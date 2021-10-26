@@ -35,3 +35,4 @@ group :test do
 end
 
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+gem "comfortable_mexican_sofa", "~> 2.0.0"
