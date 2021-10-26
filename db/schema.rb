@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_26_063411) do
+ActiveRecord::Schema.define(version: 2021_10_26_063556) do
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -38,6 +38,23 @@ ActiveRecord::Schema.define(version: 2021_10_26_063411) do
     t.integer "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "comfy_blog_posts", force: :cascade do |t|
+    t.integer "site_id", null: false
+    t.string "title", null: false
+    t.string "slug", null: false
+    t.integer "layout_id"
+    t.text "content_cache", limit: 16777215
+    t.integer "year", limit: 4, null: false
+    t.integer "month", limit: 2, null: false
+    t.boolean "is_published", default: true, null: false
+    t.datetime "published_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_comfy_blog_posts_on_created_at"
+    t.index ["site_id", "is_published"], name: "index_comfy_blog_posts_on_site_id_and_is_published"
+    t.index ["year", "month", "slug"], name: "index_comfy_blog_posts_on_year_and_month_and_slug"
   end
 
   create_table "comfy_cms_categories", force: :cascade do |t|

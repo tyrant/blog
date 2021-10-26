@@ -36,3 +36,4 @@ end
 
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem "comfortable_mexican_sofa", "~> 2.0.0"
+gem "comfy_blog", "~> 2.0.0"
