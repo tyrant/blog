@@ -2,7 +2,7 @@
 lock "~> 3.16.0"
 
 set :application, "blog"
-set :repo_url, "git@example.com:tyrant/blog.git"
+set :repo_url, "git@github.com:tyrant/blog.git"
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
