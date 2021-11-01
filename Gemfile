@@ -26,6 +26,10 @@ group :development do
   gem 'rack-mini-profiler', '~> 2.0'
   gem 'listen', '~> 3.3'
   gem 'spring'
+  gem 'capistrano-rails'
+  gem 'capistrano-rbenv'
+  gem "capistrano-bundler"
+  gem "capistrano-passenger", '~> 0.2.0'
 end
 
 group :test do
