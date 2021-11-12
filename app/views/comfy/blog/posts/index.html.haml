@@ -1,17 +1,21 @@
 .row
-  .col-md-8
-    %h1 Blog Posts
-
-    - @blog_posts.each do |post|
-
-      %h2
-        = link_to post.title, comfy_blog_post_path(@cms_site.path, post.year, post.month, post.slug)
-      .date
-        = post.published_at.to_s(:db)
-
+  .col-lg-9.col-xl-10
+    %h1
+      = params[:category] ? params[:category] : 'All Posts'
+    .row.row-cols-sm-2.row-cols-md-3.row-cols-xl-4.g-0
+      - @blog_posts.each do |post|
+        = link_to comfy_blog_post_path(@cms_site.path, post.year, post.month, post.slug) do
+          .col
+            .card.text-white
+              - cache post do
+                %img.card-img{ src: first_img_src_for(post) }
+              .card-img-overlay
+                %h5.card-title
+                  = post.title
+                
     = comfy_paginate @blog_posts
 
-  .col-md-4
+  .col-lg-3.col-xl-2
 
     %h3 Archive
     - dates_with_counts = @cms_site.blog_posts.published.group(:year, :month).order(year: :desc, month: :desc).count
@@ -23,5 +27,6 @@
         %small (#{count})
 
     %h3 Tags
-    - Comfy::Cms::Category.of_type('Comfy::Blog::Post').all.each do |tag|
-      = link_to tag.label, category: tag.label
+    - Comfy::Cms::Category.of_type('Comfy::Blog::Post').find_each do |tag|
+      %span.badge.rounded-pill.bg-secondary
+        = link_to tag.label, category: tag.label
