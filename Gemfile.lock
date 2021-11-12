@@ -121,6 +121,8 @@ GEM
     crass (1.0.6)
     erubi (1.10.0)
     erubis (2.7.0)
+    faker (2.19.0)
+      i18n (>= 1.6, < 2)
     ffi (1.15.4)
     globalid (0.5.2)
       activesupport (>= 5.0)
@@ -258,9 +260,6 @@ GEM
     temple (0.8.2)
     thor (1.1.0)
     tilt (2.0.10)
-    turbolinks (5.2.1)
-      turbolinks-source (~> 5.2)
-    turbolinks-source (5.2.0)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
     web-console (4.1.0)
@@ -299,9 +298,11 @@ DEPENDENCIES
   capybara (>= 3.26)
   comfortable_mexican_sofa (~> 2.0.0)
   comfy_blog (~> 2.0.0)!
+  faker
   image_processing (~> 1.2)
   jbuilder (~> 2.7)
   listen (~> 3.3)
+  nokogiri
   pg
   puma (~> 5.0)
   rack-mini-profiler (~> 2.0)
@@ -309,7 +310,6 @@ DEPENDENCIES
   sass-rails (>= 6)
   selenium-webdriver
   spring
-  turbolinks (~> 5)
   tzinfo-data
   web-console (>= 4.1.0)
   webdrivers

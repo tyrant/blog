@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  root to: 'application#index'
   comfy_route :blog_admin, path: "/admin"
   comfy_route :blog, path: "/blog"
   comfy_route :cms_admin, path: "/admin"
