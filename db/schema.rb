@@ -12,11 +12,14 @@
 
 ActiveRecord::Schema.define(version: 2021_10_26_063556) do
 
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
-    t.integer "record_id", null: false
-    t.integer "blob_id", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
@@ -35,7 +38,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
   end
 
   create_table "active_storage_variant_records", force: :cascade do |t|
-    t.integer "blob_id", null: false
+    t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
@@ -45,8 +48,8 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
     t.string "title", null: false
     t.string "slug", null: false
     t.integer "layout_id"
-    t.text "content_cache", limit: 16777215
-    t.integer "year", limit: 4, null: false
+    t.text "content_cache"
+    t.integer "year", null: false
     t.integer "month", limit: 2, null: false
     t.boolean "is_published", default: true, null: false
     t.datetime "published_at", null: false
@@ -74,7 +77,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
   create_table "comfy_cms_files", force: :cascade do |t|
     t.integer "site_id", null: false
     t.string "label", default: "", null: false
-    t.text "description", limit: 2048
+    t.text "description"
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -83,10 +86,10 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
 
   create_table "comfy_cms_fragments", force: :cascade do |t|
     t.string "record_type"
-    t.integer "record_id"
+    t.bigint "record_id"
     t.string "identifier", null: false
     t.string "tag", default: "text", null: false
-    t.text "content", limit: 16777215
+    t.text "content"
     t.boolean "boolean", default: false, null: false
     t.datetime "datetime"
     t.datetime "created_at", null: false
@@ -103,9 +106,9 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
     t.string "app_layout"
     t.string "label", null: false
     t.string "identifier", null: false
-    t.text "content", limit: 16777215
-    t.text "css", limit: 16777215
-    t.text "js", limit: 16777215
+    t.text "content"
+    t.text "css"
+    t.text "js"
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -121,7 +124,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
     t.string "label", null: false
     t.string "slug"
     t.string "full_path", null: false
-    t.text "content_cache", limit: 16777215
+    t.text "content_cache"
     t.integer "position", default: 0, null: false
     t.integer "children_count", default: 0, null: false
     t.boolean "is_published", default: true, null: false
@@ -135,7 +138,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
   create_table "comfy_cms_revisions", force: :cascade do |t|
     t.string "record_type", null: false
     t.integer "record_id", null: false
-    t.text "data", limit: 16777215
+    t.text "data"
     t.datetime "created_at"
     t.index ["record_type", "record_id", "created_at"], name: "index_cms_revisions_on_rtype_and_rid_and_created_at"
   end
@@ -155,7 +158,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
     t.integer "site_id", null: false
     t.string "label", null: false
     t.string "identifier", null: false
-    t.text "content", limit: 16777215
+    t.text "content"
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -168,7 +171,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
     t.integer "page_id", null: false
     t.integer "layout_id"
     t.string "label", null: false
-    t.text "content_cache", limit: 16777215
+    t.text "content_cache"
     t.boolean "is_published", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
