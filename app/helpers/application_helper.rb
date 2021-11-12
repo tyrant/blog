@@ -3,7 +3,7 @@ module ApplicationHelper
   def first_img_src_for(post)
     first_img = Nokogiri::HTML(post.content_cache).css('img').first
     if !first_img.nil? && !a_bloody_emoji?(first_img)
-      img.first['src']
+      first_img['src']
     else
       'https://via.placeholder.com/300'
     end
