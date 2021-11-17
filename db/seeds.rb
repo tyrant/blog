@@ -1,8 +1,15 @@
+def build_content
+  <<~HEREDOC
+    #{Faker::Boolean.boolean(true_ratio: 0.7) ? "<p><img src='http://lorempixel.com/#{Faker::Number.between(from: 300, to: 600)}/#{Faker::Number.between(from: 200, to: 450)}/' /></p>" : ""}
+    #{(2..8).map { "<p>#{Faker::Lorem.paragraph(sentence_count: Faker::Number.between(from: 1, to: 20))}</p>" }.join}
+  HEREDOC
+end
+
+
 if !(Rails.env.development? || Rails.env.test?)
   puts "Are you nuts? We're in the #{Rails.env} env! `rake db:seed` will wipe the entire database! You're a numpty. Exiting now."
   exit
 end
-
 
 Comfy::Cms::Site.destroy_all
 Comfy::Cms::Layout.destroy_all
@@ -44,7 +51,7 @@ cats = Comfy::Cms::Category.create!([{
       '0': {
         identifier: :content, 
         tag: "wysiwyg",
-        content: "<p>#{Faker::Lorem.paragraph(sentence_count: 17)}</p><p>#{Faker::Lorem.paragraph(sentence_count: 17)}</p><p>#{Faker::Lorem.paragraph(sentence_count: 17)}</p><p><img src='http://lorempixel.com/#{Faker::Number.between(from: 300, to: 600)}/#{Faker::Number.between(from: 200, to: 450)}/'></p><p>#{Faker::Lorem.paragraph(sentence_count: 17)}</p><p>#{Faker::Lorem.paragraph(sentence_count: 17)}</p><p>#{Faker::Lorem.paragraph(sentence_count: 17)}</p>"
+        content: build_content,
       }
     }
   )
