@@ -1,7 +1,13 @@
 
 
-.card:hover > .card-img
-  filter: saturate(2)
+.card 
+  transition-property: margin
+  transition-duration: 0.2s
+  transition-timing-function: fade-in-out
+
+.card:hover
+  margin: -6px
+
 
 .card:hover h5
   text-decoration: underline
