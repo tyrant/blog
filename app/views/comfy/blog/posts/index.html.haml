@@ -7,7 +7,7 @@
         = link_to comfy_blog_post_path(@cms_site.path, post.year, post.month, post.slug) do
           .col
             .card.text-white
-              - cache post.updated_at do
+              - cache post do
                 = image_tag resized_blob_or_placeholder_for(post), class: 'card-img'
               .card-img-overlay
                 %h5.card-title
