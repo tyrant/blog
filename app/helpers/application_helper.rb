@@ -4,7 +4,7 @@ module ApplicationHelper
   # We have a post. We would like to generate a resized-to-filled image variant for any ActiveStorage image that may exist inside the post's content, or if none exists, just a nifty placeholder.
   def resized_blob_or_placeholder_for(post)
     blob = _first_active_storage_img_blob_for(post)
-    return 'https://via.placeholder.com/240' if blob.nil?
+    return 'http://lorempixel.com/240/240' if blob.nil?
 
     blob.variant(resize_to_fill: [240, 240])
   end
