@@ -1,10 +1,60 @@
-.row.comfy-blog-post
-  .col-lg-8
-    %h1= @cms_post.title
+- content_for :title do
+  = @cms_post.title
 
-    %p
-      - label = Comfy::Blog::Post.human_attribute_name(:published_on)
-      - time  = @cms_post.published_at.to_formatted_s(:short)
-      = "#{label}: #{time}"
+.show
+  .row
+    .col-lg-8
+      %h1= @cms_post.title
 
-    = @cms_post.content_cache.html_safe
+      %p
+        - label = Comfy::Blog::Post.human_attribute_name(:published_on)
+        - time  = @cms_post.published_at.to_formatted_s(:short)
+        = "#{label}: #{time}"
+
+      = @cms_post.content_cache.html_safe
+
+  - [nil, *@cms_post.categories].each do |category|
+    - pn = @cms_post.prev_nek(for_category: category)
+    .row
+      .col.text-center
+        %h4
+          Category:
+          = category.nil? ? 'All' : category.label
+    .row
+      .col-md-6.text-start
+        - if pn[:prev]
+          .row
+            .col
+              = link_to comfy_blog_post_path(@cms_site.path, pn[:prev].year, pn[:prev].month, pn[:prev].slug) do
+                %i.bi.bi-arrow-left
+                Earlier
+          .row
+            .col
+              = link_to comfy_blog_post_path(@cms_site.path, pn[:prev].year, pn[:prev].month, pn[:prev].slug) do
+                .card.prev.mb-3
+                  .row.g-0
+                    .col
+                      .card-body
+                        %p.card-title.text-start.text-truncate
+                          = pn[:prev].title
+                      - cache ['show', pn[:prev]] do
+                        = image_tag blob_or_placeholder_for(pn[:prev], x: 96, y: 96), class: 'img-fluid rounded-end float-end'
+
+      .col-md-6.text-end
+        - if pn[:nek]
+          .row
+            .col
+              = link_to comfy_blog_post_path(@cms_site.path, pn[:nek].year, pn[:nek].month, pn[:nek].slug) do
+                Later
+                %i.bi.bi-arrow-right
+          .row
+            .col
+              = link_to comfy_blog_post_path(@cms_site.path, pn[:nek].year, pn[:nek].month, pn[:nek].slug) do
+                .card.nek.mb-3
+                  .row.g-0
+                    .col
+                      - cache ['show', pn[:nek]] do
+                        = image_tag blob_or_placeholder_for(pn[:nek], x: 96, y: 96), class: 'img-fluid rounded-start float-start'
+                      .card-body
+                        %p.card-title.text-end.text-truncate
+                          = pn[:nek].title

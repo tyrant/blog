@@ -21,5 +21,9 @@ module Blog
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    config.after_initialize do
+      Comfy::Blog::Post.class_eval { include MoreComfyBlogPostMethods }
+    end
   end
 end

@@ -1,34 +1,44 @@
+.index
+  .card 
+    transition-property: margin
+    transition-duration: 0.2s
+    transition-timing-function: fade-in-out
 
+  .card:hover
+    margin: -6px
 
-.card 
-  transition-property: margin
-  transition-duration: 0.2s
-  transition-timing-function: fade-in-out
-
-.card:hover
-  margin: -6px
-
-
-.card:hover h5
-  text-decoration: underline
-
-.card-img-overlay 
-  padding: 0
-
-  h5 
-    text-align: center
-    padding: 11px
-    background-color: black
-    opacity: 0.8
-
-span.badge
-  a
-    color: white
-    text-decoration: none
-  a:hover
+  .card:hover h5
     text-decoration: underline
 
+  .card-img-overlay 
+    padding: 0
 
-.comfy-blog-post img
-  max-width: 100%
-  height: auto
+    h5 
+      text-align: center
+      padding: 11px
+      background-color: black
+      opacity: 0.8
+
+  span.badge
+    a
+      color: white
+      text-decoration: none
+    a:hover
+      text-decoration: underline
+
+
+.show
+  img
+    max-width: 100%
+    height: auto
+
+  .card
+    height: 96px
+    .card-body
+      display: inline-block
+      width: calc(100% - 96px)
+  .card:hover
+    background-color: #f6f6f6
+
+  a
+    text-decoration: none

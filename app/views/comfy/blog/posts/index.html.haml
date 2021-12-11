@@ -1,4 +1,4 @@
-.row
+.row.index
   .col-lg-9.col-xl-10
     %h1
       = params[:category] ? params[:category] : 'All Posts'
@@ -7,8 +7,8 @@
         = link_to comfy_blog_post_path(@cms_site.path, post.year, post.month, post.slug) do
           .col
             .card.text-white
-              - cache post do
-                = image_tag resized_blob_or_placeholder_for(post), class: 'card-img'
+              - cache ['index', post] do
+                = image_tag blob_or_placeholder_for(post), class: 'card-img'
               .card-img-overlay
                 %h5.card-title
                   = post.title
