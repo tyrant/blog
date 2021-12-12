@@ -2,6 +2,9 @@ module MoreComfyBlogPostMethods
 
   # We would like the immediate prev/nek posts straddling this post, ordered by published_at.
   # These posts *might* be filtered by category.
+  # Yeah, I realise calling this for multiple Categories is an N+1 bug, but it's 
+  # honestly that big a performance hit. In practice, Posts generally don't have
+  # vast Category counts. 
   def prev_nek(for_category: nil)
 
     # Yeah, I realise #first is brittle, but I doubt I'll be using this app for 
