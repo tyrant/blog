@@ -1,8 +1,8 @@
-module MoreComfyBlogPostMethods
+module ComfyBlogPostMethods
 
   # We would like the immediate prev/nek posts straddling this post, ordered by published_at.
-  # These posts *might* be filtered by category.
-  # Yeah, I realise calling this for multiple Categories is an N+1 bug, but it's 
+  # These posts *might* be for a certain category, or just for every post.
+  # Yeah, I realise calling this across multiple Categories is an N+1 bug, but it's 
   # honestly that big a performance hit. In practice, Posts generally don't have
   # vast Category counts. 
   def prev_nek(for_category: nil)
@@ -17,10 +17,16 @@ module MoreComfyBlogPostMethods
       end
 
     {
-      prev: possibly_categorised.where('comfy_blog_posts.published_at < ?', self.published_at)
-        .order('published_at desc').limit(1).first,
-      nek: possibly_categorised.where('comfy_blog_posts.published_at > ?', self.published_at)
-        .order('published_at asc').limit(1).first
+      prev: possibly_categorised
+        .where('comfy_blog_posts.published_at < ?', self.published_at)
+        .order('published_at desc')
+        .limit(1)
+        .first,
+      nek: possibly_categorised
+        .where('comfy_blog_posts.published_at > ?', self.published_at)
+        .order('published_at asc')
+        .limit(1)
+        .first
     }
   end
 end

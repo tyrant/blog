@@ -23,7 +23,7 @@ module Blog
     # config.eager_load_paths << Rails.root.join("extras")
 
     config.after_initialize do
-      Comfy::Blog::Post.class_eval { include MoreComfyBlogPostMethods }
+      Comfy::Blog::Post.class_eval { include ComfyBlogPostMethods }
     end
   end
 end
