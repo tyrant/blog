@@ -5,7 +5,7 @@
       <% if content_for? :title %>
         <%= content_for :title %>
       <% else %>
-        Bourgeois Filth
+        Your Beloved Bourgeois Filth
       <% end %>
     </title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -17,15 +17,17 @@
     <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXZ5QKDNLC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){ dataLayer.push(arguments); }
-      gtag('js', new Date());
+    <% if Rails.env.production? %>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXZ5QKDNLC"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-      gtag('config', 'G-HXZ5QKDNLC');
-    </script>
+        gtag('config', 'G-HXZ5QKDNLC');
+      </script>
+    <% end %>
   </head>
 
   <body>
@@ -33,7 +35,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
         <a class="navbar-brand" href="/">
-          Bourgeois Filth
+          Your Beloved Bourgeois Filth
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
