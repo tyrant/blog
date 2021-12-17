@@ -51,9 +51,12 @@
               </a>
               <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                 <li><a class="dropdown-item" href="/blog">All posts</a></li>
-                <li><h6 class="dropdown-header">Categories</h6></li>
-                <li><a class="dropdown-item" href="/blog?category=Very+Bad+Advice">Very Bad Advice</a></li>
-                <li><a class="dropdown-item" href="/blog?category=Whimsy">Whimsy</a></li>
+                <li><h6 class="dropdown-header">Flavourtown Specifics</h6></li>
+                <% Comfy::Cms::Category.where.not(label: 'wysiwyg').order('label desc').find_each do |category| %>
+                  <li>
+                    <%= link_to category.label, comfy_blog_posts_path(category: category.label), class: 'dropdown-item' %>
+                  </li>
+                <% end %>
               </ul>
             </li>
           </ul>
