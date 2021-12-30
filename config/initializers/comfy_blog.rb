@@ -5,5 +5,5 @@ ComfyBlog.configure do |config|
   config.app_layout = 'layouts/application'
 
   # Number of posts per page. Default is 10
-  #   config.posts_per_page = 10
+  config.posts_per_page = 18
 end
