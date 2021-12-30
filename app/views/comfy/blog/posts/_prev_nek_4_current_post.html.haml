@@ -1,4 +1,4 @@
-- pn = @cms_post.prev_nek(for_category: category)
+- pn = @cms_post.prev_nek(category: category)
 .row
   .col.text-center
     %h4
@@ -12,7 +12,7 @@
             %i.bi.bi-arrow-left
             Earlier
       .row
-        .col
+        .col 
           = link_to comfy_blog_post_path(@cms_site.path, pn[:prev].year, pn[:prev].month, pn[:prev].slug) do
             .card.prev.mb-3
               .row.g-0

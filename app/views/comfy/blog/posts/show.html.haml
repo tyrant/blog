@@ -14,4 +14,4 @@
       = @cms_post.content_cache.html_safe
 
   - content_for :footer do
-    = render partial: 'prev_nek_4_current_post', collection: [nil, *@cms_post.categories], as: :category
+    = render partial: 'prev_nek_4_current_post', collection: [nil] + @cms_post.categories, as: :category

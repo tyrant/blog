@@ -13,7 +13,10 @@
                 %h5.card-title
                   = post.title
                 
-    = comfy_paginate @blog_posts
+    .row
+      .col
+        .mt-3.d-flex.justify-content-center
+          = comfy_paginate @blog_posts
 
   .col-lg-3.col-xl-2
 

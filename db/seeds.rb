@@ -38,6 +38,10 @@ cats = Comfy::Cms::Category.create!([{
   site: site,
   label: 'Whimsy',
   categorized_type: 'Comfy::Blog::Post'
+}, {
+  site: site,
+  label: 'NSFW',
+  categorized_type: 'Comfy::Blog::Post'
 }])
 
 50.times do 
