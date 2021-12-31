@@ -6,6 +6,10 @@ module ComfyBlogPostMethods
 
   attr_accessor :posts
 
+  def nsfw?
+    categories.include? Comfy::Cms::Category.find_by(label: 'NSFW')
+  end
+
   # We would like the immediate prev/nek posts straddling this post,
   # ordered by published_at.
   # { prev: post_preceding_self, nek: post_following_self }

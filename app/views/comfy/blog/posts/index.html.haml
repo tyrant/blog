@@ -2,11 +2,20 @@
   .col-lg-9.col-xl-10
     %h1
       = params[:category] ? params[:category] : 'All Posts'
+
+    .row
+      .col
+        .mt-3.d-flex.justify-content-center
+          = comfy_paginate @blog_posts
+        .form-check.form-switch
+          %input.form-check-input.nsfw-toggle#nsfw_toggle{ type: 'checkbox' }
+          %label.form-check-label{ for: 'nsfw_toggle' } Consent is sexy
+
     .row.row-cols-sm-1.row-cols-md-2.row-cols-xl-3.g-3
       - @blog_posts.each do |post|
         = link_to comfy_blog_post_path(@cms_site.path, post.year, post.month, post.slug) do
           .col
-            .card.text-white
+            .card.text-white{ class: post.nsfw? && 'nsfw blurred' }
               - cache ['index', post] do
                 = image_tag blob_or_placeholder_for(post), class: 'card-img'
               .card-img-overlay

@@ -2,14 +2,33 @@ require 'rails_helper'
 
 describe ComfyBlogPostMethods do
 
+  # Boilerplate, might move these to general database_cleaner setup later
+  let!(:site)   { create :site }
+  let!(:layout) { create :layout, site: site }
+  let!(:vba)    { create :category, site: site, label: 'Very Bad Advice' }
+  let!(:whimsy) { create :category, site: site, label: 'Whimsy' }
+  let!(:nsfw)   { create :category, site: site, label: 'NSFW' }
+
+  describe '#nsfw?' do
+
+    let!(:post) { create :post, site: site, layout: layout }
+
+    context 'post without an NSFW categorization' do
+      it 'returns false' do
+        expect(post.nsfw?).to eq false
+      end
+    end
+
+    context 'post with an NSFW categorization' do
+      let!(:cat) { create :categorization, category: nsfw, categorized: post }
+      it 'returns true' do
+        expect(post.nsfw?).to eq true
+      end
+    end
+  end
+
   describe '#prev_nek' do
 
-    # Boilerplate, might move these to general database_cleaner setup later
-    let!(:site) { create :site }
-    let!(:layout) { create :layout, site: site }
-    let!(:vba)  { create :category, site: site, label: 'Very Bad Advice' }
-    let!(:whimsy) { create :category, site: site, label: 'Whimsy' }
-    let!(:nsfw) { create :category, site: site, label: 'NSFW' }
 
     # Six posts, a smattering of categorizations.
     let!(:post1) { 
