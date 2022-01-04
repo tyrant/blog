@@ -14,16 +14,12 @@ describe ComfyBlogPostMethods do
     let!(:post) { create :post, site: site, layout: layout }
 
     context 'post without an NSFW categorization' do
-      it 'returns false' do
-        expect(post.nsfw?).to eq false
-      end
+      it { expect(post.nsfw?).to eq false }
     end
 
     context 'post with an NSFW categorization' do
       let!(:cat) { create :categorization, category: nsfw, categorized: post }
-      it 'returns true' do
-        expect(post.nsfw?).to eq true
-      end
+      it { expect(post.nsfw?).to eq true }
     end
   end
 
