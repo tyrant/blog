@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_26_063556) do
+ActiveRecord::Schema.define(version: 2022_01_14_234858) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -55,6 +55,7 @@ ActiveRecord::Schema.define(version: 2021_10_26_063556) do
     t.datetime "published_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "scratchpad"
     t.index ["created_at"], name: "index_comfy_blog_posts_on_created_at"
     t.index ["site_id", "is_published"], name: "index_comfy_blog_posts_on_site_id_and_is_published"
     t.index ["year", "month", "slug"], name: "index_comfy_blog_posts_on_year_and_month_and_slug"

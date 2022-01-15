@@ -9,6 +9,8 @@
 #form-fragments-container
   = render "comfy/admin/cms/fragments/form_fragments", record: @post, scope: :post
 
+= form.text_area :scratchpad, rows: 5
+
 = render "comfy/admin/cms/categories/form", form: form
 
 = form.text_field :published_at, value: @post.published_at.try(:to_s, :db), data: {'cms-datetime' => true}
