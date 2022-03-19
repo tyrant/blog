@@ -8,9 +8,9 @@ default: &default
   adapter: postgresql
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
-  username: michaelclarke
-  password:
-
+  username: <%= Settings.pgusername %>
+  password: <%= Settings.pgpassword %>
+  
 development:
   <<: *default
   database: blog_development

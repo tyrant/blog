@@ -1,0 +1,3 @@
+<% ENV.each do |key, value| %>
+  <%= key.downcase %>: <%= value.dump %>
+<% end %>
