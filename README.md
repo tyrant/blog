@@ -22,3 +22,11 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+## Dotenv and Settings
+
+How cool is that? I've installed https://github.com/bkeepers/dotenv and https://github.com/rubyconfig/config. 
+
+Add your environment variables to .env and friends. You don't need to use Foreman or anything like that to load them: Dotenv will handle that on its own. Config will then relay these to its Settings object.
+
+Suppose .env contains `DBUSERNAME=foo`. Dotenv will then popuate `ENV['DBUSERNAME']` with `foo`, and `Settings.dbusername` will in turn contain `foo`. Easy peasy.
