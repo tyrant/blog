@@ -1,5 +1,5 @@
 
-// 2% of the time, the Irritate modal will appear 20-30 seconds after page load -
+// 2% of the time, the Irritate modal will appear 10-30 seconds after page load -
 // unless ?irritate=bringiton
 export function loadIrritateModal() {
   var urlParams = new URLSearchParams(window.location.search);
