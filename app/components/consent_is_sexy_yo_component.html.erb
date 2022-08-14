@@ -1,0 +1,74 @@
+<div data-controller="consent-is-sexy-yo" 
+     class="flex flex-col sm:flex-row sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
+
+  <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
+    Consent is sexy <em>❤</em>
+  </h3>
+
+  <ul class="flex flex-row lg:flex-col mx-auto px-2">
+    <li class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50">
+      <label class="block p-2 text-sm text-gray-700 cursor-pointer relative">
+        <input class="relative top-px mr-0.5"
+               type="checkbox"
+               role="switch"
+               <% if banish_checked? %>checked="checked"<% end %>
+               <% if banish_disabled? %>disabled="disabled"<% end %>
+               data-consent-is-sexy-yo-target="banish"
+               data-action="click->consent-is-sexy-yo#handleClickBanishNsfwCompletely">
+
+        
+        Banish NSFW<sup x-data="{ isOpen: false }"
+             class="inline-block">
+          (<span x-on:mouseover="isOpen = true" 
+                 x-on:mouseleave="isOpen = false"
+                 class="hover:underline">?</span>)
+          <div x-cloak
+               x-show.transition="isOpen"
+               class="relative">
+            <div class="absolute top-0 z-10 w-48 p-2 -mt-1 text-[8.5pt] leading-[0.95rem] text-white transform -translate-x-1/2 translate-y-5 bg-black rounded-lg shadow-lg">
+              If you don't know, "NSFW" means "Not Safe For Work". PG/R/X-rated content. Raunch! Basically, all the good stuff.
+            </div>
+            <svg class="absolute z-10 w-6 h-6 text-black transform -translate-x-2 translate-y-2 fill-current stroke-current"
+                 width="8"
+                 height="8">
+              <rect x="13"
+                    y="-10"
+                    width="8"
+                    height="8"
+                    transform="rotate(45)" />
+            </svg>
+          </div>
+        </sup> 
+
+        posts
+      </label>
+    </li>
+
+    <li title="<%= mouseover_title %>" 
+        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 hover:bg-gray-50">
+      <label class="block p-2 text-sm text-gray-700 cursor-pointer <% if mouseover_disabled? %>opacity-40<% end %>">
+        <input class="relative top-px mr-0.5"
+               type="checkbox"
+               role="switch"
+               <% if mouseover_checked? %>checked="checked"<% end %>
+               <% if mouseover_disabled? %>disabled="disabled"<% end %>
+               data-consent-is-sexy-yo-target="mouseover"
+               data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
+        Unblur on hover
+      </label>
+    </li>
+
+    <li class="border-gray-300 border rounded-r-md lg:rounded-r-none lg:rounded-b-md hover:bg-gray-50">
+      <label class="block p-2 text-sm text-gray-700 cursor-pointer <% if always_disabled? %>opacity-40<% end %>">
+        <input class="relative top-px mr-0.5"
+               type="checkbox"
+               role="switch"
+               <% if always_checked? %>checked="checked"<% end %>
+               <% if always_disabled? %>disabled="disabled"<% end %>
+               data-consent-is-sexy-yo-target="always"
+               data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">
+        Unblur always
+      </label>
+    </li>
+  </ul>
+</div>

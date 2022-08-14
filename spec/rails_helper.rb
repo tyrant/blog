@@ -64,3 +64,6 @@ RSpec.configure do |config|
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
 end
+
+Comfy::Blog::Post.instance_eval { include ComfyBlogPostMethods }
+Comfy::Cms::Category.instance_eval { include ComfyCmsCategoryMethods }

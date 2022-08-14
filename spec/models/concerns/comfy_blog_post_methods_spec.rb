@@ -61,21 +61,18 @@ describe ComfyBlogPostMethods do
     describe 'No category filtering' do
 
       describe "querying post1" do
-        it "returns { prev: nil, nek: post2 }" do
-          expect(post1.prev_nek).to eq({ prev: nil, nek: post2 })
-        end
+        it { expect(post1.prev).to eq nil }
+        it { expect(post1.nek).to eq post2 }
       end
 
       describe "querying post3" do
-        it "returns { prev: post2, nek: post5 }" do
-          expect(post3.prev_nek).to eq({ prev: post2, nek: post5 })
-        end
+        it { expect(post3.prev).to eq post2 }
+        it { expect(post3.nek).to eq post5 }
       end
 
       describe "querying post6" do
-        it "returns { prev: post5, nek: nil }" do
-          expect(post6.prev_nek).to eq({ prev: post5, nek: nil })
-        end
+        it { expect(post6.prev).to eq post5 }
+        it { expect(post6.nek). to eq nil }
       end
     end
 
@@ -84,158 +81,124 @@ describe ComfyBlogPostMethods do
       describe "filtering just VBA" do
 
         describe "querying post1" do
-          it "returns { prev: nil, nek: post5 }" do
-            expect(post1.prev_nek(category: vba)).to eq({ prev: nil, nek: post5 })
-          end
+          it { expect(post1.prev(category: vba)).to eq nil }
+          it { expect(post1.nek(category: vba)).to eq post5 }
         end
 
         describe "querying post2" do
-          it "returns { prev: post1, nek: post5 }" do
-            expect(post2.prev_nek(category: vba)).to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post2.prev(category: vba)).to eq post1 }
+          it { expect(post2.nek(category: vba)).to eq post5 }
         end
 
         describe "querying post3" do
-          it "returns { prev: post1, nek: post5 }" do
-            expect(post3.prev_nek(category: vba)).to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post3.prev(category: vba)).to eq post1 }
+          it { expect(post3.nek(category: vba)).to eq post5 }
         end
 
         describe "querying post4" do
-          it "returns { prev: post1, nek: post5 }" do
-            expect(post4.prev_nek(category: vba)).to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post4.prev(category: vba)).to eq post1 }
+          it { expect(post4.nek(category: vba)).to eq post5 }
         end
 
         describe "querying post5" do
-          it "returns { prev: post1, nek: nil }" do
-            expect(post5.prev_nek(category: vba)).to eq({ prev: post1, nek: nil })
-          end
+          it { expect(post5.prev(category: vba)).to eq post1 }
+          it { expect(post5.nek(category: vba)).to eq nil }
         end
 
         describe "querying post6" do
-          it "returns { prev: post5, nek: nil }" do
-            expect(post6.prev_nek(category: vba)).to eq({ prev: post5, nek: nil })
-          end
+          it { expect(post6.prev(category: vba)).to eq post5 }
+          it { expect(post6.nek(category: vba)).to eq nil }
         end
       end
 
       describe "filtering just Whimsy" do
 
         describe "querying post1" do
-          it "returns { prev: nil, nek: post2 }" do
-            expect(post1.prev_nek(category: whimsy)).to eq({ prev: nil, nek: post2 })
-          end
+          it { expect(post1.prev(category: whimsy)).to eq nil }
+          it { expect(post1.nek(category: whimsy)).to eq post2 }
         end
 
         describe "querying post2" do
-          it "returns { prev: nil, nek: post6 }" do
-            expect(post2.prev_nek(category: whimsy)).to eq({ prev: nil, nek: post6 })
-          end
+          it { expect(post2.prev(category: whimsy)).to eq nil }
+          it { expect(post2.nek(category: whimsy)).to eq post6 }
         end
 
         describe "querying post3" do
-          it "returns { prev: post2, nek: post6 }" do
-            expect(post3.prev_nek(category: whimsy)).to eq({ prev: post2, nek: post6 })
-          end
+          it { expect(post3.prev(category: whimsy)).to eq post2 }
+          it { expect(post3.nek(category: whimsy)).to eq post6 }
         end
 
         describe "querying post4" do
-          it "returns { prev: post2, nek: post6 }" do
-            expect(post4.prev_nek(category: whimsy)).to eq({ prev: post2, nek: post6 })
-          end
+          it { expect(post4.prev(category: whimsy)).to eq post2 }
+          it { expect(post4.nek(category: whimsy)).to eq post6 }
         end
 
         describe "querying post5" do
-          it "returns { prev: post2, nek: post6 }" do
-            expect(post5.prev_nek(category: whimsy)).to eq({ prev: post2, nek: post6 })
-          end
+          it { expect(post5.prev(category: whimsy)).to eq post2 }
+          it { expect(post5.nek(category: whimsy)).to eq post6 }
         end
 
         describe "querying post6" do
-          it "returns { prev: post2, nek: nil }" do
-            expect(post6.prev_nek(category: whimsy)).to eq({ prev: post2, nek: nil })
-          end
+          it { expect(post6.prev(category: whimsy)).to eq post2 }
+          it { expect(post6.nek(category: whimsy)).to eq nil }
         end
       end
 
       describe "NSFW filter: naughty posts appear only when whitelisted" do
 
         describe "querying post2 with nsfw filter absent" do
-          it "returns { prev: post1, nek: post5 }" do
-            expect(post2.prev_nek(category: vba))
-              .to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post2.prev(category: vba)).to eq post1 }
+          it { expect(post2.nek(category: vba)).to eq post5 }
         end
 
         describe "querying post2 with nsfw filter manually false" do
-          it "returns { prev: post1, nek: post5 }" do
-            expect(post2.prev_nek(category: vba, nsfw: false))
-              .to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post2.prev(category: vba, nsfw: false)).to eq post1 }
+          it { expect(post2.nek(category: vba, nsfw: false)).to eq post5 }
         end
 
         describe "querying post2 with nsfw filter manually true" do
-          it "returns { prev: post1, nek: post5 }" do
-            expect(post2.prev_nek(category: vba, nsfw: true))
-              .to eq({ prev: post1, nek: post3 })
-          end
+          it { expect(post2.prev(category: vba, nsfw: true)).to eq post1 }
+          it { expect(post2.nek(category: vba, nsfw: true)).to eq post3 }
         end
 
         describe "querying post2 with category absent and nsfw absent" do
-          it "returns { prev: post1, nek: post3 }" do
-            expect(post2.prev_nek)
-              .to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post2.prev).to eq post1 }
+          it { expect(post2.nek).to eq post5 }
         end
 
         describe "querying post2 with category absent and nsfw false" do
-          it "returns { prev: post1, nek: post3 }" do
-            expect(post2.prev_nek)
-              .to eq({ prev: post1, nek: post5 })
-          end
+          it { expect(post2.prev(nsfw: false)).to eq post1 }
+          it { expect(post2.nek(nsfw: false)).to eq post5 }
         end
 
         describe "querying post1 with category absent and nsfw true" do
-          it "returns { prev: nil, nek: post2 }" do
-            expect(post1.prev_nek(nsfw: true))
-              .to eq({ prev: nil, nek: post2 })
-          end
+          it { expect(post1.prev(nsfw: true)).to eq nil }
+          it { expect(post1.nek(nsfw: true)).to eq post2 }
         end
 
         describe "querying post2 with category absent and nsfw true" do
-          it "returns { prev: post1, nek: post3 }" do
-            expect(post2.prev_nek(nsfw: true))
-              .to eq({ prev: post1, nek: post3 })
-          end
+          it { expect(post2.prev(nsfw: true)).to eq post1 }
+          it { expect(post2.nek(nsfw: true)).to eq post3 }
         end
 
         describe "querying post3 with category absent and nsfw true" do
-          it "returns { prev: post2, nek: post4 }" do
-            expect(post3.prev_nek(nsfw: true))
-              .to eq({ prev: post2, nek: post4 })
-          end
+          it { expect(post3.prev(nsfw: true)).to eq post2 }
+          it { expect(post3.nek(nsfw: true)).to eq post4 }
         end
 
         describe "querying post4 with category absent and nsfw true" do
-          it "returns { prev: post3, nek: post5 }" do
-            expect(post4.prev_nek(nsfw: true))
-              .to eq({ prev: post3, nek: post5 })
-          end
+          it { expect(post4.prev(nsfw: true)).to eq post3 }
+          it { expect(post4.nek(nsfw: true)).to eq post5 }
         end
 
         describe "querying post5 with category absent and nsfw true" do
-          it "returns { prev: post4, nek: post6 }" do
-            expect(post5.prev_nek(nsfw: true))
-              .to eq({ prev: post4, nek: post6 })
-          end
+          it { expect(post5.prev(nsfw: true)).to eq post4 }
+          it { expect(post5.nek(nsfw: true)).to eq post6 }
         end
 
         describe "querying post6 with category absent and nsfw true" do
-          it "returns { prev: post5, nek: nil }" do
-            expect(post6.prev_nek(nsfw: true))
-              .to eq({ prev: post5, nek: nil })
-          end
+          it { expect(post6.prev(nsfw: true)).to eq post5 }
+          it { expect(post6.nek(nsfw: true)).to eq nil }
         end
       end
 

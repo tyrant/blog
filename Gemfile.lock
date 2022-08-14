@@ -341,13 +341,14 @@ GEM
     sshkit (1.21.2)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
-    stimulus-rails (1.0.4)
-      railties (>= 6.0.0)
     temple (0.8.2)
     thor (1.1.0)
     tilt (2.0.10)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
+    view_component (2.52.0)
+      activesupport (>= 5.0.0, < 8.0)
+      method_source (~> 1.0)
     web-console (4.1.0)
       actionview (>= 6.0.0)
       activemodel (>= 6.0.0)
@@ -405,8 +406,8 @@ DEPENDENCIES
   sass-rails (>= 6)
   selenium-webdriver
   spring
-  stimulus-rails
   tzinfo-data
+  view_component
   web-console (>= 4.1.0)
   webdrivers
   webpacker (~> 5.0)
