@@ -18,21 +18,23 @@ class PrevNekComponent < ViewComponent::Base
   end
 
   def prev_css_classes
-    names = %w(flex flex-row items-center md:basis-1/2 bg-white rounded-l-lg border shadow-md md:max-w-xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700)
-    names << "duration-#{PostIndexComponent::DURATION}"
+    classes = common_css_classes
+    classes << "rounded-l-lg duration-#{PostIndexComponent::DURATION}"
+    classes << nsfw_css_classes if prev.nsfw?
 
-    names << nsfw_css_classes if prev.nsfw?
-
-    names.flatten
+    classes.flatten
   end
 
   def nek_css_classes
-    names = %w(flex flex-row items-center md:basis-1/2 bg-white rounded-r-lg border shadow-md md:max-w-xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700)
-    names << "duration-#{PostIndexComponent::DURATION}"
+    classes = common_css_classes
+    classes << "rounded-r-lg duration-#{PostIndexComponent::DURATION}"
+    classes << nsfw_css_classes if nek.nsfw?
 
-    names << nsfw_css_classes if nek.nsfw?
+    classes.flatten
+  end
 
-    names.flatten
+  def common_css_classes
+    %w(flex flex-row items-center md:basis-1/2 bg-white border shadow-md md:max-w-xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700)
   end
 
   def nsfw_css_classes
