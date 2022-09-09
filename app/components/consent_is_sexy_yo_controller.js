@@ -41,7 +41,7 @@ export default class extends Controller {
 
   updatePrevNekStimsUnblurOnMouseover() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      stim.unblurOnMouseover(this.banishTarget.checked);
+      stim.unblurOnMouseover(this.mouseoverTarget.checked);
     });
   }
 
@@ -70,7 +70,7 @@ export default class extends Controller {
 
   updatePrevNekStimsUnblurAlways() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      stim.unblurAlways(this.banishTarget.checked);
+      stim.unblurAlways(this.alwaysTarget.checked);
     });
   }
 

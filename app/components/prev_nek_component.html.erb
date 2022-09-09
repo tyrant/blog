@@ -1,6 +1,8 @@
 <div data-controller="prev-nek"
      data-prev-nek-duration-value="<%= PostIndexComponent::DURATION %>"
-     data-prev-nek-contains-nsfw-value="<%= prev.nsfw? || nek.nsfw? %>">
+     data-prev-nek-prev-is-nsfw-value="<%= prev.nsfw? %>"
+     data-prev-nek-nek-is-nsfw-value="<%= nek.nsfw? %>"
+     >
   <h4>
     <%= @category ? @category.label : 'THE LOT' %>
   </h4> 
@@ -9,7 +11,7 @@
     <% if prev.present? %>
       <%= link_to comfy_blog_post_path(@site.path, prev.year, prev.month, prev.slug), 
           class: prev_css_classes,
-          data: { 'prev-nek-target': 'prev', 'prev-nek-prev-is-nsfw-value': prev.nsfw? } do %>
+          data: { 'prev-nek-target': 'prev' } do %>
 
         <%= image_tag prev.resized_blob_or_orig_or_placeholder_url(x: 96, y: 96),
             class: 'object-cover w-32 h-32 rounded-t-lg md:rounded-none md:rounded-l-lg' %>
@@ -28,7 +30,7 @@
     <% if nek.present? %>
       <%= link_to comfy_blog_post_path(@site.path, nek.year, nek.month, nek.slug),
           class: nek_css_classes,
-          data: { 'prev-nek-target': 'nek', 'prev-nek-nek-is-nsfw-value': nek.nsfw? } do %>
+          data: { 'prev-nek-target': 'nek' } do %>
 
         <div class="flex flex-col justify-between p-2 leading-normal">
           <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white">

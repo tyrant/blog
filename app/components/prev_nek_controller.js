@@ -3,7 +3,6 @@ import { Controller } from '@hotwired/stimulus';
 export default class extends Controller {
 
   static values = { 
-    containsNsfw: Boolean, 
     duration: Number,
     prevIsNsfw: Boolean,
     nekIsNsfw: Boolean
@@ -13,7 +12,7 @@ export default class extends Controller {
 
   static getNsfwContainingStims() {
     return window.getStimsBy({ name: 'prev-nek' })
-                 .filter(s => s.containsNsfwValue);
+                 .filter(s => { return s.prevIsNsfwValue || s.nekIsNsfwValue });
   }
 
   // Courtesy https://leastbad.com/stimulus-power-move
@@ -22,38 +21,30 @@ export default class extends Controller {
   }
 
   banish(yes) {
-    console.log('yes', yes)
-    console.log('this.nsfwTargets()', this.nsfwTargets())
-
-    if (yes) {
-      this.nsfwTargets().forEach(el => {
-
-      });
-      this.prevNsfwTarget.classLis
-    } else {
-
-    }
+    this.nsfwTargets().forEach(el => {
+      if (yes) el.classList.add('opacity-50');
+      else     el.classList.remove('opacity-50');
+    });
   }
 
   unblurOnMouseover(yes) {
-    if (yes) this.nsfwEls().add('hover:blur-none');
-    else     this.classes().remove('hover:blur-none');
+    this.nsfwTargets().forEach(el => {
+      if (yes) el.classList.add('hover:blur-none');
+      else     el.classList.remove('hover:blur-none');
+    });
   }
 
   unblurAlways(yes) {
-    if (yes) this.classes().remove('blur-sm');
-    else     this.classes().add('blur-sm');
+    this.nsfwTargets().forEach(el => {
+      if (yes) el.classList.remove('blur-sm');
+      else     el.classList.add('blur-sm');
+    });
   }
 
   nsfwTargets() {
-
-    ['prev', 'nek'].map(pn => {
-      console.log('pn', pn)
-      console.log('`${pn}IsNsfwValue`', `${pn}IsNsfwValue`)
-      console.log('this[`${pn}IsNsfwValue`]', this[`${pn}IsNsfwValue`])
-      console.log('this[`${pn}Target`]', this[`${pn}Target`])
+    return ['prev', 'nek'].map(pn => {
       if (this[`${pn}IsNsfwValue`]) return this[`${pn}Target`];
-    });
+    }).filter(Boolean);
   }
 
 
