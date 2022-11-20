@@ -29,9 +29,6 @@
 /public/assets
 .byebug_history
 
-# Ignore master key for decrypting credentials and more.
-/config/master.key
-
 /public/packs
 /public/packs-test
 /node_modules
@@ -39,12 +36,5 @@
 yarn-debug.log*
 .yarn-integrity
 
-config/settings.local.yml
-config/settings/*.local.yml
-config/environments/*.local.yml
-
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+/config/credentials/development.key
+/config/credentials/production.key

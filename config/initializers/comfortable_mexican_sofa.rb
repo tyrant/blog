@@ -90,8 +90,10 @@ end
 
 # Default credentials for ComfortableMexicanSofa::AccessControl::AdminAuthentication
 # YOU REALLY WANT TO CHANGE THIS BEFORE PUTTING YOUR SITE LIVE
-ComfortableMexicanSofa::AccessControl::AdminAuthentication.username = "password"
-ComfortableMexicanSofa::AccessControl::AdminAuthentication.password = "username"
+ComfortableMexicanSofa::AccessControl::AdminAuthentication
+  .username = Rails.application.credentials.comfy[:username]
+ComfortableMexicanSofa::AccessControl::AdminAuthentication
+  .password = Rails.application.credentials.comfy[:password]
 
 # Uncomment this module and `config.admin_auth` above to use custom admin authentication
 # module ComfyAdminAuthentication
