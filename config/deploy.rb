@@ -21,7 +21,7 @@ set :deploy_to, "/home/app-user/blog"
 # set :pty, true
 
 # Default value for :linked_files is []
-append :linked_files, 'config/database.yml', 'config/master.key', 'config/credentials/production.key'
+append :linked_files, 'config/database.yml', 'config/credentials/production.key'
 
 # Default value for linked_dirs is []
 append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/packs", "public/system", '.bundle', "node_modules"
@@ -42,10 +42,10 @@ set :rbenv_path, '/home/app-user/.rbenv'
 
 namespace :deploy do
   namespace :check do
-    before :linked_files, :set_master_key do
+    before :linked_files, :set_production_key do
       on roles(:app), in: :sequence, wait: 10 do
-        unless test("[ -f #{shared_path}/config/master.key ]")
-          upload! 'config/master.key', "#{shared_path}/config/master.key"
+        unless test("[ -f #{shared_path}/config/production.key ]")
+          upload! 'config/production.key', "#{shared_path}/config/production.key"
         end
       end
     end
