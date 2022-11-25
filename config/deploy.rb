@@ -40,6 +40,8 @@ append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/pack
 
 set :rbenv_path, '/home/app-user/.rbenv'
 
+set :bundle_binstubs, -> { shared_path.join('bin') }
+
 namespace :deploy do
   namespace :check do
     before :linked_files, :set_production_key do
