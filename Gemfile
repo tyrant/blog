@@ -12,6 +12,10 @@ gem 'jbuilder', '~> 2.7'
 gem 'image_processing', '~> 1.2'
 gem 'bootsnap', '>= 1.4.4', require: false
 
+# https://github.com/net-ssh/net-ssh/issues/565
+gem 'ed25519'
+gem 'bcrypt_pbkdf'
+
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'
@@ -45,4 +49,3 @@ gem "comfy_blog", "~> 2.0.0", git: 'git://github.com/comfy/comfy-blog.git', bran
 gem 'nokogiri'
 gem 'whenever'
 gem 'kaminari'
-gem 'ed25519' # https://github.com/net-ssh/net-ssh/issues/565
