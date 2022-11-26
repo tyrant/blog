@@ -45,3 +45,4 @@ gem "comfy_blog", "~> 2.0.0", git: 'git://github.com/comfy/comfy-blog.git', bran
 gem 'nokogiri'
 gem 'whenever'
 gem 'kaminari'
+gem 'ed25519' # https://github.com/net-ssh/net-ssh/issues/565
