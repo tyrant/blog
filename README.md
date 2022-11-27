@@ -23,18 +23,63 @@ Things you may want to cover:
 
 * ...
 
-## Dotenv and Settings
-
-How cool is that? I've installed https://github.com/bkeepers/dotenv and https://github.com/rubyconfig/config. 
-
-Add your environment variables to .env and friends. You don't need to use Foreman or anything like that to load them: Dotenv will handle that on its own. Config will then relay these to its Settings object.
-
-Suppose .env contains `DBUSERNAME=foo`. Dotenv will then popuate `ENV['DBUSERNAME']` with `foo`, and `Settings.dbusername` will in turn contain `foo`. Easy peasy.
-
 ## Webpacker
 
 Don't forget that we're using JS packs. To yoink our JS content into application_pack_tag+pals, Webpacker must run:
 
 `$ bundle exec ./bin/webpack-dev-server`
 
+## Rails Credentials
+
+Took a bit to figure this stuff out. Here's the deal. You've got multi-env creds, stored in config/credentials/*.yml.enc, and an overall app creds file, in config/credentials.yml.enc. 
+
+### Keys
+
+Each is accompanied by a file containing its corresponding encryption key.
+
+Two issues are extra-paramount:
+* GITIGNORE THESE FILES :scream:
+* FOR GOD'S SAKE ADD THESE KEYS TO A PASSWORD MANAGER, DON'T LOSE THEM :scream: :scream:
+
+Nail both, though? You're golden.
+
+### Writing shit
+
 Fire that shit up first, and thence all Stimulus controllers' content will remain current.
+
+You edit each file thusly:
+```
+EDITOR=nano bundle exec rails credentials:edit --environment [env-name-here]
+```
+
+Once decrypted, each file is simply your classic YAML goodness. Edit as you please, possibly like so:
+```
+# config/credentials.yml (once decrypted)
+...
+pg:
+  username: username-goes-here
+  password: password-goes-here
+...
+```
+
+### Reading shit
+
+Once added, you may then access their internals like so:
+```
+# config/database.yml
+...
+default: &default
+  ...
+  username: <%= Rails.application.credentials.pg[:username] %>
+  password: <%= Rails.application.credentials.pg[:password] %>
+...
+```
+
+Note the syntax. Hash keys, not method calls. Don't do `Rails.application.credentials.pg.username`! Rails's decryption creates method-calls for each YAML file's base-level keys ... and makes each of these methods return hashes. So `Rails.application.credentials.pg` returns a hash. This hash: `{ username: 'username-goes-here', password: 'password-goes-here }`.
+
+### Per-environment inheritance/overrides
+
+For development and test, any keys/values in config/credentials/*.yml will override those same keys and values in config/credentials.yml. So if you have different values for `Rails.application.credentials.pg[:password]` between development and test, you can use exactly the same method call in config/database.yml, and Rails will deduce and supply the correct value from the environment name.
+
+But not production! Turns out production is a special case. Its creds file doesn't inherit from credentials.yml. All its contents must be in only that file. Including secret_key_base. Make sure this exists within. Otherwise you'll never hear the end of it.
+

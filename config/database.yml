@@ -8,8 +8,8 @@ default: &default
   adapter: postgresql
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
-  username: <%= Settings.pgusername %>
-  password: <%= Settings.pgpassword %>
+  username: <%= Rails.application.credentials.pg[:username] %>
+  password: <%= Rails.application.credentials.pg[:password] %>
   
 development:
   <<: *default
@@ -24,4 +24,4 @@ test:
 
 production:
   <<: *default
-  database: db/production.sqlite3
+  database: blog_production
