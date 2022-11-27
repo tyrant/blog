@@ -19,7 +19,7 @@ class PrevNekComponent < ViewComponent::Base
 
   def prev_css_classes
     classes = common_css_classes
-    classes << "rounded-l-lg duration-#{PostIndexComponent::DURATION}"
+    classes << "rounded-l-lg flex-row border-r-0 duration-#{PostIndexComponent::DURATION}"
     classes << nsfw_css_classes if prev.nsfw?
 
     classes.flatten
@@ -27,11 +27,13 @@ class PrevNekComponent < ViewComponent::Base
 
   def nek_css_classes
     classes = common_css_classes
-    classes << "rounded-r-lg duration-#{PostIndexComponent::DURATION}"
+    classes << "rounded-r-lg flex-row-reverse border-l-0 duration-#{PostIndexComponent::DURATION}"
     classes << nsfw_css_classes if nek.nsfw?
 
     classes.flatten
   end
+
+  private
 
   def common_css_classes
     %w(flex flex-row items-center md:basis-1/2 bg-white border shadow-md md:max-w-xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700)

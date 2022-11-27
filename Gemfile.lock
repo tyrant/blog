@@ -236,6 +236,8 @@ GEM
     nokogiri (1.13.8)
       mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
+    nokogiri (1.13.8-arm64-darwin)
+      racc (~> 1.4)
     nokogiri (1.13.8-x86_64-darwin)
       racc (~> 1.4)
     nokogiri (1.13.8-x86_64-linux)
@@ -334,6 +336,14 @@ GEM
     sshkit (1.21.2)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
+    tailwindcss-rails (2.0.21)
+      railties (>= 6.0.0)
+    tailwindcss-rails (2.0.21-arm64-darwin)
+      railties (>= 6.0.0)
+    tailwindcss-rails (2.0.21-x86_64-darwin)
+      railties (>= 6.0.0)
+    tailwindcss-rails (2.0.21-x86_64-linux)
+      railties (>= 6.0.0)
     temple (0.8.2)
     thor (1.2.1)
     tilt (2.0.10)
@@ -367,6 +377,7 @@ GEM
 
 PLATFORMS
   -darwin-21
+  arm64-darwin
   ruby
   x86_64-darwin-17
   x86_64-darwin-20
@@ -400,6 +411,7 @@ DEPENDENCIES
   rspec-rails
   selenium-webdriver
   spring
+  tailwindcss-rails
   tzinfo-data
   view_component
   web-console (>= 4.1.0)
@@ -411,4 +423,4 @@ RUBY VERSION
    ruby 3.1.2p20
 
 BUNDLED WITH
-   2.2.14
+   2.3.25
