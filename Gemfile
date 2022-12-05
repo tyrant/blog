@@ -8,13 +8,8 @@ gem 'pg'
 gem 'puma', '~> 5.0'
 gem 'webpacker', '~> 5.4'
 gem 'jbuilder', '~> 2.7'
-<<<<<<< Updated upstream
-=======
-# gem 'redis', '~> 4.0'
-# gem 'bcrypt', '~> 3.1.7'
 gem 'tailwindcss-rails'
 
->>>>>>> Stashed changes
 gem 'image_processing', '~> 1.2'
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'view_component'
