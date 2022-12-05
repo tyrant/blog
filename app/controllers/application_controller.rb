@@ -5,7 +5,7 @@ class ApplicationController < ActionController::Base
   before_action :instanceify_nsfw_cookies
   before_action :init_nav_items
 
-  S_TO_B = [true, false].map{|b| [b.to_s, b] }.to_h
+  STR_TO_BOOL = [true, false].map { |b| [b.to_s, b] }.to_h
   COOKIES = [
     { code: 'banish',    name: 'banish_nsfw_completely',   default: false },
     { code: 'mouseover', name: 'unblur_nsfw_on_mouseover', default: true  },
@@ -33,20 +33,19 @@ class ApplicationController < ActionController::Base
     Comfy::Cms::Category.instance_eval { include ComfyCmsCategoryMethods }
   end
 
+  # Our three NSFW-visibility-options cookies are all boolean. But cookies are
+  # stringly typed. Convert all three, 'true'/'false', to true/false.
   def unstringly_type_nsfw_cookies
-    COOKIES.each do |c|
-      S_TO_B.each do |str, bool|
-        request.cookies[c[:name]] = bool if request.cookies[c[:name]] == str
+    COOKIES.each do |cookie|
+      STR_TO_BOOL.each do |str, bool|
+        request.cookies[cookie[:name]] = bool if request.cookies[cookie[:name]] == str
       end
     end
   end
 
   def instanceify_nsfw_cookies
-    @nsfw_options = COOKIES.map do |c|
-      [
-        c[:code], 
-        !request.cookies[c[:name]].nil? ? request.cookies[c[:name]] : c[:default]
-      ]
+    @nsfw_options = COOKIES.map do |cookie|
+      [ cookie[:code], request.cookies.fetch(cookie[:name], cookie[:default]) ]
     end.to_h
   end
 
@@ -54,7 +53,7 @@ class ApplicationController < ActionController::Base
     @nav_items = [
       { label: 'THE LOT', 
         path: comfy_blog_posts_path },
-      *Comfy::Cms::Category.select(:label).where("label != 'wysiwyg'").map do |cat|
+      *Comfy::Cms::Category.where("label != 'wysiwyg'").select(:label).map do |cat|
         { label: cat.label,
           path: comfy_blog_posts_path(category: cat.label) }
       end
