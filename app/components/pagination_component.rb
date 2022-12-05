@@ -17,7 +17,7 @@ class PaginationComponent < ViewComponent::Base
   end
 
   def prev_page_no
-    if @cur_page_no < 1
+    if @cur_page_no <= 1
       1
     else
       @cur_page_no - 1
