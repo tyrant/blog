@@ -23,11 +23,23 @@ Things you may want to cover:
 
 * ...
 
+
+## Foreman and Procfiles
+
+This is your hourly reminder that you run your Procfile contents thusly:
+```
+foreman start -f Procfile.dev
+```
+Either that or `bin/dev`.
+
 ## Webpacker
 
 Don't forget that we're using JS packs. To yoink our JS content into application_pack_tag+pals, Webpacker must run:
 
 `$ bundle exec ./bin/webpack-dev-server`
+
+Fire that shit up first, and thence all Stimulus controllers' content will remain current.
+
 
 ## Rails Credentials
 
@@ -38,14 +50,12 @@ Took a bit to figure this stuff out. Here's the deal. You've got multi-env creds
 Each is accompanied by a file containing its corresponding encryption key.
 
 Two issues are extra-paramount:
-* GITIGNORE THESE FILES :scream:
-* FOR GOD'S SAKE ADD THESE KEYS TO A PASSWORD MANAGER, DON'T LOSE THEM :scream: :scream:
+* FOR GOD'S SAKE GITIGNORE THESE FILES :scream:
+* FOR GOD'S SAKE ADD THE KEYS THEMSELVES TO A PASSWORD MANAGER, DON'T LOSE THEM :scream: :scream:
 
 Nail both, though? You're golden.
 
 ### Writing shit
-
-Fire that shit up first, and thence all Stimulus controllers' content will remain current.
 
 You edit each file thusly:
 ```
