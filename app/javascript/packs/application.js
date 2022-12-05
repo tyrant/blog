@@ -5,15 +5,14 @@
 
 import Rails from "@rails/ujs";
 import * as ActiveStorage from "@rails/activestorage";
-//import Alpine from 'alpinejs';
+import Alpine from 'alpinejs';
 import "channels";
 import "../controllers";
 import "../components";
-import "../../assets/stylesheets/application";
 
 Rails.start();
 ActiveStorage.start();
-//Alpine.start();
+Alpine.start();
 
 // `name` must be dasherised: to, e.g., yoink all PostIndexController instances, 
 // call getStimsBy({ name: 'post-index' }).
