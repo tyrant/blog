@@ -13,14 +13,11 @@
     <%= csp_meta_tag %>
     <%= favicon_link_tag asset_path('winky.png') %>
     <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
-    <%# <script src="https://cdn.tailwindcss.com"></script> %>
-    -1
-    <script src="//unpkg.com/alpinejs" defer></script>
-    0
-    <%= stylesheet_pack_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
-    1
+    
+    <%= stylesheet_link_tag 'tailwind', 'data-turbo-track': 'reload' %>
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Great+Vibes">
-    2
+    
     <% if Rails.env.production? %>
       <!-- Global site tag (gtag.js) - Google Analytics -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXZ5QKDNLC"></script>
