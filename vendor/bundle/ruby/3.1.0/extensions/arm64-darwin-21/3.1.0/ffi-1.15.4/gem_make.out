@@ -1,5 +1,5 @@
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/ffi-1.15.4/ext/ffi_c
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221205-61498-o1jbxh.rb extconf.rb
+/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221206-73588-54guw4.rb extconf.rb
 checking for ffi_prep_closure_loc() in -lffi... yes
 checking for ffi_prep_cif_var()... yes
 checking for ffi_raw_call()... yes
@@ -41,4 +41,4 @@ ld: warning: -undefined dynamic_lookup may not work with chained fixups
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/ffi-1.15.4/ext/ffi_c
 make DESTDIR\= install
-/opt/homebrew/bin/ginstall -c -m 0755 ffi_c.bundle ./.gem.20221205-61498-5nd5g8
+/opt/homebrew/bin/ginstall -c -m 0755 ffi_c.bundle ./.gem.20221206-73588-enrkno

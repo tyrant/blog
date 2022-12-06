@@ -1,5 +1,5 @@
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/sassc-2.4.0/ext
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221205-61498-7vzpy0.rb extconf.rb
+/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221206-73588-92iyjc.rb extconf.rb
 creating Makefile
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/sassc-2.4.0/ext
@@ -88,4 +88,4 @@ ld: warning: -undefined dynamic_lookup may not work with chained fixups
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/sassc-2.4.0/ext
 make DESTDIR\= install
-/opt/homebrew/bin/ginstall -c -m 0755 libsass.bundle ./.gem.20221205-61498-r6txej/sassc
+/opt/homebrew/bin/ginstall -c -m 0755 libsass.bundle ./.gem.20221206-73588-ka19h/sassc

@@ -1,5 +1,5 @@
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/pg-1.2.3/ext
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221205-61498-daewnh.rb extconf.rb
+/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221206-73588-o0qyc.rb extconf.rb
 checking for pg_config... yes
 Using config values from /opt/homebrew/bin/pg_config
 checking for libpq-fe.h... yes
@@ -315,4 +315,4 @@ ld: warning: -undefined dynamic_lookup may not work with chained fixups
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/pg-1.2.3/ext
 make DESTDIR\= install
-/opt/homebrew/bin/ginstall -c -m 0755 pg_ext.bundle ./.gem.20221205-61498-tsozjv
+/opt/homebrew/bin/ginstall -c -m 0755 pg_ext.bundle ./.gem.20221206-73588-b4jcyr

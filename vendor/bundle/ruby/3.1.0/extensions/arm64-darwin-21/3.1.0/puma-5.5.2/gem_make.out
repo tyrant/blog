@@ -1,5 +1,5 @@
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/puma-5.5.2/ext/puma_http11
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221205-61498-7l8a32.rb extconf.rb
+/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221206-73588-6isdph.rb extconf.rb
 using OpenSSL pkgconfig (openssl.pc)
 checking for openssl/bio.h... yes
 checking for DTLS_method() in openssl/ssl.h... yes
@@ -23,4 +23,4 @@ ld: warning: -undefined dynamic_lookup may not work with chained fixups
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/puma-5.5.2/ext/puma_http11
 make DESTDIR\= install
-/opt/homebrew/bin/ginstall -c -m 0755 puma_http11.bundle ./.gem.20221205-61498-dr6pkp/puma
+/opt/homebrew/bin/ginstall -c -m 0755 puma_http11.bundle ./.gem.20221206-73588-9vcrv0/puma

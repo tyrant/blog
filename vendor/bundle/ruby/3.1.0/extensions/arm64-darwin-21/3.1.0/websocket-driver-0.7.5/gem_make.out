@@ -1,5 +1,5 @@
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/websocket-driver-0.7.5/ext/websocket-driver
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221205-61498-kskhic.rb extconf.rb
+/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221206-73588-4fe5b4.rb extconf.rb
 creating Makefile
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/websocket-driver-0.7.5/ext/websocket-driver
@@ -13,4 +13,4 @@ ld: warning: -undefined dynamic_lookup may not work with chained fixups
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/websocket-driver-0.7.5/ext/websocket-driver
 make DESTDIR\= install
-/opt/homebrew/bin/ginstall -c -m 0755 websocket_mask.bundle ./.gem.20221205-61498-mlbfn3
+/opt/homebrew/bin/ginstall -c -m 0755 websocket_mask.bundle ./.gem.20221206-73588-23pq6

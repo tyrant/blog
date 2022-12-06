@@ -1,5 +1,5 @@
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/msgpack-1.4.2/ext/msgpack
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221205-61498-l3z3dt.rb extconf.rb
+/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -r ./siteconf20221206-73588-3j2anw.rb extconf.rb
 checking for ruby/st.h... yes
 checking for st.h... no
 checking for rb_str_replace() in ruby.h... yes
@@ -54,4 +54,4 @@ ld: warning: -undefined dynamic_lookup may not work with chained fixups
 
 current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/msgpack-1.4.2/ext/msgpack
 make DESTDIR\= install
-/opt/homebrew/bin/ginstall -c -m 0755 msgpack.bundle ./.gem.20221205-61498-7h34la/msgpack
+/opt/homebrew/bin/ginstall -c -m 0755 msgpack.bundle ./.gem.20221206-73588-mz8y3m/msgpack
