@@ -1,0 +1,27 @@
+current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/2.6.0/gems/puma-5.5.2/ext/puma_http11
+/Users/pi_neutrino/.rbenv/versions/2.6.5/bin/ruby -I /Users/pi_neutrino/.rbenv/versions/2.6.5/lib/ruby/2.6.0 -r ./siteconf20221206-78191-1s7itiw.rb extconf.rb
+checking for BIO_read() in -lcrypto... yes
+checking for SSL_CTX_new() in -lssl... yes
+checking for openssl/bio.h... yes
+checking for DTLS_method() in openssl/ssl.h... yes
+checking for TLS_server_method() in openssl/ssl.h... yes
+checking for SSL_CTX_set_min_proto_version(NULL, 0) in openssl/ssl.h... yes
+checking for X509_STORE_up_ref()... yes
+checking for SSL_CTX_set_ecdh_auto(NULL, 0) in openssl/ssl.h... yes
+checking for Random.bytes... yes
+creating Makefile
+
+current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/2.6.0/gems/puma-5.5.2/ext/puma_http11
+make "DESTDIR=" clean
+
+current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/2.6.0/gems/puma-5.5.2/ext/puma_http11
+make "DESTDIR="
+compiling http11_parser.c
+compiling mini_ssl.c
+compiling puma_http11.c
+linking shared-object puma/puma_http11.bundle
+ld: warning: -undefined dynamic_lookup may not work with chained fixups
+
+current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/2.6.0/gems/puma-5.5.2/ext/puma_http11
+make "DESTDIR=" install
+/usr/bin/install -c -m 0755 puma_http11.bundle ./.gem.20221206-78191-nywodk/puma

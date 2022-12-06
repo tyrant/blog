@@ -1,5 +1,5 @@
 GIT
-  remote: git://github.com/comfy/comfy-blog.git
+  remote: https://github.com/comfy/comfy-blog.git
   revision: 767f3848165a3799db76c26ebe2901d5a9c3b93f
   branch: master
   specs:
