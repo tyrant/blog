@@ -57,8 +57,8 @@ export default class extends Controller {
     // for three separate HTML elements.
     let classLists = {
       input: this.mouseoverTarget.classList,
-      label: this.mouseoverTarget.parentNode.classList,
-      li: this.mouseoverTarget.parentNode.parentNode.classList
+      label: this.mouseoverTarget.closest('label').classList,
+      li: this.mouseoverTarget.closest('li').classList
     };
 
     if (this.isMouseoverDisabled()) {
@@ -102,8 +102,8 @@ export default class extends Controller {
   updateUnblurAlwaysCss() {
     let classLists = {
       input: this.alwaysTarget.classList,
-      label: this.alwaysTarget.parentNode.classList,
-      li: this.alwaysTarget.parentNode.parentNode.classList
+      label: this.alwaysTarget.closest('label').classList,
+      li: this.alwaysTarget.closest('li').classList
     };
 
     if (this.isAlwaysDisabled()) {
