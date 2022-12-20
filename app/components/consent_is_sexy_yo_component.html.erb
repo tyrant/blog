@@ -2,13 +2,15 @@
      class="flex flex-col sm:flex-row sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
 
   <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
-    Consent is sexy <em>❤</em>
+    Consent is sexy<em>❤</em>
   </h3>
 
   <ul class="flex flex-row lg:flex-col mx-auto shadow-md rounded-md">
-    <li class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50">
-      <label class="block p-2 text-sm text-gray-700 cursor-pointer relative">
-        <input class="relative top-px mr-0.5"
+    <li class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50 p-2 block text-sm text-gray-700 cursor-pointer">
+    
+      <label class="cursor-pointer">
+      
+        <input class="cursor-pointer"
                type="checkbox"
                role="switch"
                <% if banish_checked? %>checked="checked"<% end %>
@@ -45,26 +47,34 @@
     </li>
 
     <li title="<%= mouseover_title %>" 
-        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 hover:bg-gray-50">
-      <label class="block p-2 text-sm text-gray-700 cursor-pointer <% if mouseover_disabled? %>opacity-40<% end %>">
-        <input class="relative top-px mr-0.5"
+        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 hover:bg-gray-50 p-2 block text-sm text-gray-700 
+        cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
+
+      <label class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %> 
+                    <% if mouseover_disabled? %>opacity-40<% end %>">
+
+        <input class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
                type="checkbox"
                role="switch"
-               <% if mouseover_checked? %>checked="checked"<% end %>
-               <% if mouseover_disabled? %>disabled="disabled"<% end %>
+               <% if mouseover_checked? %>checked<% end %>
+               <% if mouseover_disabled? %>disabled<% end %>
                data-consent-is-sexy-yo-target="mouseover"
                data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
         Unblur on hover
       </label>
     </li>
 
-    <li class="border-gray-300 border rounded-r-md lg:rounded-r-none lg:rounded-b-md hover:bg-gray-50">
-      <label class="block p-2 text-sm text-gray-700 cursor-pointer <% if always_disabled? %>opacity-40<% end %>">
-        <input class="relative top-px mr-0.5"
+    <li class="border-gray-300 border rounded-r-md lg:rounded-r-none lg:rounded-b-md hover:bg-gray-50 p-2 block text-sm text-gray-700
+               cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
+      
+      <label class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>
+                    <% if always_disabled? %>opacity-40<% end %>">
+
+        <input class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
                type="checkbox"
                role="switch"
-               <% if always_checked? %>checked="checked"<% end %>
-               <% if always_disabled? %>disabled="disabled"<% end %>
+               <% if always_checked? %>checked<% end %>
+               <% if always_disabled? %>disabled<% end %>
                data-consent-is-sexy-yo-target="always"
                data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">
         Unblur always

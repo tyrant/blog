@@ -7,7 +7,9 @@ export default class extends Controller {
   static targets = ['banish', 'mouseover', 'always'];
 
   handleClickBanishNsfwCompletely() {
+    this.mouseoverTarget.disabled = this.isMouseoverDisabled();
     this.updateUnblurOnHoverCss();
+    this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
     this.updateNsfwPostIndexStimsBanish();
     this.updateNsfwPrevNekStimsBanish();
@@ -27,6 +29,7 @@ export default class extends Controller {
   }
 
   handleClickUnblurNsfwOnMouseover() {
+    this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
     this.updateNsfwPostIndexStimsUnblurOnMouseover();
     this.updatePrevNekStimsUnblurOnMouseover();
@@ -50,10 +53,28 @@ export default class extends Controller {
   }
 
   updateUnblurOnHoverCss() {
-    this.mouseoverTarget.disabled = this.isMouseoverDisabled();
-    let classes = this.mouseoverTarget.parentNode.classList;
-    if (this.isMouseoverDisabled()) classes.add('opacity-40');
-    else                            classes.remove('opacity-40');
+    // Hack hackity hack :O Turns out we need to swap in/out cursor-* classes
+    // for three separate HTML elements.
+    let classLists = {
+      input: this.mouseoverTarget.classList,
+      label: this.mouseoverTarget.parentNode.classList,
+      li: this.mouseoverTarget.parentNode.parentNode.classList
+    };
+
+    if (this.isMouseoverDisabled()) {
+      classLists.label.add('opacity-40');
+      Object.values(classLists).forEach(el => {
+        el.remove('cursor-pointer');
+        el.add('cursor-not-allowed');
+      });
+
+    } else {
+      classLists.label.remove('opacity-40');
+      Object.values(classLists).forEach(el => {
+        el.remove('cursor-not-allowed');
+        el.add('cursor-pointer');
+      });
+    }
   }
   
   handleClickUnblurNsfwAlways() {
@@ -79,9 +100,25 @@ export default class extends Controller {
   }
 
   updateUnblurAlwaysCss() {
-    this.alwaysTarget.disabled = this.isAlwaysDisabled();
-    let classes = this.alwaysTarget.parentNode.classList;
-    if (this.isAlwaysDisabled()) classes.add('opacity-40');
-    else                         classes.remove('opacity-40');
+    let classLists = {
+      input: this.alwaysTarget.classList,
+      label: this.alwaysTarget.parentNode.classList,
+      li: this.alwaysTarget.parentNode.parentNode.classList
+    };
+
+    if (this.isAlwaysDisabled()) {
+      classLists.label.add('opacity-40');
+      Object.values(classLists).forEach(el => {
+        el.remove('cursor-pointer');
+        el.add('cursor-not-allowed');
+      });
+
+    } else {
+      classLists.label.remove('opacity-40');
+      Object.values(classLists).forEach(el => {
+        el.remove('cursor-not-allowed');
+        el.add('cursor-pointer');
+      });
+    }
   }
 }
