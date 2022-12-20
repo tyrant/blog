@@ -1,5 +1,0 @@
-.page-header
-  %h2 Edit <%= class_name.titleize %>
-
-= comfy_form_with model: @<%= file_name %>, url: [:admin, @<%= file_name %>] do |form|
-  = render form

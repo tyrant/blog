@@ -1,3 +1,0 @@
-current directory: /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/mimemagic-0.4.3/ext/mimemagic
-/Users/pi_neutrino/.rbenv/versions/3.1.2/bin/ruby -I/Users/pi_neutrino/.rbenv/versions/3.1.2/lib/ruby/3.1.0 -rrubygems /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/gems/rake-13.0.6/exe/rake RUBYARCHDIR\=/Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/extensions/arm64-darwin-21/3.1.0/mimemagic-0.4.3 RUBYLIBDIR\=/Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/extensions/arm64-darwin-21/3.1.0/mimemagic-0.4.3
-mkdir -p /Users/pi_neutrino/Work/blog/vendor/bundle/ruby/3.1.0/extensions/arm64-darwin-21/3.1.0/mimemagic-0.4.3/mimemagic
