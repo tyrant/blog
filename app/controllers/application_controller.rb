@@ -53,7 +53,7 @@ class ApplicationController < ActionController::Base
     @nav_items = [
       { label: 'THE LOT', 
         path: comfy_blog_posts_path },
-      *Comfy::Cms::Category.where("label != 'wysiwyg'").select(:label).map do |cat|
+      *Comfy::Cms::Category.public_names.select(:label).map do |cat|
         { label: cat.label,
           path: comfy_blog_posts_path(category: cat.label) }
       end
