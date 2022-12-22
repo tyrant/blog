@@ -7,7 +7,8 @@ export default class extends Controller {
   }
 
   possiblyOpenIrritateModal() {
-    if (!(this.isBroughtOn() || Math.random() > 0.98)) return;
+    if (!this.isBroughtOn()) return;
+    if (Math.random() > 0.98) return;
 
     setTimeout(() => {
       document.getElementById('modal_stim')
