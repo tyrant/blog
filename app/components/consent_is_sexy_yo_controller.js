@@ -53,28 +53,19 @@ export default class extends Controller {
   }
 
   updateUnblurOnHoverCss() {
-    // Hack hackity hack :O Turns out we need to swap in/out cursor-* classes
-    // for three separate HTML elements.
-    let classLists = {
-      input: this.mouseoverTarget.classList,
-      label: this.mouseoverTarget.closest('label').classList,
-      li: this.mouseoverTarget.closest('li').classList
-    };
+    let cursors = ['cursor-pointer', 'cursor-not-allowed'];
+    let classLists = [
+      this.mouseoverTarget,
+      this.mouseoverTarget.closest('label'),
+      this.mouseoverTarget.closest('li')
+    ].map(c => c.classList);
 
-    if (this.isMouseoverDisabled()) {
-      classLists.label.add('opacity-40');
-      Object.values(classLists).forEach(el => {
-        el.remove('cursor-pointer');
-        el.add('cursor-not-allowed');
-      });
-
-    } else {
-      classLists.label.remove('opacity-40');
-      Object.values(classLists).forEach(el => {
-        el.remove('cursor-not-allowed');
-        el.add('cursor-pointer');
-      });
-    }
+    // The Mouseover checkbox/form-el CSS only ever changes upon checking the 
+    // Banish checkbox. It's a straightforward toggle/switch, every time, so we
+    // can safely call .toggle(). See updateUnblurAlwaysCss() for more.
+    classLists[1].toggle('opacity-40');
+    if (!this.isMouseoverDisabled()) cursors.reverse();
+    classLists.forEach(el => el.replace(...cursors));
   }
   
   handleClickUnblurNsfwAlways() {
@@ -100,25 +91,25 @@ export default class extends Controller {
   }
 
   updateUnblurAlwaysCss() {
-    let classLists = {
-      input: this.alwaysTarget.classList,
-      label: this.alwaysTarget.closest('label').classList,
-      li: this.alwaysTarget.closest('li').classList
-    };
+    let cursors = ['cursor-pointer', 'cursor-not-allowed'];
+    let classLists = [
+      this.alwaysTarget,
+      this.alwaysTarget.closest('label'),
+      this.alwaysTarget.closest('li')
+    ].map(c => c.classList);
 
+    // Bit more complex here. Unlike updateUnblurOnHoverCss(), the Always
+    // checkbox/form-el CSS can be updated by either Banish or Mouseover
+    // check actions. .isAlwaysDisabled() doesn't necessarily always change,
+    // so you can't just call classLists[1].toggle(). You have to query
+    // .isAlwaysDisabled() each time.
     if (this.isAlwaysDisabled()) {
-      classLists.label.add('opacity-40');
-      Object.values(classLists).forEach(el => {
-        el.remove('cursor-pointer');
-        el.add('cursor-not-allowed');
-      });
-
+      classLists[1].add('opacity-40');
     } else {
-      classLists.label.remove('opacity-40');
-      Object.values(classLists).forEach(el => {
-        el.remove('cursor-not-allowed');
-        el.add('cursor-pointer');
-      });
+      classLists[1].remove('opacity-40');
+      cursors.reverse();
     }
+
+    classLists.forEach(el => el.replace(...cursors));
   }
 }
