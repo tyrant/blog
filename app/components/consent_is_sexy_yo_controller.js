@@ -100,9 +100,9 @@ export default class extends Controller {
 
     // Bit more complex here. Unlike updateUnblurOnHoverCss(), the Always
     // checkbox/form-el CSS can be updated by either Banish or Mouseover
-    // check actions. .isAlwaysDisabled() doesn't necessarily always change,
-    // so you can't just call classLists[1].toggle(). You have to query
-    // .isAlwaysDisabled() each time.
+    // check actions. .isAlwaysDisabled() sometimes doesn't change, so these
+    // classes sometimes don't toggle. You have to query .isAlwaysDisabled() 
+    // manually each time.
     if (this.isAlwaysDisabled()) {
       classLists[1].add('opacity-40');
     } else {
