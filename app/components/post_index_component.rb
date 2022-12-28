@@ -1,6 +1,11 @@
 class PostIndexComponent < ViewComponent::Base
 
   DURATION = 200
+  CAT_CSS = {
+    'whimsy' => 'bg-indigo-100 text-indigo-800',
+    'nsfw' => 'bg-red-800 text-red-100',
+    'very-bad-advice' => 'bg-lime-100 text-lime-800'
+  }
 
   def initialize(post_index:, cms_site:, nsfw_options:)
     @post = post_index
@@ -12,18 +17,13 @@ class PostIndexComponent < ViewComponent::Base
 
   def css_classes
     names = ['card', "duration-#{DURATION}"]
-
     names << nsfw_css_classes if @post.nsfw?
 
-    names.flatten
+    names.flatten.join ' '
   end
 
   def css_classes_for_category(category)
-    {
-      'whimsy' => 'bg-indigo-100 text-indigo-800',
-      'nsfw' => 'bg-red-800 text-red-100',
-      'very-bad-advice' => 'bg-lime-100 text-lime-800'
-    }[category.label.parameterize]
+    CAT_CSS[category.label.parameterize]
   end
 
   def nsfw_css_classes

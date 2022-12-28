@@ -2,7 +2,7 @@
      data-post-index-target="card" 
      data-post-index-nsfw-value="<%= @post.nsfw? %>"
      data-post-index-duration-value="<%= PostIndexComponent::DURATION %>"
-     class="<%= css_classes.join(' ') %>">
+     class="<%= css_classes %>">
      
   <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug) do %>
   

@@ -5,26 +5,37 @@
      class="my-3"
      >
 
-  <div class="flex flex-col items-center sm:flex-row gap-0 hover:bg-gray-100">
+  <div class="flex flex-col sm:flex-row items-center gap-0">
 
     <% if prev.present? %>
       <%= link_to comfy_blog_post_path(@site.path, prev.year, prev.month, prev.slug), 
           class: prev_css_classes,
           data: { 'prev-nek-target': 'prev' } do %>
 
-        <%= image_tag prev.resized_blob_or_orig_or_placeholder_url(x: 72, y: 72),
-            class: 'object-cover w-24 h-24 rounded-l-lg rounded-none rounded-l-lg' %>
-
-        <div class="flex flex-col justify-between p-2 leading-normal">
-          <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white">
-            <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
-          </h5>
+        <div class="grow flex flex-col p-2">
+          <div class="grow">
+            <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white max-h-12 mb-0 overflow-hidden text-ellipsis font-bold">
+              <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
+            </h5>
+          </div>
+          <div>
+            <span class="float-left">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18" />
+              </svg>
+              Earlier
+            </span> 
+            <span class="text-slate-500"><%= prev.published_at.to_formatted_s :short %></span>
+          </div>
         </div>
+
+        <%= image_tag prev.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
+            class: 'flex-none object-cover w-24 md:w-32 h-24 rounded-tr-lg sm:rounded-tr-none' %>
       <% end %>
     <% end %>
 
-    <div class="basis-28 text-center px-3">
-      <%= @category&.label || 'All Categories' %>
+    <div class="<%= css_classes_for_category_label @category %>">
+      <%= @category&.label || 'All Posts' %>
     </div>
 
     <% if nek.present? %>
@@ -32,13 +43,24 @@
           class: nek_css_classes,
           data: { 'prev-nek-target': 'nek' } do %>
 
-        <%= image_tag nek.resized_blob_or_orig_or_placeholder_url(x: 72, y: 72),
-            class: 'object-cover w-24 h-24 rounded-r-lg rounded-none rounded-r-lg' %>
+        <%= image_tag nek.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
+            class: 'flex-none object-cover w-24 md:w-32 h-24 rounded-bl-lg sm:rounded-bl-none' %>
 
-        <div class="flex flex-col justify-between p-2 leading-normal">
-          <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white">
-            <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
-          </h5>
+        <div class="grow flex flex-col p-2">
+          <div class="grow">
+            <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white max-h-12 mb-0 overflow-hidden text-ellipsis font-bold">
+              <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
+            </h5>
+          </div>
+          <div>
+            <span class="text-slate-500"><%= nek.published_at.to_formatted_s :short %></span>
+            <span class="float-right">
+              Later
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
+              </svg>
+            </span>
+          </div>
         </div>
       <% end %>
     <% end %>
