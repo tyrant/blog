@@ -51,7 +51,7 @@ class ApplicationController < ActionController::Base
 
   def init_nav_items
     @nav_items = [
-      { label: 'THE LOT', 
+      { label: 'All Posts', 
         path: comfy_blog_posts_path },
       *Comfy::Cms::Category.public_names.select(:label).map do |cat|
         { label: cat.label,
