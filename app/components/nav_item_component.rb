@@ -12,7 +12,7 @@ class NavItemComponent < ViewComponent::Base
   private
 
   def html_attrs
-    attrs = { class: css_classes }
+    attrs = { class: css_classes.join(' ') }
     attrs[:aria] = aria_attrs if aria_attrs
 
     attrs
