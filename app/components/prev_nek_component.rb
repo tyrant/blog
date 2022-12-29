@@ -43,7 +43,7 @@ class PrevNekComponent < ViewComponent::Base
   private
 
   def common_css_classes
-    %w(w-full sm:w-auto flex basis-1/2 bg-white border shadow-md hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 h-24) + ["duration-#{PostIndexComponent::DURATION}"]
+    %w(w-full sm:w-auto flex basis-1/2 bg-white border shadow-md hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700) + ["duration-#{PostIndexComponent::DURATION}"]
   end
 
   def nsfw_css_classes
