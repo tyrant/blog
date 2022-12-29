@@ -23,19 +23,19 @@
           Hide 
           <span class="inline-block">
             NSFW<sup x-data="{ isOpen: false }"
-                class="inline-block">
+                     class="inline-block">
               <span x-on:mouseover="isOpen = true" 
                     x-on:mouseleave="isOpen = false"
                     class="hover:underline">(?)</span>
               <div x-cloak
-                  x-show.transition="isOpen"
-                  class="relative">
+                   x-show.transition="isOpen"
+                   class="relative">
                 <div class="absolute top-0 z-10 w-48 p-2 -mt-1 text-[8.5pt] leading-[0.95rem] text-white transform -translate-x-1/2 translate-y-5 bg-black rounded-lg shadow-lg">
                   If you don't know, "NSFW" means "Not Safe For Work". PG/R/X-rated content. Raunch! Basically, all the good stuff.
                 </div>
                 <svg class="absolute z-10 w-6 h-6 text-black transform -translate-x-2 translate-y-2 fill-current stroke-current"
-                    width="8"
-                    height="8">
+                     width="8"
+                     height="8">
                   <rect x="13"
                         y="-10"
                         width="8"
