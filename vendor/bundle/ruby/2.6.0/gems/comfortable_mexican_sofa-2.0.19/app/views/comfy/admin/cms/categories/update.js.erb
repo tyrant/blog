@@ -1,6 +1,0 @@
-$('.editable form#<%= dom_id(@category) %>').replaceWith(
-  '<%= escape_javascript(render "show", category: @category ) %>'
-);
-$('.read .category#<%= dom_id(@category) %>').replaceWith(
-  '<%= escape_javascript(render "show", category: @category, read: true) %>'
-);
