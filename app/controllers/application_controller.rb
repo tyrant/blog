@@ -43,6 +43,8 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # Generate a list of all COOKIES values, each mapping either to this request's
+  # incoming actual cookie values, or reverting to cookie[:default] if absent.
   def instanceify_nsfw_cookies
     @nsfw_options = COOKIES.map do |cookie|
       [ cookie[:code], request.cookies.fetch(cookie[:name], cookie[:default]) ]
