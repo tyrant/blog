@@ -19,6 +19,8 @@ gem 'matrix'
 gem 'ed25519'
 gem 'bcrypt_pbkdf'
 
+gem 'net-smtp', require: false
+
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'
