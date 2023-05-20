@@ -1,0 +1,102 @@
+<div data-controller="consent-is-sexy-yo" 
+     class="flex flex-col sm:flex-row sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
+
+  <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
+    Consent is sexy<em>❤</em>
+  </h3>
+
+  <ul class="flex flex-row lg:flex-col mx-auto shadow-md rounded-md">
+    <li id="banish-li"
+        class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
+    
+      <label class="cursor-pointer flex">
+
+        <div class="mr-1.5 my-auto ml-2">
+          <input id="banish"
+                 class="cursor-pointer"
+                 type="checkbox"
+                 role="switch"
+                 <% if banish_checked? %>checked="checked"<% end %>
+                 <% if banish_disabled? %>disabled="disabled"<% end %>
+                 data-consent-is-sexy-yo-target="banish"
+                 data-action="click->consent-is-sexy-yo#handleClickBanishNsfwCompletely">
+        </div>
+        <div class="text-center my-2 mr-2">
+          Hide 
+          <span class="inline-block">
+            NSFW<sup x-data="{ isOpen: false }"
+                     class="inline-block">
+              <span x-on:mouseover="isOpen = true" 
+                    x-on:mouseleave="isOpen = false"
+                    class="hover:underline">(?)</span>
+              <div x-cloak
+                   x-show.transition="isOpen"
+                   class="relative">
+                <div class="absolute top-0 z-10 w-48 p-2 -mt-1 text-[8.5pt] leading-[0.95rem] text-white transform -translate-x-1/2 translate-y-5 bg-black rounded-lg shadow-lg">
+                  If you don't know, "NSFW" means "Not Safe For Work". PG/R/X-rated content. Raunch! Basically, all the good stuff.
+                </div>
+                <svg class="absolute z-10 w-6 h-6 text-black transform -translate-x-2 translate-y-2 fill-current stroke-current"
+                     width="8"
+                     height="8">
+                  <rect x="13"
+                        y="-10"
+                        width="8"
+                        height="8"
+                        transform="rotate(45)" />
+                </svg>
+              </div></sup>
+          </span>
+          posts
+        </div>
+      </label>
+    </li>
+
+    <li id="unblur_on_mouseover-li"
+        title="<%= mouseover_title %>" 
+        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 hover:bg-gray-50 block text-sm text-gray-700 
+               cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
+
+      <label class="flex
+                    cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %> 
+                    <% if mouseover_disabled? %>opacity-40<% end %>">
+
+        <div class="mr-1.5 my-auto ml-2">
+          <input id="unblur_on_mouseover"
+                 class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
+                 type="checkbox"
+                 role="switch"
+                 <% if mouseover_checked? %>checked<% end %>
+                 <% if mouseover_disabled? %>disabled<% end %>
+                 data-consent-is-sexy-yo-target="mouseover"
+                 data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
+        </div>
+        <div class="text-center my-2 mr-2">
+          Unblur on hover
+        </div>
+      </label>
+    </li>
+
+    <li id="unblur_always-li"
+        class="border-gray-300 border rounded-r-md lg:rounded-r-none lg:rounded-b-md hover:bg-gray-50 block text-sm text-gray-700
+               cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
+      
+      <label class="flex
+                    cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>
+                    <% if always_disabled? %>opacity-40<% end %>">
+        <div class="mr-1.5 my-auto ml-2">
+          <input id="unblur_always"
+                 class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
+                 type="checkbox"
+                 role="switch"
+                 <% if always_checked? %>checked<% end %>
+                 <% if always_disabled? %>disabled<% end %>
+                 data-consent-is-sexy-yo-target="always"
+                 data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">
+        </div>
+        <div class="text-center my-2 mr-2">
+          Unblur always
+        </div>
+      </label>
+    </li>
+  </ul>
+</div>

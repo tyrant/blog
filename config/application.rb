@@ -21,10 +21,6 @@ module Blog
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-
-    # Much faffing implies this is the least crap location for a .class_eval call.
-    config.after_initialize do
-      Comfy::Blog::Post.class_eval { include ComfyBlogPostMethods }
-    end
+    
   end
 end

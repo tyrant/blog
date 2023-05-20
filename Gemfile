@@ -1,20 +1,26 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '2.6.5'
+ruby File.read('.ruby-version').strip
 
 gem 'rails', '~> 6.1.4', '>= 6.1.4.1'
 gem 'pg'
 gem 'puma', '~> 5.0'
-gem 'sass-rails', '>= 6'
-gem 'webpacker', '~> 5.0'
+gem 'webpacker', '~> 5.4'
 gem 'jbuilder', '~> 2.7'
+gem 'tailwindcss-rails'
+
 gem 'image_processing', '~> 1.2'
 gem 'bootsnap', '>= 1.4.4', require: false
+gem 'view_component'
+gem 'matrix'
+gem 'turbo-rails'
 
 # https://github.com/net-ssh/net-ssh/issues/565
 gem 'ed25519'
 gem 'bcrypt_pbkdf'
+
+gem 'net-smtp', require: false
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
@@ -49,3 +55,6 @@ gem "comfy_blog", "~> 2.0.0", git: 'https://github.com/comfy/comfy-blog.git', br
 gem 'nokogiri'
 gem 'whenever'
 gem 'kaminari'
+
+# Use Redis for Action Cable
+gem 'redis', '~> 4.0'

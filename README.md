@@ -23,9 +23,38 @@ Things you may want to cover:
 
 * ...
 
+
+## Foreman and Procfiles
+
+This is your hourly reminder that you run your Procfile contents thusly:
+```
+foreman start -f Procfile.dev
+```
+Either that or `bin/dev`. Not `be bin/dev`! Foreman doesn't play nicely with
+Bundler. See Foreman's docs re why.
+
+## Webpacker
+
+Don't forget that we're using JS packs. To yoink our JS content into application_pack_tag+pals, Webpacker must run:
+
+`$ bundle exec ./bin/webpack-dev-server`
+
+Fire that shit up first, and thence all Stimulus controllers' content will remain current. Right now, this command is already inside `Procfile.dev`, so running `bin/dev` will handle this automatically, but just something to keep in mind.
+
+
 ## Rails Credentials
 
-Took a bit to figure this stuff out. Here's the deal. You've got multi-env creds, stored in config/credentials/*.yml.enc, and an overall app creds file, in config/credentials.yml.enc. Each is accompanied by a file containing its corresponding encryption key, GITIGNORE THIS :O
+Took a bit to figure this stuff out. Here's the deal. You've got per-env creds, stored in config/credentials/*.yml.enc, and an overall app creds file, in config/credentials.yml.enc. 
+
+### Keys
+
+Each is accompanied by a file containing its corresponding encryption key.
+
+Two issues are extra-paramount:
+* FOR GOD'S SAKE GITIGNORE THESE KEY FILES :scream:
+* FOR GOD'S SAKE ADD THE KEYS THEMSELVES TO A PASSWORD MANAGER, DON'T LOSE THEM :scream: :scream:
+
+Nail both, though? You're golden.
 
 ### Writing shit
 
@@ -64,3 +93,4 @@ Note the syntax. Hash keys, not method calls. Don't do `Rails.application.creden
 For development and test, any keys/values in config/credentials/*.yml will override those same keys and values in config/credentials.yml. So if you have different values for `Rails.application.credentials.pg[:password]` between development and test, you can use exactly the same method call in config/database.yml, and Rails will deduce and supply the correct value from the environment name.
 
 But not production! Turns out production is a special case. Its creds file doesn't inherit from credentials.yml. All its contents must be in only that file. Including secret_key_base. Make sure this exists within. Otherwise you'll never hear the end of it.
+

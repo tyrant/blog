@@ -5,17 +5,35 @@
 
 import Rails from "@rails/ujs";
 import * as ActiveStorage from "@rails/activestorage";
+import Alpine from 'alpinejs';
 import "channels";
-import { loadIrritateModal } from "./irritate";
-import { setNsfwSlidersChangeEvents } from "./nsfw";
+import "@hotwired/turbo-rails";
+import "../controllers";
+import "../components";
 
 Rails.start();
 ActiveStorage.start();
+Alpine.start();
 
-document.addEventListener("DOMContentLoaded", function() {
-  setNsfwSlidersChangeEvents();
-});
+// `name` must be dasherised: to, e.g., yoink all PostIndexController instances, 
+// call getStimsBy({ name: 'post-index' }).
+window.getStimsBy = ({ name }) => {
+  return [...document.querySelectorAll(`[data-controller="${name}"]`)].map(el => {
+    return el.stimulusController;
+  });
+};
 
-document.addEventListener("DOMContentLoaded", function() {
-  loadIrritateModal();
-});
+window.fourWeeksInSeconds = () => {
+  return 60*60*24*28;
+}
+
+window.randomInteger = ({ floor, ceil }) => {
+  return parseInt((Math.random() * (ceil - floor)) + floor);
+}
+
+// Receives cookie key-value pairs: { cookieName: cookieValue, ... }
+window.setCookies = cookieData => {
+  Object.keys(cookieData).forEach(name => {
+    document.cookie = `${name}=${cookieData[name]}; max-age=${fourWeeksInSeconds()}; path=/`;
+  });
+}

@@ -1,0 +1,72 @@
+<div class="bg-white py-2 sm:pt-0 md:pt-1 flex items-center justify-between border-gray-200 sm:px-6">
+
+  <div class="flex-1 flex justify-between sm:hidden">
+    <%= link_to 'Previous', 
+                comfy_blog_posts_path(page: prev_page_no), 
+                class: "relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white shadow-md hover:bg-gray-50" %>
+    <%= link_to 'Next', 
+                comfy_blog_posts_path(page: next_page_no), 
+                class: "ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white shadow-md hover:bg-gray-50" %>
+  </div>
+
+  <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+    <div class="w-full flex flex-col md:flex-row">
+      <div class="text-sm text-gray-700 mx-auto mb-1 md:mt-2">
+        Showing
+        <span class="font-medium"><%= cur_page_floor %></span>
+        to
+        <span class="font-medium"><%= cur_page_ceil %></span>
+        of
+        <span class="font-medium"><%= posts_total_count %></span>
+        results
+      </div>
+
+      <div class="mx-auto">
+        <nav class="relative z-0 inline-flex rounded-md shadow-md -space-x-px" aria-label="Pagination">
+          <%= link_to comfy_blog_posts_path(page: prev_page_no, category: params[:category]), 
+                      class: "relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+            <span class="sr-only">Previous</span>
+
+            <!-- Heroicon name: solid/chevron-left -->
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          <% end %>
+
+          <% 1.upto pages_total_count do |n| %>
+            <% if n == @cur_page_no %>
+              <%= link_to n,
+                          comfy_blog_posts_path(page: n, category: params[:category]), 
+                          class: "z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium", 
+                          aria: { current: 'page' } %>
+
+            <% elsif n_near_start_cur_end?(n: n) %>
+              <%= link_to n,
+                          comfy_blog_posts_path(page: n, category: params[:category]), 
+                          class: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium" %>
+
+            <% elsif n < @cur_page_no && !@already_displayed_1_to_n_ellipsis %>
+              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"> ... </span>
+              <% @already_displayed_1_to_n_ellipsis = true %>
+
+            <% elsif n > @cur_page_no && !@already_displayed_n_to_page_count_ellipsis %>
+              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"> ... </span>
+              <% @already_displayed_n_to_page_count_ellipsis = true %>
+
+            <% end %>
+          <% end %>
+
+          <%= link_to comfy_blog_posts_path(page: next_page_no, category: params[:category]), 
+                      class: "relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+            <span class="sr-only">Next</span>
+
+            <!-- Heroicon name: solid/chevron-right -->
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+          <% end %>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>

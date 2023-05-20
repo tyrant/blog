@@ -11,13 +11,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <%= favicon_link_tag asset_path('winky.png') %>
- 
-    <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= favicon_link_tag asset_path('kissy-transparent.png') %>
     <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
-
+    
+    <%= stylesheet_link_tag 'tailwind', 'data-turbo-track': 'reload' %>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Great+Vibes">
+    
     <% if Rails.env.production? %>
       <!-- Global site tag (gtag.js) - Google Analytics -->
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXZ5QKDNLC"></script>
@@ -32,55 +32,64 @@
   </head>
 
   <body>
+    <%= render NavComponent.new(nav_items: @nav_items) %>
+    <%= render FlashComponent.new(message: flash.notice) %>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="/">
-          Your Beloved Bourgeois Filth
-        </a>
+    <div class="container mx-auto">
+      <%= yield %>
+      <%= content_for :footer if content_for? :footer %>  
+    </div>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Blog
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="/blog">All posts</a></li>
-                <li><h6 class="dropdown-header">Flavourtown Specifics</h6></li>
-                <% Comfy::Cms::Category.where.not(label: 'wysiwyg').order('label desc').find_each do |category| %>
-                  <li>
-                    <%= link_to category.label, comfy_blog_posts_path(category: category.label), class: 'dropdown-item' %>
-                  </li>
-                <% end %>
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-
-    <% flash.each do |_, monosodium_glutamate| %>
-      <div role="alert" class="alert alert-warning alert-dismissible fade show">
-        <%= monosodium_glutamate %>
-        <button class="btn-close" data-bs-dismiss="alert" type="button" aria-label="Close"></button>
-      </div>
+    <% content_for :modal_body do %>
+      <h1 class="absolute top-[15%] right-[8%] text-white xs:text-2xl sm:text-3xl uppercase">We interrupt this blog</h1>
+      <h2 class="absolute top-[32%] right-[22%] text-white">to annoy you</h2>
+      <h2 class="absolute top-[48%] right-[43%] text-white">and make things</h2>
+      <h2 class="absolute top-[62%] right-[70%] text-white">generally</h2>
+      <%= image_tag 'bbc-globe.jpg' %>
+      <%= image_tag 'idle-wink-nudge-cropped.jpg' %>
     <% end %>
 
-    <div class="container">
-      <%= yield %>
-    </div>
+    <% content_for :modal_button do %>
+      <button class="w-full
+                     inline-flex
+                     justify-center
+                     rounded-md
+                     border
+                     border-transparent
+                     shadow-sm
+                     px-4
+                     py-2
+                     bg-red-800
+                     text-base
+                     font-medium
+                     text-white
+                     hover:bg-red-700
+                     hover:tracking-widest
+                     hover:before:content-['😱']
+                     hover:after:content-['😱']
+                     hover:focus:before:content-['😱😱']
+                     hover:focus:after:content-['😱😱']
+                     hover:focus:bg-red-500
+                     hover:focus:tracking-[.4em]
+                     hover:focus:font-normal
+                     focus:outline-none
+                     focus:ring-2
+                     focus:ring-offset-2
+                     focus:ring-red-500
+                     focus:tracking-[.5em]
+                     focus:before:content-['😱😱😱']
+                     focus:after:content-['😱😱😱']
+                     focus:uppercase
+                     focus:font-bold
+                     focus:bg-red-400
+                     sm:ml-3
+                     sm:w-auto
+                     sm:text-sm"
+              x-on:click="isOpen=false">
+        irritating
+      </button>
+    <% end %>
 
-    <div class="container-fluid footer bg-light bg-gradient">
-      <div class="container"><%= content_for :footer if content_for? :footer %></div>
-    </div>
-
-    <%= render 'layouts/irritate_modal' %>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <%= render ModalComponent.new %>
   </body>
 </html>

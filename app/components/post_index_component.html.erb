@@ -1,0 +1,24 @@
+<div data-controller="post-index" 
+     data-post-index-target="card" 
+     data-post-index-nsfw-value="<%= @post.nsfw? %>"
+     data-post-index-duration-value="<%= PostIndexComponent::DURATION %>"
+     class="<%= css_classes %>">
+     
+  <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug) do %>
+  
+    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url, class: 'object-cover w-full h-56 shadow-xl rounded-xl' %>
+
+    <div class="p-2">
+      <% @post.categories.order(:id).each do |category| %>
+        <span class="inline-block text-xs font-medium mr-2 px-2.5 py-0.5 rounded 
+                    <%= css_classes_for_category(category) %>">
+          <%= category.label %>
+        </span>
+      <% end %>
+      <h5 class="text-lg font-bold text-gray-900">
+        <%= @post.title %>
+      </h5>
+      <p><%= @post.published_at.to_formatted_s(:long) %></p>
+    </div>
+  <% end %>
+</div>
