@@ -1,4 +1,3 @@
-
 class Comfy::Blog::Post < ActiveRecord::Base
 
   # def nsfw?
