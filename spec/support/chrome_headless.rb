@@ -4,7 +4,7 @@ RSpec.configure do |config|
     Capybara::Selenium::Driver.new driver,
       browser: :chrome,
       capabilities: [Selenium::WebDriver::Chrome::Options.new(
-        args: %w[headless]
+        args: %w[headless] # All available args: https://peter.sh/experiments/chromium-command-line-switches/
       )]
   end
 

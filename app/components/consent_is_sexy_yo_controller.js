@@ -7,19 +7,17 @@ export default class extends Controller {
   static targets = ['banish', 'mouseover', 'always'];
 
   handleClickBanishNsfwCompletely() {
+    window.setCookies({ banish_nsfw_completely: this.banishTarget.checked });
     this.mouseoverTarget.disabled = this.isMouseoverDisabled();
     this.updateUnblurOnHoverCss();
     this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
     this.updateNsfwPostIndexStimsBanish();
     this.updateNsfwPrevNekStimsBanish();
-    window.setCookies({ banish_nsfw_completely: this.banishTarget.checked });
   }
 
   updateNsfwPostIndexStimsBanish() {
-    PostIndexController.getNsfwStims().forEach(stim => {
-      stim.banish(this.banishTarget.checked);
-    });
+    document.getElementById('prev_nek').reload();
   }
 
   updateNsfwPrevNekStimsBanish() {

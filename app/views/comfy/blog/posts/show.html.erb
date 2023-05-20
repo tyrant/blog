@@ -23,13 +23,14 @@
 </div>
 
 <% content_for :footer do %>
-  <%= render PrevNekComponent.new(
-        post: @cms_post, 
-        site: @cms_site, 
-        nsfw_options: @nsfw_options) %>
-  <%= render PrevNekComponent.with_collection(
-        @cms_post.categories.nsfw_banished(@nsfw_options['banish']), 
+  <turbo-frame id="prev_nek" src="<%= prev_nek_path(@cms_post) %>">
+    <%= 
+      render PrevNekComponent.with_collection(
+        [nil, *@cms_post.categories.nsfw_banished(@nsfw_options['banish'])], 
         site: @cms_site,
         post: @cms_post,
-        nsfw_options: @nsfw_options) %>
+        nsfw_options: @nsfw_options
+      )
+    %>
+  </turbo-frame>
 <% end %>

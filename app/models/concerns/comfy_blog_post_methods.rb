@@ -13,7 +13,7 @@ module ComfyBlogPostMethods
           SELECT NULL FROM comfy_cms_categorizations
             WHERE 
               comfy_cms_categorizations.categorized_id = comfy_blog_posts.id
-              AND 
+            AND 
               comfy_cms_categorizations.category_id = (
                 SELECT id FROM comfy_cms_categories WHERE label = 'NSFW'
               )
@@ -36,7 +36,7 @@ module ComfyBlogPostMethods
     # opt-in: regular filtering ain't good enough.
 
     def prev(category: nil, nsfw: false)
-      Comfy::Blog::Post.where('published_at < ?', self.published_at)
+      site.blog_posts.where('published_at < ?', self.published_at)
         .published
         .for_category(category&.label)
         .nsfw_banished(!nsfw)
@@ -46,7 +46,7 @@ module ComfyBlogPostMethods
     end
 
     def nek(category: nil, nsfw: false)
-      Comfy::Blog::Post.where('published_at > ?', self.published_at)
+      site.blog_posts.where('published_at > ?', self.published_at)
         .published
         .for_category(category&.label)
         .nsfw_banished(!nsfw)

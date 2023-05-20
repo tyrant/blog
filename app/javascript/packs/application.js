@@ -7,6 +7,7 @@ import Rails from "@rails/ujs";
 import * as ActiveStorage from "@rails/activestorage";
 import Alpine from 'alpinejs';
 import "channels";
+import "@hotwired/turbo-rails";
 import "../controllers";
 import "../components";
 
@@ -33,6 +34,6 @@ window.randomInteger = ({ floor, ceil }) => {
 // Receives cookie key-value pairs: { cookieName: cookieValue, ... }
 window.setCookies = cookieData => {
   Object.keys(cookieData).forEach(name => {
-    document.cookie = `${name}=${cookieData[name]}; max-age=${fourWeeksInSeconds()};`;
+    document.cookie = `${name}=${cookieData[name]}; max-age=${fourWeeksInSeconds()}; path=/`;
   });
 }

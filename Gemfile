@@ -13,7 +13,8 @@ gem 'tailwindcss-rails'
 gem 'image_processing', '~> 1.2'
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'view_component'
-gem 'matrix' 
+gem 'matrix'
+gem 'turbo-rails'
 
 # https://github.com/net-ssh/net-ssh/issues/565
 gem 'ed25519'
@@ -54,3 +55,6 @@ gem "comfy_blog", "~> 2.0.0", git: 'https://github.com/comfy/comfy-blog.git', br
 gem 'nokogiri'
 gem 'whenever'
 gem 'kaminari'
+
+# Use Redis for Action Cable
+gem 'redis', '~> 4.0'

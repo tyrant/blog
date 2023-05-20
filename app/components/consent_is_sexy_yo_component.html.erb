@@ -6,12 +6,14 @@
   </h3>
 
   <ul class="flex flex-row lg:flex-col mx-auto shadow-md rounded-md">
-    <li class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
+    <li id="banish-li"
+        class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
     
       <label class="cursor-pointer flex">
 
         <div class="mr-1.5 my-auto ml-2">
-          <input class="cursor-pointer"
+          <input id="banish"
+                 class="cursor-pointer"
                  type="checkbox"
                  role="switch"
                  <% if banish_checked? %>checked="checked"<% end %>
@@ -49,7 +51,8 @@
       </label>
     </li>
 
-    <li title="<%= mouseover_title %>" 
+    <li id="unblur_on_mouseover-li"
+        title="<%= mouseover_title %>" 
         class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 hover:bg-gray-50 block text-sm text-gray-700 
                cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
 
@@ -58,7 +61,8 @@
                     <% if mouseover_disabled? %>opacity-40<% end %>">
 
         <div class="mr-1.5 my-auto ml-2">
-          <input class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
+          <input id="unblur_on_mouseover"
+                 class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
                  type="checkbox"
                  role="switch"
                  <% if mouseover_checked? %>checked<% end %>
@@ -72,14 +76,16 @@
       </label>
     </li>
 
-    <li class="border-gray-300 border rounded-r-md lg:rounded-r-none lg:rounded-b-md hover:bg-gray-50 block text-sm text-gray-700
+    <li id="unblur_always-li"
+        class="border-gray-300 border rounded-r-md lg:rounded-r-none lg:rounded-b-md hover:bg-gray-50 block text-sm text-gray-700
                cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
       
       <label class="flex
                     cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>
                     <% if always_disabled? %>opacity-40<% end %>">
         <div class="mr-1.5 my-auto ml-2">
-          <input class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
+          <input id="unblur_always"
+                 class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
                  type="checkbox"
                  role="switch"
                  <% if always_checked? %>checked<% end %>

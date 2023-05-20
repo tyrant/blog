@@ -2,12 +2,11 @@ require 'rails_helper'
 
 describe ComfyBlogPostMethods do
 
-  # Boilerplate, might move these to general database_cleaner setup later
   let!(:site)   { create :site }
   let!(:layout) { create :layout, site: site }
-  let!(:vba)    { create :category, site: site, label: 'Very Bad Advice' }
-  let!(:whimsy) { create :category, site: site, label: 'Whimsy' }
-  let!(:nsfw)   { create :category, site: site, label: 'NSFW' }
+  let!(:vba)    { Comfy::Cms::Category.find_by label: 'Very Bad Advice' }
+  let!(:whimsy) { Comfy::Cms::Category.find_by label: 'Whimsy' }
+  let!(:nsfw)   { Comfy::Cms::Category.find_by label: 'NSFW' }
 
   describe '#nsfw?' do
 
@@ -27,24 +26,12 @@ describe ComfyBlogPostMethods do
 
 
     # Six posts, a smattering of categorizations.
-    let!(:post1) { 
-      create :post, site: site, layout: layout, published_at: DateTime.now - 8.days
-    }
-    let!(:post2) { 
-      create :post, site: site, layout: layout, published_at: DateTime.now - 7.days
-    }
-    let!(:post3) { 
-      create :post, site: site, layout: layout, published_at: DateTime.now - 6.days
-    }
-    let!(:post4) {
-      create :post, site: site, layout: layout, published_at: DateTime.now - 5.days
-    }
-    let!(:post5) { 
-      create :post, site: site, layout: layout, published_at: DateTime.now - 4.days
-    }
-    let!(:post6) {
-      create :post, site: site, layout: layout, published_at: DateTime.now - 3.days
-    }
+    let!(:post1) { create :post, site: site, layout: layout, published_at: DateTime.now - 8.days }
+    let!(:post2) { create :post, site: site, layout: layout, published_at: DateTime.now - 7.days }
+    let!(:post3) { create :post, site: site, layout: layout, published_at: DateTime.now - 6.days }
+    let!(:post4) { create :post, site: site, layout: layout, published_at: DateTime.now - 5.days }
+    let!(:post5) { create :post, site: site, layout: layout, published_at: DateTime.now - 4.days }
+    let!(:post6) { create :post, site: site, layout: layout, published_at: DateTime.now - 3.days }
     # VBA: odds
     let!(:c1) { create :categorization, category: vba, categorized: post1 }
     let!(:c2) { create :categorization, category: vba, categorized: post3 }
@@ -77,9 +64,7 @@ describe ComfyBlogPostMethods do
     end
 
     describe 'Category filtering' do
-
       describe "filtering just VBA" do
-
         describe "querying post1" do
           it { expect(post1.prev(category: vba)).to eq nil }
           it { expect(post1.nek(category: vba)).to eq post5 }
@@ -112,7 +97,6 @@ describe ComfyBlogPostMethods do
       end
 
       describe "filtering just Whimsy" do
-
         describe "querying post1" do
           it { expect(post1.prev(category: whimsy)).to eq nil }
           it { expect(post1.nek(category: whimsy)).to eq post2 }
@@ -145,7 +129,6 @@ describe ComfyBlogPostMethods do
       end
 
       describe "NSFW filter: naughty posts appear only when whitelisted" do
-
         describe "querying post2 with nsfw filter absent" do
           it { expect(post2.prev(category: vba)).to eq post1 }
           it { expect(post2.nek(category: vba)).to eq post5 }
