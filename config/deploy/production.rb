@@ -63,3 +63,4 @@
 set :stage, :production
 server '119.9.42.4', user: 'app-user', password: 'hostable730', roles: %w{web app db}
 set :assets_roles, [:web, :app, :db]
+set :branch, :mistress
