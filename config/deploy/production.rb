@@ -64,3 +64,5 @@ set :stage, :production
 server '119.9.42.4', user: 'app-user', password: 'hostable730', roles: %w{web app db}
 set :assets_roles, [:web, :app, :db]
 set :branch, :mistress
+# https://stackoverflow.com/questions/33414502/capistrano-bundler-how-to-make-it-verbose
+set :bundle_flags, '--deployment'
