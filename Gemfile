@@ -20,7 +20,8 @@ gem 'turbo-rails'
 gem 'ed25519'
 gem 'bcrypt_pbkdf'
 
-gem 'net-smtp', require: false
+# https://stackoverflow.com/questions/70500220/rails-7-ruby-3-1-loaderror-cannot-load-such-file-net-smtp
+gem 'mail', '~> 2.8.0'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
