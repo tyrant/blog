@@ -1,7 +1,7 @@
 # config valid for current version and patch releases of Capistrano
 lock "~> 3.17.1"
 
-set :rbenv_ruby, File.read('../.ruby-version').strip
+set :rbenv_ruby, '3.1.2'
 
 set :application, "blog"
 set :repo_url, "git@github.com:tyrant/blog.git"
