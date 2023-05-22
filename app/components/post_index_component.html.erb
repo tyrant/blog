@@ -18,7 +18,7 @@
       <h5 class="text-lg font-bold text-gray-900">
         <%= @post.title %>
       </h5>
-      <p><%= @post.published_at.to_formatted_s(:long) %></p>
+      <p><%= @post.published_at.strftime "%H:%M, %-d %b %Y" %></p>
     </div>
   <% end %>
 </div>

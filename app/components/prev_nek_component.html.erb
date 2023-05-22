@@ -25,7 +25,7 @@
               </svg>
               Earlier
             </span> 
-            <span class="text-slate-500"><%= prev.published_at.to_formatted_s :short %></span>
+            <span class="text-slate-500"><%= prev.published_at.strftime "%H:%M, %-d %b %Y" %></span>
           </div>
         </div>
 
@@ -53,7 +53,7 @@
             </h5>
           </div>
           <div>
-            <span class="text-slate-500"><%= nek.published_at.to_formatted_s :short %></span>
+            <span class="text-slate-500"><%= nek.published_at.strftime "%H:%M, %-d %b %Y" %></span>
             <span class="float-right">
               Later
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
