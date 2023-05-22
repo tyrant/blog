@@ -1,4 +1,4 @@
-<turbo-frame id="prev_nek">
+<turbo-frame id="prev_nek" target="_top">
   <%=
     render PrevNekComponent.with_collection(
       [nil, *@cms_post.categories.nsfw_banished(@nsfw_options['banish'])], 

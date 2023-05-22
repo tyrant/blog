@@ -17,13 +17,13 @@ export default class extends Controller {
   }
 
   updateNsfwPostIndexStimsBanish() {
-    document.getElementById('prev_nek').reload();
+    PostIndexController.getNsfwStims().forEach(stim => {
+      stim.banish(this.banishTarget.checked);
+    });
   }
 
   updateNsfwPrevNekStimsBanish() {
-    PrevNekController.getNsfwContainingStims().forEach(stim => {
-      stim.banish(this.banishTarget.checked);
-    });
+    document.getElementById('prev_nek').reload();
   }
 
   handleClickUnblurNsfwOnMouseover() {
