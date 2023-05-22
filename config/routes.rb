@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
-  root to: 'application#index'
   get 'posts/:id/prev_nek', to: 'posts#prev_nek', as: 'prev_nek'
+  root to: 'application#index'
+
   comfy_route :blog_admin, path: "/admin"
   comfy_route :blog, path: "/blog"
   # Ensure that this route is defined last
