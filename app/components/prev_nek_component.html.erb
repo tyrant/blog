@@ -25,7 +25,7 @@
               </svg>
               Earlier
             </span> 
-            <span class="text-slate-500"><%= prev.published_at.strftime "%H:%M, %-d %b %Y" %></span>
+            <span class="text-slate-500"><%= prev.published_at.strftime "%-d %b %Y" %></span>
           </div>
         </div>
 
@@ -48,12 +48,12 @@
 
         <div class="grow flex flex-col p-2">
           <div class="grow">
-            <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white max-h-6 sm:max-h-12 mb-0 overflow-hidden text-ellipsis font-bold">
-              <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
+            <h5 class="mb-2 tracking-tight text-gray-900 dark:text-white max-h-6 sm:max-h-12 mb-0 font-bold overflow-hidden text-ellipsis">
+              <%= nek.title %>
             </h5>
           </div>
           <div>
-            <span class="text-slate-500"><%= nek.published_at.strftime "%H:%M, %-d %b %Y" %></span>
+            <span class="text-slate-500"><%= nek.published_at.strftime "%-d %b %Y" %></span>
             <span class="float-right">
               Later
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
