@@ -318,13 +318,13 @@ GEM
     sshkit (1.21.3)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
-    tailwindcss-rails (2.0.21)
+    tailwindcss-rails (2.0.29)
       railties (>= 6.0.0)
-    tailwindcss-rails (2.0.21-arm64-darwin)
+    tailwindcss-rails (2.0.29-arm64-darwin)
       railties (>= 6.0.0)
-    tailwindcss-rails (2.0.21-x86_64-darwin)
+    tailwindcss-rails (2.0.29-x86_64-darwin)
       railties (>= 6.0.0)
-    tailwindcss-rails (2.0.21-x86_64-linux)
+    tailwindcss-rails (2.0.29-x86_64-linux)
       railties (>= 6.0.0)
     temple (0.8.2)
     thor (1.2.1)
@@ -400,7 +400,7 @@ DEPENDENCIES
   rspec-rails
   selenium-webdriver
   spring
-  tailwindcss-rails
+  tailwindcss-rails (~> 2.0, >= 2.0.29)
   turbo-rails
   tzinfo-data
   view_component

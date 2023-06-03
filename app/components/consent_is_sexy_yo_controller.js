@@ -5,9 +5,21 @@ import PrevNekController from './prev_nek_controller';
 export default class extends Controller {
 
   static targets = ['banish', 'mouseover', 'always'];
+  static values = {
+    banish: Boolean,
+    mouseover: Boolean,
+    always: Boolean
+  }
+
+  connect() {
+    // Courtesy https://leastbad.com/stimulus-power-move
+    this.element.stimulusController = this;
+  }
 
   handleClickBanishNsfwCompletely() {
-    window.setCookies({ banish_nsfw_completely: this.banishTarget.checked });
+    this.banishValue = this.banishTarget.checked;
+
+    window.setCookies({ banish_nsfw_completely: this.banishValue });
     this.mouseoverTarget.disabled = this.isMouseoverDisabled();
     this.updateUnblurOnHoverCss();
     this.alwaysTarget.disabled = this.isAlwaysDisabled();
@@ -17,37 +29,31 @@ export default class extends Controller {
   }
 
   updateNsfwPostIndexStimsBanish() {
-    PostIndexController.getNsfwStims().forEach(stim => {
-      stim.banish(this.banishTarget.checked);
-    });
+    PostIndexController.getNsfwStims().forEach(s => s.banish(this.banishValue));
   }
 
   updateNsfwPrevNekStimsBanish() {
-    document.getElementById('prev_nek').reload();
+    if (document.getElementById('prev_nek'))
+      document.getElementById('prev_nek').reload();
   }
 
   handleClickUnblurNsfwOnMouseover() {
+    this.mouseoverValue = this.mouseoverTarget.checked;
+
     this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
-    this.updateNsfwPostIndexStimsUnblurOnMouseover();
     this.updatePrevNekStimsUnblurOnMouseover();
-    window.setCookies({ unblur_nsfw_on_mouseover: this.mouseoverTarget.checked });
-  }
-
-  updateNsfwPostIndexStimsUnblurOnMouseover() {
-    PostIndexController.getNsfwStims().forEach(stim => {
-      stim.unblurOnMouseover(this.mouseoverTarget.checked);
-    });
+    window.setCookies({ unblur_nsfw_on_mouseover: this.mouseoverValue });
   }
 
   updatePrevNekStimsUnblurOnMouseover() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      stim.unblurOnMouseover(this.mouseoverTarget.checked);
+      stim.unblurOnFutureMouseover(this.mouseoverValue);
     });
   }
 
   isMouseoverDisabled() {
-    return this.banishTarget.checked;
+    return this.banishValue;
   }
 
   updateUnblurOnHoverCss() {
@@ -67,25 +73,27 @@ export default class extends Controller {
   }
   
   handleClickUnblurNsfwAlways() {
+    this.alwaysValue = this.alwaysTarget.checked;
+
     this.updateNsfwPostIndexStimsUnblurAlways();
     this.updatePrevNekStimsUnblurAlways();
-    window.setCookies({ unblur_nsfw_always: this.alwaysTarget.checked });
+    window.setCookies({ unblur_nsfw_always: this.alwaysValue });
   }
 
   updateNsfwPostIndexStimsUnblurAlways() {
     PostIndexController.getNsfwStims().forEach(stim => {
-      stim.unblurAlways(this.alwaysTarget.checked);
+      stim.unblurAlways(this.alwaysValue);
     });
   }
 
   updatePrevNekStimsUnblurAlways() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      stim.unblurAlways(this.alwaysTarget.checked);
+      stim.unblurAlways(this.alwaysValue);
     });
   }
 
   isAlwaysDisabled() {
-    return this.banishTarget.checked || !this.mouseoverTarget.checked;
+    return this.banishValue || !this.mouseoverValue;
   }
 
   updateUnblurAlwaysCss() {

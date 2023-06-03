@@ -16,9 +16,7 @@ export default class extends Controller {
   }
 
   // Courtesy https://leastbad.com/stimulus-power-move
-  connect() {
-    this.element.stimulusController = this;
-  }
+  connect() { this.element.stimulusController = this; }
 
   banish(yes) {
     this.nsfwTargets().forEach(el => {
@@ -27,7 +25,7 @@ export default class extends Controller {
     });
   }
 
-  unblurOnMouseover(yes) {
+  unblurOnFutureMouseover(yes) {
     this.nsfwTargets().forEach(el => {
       if (yes) el.classList.add('hover:blur-none');
       else     el.classList.remove('hover:blur-none');
@@ -46,6 +44,4 @@ export default class extends Controller {
       if (this[`${pn}IsNsfwValue`]) return this[`${pn}Target`];
     }).filter(Boolean);
   }
-
-
 }

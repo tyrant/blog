@@ -1,4 +1,7 @@
-<div data-controller="consent-is-sexy-yo" 
+<div data-controller="consent-is-sexy-yo"
+     data-consent-is-sexy-yo-banish-value="<%= banish? %>"
+     data-consent-is-sexy-yo-mouseover-value="<%= mouseover? %>"
+     data-consent-is-sexy-yo-always-value="<%= always? %>"
      class="flex flex-col sm:flex-row sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
 
   <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
@@ -16,7 +19,7 @@
                  class="cursor-pointer"
                  type="checkbox"
                  role="switch"
-                 <% if banish_checked? %>checked="checked"<% end %>
+                 <% if banish? %>checked="checked"<% end %>
                  <% if banish_disabled? %>disabled="disabled"<% end %>
                  data-consent-is-sexy-yo-target="banish"
                  data-action="click->consent-is-sexy-yo#handleClickBanishNsfwCompletely">
@@ -65,7 +68,7 @@
                  class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
                  type="checkbox"
                  role="switch"
-                 <% if mouseover_checked? %>checked<% end %>
+                 <% if mouseover? %>checked<% end %>
                  <% if mouseover_disabled? %>disabled<% end %>
                  data-consent-is-sexy-yo-target="mouseover"
                  data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
@@ -88,7 +91,7 @@
                  class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
                  type="checkbox"
                  role="switch"
-                 <% if always_checked? %>checked<% end %>
+                 <% if always? %>checked<% end %>
                  <% if always_disabled? %>disabled<% end %>
                  data-consent-is-sexy-yo-target="always"
                  data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">

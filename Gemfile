@@ -8,7 +8,7 @@ gem 'pg'
 gem 'puma', '~> 5.0'
 gem 'webpacker', '~> 5.4'
 gem 'jbuilder', '~> 2.7'
-gem 'tailwindcss-rails'
+gem 'tailwindcss-rails', '~> 2.0', '>= 2.0.29'
 
 gem 'image_processing', '~> 1.2'
 gem 'bootsnap', '>= 1.4.4', require: false

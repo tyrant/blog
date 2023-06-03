@@ -11,7 +11,7 @@ class ConsentIsSexyYoComponent < ViewComponent::Base
     false
   end
 
-  def banish_checked?
+  def banish?
     @nsfw_options['banish']
   end
 
@@ -21,12 +21,12 @@ class ConsentIsSexyYoComponent < ViewComponent::Base
     end
   end
 
-  def mouseover_checked?
+  def mouseover?
     @nsfw_options['mouseover']
   end
 
   def mouseover_disabled?
-    banish_checked?
+    banish?
   end
 
   def always_title
@@ -35,12 +35,12 @@ class ConsentIsSexyYoComponent < ViewComponent::Base
     end
   end
 
-  def always_checked?
+  def always?
     @nsfw_options['always']
   end
 
   def always_disabled?
-    banish_checked? || !mouseover_checked?
+    banish? || !mouseover?
   end
 
 end

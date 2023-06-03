@@ -1,24 +1,28 @@
 <div data-controller="post-index" 
-     data-post-index-target="card" 
      data-post-index-nsfw-value="<%= @post.nsfw? %>"
      data-post-index-duration-value="<%= PostIndexComponent::DURATION %>"
      class="<%= css_classes %>">
-     
-  <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug) do %>
-  
-    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url, class: 'object-cover w-full h-56 shadow-xl rounded-xl' %>
 
-    <div class="p-2">
-      <% @post.categories.public_names.order(:id).each do |category| %>
-        <span class="inline-block text-xs font-medium mr-2 px-2.5 py-0.5 rounded 
-                    <%= css_classes_for_category(category) %>">
+  <div class="absolute top-2 right-2 z-10" data-post-index-target="categories">
+    <% @post.categories.public_names.nsfw_first.each do |category| %>
+      <%= link_to comfy_blog_posts_path(category: category.label) do %>
+        <span class="<%= css_classes_for_category(category) %>">
           <%= category.label %>
         </span>
       <% end %>
+    <% end %>
+  </div>
+
+  <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug), class: css_classes_for_link, data: { 'post-index-target': 'link' } do %>
+       
+    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url, class: 'post-image object-cover w-full h-56 shadow-xl rounded-xl' %>
+
+    <div class="p-2">
       <h5 class="text-lg font-bold text-gray-900 leading-tight">
         <%= @post.title %>
       </h5>
-      <p><%= @post.published_at.strftime "%H:%M, %-d %b %Y" %></p>
+
+      <span class="text-xs"><%= @post.published_at.strftime "%-d %b %Y" %></span>
     </div>
   <% end %>
 </div>

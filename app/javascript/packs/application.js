@@ -17,6 +17,7 @@ Alpine.start();
 
 // `name` must be dasherised: to, e.g., yoink all PostIndexController instances, 
 // call getStimsBy({ name: 'post-index' }).
+// Don't forget to add the correct connect() calls! With .stimulusController.
 window.getStimsBy = ({ name }) => {
   return [...document.querySelectorAll(`[data-controller="${name}"]`)].map(el => {
     return el.stimulusController;

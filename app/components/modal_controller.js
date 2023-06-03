@@ -2,9 +2,7 @@ import { Controller } from '@hotwired/stimulus'
 
 export default class extends Controller {
 
-  connect() {
-    this.possiblyOpenIrritateModal();
-  }
+  connect() { this.possiblyOpenIrritateModal(); }
 
   possiblyOpenIrritateModal() {
     if (!this.isBroughtOn()) return;

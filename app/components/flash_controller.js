@@ -4,7 +4,5 @@ export default class extends Controller {
 
   static targets = ['banner'];
 
-  close() {
-    this.bannerTarget.remove();
-  }
+  close() { this.bannerTarget.remove(); }
 }

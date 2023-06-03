@@ -1,10 +1,13 @@
 class PostIndexComponent < ViewComponent::Base
 
-  DURATION = 200
+  # Remember, we can't just slap on any old number, Tailwind has preset defaults:
+  # https://tailwindcss.com/docs/transition-duration
+  DURATION = 1000
+  
   CAT_CSS = {
-    'whimsy' => 'bg-indigo-100 text-indigo-800',
-    'nsfw' => 'bg-red-800 text-red-100',
-    'very-bad-advice' => 'bg-lime-100 text-lime-800'
+    'whimsy' => %w(cat-blurrable bg-indigo-100 text-indigo-800 outline-indigo-800),
+    'nsfw' => %w(bg-red-800 text-red-100 outline-red-100),
+    'very-bad-advice' => %w(cat-blurrable bg-lime-100 text-lime-800 outline-lime-800)
   }
 
   def initialize(post_index:, cms_site:, nsfw_options:)
@@ -16,21 +19,32 @@ class PostIndexComponent < ViewComponent::Base
   private
 
   def css_classes
-    names = ['card', "duration-#{DURATION}"]
-    names << nsfw_css_classes if @post.nsfw?
+    classes = %w(post-index relative transition) << "duration-#{DURATION}"
+    classes += %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
 
-    names.flatten.join ' '
+    classes.join ' '
+  end
+
+  def css_classes_for_link
+    classes = %w(link transition) << "duration-#{DURATION}"
+    
+    if @post.nsfw?
+      # classes += %w(hover:blur-none) if @nsfw_options['mouseover']
+      classes += %w(blur-sm) unless @nsfw_options['always']
+    end
+
+    classes.join ' '
   end
 
   def css_classes_for_category(category)
-    CAT_CSS[category.label.parameterize]
-  end
+    label = category.label.parameterize
 
-  def nsfw_css_classes
-    [
-      @nsfw_options['banish']    ? ['hidden', 'opacity-0'] : nil,
-      @nsfw_options['mouseover'] ? 'hover:blur-none' : nil,
-      !@nsfw_options['always']   ? 'blur-sm' : nil
-    ].compact.flatten
+    classes = %w(inline-block text-xs hover:outline font-medium mb-2 px-2.5 py-1 rounded float-right clear-both opacity-90 transition) << CAT_CSS[label] << "duration-#{DURATION}"
+    
+    if (@post.nsfw? && label != 'nsfw') && !@nsfw_options['always']
+      classes += %w(blur-sm)
+    end 
+
+    classes.join ' '
   end
 end
