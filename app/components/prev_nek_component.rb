@@ -43,11 +43,12 @@ class PrevNekComponent < ViewComponent::Base
   private
 
   def common_css_classes
-    %w(w-full sm:w-auto flex basis-1/2 bg-white border shadow-md hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700) + ["duration-#{PostIndexComponent::DURATION}"]
+    %w(w-full sm:w-auto flex basis-1/2 bg-white border shadow-md hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 transition) + ["duration-#{PostIndexComponent::DURATION}"]
   end
 
   def nsfw_css_classes
-    classes = ['nsfw']
+    classes = %w(nsfw)
+    
     classes << 'opacity-50' if @nsfw_options['banish']
     classes << 'hover:blur-none' if @nsfw_options['mouseover']
     classes << 'blur-sm' unless @nsfw_options['always']

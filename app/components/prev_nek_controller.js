@@ -18,28 +18,22 @@ export default class extends Controller {
   // Courtesy https://leastbad.com/stimulus-power-move
   connect() { this.element.stimulusController = this; }
 
-  banish(yes) {
-    this.nsfwTargets().forEach(el => {
-      if (yes) el.classList.add('opacity-50');
-      else     el.classList.remove('opacity-50');
-    });
-  }
-
   unblurOnFutureMouseover(yes) {
-    this.nsfwTargets().forEach(el => {
+    this.#nsfwTargets().forEach(el => {
       if (yes) el.classList.add('hover:blur-none');
       else     el.classList.remove('hover:blur-none');
     });
   }
 
-  unblurAlways(yes) {
-    this.nsfwTargets().forEach(el => {
-      if (yes) el.classList.remove('blur-sm');
-      else     el.classList.add('blur-sm');
-    });
+  blurNow() {
+    this.#nsfwTargets().forEach(el => el.classList.add('blur-sm'));
   }
 
-  nsfwTargets() {
+  unblurNow() {
+    this.#nsfwTargets().forEach(el => el.classList.remove('blur-sm'));
+  }
+
+  #nsfwTargets() {
     return ['prev', 'nek'].map(pn => {
       if (this[`${pn}IsNsfwValue`]) return this[`${pn}Target`];
     }).filter(Boolean);

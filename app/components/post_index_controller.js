@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import ConsentIsSexyYoController from './consent_is_sexy_yo_controller';
 
 export default class extends Controller {
 
@@ -27,57 +28,62 @@ export default class extends Controller {
   addVanillaJsMouseOverOutListeners() {
     if (!this.nsfwValue) return;
 
-    this.hoverable().forEach(m => {
-      m.addEventListener('mouseover', () => { this.unblur(); });
-      m.addEventListener('mouseout', () => { this.blur(); });
+    this.#hoverable().forEach(m => {
+      m.addEventListener('mouseover', () => { 
+        if (this.#needToUnblurOnMouseover()) this.unblurNow();
+      });
+      m.addEventListener('mouseout', () => { 
+        if (this.#needToBlurOnMouseout()) this.blurNow(); 
+      });
     });
   }
 
-  banish(yes) {
-    if (yes) {
-      this.element.classList.add('opacity-0');
-      setTimeout(() => { this.element.classList.add('hidden'); }, this.durationValue);
-
-    } else { 
-      this.element.classList.remove('hidden');
-
-      // For some reason, calling this.classes().remove('opacity-0') without 
-      // this setTimeout() doesn't trigger Tailwind's duration. We must wrap.
-      setTimeout(() => { this.element.classList.remove('opacity-0'); }, 0);
-    }
+  banishNow() {
+    this.element.classList.add('opacity-0');
+    setTimeout(
+      () => { this.element.classList.add('hidden'); },
+      this.durationValue
+    );
   }
 
-  unblurAlways(yes) {
-    yes ? this.unblur() : this.blur(); 
+  unbanishNow() {
+    this.element.classList.remove('hidden');
+
+    // For some reason, calling .remove('opacity-0') without 
+    // setTimeout() doesn't trigger Tailwind's duration. We must wrap.
+    setTimeout(
+      () => { this.element.classList.remove('opacity-0'); },
+      0
+    );
+
+    let c = ConsentIsSexyYoController.instance();
+    if (c.mouseoverValue && c.alwaysValue) this.unblurNow();
+    else                                   this.blurNow();
   }
 
-  sexyStim() { return window.getStimsBy({ name: 'consent-is-sexy-yo' })[0]; }
+  unblurNow() {
+    this.#blurrable().forEach(b => b.classList.remove('blur-sm'));
+  }
 
-  needToUnblurOnMouseover() {
-    let c = this.sexyStim();
+  blurNow() {
+    this.#blurrable().forEach(b => b.classList.add('blur-sm'));
+  }
+
+  #needToUnblurOnMouseover() {
+    let c = ConsentIsSexyYoController.instance();
     return !c.banishValue && c.mouseoverValue;
   }
 
-  unblur() {
-    if (!this.needToUnblurOnMouseover()) return;
-    this.blurrable().forEach(b => b.classList.remove('blur-sm'));
-  }
-
-  needToBlurOnMouseout() {
-    let c = this.sexyStim();
+  #needToBlurOnMouseout() {
+    let c = ConsentIsSexyYoController.instance();
     return !c.banishValue && c.mouseoverValue && !c.alwaysValue;
   }
 
-  blur() {
-    if (!this.needToBlurOnMouseout()) return;
-    this.blurrable().forEach(b => b.classList.add('blur-sm'));
-  }
-
-  hoverable() { 
+  #hoverable() { 
     return [this.linkTarget, this.categoriesTarget];
   }
 
-  blurrable() { 
+  #blurrable() { 
     return [
       this.linkTarget,
       ...this.element.getElementsByClassName('cat-blurrable')

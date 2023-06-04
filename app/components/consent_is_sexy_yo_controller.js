@@ -11,6 +11,10 @@ export default class extends Controller {
     always: Boolean
   }
 
+  static instance() {
+    return window.getStimsBy({ name: 'consent-is-sexy-yo' })[0];
+  }
+
   connect() {
     // Courtesy https://leastbad.com/stimulus-power-move
     this.element.stimulusController = this;
@@ -29,12 +33,14 @@ export default class extends Controller {
   }
 
   updateNsfwPostIndexStimsBanish() {
-    PostIndexController.getNsfwStims().forEach(s => s.banish(this.banishValue));
+    PostIndexController.getNsfwStims().forEach(stim => {
+      this.banishValue ? stim.banishNow() : stim.unbanishNow();
+    });
   }
 
   updateNsfwPrevNekStimsBanish() {
-    if (document.getElementById('prev_nek'))
-      document.getElementById('prev_nek').reload();
+    let prevNekTurbo = document.getElementById('prev_nek');
+    if (prevNekTurbo) prevNekTurbo.reload();
   }
 
   handleClickUnblurNsfwOnMouseover() {
@@ -42,11 +48,21 @@ export default class extends Controller {
 
     this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
-    this.updatePrevNekStimsUnblurOnMouseover();
+    this.updatePostIndexStimsPossiblyBlur();
+    this.updatePrevNekStimsPossiblyBlurOnMouseover();
+
     window.setCookies({ unblur_nsfw_on_mouseover: this.mouseoverValue });
   }
 
-  updatePrevNekStimsUnblurOnMouseover() {
+  updatePostIndexStimsPossiblyBlur() {
+    if (!this.alwaysValue) return;
+
+    PostIndexController.getNsfwStims().forEach(stim => {
+      this.mouseoverValue ? stim.unblurNow() : stim.blurNow();
+    });
+  }
+
+  updatePrevNekStimsPossiblyBlurOnMouseover() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
       stim.unblurOnFutureMouseover(this.mouseoverValue);
     });
@@ -82,13 +98,13 @@ export default class extends Controller {
 
   updateNsfwPostIndexStimsUnblurAlways() {
     PostIndexController.getNsfwStims().forEach(stim => {
-      stim.unblurAlways(this.alwaysValue);
+      this.alwaysValue ? stim.unblurNow() : stim.blurNow();
     });
   }
 
   updatePrevNekStimsUnblurAlways() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      stim.unblurAlways(this.alwaysValue);
+      this.alwaysValue ? stim.unblurNow() : stim.blurNow();
     });
   }
 

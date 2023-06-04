@@ -2,8 +2,8 @@ class PostIndexComponent < ViewComponent::Base
 
   # Remember, we can't just slap on any old number, Tailwind has preset defaults:
   # https://tailwindcss.com/docs/transition-duration
-  DURATION = 1000
-  
+  DURATION = 150
+
   CAT_CSS = {
     'whimsy' => %w(cat-blurrable bg-indigo-100 text-indigo-800 outline-indigo-800),
     'nsfw' => %w(bg-red-800 text-red-100 outline-red-100),
@@ -28,9 +28,8 @@ class PostIndexComponent < ViewComponent::Base
   def css_classes_for_link
     classes = %w(link transition) << "duration-#{DURATION}"
     
-    if @post.nsfw?
-      # classes += %w(hover:blur-none) if @nsfw_options['mouseover']
-      classes += %w(blur-sm) unless @nsfw_options['always']
+    if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])
+      classes += %w(blur-sm)
     end
 
     classes.join ' '
