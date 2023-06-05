@@ -7,8 +7,7 @@ export default class extends Controller {
 
   static values = { 
     nsfw: Boolean, 
-    duration: Number, 
-    consentIsSexyUnblur: { type: Boolean, default: true } // Non-DRY, ugh
+    duration: Number
   };
 
   static getNsfwStims() {

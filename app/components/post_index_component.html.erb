@@ -15,7 +15,7 @@
 
   <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug), class: css_classes_for_link, data: { 'post-index-target': 'link' } do %>
        
-    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url, class: 'post-image object-cover w-full h-56 shadow-xl rounded-xl' %>
+    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url, class: 'post-image object-cover w-full h-56 shadow-xl rounded-xl scale-100 hover:scale-[1.02] ease-in duration-150' %>
 
     <div class="p-2">
       <h5 class="text-lg font-bold text-gray-900 leading-tight">
