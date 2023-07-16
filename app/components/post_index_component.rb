@@ -7,7 +7,7 @@ class PostIndexComponent < ViewComponent::Base
   CAT_CSS = {
     'whimsy' => %w(cat-blurrable bg-indigo-100 text-indigo-800 outline-indigo-800),
     'nsfw' => %w(bg-red-800 text-red-100 outline-red-100),
-    'very-bad-advice' => %w(cat-blurrable bg-lime-100 text-lime-800 outline-lime-800)
+    'shite-advice' => %w(cat-blurrable bg-lime-100 text-lime-800 outline-lime-800)
   }
 
   def initialize(post_index:, cms_site:, nsfw_options:)

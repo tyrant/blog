@@ -32,7 +32,7 @@ layout = Comfy::Cms::Layout.create!(
 )
 cats = Comfy::Cms::Category.create!([{
   site: site,
-  label: 'Very Bad Advice',
+  label: 'Shite Advice',
   categorized_type: 'Comfy::Blog::Post'
 }, {
   site: site,

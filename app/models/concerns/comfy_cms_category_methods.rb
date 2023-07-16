@@ -5,7 +5,7 @@ module ComfyCmsCategoryMethods
 
     scope :nsfw_first, -> { where(label: 'NSFW') + nsfw_banished! }
 
-    scope :public_names, -> { where(label: ['Very Bad Advice', 'Whimsy', 'NSFW']) }
+    scope :public_names, -> { where(label: ['Shite Advice', 'Whimsy', 'NSFW']) }
 
     scope :nsfw_banished!, -> { where.not(label: 'NSFW') }
 
