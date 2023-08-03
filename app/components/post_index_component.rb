@@ -20,19 +20,19 @@ class PostIndexComponent < ViewComponent::Base
 
   def css_classes
     classes = %w(post-index relative transition) << "duration-#{DURATION}"
-    classes += %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
-
-    classes.join ' '
+    classes << %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
+  
+    classes
   end
 
   def css_classes_for_link
     classes = %w(link transition) << "duration-#{DURATION}"
     
     if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])
-      classes += %w(blur-sm)
+      classes << %w(blur-sm)
     end
 
-    classes.join ' '
+    classes
   end
 
   def css_classes_for_category(category)
@@ -41,9 +41,9 @@ class PostIndexComponent < ViewComponent::Base
     classes = %w(inline-block text-xs hover:outline font-medium mb-2 px-2.5 py-1 rounded float-right clear-both opacity-90 transition) << CAT_CSS[label] << "duration-#{DURATION}"
     
     if (@post.nsfw? && label != 'nsfw') && !@nsfw_options['always']
-      classes += %w(blur-sm)
+      classes << %w(blur-sm)
     end 
 
-    classes.join ' '
+    classes
   end
 end

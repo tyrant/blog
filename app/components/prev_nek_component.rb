@@ -19,25 +19,25 @@ class PrevNekComponent < ViewComponent::Base
 
   def prev_css_classes
     classes = common_css_classes
-    classes += %w(rounded-t-lg sm:rounded-l-lg border-b-none sm:border-r-none text-right)
-    classes += nsfw_css_classes if prev.nsfw?
+    classes << %w(rounded-t-lg sm:rounded-l-lg border-b-none sm:border-r-none text-right)
+    classes << nsfw_css_classes if prev.nsfw?
 
-    classes.join ' '
+    classes
   end
 
   def nek_css_classes
     classes = common_css_classes
-    classes += %w(rounded-b-lg sm:rounded-r-lg border-t-none sm:border-l-none)
-    classes += nsfw_css_classes if nek.nsfw?
+    classes << %w(rounded-b-lg sm:rounded-r-lg border-t-none sm:border-l-none)
+    classes << nsfw_css_classes if nek.nsfw?
 
-    classes.join ' '
+    classes
   end
 
   def css_classes_for_category_label(category)
     classes = %w(order-first sm:order-none text-center text-lg px-1 py-1 w-auto sm:w-20 mx-auto sm:-mx-10 md:w-24 md:-mx-12 -my-0 bg-white z-10 rounded font-bold sm:opacity-90 leading-tight)
-    classes += PostIndexComponent::CAT_CSS[category.label.parameterize] if category.present?
+    classes << PostIndexComponent::CAT_CSS[category.label.parameterize] if category.present?
     
-    classes.join ' '
+    classes
   end
 
   private
