@@ -23,6 +23,10 @@ gem 'bcrypt_pbkdf'
 # https://stackoverflow.com/questions/70500220/rails-7-ruby-3-1-loaderror-cannot-load-such-file-net-smtp
 gem 'mail', '~> 2.8.0'
 
+gem 'simple_form'
+gem 'simple_form-tailwind'
+gem 'truemail'
+
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'

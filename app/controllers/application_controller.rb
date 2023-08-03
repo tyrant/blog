@@ -4,6 +4,7 @@ class ApplicationController < ActionController::Base
   before_action :unstringly_type_nsfw_cookies
   before_action :instanceify_nsfw_cookies
   before_action :init_nav_items
+  before_action :init_email_if_uninitted
 
   STR_TO_BOOL = [true, false].map { |b| [b.to_s, b] }.to_h
   COOKIES = [
@@ -60,5 +61,9 @@ class ApplicationController < ActionController::Base
           path: comfy_blog_posts_path(category: cat.label) }
       end
     ]
+  end
+
+  def init_email_if_uninitted
+    @email ||= Email.new
   end
 end

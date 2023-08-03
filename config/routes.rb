@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :emails, only: :create
   get 'posts/:id/prev_nek', to: 'posts#prev_nek', as: 'prev_nek'
   root to: 'application#index'
 

@@ -1,0 +1,13 @@
+<%= simple_form_for email, html: { id: 'email_signup', class: 'ml-2', data: { controller: 'email-signup' } } do |f| %>
+  <span class="text-gray-300">
+    Mailing list
+  </span>
+  <%= f.input :address, 
+              label: '',
+              error: '',
+              placeholder: 'Your email here',
+              wrapper_html: { class: 'inline-block' },
+              input_html: { class: 'inline-block', type: 'email' } %>
+  <%= f.submit "Join",
+               class: 'inline-block rounded-md bg-slate-200 px-3 py-2 cursor-pointer' %>
+<% end %>

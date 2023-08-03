@@ -1,0 +1,5 @@
+<%= turbo_stream.append 'notifications' do %>
+  <%= render NotificationComponent.new(
+    type: @email.notification_type,
+    html_content: @email.notification_content) %>
+<% end %>
