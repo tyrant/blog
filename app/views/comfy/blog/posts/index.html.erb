@@ -20,7 +20,9 @@
     <%= content_for :paginate %>
 
     <div class="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-      <%= render PostIndexComponent.with_collection @blog_posts, cms_site: @cms_site, nsfw_options: @nsfw_options %>
+      <%= render PostIndexComponent.with_collection @blog_posts, 
+                                                    cms_site: @cms_site,
+                                                    nsfw_options: @nsfw_options %>
     </div>
     
     <%= content_for :paginate %>
