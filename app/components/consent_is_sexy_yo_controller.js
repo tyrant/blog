@@ -30,6 +30,7 @@ export default class extends Controller {
     this.updateUnblurAlwaysCss();
     this.updateNsfwPostIndexStimsBanish();
     this.updateNsfwPrevNekStimsBanish();
+    this.updatePaginationControllerCeil();
   }
 
   updateNsfwPostIndexStimsBanish() {
@@ -41,6 +42,12 @@ export default class extends Controller {
   updateNsfwPrevNekStimsBanish() {
     let prevNekTurbo = document.getElementById('prev_nek');
     if (prevNekTurbo) prevNekTurbo.reload();
+  }
+
+  updatePaginationControllerCeil() {
+    window.getStimsBy({ name: 'pagination' }).forEach(stim => {
+      stim.updateCeil({ nsfwBanished: this.banishValue });
+    });
   }
 
   handleClickUnblurNsfwOnMouseover() {

@@ -1,4 +1,7 @@
-<div class="bg-white py-2 sm:pt-0 md:pt-1 flex items-center justify-between border-gray-200 sm:px-6">
+<div data-controller="pagination"
+     data-pagination-page-no-value="<%= @cur_page_no %>"
+     data-pagination-page-size-value="<%= page_size %>"
+     class="bg-white py-2 sm:pt-0 md:pt-1 flex items-center justify-between border-gray-200 sm:px-6">
 
   <div class="flex-1 flex justify-between sm:hidden">
     <%= link_to 'Previous', 
@@ -15,7 +18,10 @@
         Showing
         <span class="font-medium"><%= cur_page_floor %></span>
         to
-        <span class="font-medium"><%= cur_page_ceil %></span>
+        <span class="font-medium"
+              data-pagination-target="ceil">
+          <%= cur_page_ceil %>
+        </span>
         of
         <span class="font-medium"><%= posts_total_count %></span>
         results

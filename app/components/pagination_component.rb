@@ -2,8 +2,10 @@ class PaginationComponent < ViewComponent::Base
 
   DEFAULT_DISTANCE = 1
 
-  def initialize(page_no:)
+  def initialize(page_no:, nsfw_banished:, sfw_count:)
     @cur_page_no = page_no.nil? ? 1 : page_no.to_i
+    @nsfw_banished = nsfw_banished
+    @sfw_count = sfw_count
     @already_displayed_1_to_n_ellipsis = false 
     @already_displayed_n_to_page_count_ellipsis = false
   end
@@ -41,11 +43,18 @@ class PaginationComponent < ViewComponent::Base
   end
 
   def cur_page_ceil
-    if @cur_page_no * page_size > posts_total_count
-      posts_total_count
-    else
-      @cur_page_no * page_size
-    end
+    all_posts_count = if @cur_page_no * page_size > posts_total_count
+        posts_total_count
+      else
+        @cur_page_no * page_size
+      end
+
+    all_posts_count -= cur_page_nsfw_posts_count if @nsfw_banished
+    all_posts_count
+  end
+
+  def cur_page_nsfw_posts_count
+    page_size - @sfw_count
   end
 
   def posts_total_count
