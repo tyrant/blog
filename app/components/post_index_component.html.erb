@@ -3,7 +3,7 @@
      data-post-index-duration-value="<%= PostIndexComponent::DURATION %>"
      class="<%= css_classes %>">
 
-  <div class="absolute top-2 right-2 z-10" data-post-index-target="categories">
+  <div class="absolute top-4 right-4 z-10" data-post-index-target="categories">
     <% @post.categories.public_names.nsfw_first.each do |category| %>
       <%= link_to comfy_blog_posts_path(category: category.label) do %>
         <span class="<%= css_classes_for_category(category) %>">
@@ -13,16 +13,33 @@
     <% end %>
   </div>
 
-  <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug), class: css_classes_for_link, data: { 'post-index-target': 'link' } do %>
+  <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug),
+      class: css_classes_for_link,
+      data: { 'post-index-target': 'link' } do %>
        
-    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url, class: 'post-image object-cover w-full h-56 shadow-xl rounded-xl scale-100 hover:scale-[1.02] ease-in duration-150' %>
+    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url,
+        class: 'object-cover w-full h-64 shadow-xl rounded-xl scale-100 ease-in duration-150',
+        data: { 'post-index-target': 'image' } %>
 
-    <div class="p-2">
-      <h5 class="text-lg font-bold text-gray-900 leading-tight">
-        <%= @post.title %>
-      </h5>
+    <div class="w-full h-32 bg-gradient-to-b from-transparent to-neutral-700 absolute top-32 left-0 rounded-xl duration-150"
+         data-post-index-target="overlay">
 
-      <span class="text-xs"><%= @post.published_at.strftime "%-d %b %Y" %></span>
+      <div class="p-4 absolute bottom-0 left-0">
+        <h5 class="text-lg font-bold text-gray-100 leading-tight">
+          <%= @post.title %>
+        </h5>
+      </div>
+    </div>
+
+    <div class="px-4 mt-2 mb-4">
+      <div class="text-xs mb-0.5 text-gray-500">
+        <%= @post.published_at.strftime "%-d %b %Y" %>
+      </div>
+      <div class="text-sm">
+        <% cache "#{@post.id}-preview" do %>
+          <%= Nokogiri::HTML(@post.content_cache.html_safe).text.truncate(128) %>
+        <% end %>
+      </div>
     </div>
   <% end %>
 </div>

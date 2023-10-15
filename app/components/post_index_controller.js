@@ -3,7 +3,7 @@ import ConsentIsSexyYoController from './consent_is_sexy_yo_controller';
 
 export default class extends Controller {
 
-  static targets = ['link', 'categories'];
+  static targets = ['link', 'categories', 'image', 'overlay'];
 
   static values = { 
     nsfw: Boolean, 
@@ -18,21 +18,26 @@ export default class extends Controller {
     // Courtesy https://leastbad.com/stimulus-power-move
     this.element.stimulusController = this;
 
-    this.addVanillaJsMouseOverOutListeners();
+    this.setVanillaJsMouseoverMouseoutListeners();
   }
 
-  // Normally we'd do this with Stim targets ... but we have a variable number
-  // of category-targets, and turns out Stim-based selectors break when you 
-  // can't be sure they're there. Hmph. Vanilla event listeners it is.
-  addVanillaJsMouseOverOutListeners() {
-    if (!this.nsfwValue) return;
-
-    this.#hoverable().forEach(m => {
-      m.addEventListener('mouseover', () => { 
-        if (this.#needToUnblurOnMouseover()) this.unblurNow();
+  // Normally we'd do this with regular ol' Stim targets ... but things are a 
+  // tad fiddlier here: 
+  // (1) #blurrables() includes a post's categories, which have different 
+  //     counts per post. Turns out Stim-based selectors break when you can't be
+  //     sure they're there. Hmph. Vanilla event listeners it is.
+  // (2) With #scalables(), I don't think there's a Tailwind-y way of applying
+  //     or removing classes to sibling elements on hover. Is there? Vanilla
+  //     again.
+  setVanillaJsMouseoverMouseoutListeners() {
+    this.#hoverables().forEach(m => {
+      m.addEventListener('mouseover', () => {
+        this.#scaleScalablesNow();
+        if (this.#needToUnblurOnMouseover()) this.unblurBlurrablesNow();
       });
-      m.addEventListener('mouseout', () => { 
-        if (this.#needToBlurOnMouseout()) this.blurNow(); 
+      m.addEventListener('mouseout', () => {
+        this.#unscaleScalablesNow();
+        if (this.#needToBlurOnMouseout()) this.blurBlurrablesNow();
       });
     });
   }
@@ -56,33 +61,47 @@ export default class extends Controller {
     );
 
     let c = ConsentIsSexyYoController.instance();
-    if (c.mouseoverValue && c.alwaysValue) this.unblurNow();
-    else                                   this.blurNow();
+    if (c.mouseoverValue && c.alwaysValue) this.unblurBlurrablesNow();
+    else                                   this.blurBlurrablesNow();
   }
 
-  unblurNow() {
-    this.#blurrable().forEach(b => b.classList.remove('blur-sm'));
+  unblurBlurrablesNow() {
+    this.#blurrables().forEach(b => b.classList.remove('blur-sm'));
   }
 
-  blurNow() {
-    this.#blurrable().forEach(b => b.classList.add('blur-sm'));
+  blurBlurrablesNow() {
+    this.#blurrables().forEach(b => b.classList.add('blur-sm'));
+  }
+
+  // Private :O
+
+  #scaleScalablesNow() {
+    this.#scalables().forEach(s => s.classList.add('scale-[1.015]'));
+  }
+
+  #unscaleScalablesNow() {
+    this.#scalables().forEach(s => s.classList.remove('scale-[1.015]'));
   }
 
   #needToUnblurOnMouseover() {
     let c = ConsentIsSexyYoController.instance();
-    return !c.banishValue && c.mouseoverValue;
+    return this.nsfwValue && !c.banishValue && c.mouseoverValue;
   }
 
   #needToBlurOnMouseout() {
     let c = ConsentIsSexyYoController.instance();
-    return !c.banishValue && c.mouseoverValue && !c.alwaysValue;
+    return this.nsfwValue && !c.banishValue && c.mouseoverValue && !c.alwaysValue;
   }
 
-  #hoverable() { 
+  #scalables() {
+    return [this.imageTarget, this.overlayTarget];
+  }
+
+  #hoverables() { 
     return [this.linkTarget, this.categoriesTarget];
   }
 
-  #blurrable() { 
+  #blurrables() { 
     return [
       this.linkTarget,
       ...this.element.getElementsByClassName('cat-blurrable')

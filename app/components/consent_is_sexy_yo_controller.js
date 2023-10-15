@@ -58,7 +58,7 @@ export default class extends Controller {
     if (!this.alwaysValue) return;
 
     PostIndexController.getNsfwStims().forEach(stim => {
-      this.mouseoverValue ? stim.unblurNow() : stim.blurNow();
+      this.mouseoverValue ? stim.unblurBlurrablesNow() : stim.blurBlurrablesNow();
     });
   }
 
@@ -98,13 +98,13 @@ export default class extends Controller {
 
   updateNsfwPostIndexStimsUnblurAlways() {
     PostIndexController.getNsfwStims().forEach(stim => {
-      this.alwaysValue ? stim.unblurNow() : stim.blurNow();
+      this.alwaysValue ? stim.unblurBlurrablesNow() : stim.blurBlurrablesNow();
     });
   }
 
   updatePrevNekStimsUnblurAlways() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      this.alwaysValue ? stim.unblurNow() : stim.blurNow();
+      this.alwaysValue ? stim.unblurBlurrablesNow() : stim.blurBlurrablesNow();
     });
   }
 
