@@ -17,27 +17,27 @@
       class: css_classes_for_link,
       data: { 'post-index-target': 'link' } do %>
        
-    <%= image_tag @post.resized_blob_or_orig_or_placeholder_url,
-        class: 'object-cover w-full h-64 shadow-xl rounded-xl scale-100 ease-in duration-150',
-        data: { 'post-index-target': 'image' } %>
+    <div class="duration-150" data-post-index-target="scale">
+      <%= image_tag @post.resized_blob_or_orig_or_placeholder_url,
+          class: 'object-cover w-full h-64 shadow-xl rounded-xl scale-100 ease-in duration-150' %>
 
-    <div class="w-full h-32 bg-gradient-to-b from-transparent to-neutral-700 absolute top-32 left-0 rounded-xl duration-150"
-         data-post-index-target="overlay">
+      <div class="w-full h-32 bg-gradient-to-b from-transparent to-neutral-700 absolute top-32 left-0 rounded-xl">
 
-      <div class="p-4 absolute bottom-0 left-0">
-        <h5 class="text-lg font-bold text-gray-100 leading-tight">
-          <%= @post.title %>
-        </h5>
+        <div class="p-4 absolute bottom-0 left-0">
+          <h5 class="text-lg font-bold text-gray-100 leading-tight">
+            <%= @post.title %>
+          </h5>
+          <div class="text-xs mt-1 text-gray-300">
+            <%= @post.published_at.strftime "%-d %b %Y" %>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="px-4 mt-2 mb-4">
-      <div class="text-xs mb-0.5 text-gray-500">
-        <%= @post.published_at.strftime "%-d %b %Y" %>
-      </div>
       <div class="text-sm">
         <% cache "#{@post.id}-preview" do %>
-          <%= Nokogiri::HTML(@post.content_cache.html_safe).text.truncate(128).gsub!("\n", "<br>") %>
+          <%= Nokogiri::HTML(@post.content_cache.html_safe).text.truncate(128) %>
         <% end %>
       </div>
     </div>
