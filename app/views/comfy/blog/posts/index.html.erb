@@ -21,7 +21,7 @@
   <div class="lg:basis-full">
     <%= content_for :paginate %>
 
-    <div class="grid gap-4 py-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div class="grid gap-7 py-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       <%= render PostIndexComponent.with_collection @blog_posts, cms_site: @cms_site, nsfw_options: @nsfw_options %>
     </div>
     
