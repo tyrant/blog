@@ -37,7 +37,7 @@
     <div class="px-4 mt-2 mb-4">
       <div class="text-sm">
         <% cache "#{@post.id}-preview" do %>
-          <%= Nokogiri::HTML(@post.content_cache.gsub('</h2>', "</h2> ").gsub('</p>', "</p> ")).text.truncate(192) %>
+          <%= Nokogiri::HTML(@post.content_cache.gsub('</h2>', "</h2>\r\n").gsub('</p>', "</p>\r\n")).text.truncate(192) %>
         <% end %>
       </div>
     </div>
