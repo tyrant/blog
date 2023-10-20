@@ -34,8 +34,12 @@ class PrevNekComponent < ViewComponent::Base
   end
 
   def css_classes_for_category_label(category)
-    classes = %w(order-first sm:order-none text-center text-lg px-1 py-1 w-auto sm:w-20 mx-auto sm:-mx-10 md:w-24 md:-mx-12 -my-0 bg-white z-10 rounded font-bold sm:opacity-90 leading-tight)
-    classes += PostIndexComponent::CAT_CSS[category.label.parameterize] if category.present?
+    classes = %w(text-center text-lg px-4 sm:px-1 py-1 h-8 -my-4 sm:h-auto sm:my-auto w-auto sm:w-20 mx-auto sm:-mx-10 md:w-24 md:-mx-12 -my-0 z-10 rounded font-bold opacity-80 sm:opacity-90 leading-tight hover:outline shadow-lg)
+    classes += if category.present?
+      PostIndexComponent::CAT_CSS[category.label.parameterize]
+    else
+      ['bg-gray-100']
+    end
     
     classes.join ' '
   end
@@ -49,7 +53,6 @@ class PrevNekComponent < ViewComponent::Base
   def nsfw_css_classes
     classes = %w(nsfw)
     
-    classes << 'opacity-50' if @nsfw_options['banish']
     classes << 'hover:blur-none' if @nsfw_options['mouseover']
     classes << 'blur-sm' unless @nsfw_options['always']
 
