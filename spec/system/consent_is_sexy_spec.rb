@@ -2,6 +2,69 @@
 
 require 'rails_helper'
 
+shared_examples 'Naughty posts CSS-hidden' do |wait|
+  before { sleep 1 if wait }
+  it { expect(all('.post-index:not(.hidden)').length).to eq posts_count_page_1_without_nsfw }
+end
+
+shared_examples 'Naughty posts CSS-showing' do |wait|
+  before { sleep 1 if wait }
+  it { expect(all('.post-index:not(.hidden)').length).to eq ComfyBlog.config.posts_per_page }
+end
+
+shared_examples 'Webkit blur effect disappears on hover' do |wait|
+  before { sleep 1 if wait }
+  it {
+    expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+      .to change { webkit_blur_pixels }
+      .from('blur(4px)')
+      .to('none')
+  }
+end
+
+shared_examples "Webkit blur effect unaffected by hover" do |wait|
+  before { sleep 1 if wait }
+  it { 
+    expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+      .not_to change { webkit_blur_pixels }
+  }
+end
+
+shared_examples "Webkit blur effect remains on hover" do
+  before { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+  it { expect(webkit_blur_pixels).to eq 'blur(4px)' }
+end
+
+shared_examples "Webkit blur effect absent on hover" do |wait|
+  before { sleep 1 if wait
+           find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+  it { expect(webkit_blur_pixels).to eq 'none' }
+end
+
+shared_examples 'Unblur On Mouseover <li> disabled' do
+  it { expect(page).to have_css '#unblur_on_mouseover-li label.cursor-not-allowed' }
+  it { expect(page).to have_css '#unblur_on_mouseover-li label.opacity-40' }
+  it { expect(page).to have_css '#unblur_on_mouseover[disabled]' }
+end
+
+shared_examples 'Unblur On Mouseover <li> enabled' do
+  it { expect(page).to have_css '#unblur_on_mouseover-li label.cursor-pointer' }
+  it { expect(page).not_to have_css '#unblur_on_mouseover-li label.opacity-40' }
+  it { expect(page).not_to have_css '#unblur_on_mouseover[disabled]' }
+end
+
+shared_examples 'Unblur Always <li> disabled' do
+  it { expect(page).to have_css '#unblur_always-li label.cursor-not-allowed' }
+  it { expect(page).to have_css '#unblur_always-li label.opacity-40' }
+  it { expect(page).to have_css '#unblur_always[disabled]' }
+end
+
+shared_examples 'Unblur Always <li> enabled' do
+  it { expect(page).to have_css '#unblur_always-li label.cursor-pointer' }
+  it { expect(page).not_to have_css '#unblur_always-li label.opacity-40' }
+  it { expect(page).not_to have_css '#unblur_always[disabled]' }
+end
+
 describe 'ConsentIsSexy component usage', type: :system do
 
   let(:site) { Comfy::Cms::Site.first }
@@ -30,271 +93,110 @@ describe 'ConsentIsSexy component usage', type: :system do
 
   describe 'setting and saving NSFW option values' do
 
-    # We don't want to use our nsfw_banished scope! Not here at least. We want
-    # to paginate (exactly 12 records), then filter out its nsfw, in that order.
-    let(:posts_count_page_1_without_nsfw) { 
-      site.blog_posts.order(:published_at)
-        .reverse_order.page(1)
-        .per(ComfyBlog.config.posts_per_page)
-        .to_a.reject!{ |p| p.nsfw? } 
-        .length
-    }
-    let(:posts_count_page_1_with_nsfw) { 
-      ComfyBlog.config.posts_per_page - posts_count_page_1_without_nsfw
-    }
-
-    # Reminder: the default NSFW checkbox values are defined at
-    # ApplicationController::COOKIES:
-    # banish: false; unblur-on-mouseover: true; always-show: false
-    before { visit comfy_blog_posts_path }
-
     # Normally we'd just use a `let`, but `let`s cache their values. We don't
     # want that. We want this to execute in full each time it's called.
     def webkit_blur_pixels
-      evaluate_script('getComputedStyle(document.querySelector("[data-post-index-nsfw-value=\'true\']")).webkitFilter')
+      lol = <<~LOL
+        (() => {
+          const css = "[data-post-index-nsfw-value='true'] > a.link";
+          const link = document.querySelector(css);
+          return getComputedStyle(link).webkitFilter;
+        })();
+      LOL
+      evaluate_script(lol)
     end
 
-    describe "checking/unchecking 'Hide NSFW(?) posts'" do
+    # We don't want to use our nsfw_banished scope! Not here at least. We want
+    # to paginate (exactly 12 records), then filter out its nsfw, in that order.
+    let(:posts_count_page_1_without_nsfw) {
+      site.blog_posts.order(:published_at)
+        .reverse_order.page(1)
+        .per(ComfyBlog.config.posts_per_page)
+        .to_a.reject!(&:nsfw?)
+        .length
+    }
 
-      describe "hiding all NSFW posts" do
+    # Reminder: the default NSFW checkbox values are defined at
+    # ApplicationController::COOKIES, and it's their values that define initial
+    # checkbox behaviour:
+    # banish: false; unblur-on-mouseover: true; always-show: false
+    before { visit comfy_blog_posts_path }
 
-        it "whittles the naughty posts" do
-          expect {
-            check :banish
-            sleep PostIndexComponent::DURATION/1000.0
-          }.to change { all('.card:not(.hidden)').length }
-           .from(ComfyBlog.config.posts_per_page)
-           .to(posts_count_page_1_without_nsfw)
-        end
-      end
+    describe "Checking/unchecking 'Hide NSFW(?) posts'" do
+      it_behaves_like 'Naughty posts CSS-showing', false
 
-      describe "persisting its checkbox value on page reload" do
-        before do
-          check :banish
-          refresh
-        end
-
-        it { expect(find('#banish')).to be_checked }
-      end
-
-      describe "immediately greying-out and disabling the other two checkboxes" do
+      describe "Checking" do
         before { check :banish }
+        it_behaves_like 'Naughty posts CSS-hidden', true
+        it_behaves_like 'Unblur On Mouseover <li> disabled'
+        it_behaves_like 'Unblur Always <li> disabled'
+        
+        describe 'Refreshing' do
+          before { refresh }
+          it { expect(find('#banish')).to be_checked }
+          it_behaves_like 'Naughty posts CSS-hidden', false
+          it_behaves_like 'Unblur On Mouseover <li> disabled'
+          it_behaves_like 'Unblur Always <li> disabled'
 
-        it { expect(page).to have_css '#unblur_on_mouseover-li label.cursor-not-allowed' }
-        it { expect(page).to have_css '#unblur_on_mouseover-li label.opacity-40' }
-        it { expect(page).to have_css '#unblur_on_mouseover[disabled]' }
-        it { expect(page).to have_css '#unblur_always-li label.cursor-not-allowed' }
-        it { expect(page).to have_css '#unblur_always-li label.opacity-40' }
-        it { expect(page).to have_css '#unblur_always[disabled]' }
-      end
-
-      describe "persisting in greying-out and disabling the other two checkboxes after page reload" do
-        before do
-          check :banish
-          refresh
+          describe 'Unchecking' do
+            before { uncheck :banish }
+            it_behaves_like 'Naughty posts CSS-showing', true
+            it_behaves_like 'Unblur On Mouseover <li> enabled'
+            it_behaves_like 'Unblur Always <li> enabled'
+          end
         end
-
-        it { expect(page).to have_css '#unblur_on_mouseover-li label.cursor-not-allowed' }
-        it { expect(page).to have_css '#unblur_on_mouseover-li label.opacity-40' }
-        it { expect(page).to have_css '#unblur_on_mouseover[disabled]' }
-        it { expect(page).to have_css '#unblur_always-li label.cursor-not-allowed' }
-        it { expect(page).to have_css '#unblur_always-li label.opacity-40' }
-        it { expect(page).to have_css '#unblur_always[disabled]' }
-      end
-      
-      describe "un-greying and enabling the other two checkboxes after check, reload, uncheck" do
-        before do
-          check :banish
-          refresh
-          uncheck :banish
-        end
-
-        it { expect(page).to have_css '#unblur_on_mouseover-li label.cursor-pointer' }
-        it { expect(page).not_to have_css '#unblur_on_mouseover-li label.opacity-40' }
-        it { expect(page).not_to have_css '#unblur_on_mouseover[disabled]' }
-        it { expect(page).to have_css '#unblur_always-li label.cursor-pointer' }
-        it { expect(page).not_to have_css '#unblur_always-li label.opacity-40' }
-        it { expect(page).not_to have_css '#unblur_always[disabled]' }
       end
     end
 
-    describe "unchecking/checking 'Unblur on hover'" do
-      describe "initial blur behaviour" do
-        it "decreases the blur effect from 4px to 0px on hover" do
-          expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-            .to change { webkit_blur_pixels }
-            .from('blur(4px)')
-            .to('blur(0px)')
-        end
-      end
+    describe "Unchecking/checking 'Unblur on hover'" do
+      it_behaves_like 'Webkit blur effect disappears on hover', false
 
-      describe "unchecking" do
-        it "removes hover:blur-none CSS from all NSFW posts" do
-          expect { uncheck :unblur_on_mouseover }
-            .to change { all(:xpath, "//*[contains(@class, 'hover:blur-none')]").length }
-            .from(posts_count_page_1_with_nsfw)
-            .to(0)
-        end
-      end
-
-      describe "blur remaining present on NSFW posts on mouseover after unchecking" do
+      describe "Unchecking" do
         before { uncheck :unblur_on_mouseover }
+        it_behaves_like 'Unblur Always <li> disabled'
+        it_behaves_like "Webkit blur effect unaffected by hover", false
+        it_behaves_like "Webkit blur effect remains on hover"
 
-        it "keeps the blur effect applied and unchanged" do
-          expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-            .not_to change { webkit_blur_pixels }
+        describe "Immediately rechecking without refreshing" do
+          before { check :unblur_on_mouseover }
+          it_behaves_like 'Unblur Always <li> enabled'
+          it_behaves_like 'Webkit blur effect disappears on hover', false
         end
 
-        it "keeps the blur effect at 4px" do
-          find("[data-post-index-nsfw-value=\'true\']", match: :first).hover
-          expect(webkit_blur_pixels).to eq 'blur(4px)'
+        describe "Refreshing" do
+          before { refresh }
+          it { expect(find('#unblur_on_mouseover')).not_to be_checked }
+          it_behaves_like 'Unblur Always <li> disabled'
+          it_behaves_like "Webkit blur effect unaffected by hover", false
+          it_behaves_like "Webkit blur effect remains on hover"
+
+          describe "Rechecking" do
+            before { check :unblur_on_mouseover }
+            it_behaves_like 'Unblur Always <li> enabled'
+            it_behaves_like 'Webkit blur effect disappears on hover', false
+          end
         end
-      end
-
-      describe "re-adding all prior hover:blur-none CSS on re-checking" do
-        before { uncheck :unblur_on_mouseover }
-
-        it "re-adds hover:blur-none CSS to all NSFW posts" do
-          expect { check :unblur_on_mouseover }
-            .to change { all(:xpath, "//*[contains(@class, 'hover:blur-none')]").length }
-            .from(0)
-            .to(posts_count_page_1_with_nsfw)
-        end
-      end
-
-      describe "persisting its checkbox value on page reload" do
-        before do
-          uncheck :unblur_on_mouseover
-          refresh
-        end
-
-        it { expect(find('#unblur_on_mouseover')).not_to be_checked }
-      end
-
-      describe "blur reappearing on NSFW posts on mouseover after uncheck, reload, check" do
-        before do
-          uncheck :unblur_on_mouseover
-          refresh
-          check :unblur_on_mouseover
-        end
-
-        it "returns to decreasing the blur effect from 4px to 0px on hover" do
-          expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-            .to change { webkit_blur_pixels }
-            .from('blur(4px)')
-            .to('blur(0px)')
-        end
-      end
-
-      describe "immediately greying-out and disabling the unblur-always checkbox" do
-        before { uncheck :unblur_on_mouseover }
-
-        it { expect(page).to have_css '#unblur_always-li label.cursor-not-allowed' }
-        it { expect(page).to have_css '#unblur_always-li label.opacity-40' }
-        it { expect(page).to have_css '#unblur_always[disabled]' }
-      end
-
-      describe "persisting in greying-out and disabling the unblur-always checkbox after page reload" do
-        before do
-          uncheck :unblur_on_mouseover
-          refresh
-        end
-
-        it { expect(page).to have_css '#unblur_always-li label.cursor-not-allowed' }
-        it { expect(page).to have_css '#unblur_always-li label.opacity-40' }
-        it { expect(page).to have_css '#unblur_always[disabled]' }
-      end
-
-      describe "un-greying and enabling the unblur-always checkbox after uncheck, reload, check" do
-        before do
-          uncheck :unblur_on_mouseover
-          refresh
-          check :unblur_on_mouseover
-        end
-
-        it { expect(page).to have_css '#unblur_always-li label.cursor-pointer' }
-        it { expect(page).not_to have_css '#unblur_always-li label.opacity-40' }
-        it { expect(page).not_to have_css '#unblur_always[disabled]' }
       end
     end
 
     describe "Unchecking/checking 'Unblur always'" do
+      it_behaves_like 'Webkit blur effect disappears on hover', false
 
-      describe "Unblur CSS classes immediately vanishing on check" do
-        it "removes blur-sm CSS from all NSFW posts" do
-          expect { check :unblur_always }
-            .to change { all(:xpath, "//*[contains(@class, 'blur-sm')]").length }
-            .from(posts_count_page_1_with_nsfw)
-            .to(0)
-        end
-      end
-
-      describe "Unblur Webkit effect immediately vanishing on check" do 
+      describe "Checking" do
         before { check :unblur_always }
+        it_behaves_like "Webkit blur effect unaffected by hover", true
+        it_behaves_like "Webkit blur effect absent on hover"
 
-        # For some dang reason, without the `sleep 1`, this initial webkit state
-        # is "blur(3.71679px)". Bah :O
-        it "removes the blur effect" do
-          expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover; sleep 1 }
-            .to change { webkit_blur_pixels }
-            .from('blur(4px)')
-            .to('blur(0px)')
-        end
-      end
+        describe "Refreshing" do
+          before { refresh }
+          it { expect(find('#unblur_always')).to be_checked }
+          it_behaves_like "Webkit blur effect unaffected by hover"
+          it_behaves_like "Webkit blur effect absent on hover"
 
-      describe "Checkbox value persisting on page reload" do
-        before do
-          check :unblur_always
-          refresh
-        end
-
-        it { expect(find('#unblur_always')).to be_checked }
-      end
-
-      describe "Unblur CSS classes persisting on check, page reload" do
-        it "keeps blur-sm removed after reload" do
-          expect { 
-            check :unblur_always
-            refresh 
-          }.to change { all(:xpath, "//*[contains(@class, 'blur-sm')]").length }
-           .from(posts_count_page_1_with_nsfw)
-           .to(0)
-        end
-      end
-
-      describe "Unblur Webkit effect persisting on check, page reload" do
-        before do
-          check :unblur_always
-          refresh
-        end
-
-        # I have no idea why just this one scenario sets the Webkit blur to
-        # 'none' instead of 'blur(0px)'. But ugh.
-        it "keeps blur(4px) removed" do
-          expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-            .to change { webkit_blur_pixels }
-            .from('none')
-            .to('blur(0px)')
-        end
-      end
-
-      context "check, reload, uncheck" do
-        before do
-          check :unblur_always
-          refresh
-          uncheck :unblur_always
-        end
-
-        it 'reapplies the blur-sm CSS classes to NSFW posts' do
-          expect(all(:xpath, "//*[contains(@class, 'blur-sm')]").length)
-            .to eq posts_count_page_1_with_nsfw
-        end
-
-        # Without the `sleep 1`, turns out the Webkit initial filter state is
-        # "blur(0.283206px)". Bah.
-        it "keeps blur(4px) removed from all NSFW posts" do
-          expect { sleep 1; find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-            .not_to change { webkit_blur_pixels }
+          describe "Unchecking" do
+            before { uncheck :unblur_always }
+            it_behaves_like 'Webkit blur effect disappears on hover', true
+          end
         end
       end
     end
