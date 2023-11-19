@@ -14,20 +14,16 @@ end
 
 shared_examples 'Webkit blur effect disappears on hover' do |wait|
   before { sleep 1 if wait }
-  it {
-    expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-      .to change { webkit_blur_pixels }
-      .from('blur(4px)')
-      .to('none')
-  }
+  it { expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+         .to change { webkit_blur_pixels }
+         .from('blur(4px)')
+         .to('none') }
 end
 
 shared_examples "Webkit blur effect unaffected by hover" do |wait|
   before { sleep 1 if wait }
-  it { 
-    expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
-      .not_to change { webkit_blur_pixels }
-  }
+  it { expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+         .not_to change { webkit_blur_pixels } }
 end
 
 shared_examples "Webkit blur effect remains on hover" do
@@ -67,28 +63,14 @@ end
 
 describe 'ConsentIsSexy component usage', type: :system do
 
-  let(:site) { Comfy::Cms::Site.first }
-
   # Ensure there's always at least one NSFW post in the first page
-  # ... This post refuses to appear on the first page and for the life of me I
-  # cannot figure out why and it messes up the NSFW-count tests :scream:
-  # Commented-out for now.
+  # The probability of there being zero is (2/3)^12=~0.0077 ... but can't hurt
+  # to be thorough. A test intermittently failing ~1% of the time is too much.
   before do
-    # Comfy::Blog::Post.create!(
-    #   site: site,
-    #   layout: Comfy::Cms::Layout.first,
-    #   title: 'blargh',
-    #   slug: 'blargh',
-    #   published_at: site.blog_posts.order('published_at desc').limit(1).first.published_at + 1.hour,
-    #   fragments_attributes: { 
-    #     '0': {
-    #       identifier: :content, 
-    #       tag: "wysiwyg",
-    #       content: "<p><img src='http://picsum.photos/#{Faker::Number.between(from: 300, to: 600)}/#{Faker::Number.between(from: 200, to: 450)}/' /></p>",
-    #     }
-    #   },
-    #   categories: [Comfy::Cms::Category.find_by(label: 'NSFW')]
-    # )
+    Comfy::Cms::Categorization.find_or_create_by!(
+      category: Comfy::Cms::Category.find_by(label: 'NSFW'),
+      categorized: Comfy::Blog::Post.order(:updated_at).last
+    )
   end
 
   describe 'setting and saving NSFW option values' do
@@ -109,7 +91,7 @@ describe 'ConsentIsSexy component usage', type: :system do
     # We don't want to use our nsfw_banished scope! Not here at least. We want
     # to paginate (exactly 12 records), then filter out its nsfw, in that order.
     let(:posts_count_page_1_without_nsfw) {
-      site.blog_posts.order(:published_at)
+      Comfy::Cms::Site.first.blog_posts.order(:published_at)
         .reverse_order.page(1)
         .per(ComfyBlog.config.posts_per_page)
         .to_a.reject!(&:nsfw?)
