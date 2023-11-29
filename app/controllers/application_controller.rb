@@ -17,6 +17,15 @@ class ApplicationController < ActionController::Base
       #notice: "I hadn't actually coded this bit yet! Just the blog for now."
   end
 
+  def apocalypse
+  end
+
+  def phwoar
+  end
+
+  def superb
+  end
+
   private
 
   # Much faffing implies this is the least crap location I can find for these
@@ -53,12 +62,11 @@ class ApplicationController < ActionController::Base
 
   def init_nav_items
     @nav_items = [
-      { label: 'All Posts', 
-        path: comfy_blog_posts_path },
+      { label: 'Blog', path: comfy_blog_posts_path },
       *Comfy::Cms::Category.public_names.select(:label).map do |cat|
-        { label: cat.label,
-          path: comfy_blog_posts_path(category: cat.label) }
-      end
+        { label: cat.label, path: comfy_blog_posts_path(category: cat.label) }
+      end#,
+      #{ label: 'Sexyverse', path:  }
     ]
   end
 end
