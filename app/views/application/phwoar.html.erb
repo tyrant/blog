@@ -19,8 +19,24 @@
     <%= image_tag 'amazon.png' %>
   <% end %>
 
-  <%= link_to '' do %>
-    <%= image_tag 'apple_books2.png' %>
+  
+  <%= link_to '#', class: 'relative', 'x-data': "{ isOpen: false }" do %>
+    <%= image_tag 'apple_books2.png', 'x-on:mouseover': 'isOpen=true', 'x-on:mouseleave': 'isOpen=false' %>
+
+    <div x-show.transition="isOpen" class="absolute top-0 left-0">
+      <div class="absolute bottom-0 z-10 p-2 w-64 -mt-1 text-[8.5pt] leading-[0.95rem] text-white transform -translate-x-0 -translate-y-2 bg-black rounded-lg shadow-lg">
+        Apple Books withdrew this! Only this book.<br>No idea why. Soz. Use another link here?
+      </div>
+      <svg class="absolute z-10 w-6 h-6 text-black transform -translate-x-1 -translate-y-4 fill-current stroke-current"
+            width="8"
+            height="8">
+        <rect x="13"
+              y="-10"
+              width="8"
+              height="8"
+              transform="rotate(45)" />
+      </svg>
+    </div>
   <% end %>
 
   <%= link_to 'https://www.barnesandnoble.com/w/1144217726' do %>
