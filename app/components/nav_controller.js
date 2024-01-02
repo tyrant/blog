@@ -2,19 +2,36 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
 
-  static targets = ['open', 'closed', 'mobileMenu'];
+  static targets = ['sexyverseSubmenu', 'allpostsSubmenu', 'mobile'];
 
-  // Toggle block/hidden classes on our nav menu icons, and mobile nav menu.
-  // Their initial state is: 
-  // show the Closed icon; hide the Open icon; hide the mobile menu.
-  toggleMobileMenu() {
-    this.openTarget.classList.toggle('hidden');
-    this.openTarget.classList.toggle('block');
+  closeShite(e) {
+    if (e.target.closest('#sexyverseIcon') == null) {
+      this.sexyverseSubmenuTarget.classList.add('hidden');
+      this.sexyverseSubmenuTarget.classList.remove('block');
+    }
+    if (e.target.closest('#allpostsIcon') == null) {
+      this.allpostsSubmenuTarget.classList.add('hidden');
+      this.allpostsSubmenuTarget.classList.remove('block');
+    }
+  }
 
-    this.closedTarget.classList.toggle('block');
-    this.closedTarget.classList.toggle('hidden');
+  toggleSexyverseSubmenu(e) {
+    e.preventDefault();
+    ['hidden', 'block'].forEach(c => {
+      this.sexyverseSubmenuTarget.classList.toggle(c);
+    });
+  }
 
-    this.mobileMenuTarget.classList.toggle('hidden');
-    this.mobileMenuTarget.classList.toggle('block');
+  toggleAllpostsSubmenu(e) {
+    e.preventDefault();
+    ['hidden', 'block'].forEach(c => {
+      this.allpostsSubmenuTarget.classList.toggle(c);
+    });
+  }
+
+  toggleMobile() {
+    ['hidden', 'block'].forEach(c => {
+      this.mobileTarget.classList.toggle(c);
+    });
   }
 }

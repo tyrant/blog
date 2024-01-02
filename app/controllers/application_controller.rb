@@ -13,17 +13,20 @@ class ApplicationController < ActionController::Base
   ]
 
   def index
-    redirect_to comfy_blog_posts_path#
-      #notice: "I hadn't actually coded this bit yet! Just the blog for now."
+    redirect_to comfy_blog_posts_path
   end
 
   def apocalypse
+    redirect_to phwoar_path
   end
 
   def phwoar
   end
 
   def superb
+  end
+
+  def supremacy
   end
 
   private
@@ -62,11 +65,35 @@ class ApplicationController < ActionController::Base
 
   def init_nav_items
     @nav_items = [
-      { label: 'Blog', path: comfy_blog_posts_path },
-      *Comfy::Cms::Category.public_names.select(:label).map do |cat|
-        { label: cat.label, path: comfy_blog_posts_path(category: cat.label) }
-      end#,
-      #{ label: 'Sexyverse', path:  }
+      { 
+        key: 'sexyverse',
+        label: 'Sexyverse',
+        path: apocalypse_path,
+        children: [{ 
+          key: 'phwoar',
+          label: 'Apocalypse 1/6: the Knights of Raw Phwoar',
+          path: phwoar_path
+        }, { 
+          key: 'superb',
+          label: 'Apocalypse 2/6: the Soviet Sluts Superb', 
+          path: superb_path 
+        }, { 
+          key: 'supremacy',
+          label: 'Apocalypse 3/6: the Cervical Supremacy',
+          path: supremacy_path
+        }]
+      }, { 
+        key: 'all-posts',
+        label: 'Blog',
+        path: comfy_blog_posts_path,
+        children: Comfy::Cms::Category.public_names.select(:label).map do |cat|
+          { 
+            key: cat.label.parameterize,
+            label: cat.label,
+            path: comfy_blog_posts_path(category: cat.label)
+          }
+        end
+      }
     ]
   end
 end

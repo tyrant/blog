@@ -35,7 +35,7 @@
     <% end %>
 
     <%= link_to comfy_blog_posts_path(category: @category&.label),
-       class: css_classes_for_category_label(@category) do %>
+       class: css_classes_for_category do %>
       <%= @category&.label || 'All Posts' %>
     <% end %>
 

@@ -1,68 +1,43 @@
-<nav class="bg-gray-800" data-controller="nav">
-  <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-    <div class="relative flex items-center justify-between h-16">
-      <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
-
-        <!-- Mobile menu button -->
-        <button type="button" 
-                class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" 
-                aria-controls="mobile-menu" 
-                aria-expanded="false"
-                data-action="click->nav#toggleMobileMenu">
-
-          <span class="sr-only">Open main menu</span>
-
-          <!-- Icon when menu is closed.
-               Heroicon name: outline/menu
-               Menu open: "hidden", Menu closed: "block" -->
-          <svg class="block h-6 w-6" 
-               xmlns="http://www.w3.org/2000/svg" 
-               fill="none" 
-               viewBox="0 0 24 24" 
-               stroke="currentColor" 
-               aria-hidden="true"
-               data-nav-target="closed">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-
-          <!-- Icon when menu is open.
-               Heroicon name: outline/x
-               Menu open: "block", Menu closed: "hidden" -->
-          <svg class="hidden h-6 w-6" 
-               xmlns="http://www.w3.org/2000/svg" 
-               fill="none" 
-               viewBox="0 0 24 24" 
-               stroke="currentColor" 
-               aria-hidden="true"
-               data-nav-target="open">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
-
-        <div class="flex-shrink-0 flex items-center">
-          <%= link_to root_path, class: 'bg-gray-800' do %>
-            <%= image_tag 'kissy-transparent.png', class: 'h-9 w-auto', alt: 'Workflow' %>
-          <% end %>
-        </div>
-
-        <div class="hidden sm:block sm:ml-6">
-          <div class="flex space-x-4">
-            <%= render NavItemComponent.with_collection(@nav_items, for_viewport: 'desktop') %>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mobile menu, show/hide based on menu state. -->
-  <div class="sm:hidden hidden" 
-       id="mobile-menu"
-       data-nav-target="mobileMenu">
-    <div class="px-2 pt-2 pb-3 space-y-1">
-      <%= render NavItemComponent.with_collection(@nav_items, for_viewport: 'mobile') %>
+<nav class="bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-700" data-controller="nav" data-action="click@window->nav#closeShite">
+  <div class="max-w-screen-xl flex flex-row-reverse flex-wrap items-center justify-between mx-auto p-4">
+    <%= link_to root_path, class: 'flex items-center space-x-3 rtl:space-x-reverse' do %>
+      <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Your Beloved Bourgeois Filth</span>
+      <%= image_tag 'kissy-transparent.png', class: 'h-9 w-auto' %>
+    <% end %>
+    <button data-action="click->nav#toggleMobile" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+      <span class="sr-only">Open main menu</span>
+      <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
+      </svg>
+    </button>
+    <div class="hidden w-full md:block md:w-auto" data-nav-target="mobile">
+      <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-100 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+        <% @nav_items.each do |nav_item| %>
+          <li>
+            <% if nav_item.key? :children %>
+              <div id="<%= nav_item[:key].gsub('-', '') %>Icon" class="flex items-center justify-between w-full py-2 px-3 text-gray-900 rounded-lg hover:bg-gray-200 md:hover:bg-transparent md:border-0 md:p-0 md:w-auto">
+                <%= link_to nav_item[:label], nav_item[:path], class: 'md:hover:text-blue-700' %>
+                <a href="" class="focus:outline-none focus:ring-2 focus:ring-gray-200 hover:bg-gray-200 p-2 ms-2 rounded-lg cursor-pointer" data-action="click->nav#toggle<%= nav_item[:key].gsub('-', '').capitalize %>Submenu">
+                  <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                  </svg>
+                </a>
+              </div>
+              <div data-nav-target="<%= nav_item[:key].gsub('-', '') %>Submenu" class="z-10 hidden font-normal bg-white divide-y divide-gray-100 w-auto rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 absolute m-1">
+                <ul class="py-2 text-sm text-gray-700 dark:text-gray-400">
+                  <% nav_item[:children].each do |nav_child| %>
+                    <li>
+                      <%= link_to nav_child[:label], nav_child[:path], class: 'block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white' %>
+                    </li> 
+                  <% end %>
+                </ul>
+              </div>
+            <% else %>
+              <%= link_to nav_item[:label], nav_item[:path], class: 'block py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700 md:p-0 md:dark:text-blue-500 dark:bg-blue-600 md:dark:bg-transparent' %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
     </div>
   </div>
 </nav>

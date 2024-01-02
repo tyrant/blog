@@ -4,11 +4,17 @@ Rails.application.routes.draw do
 
 
   get 'the-sex-commandos-thwart-the-third-vaginal-apocalypse',
-    to: 'application#apocalypse'
+    to: 'application#apocalypse',
+    as: 'apocalypse'
   get 'the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-one-the-knights-of-raw-phwoar',
-    to: 'application#phwoar'
+    to: 'application#phwoar',
+    as: 'phwoar'
   get 'the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-two-the-soviet-sluts-superb',
-    to: 'application#superb'
+    to: 'application#superb',
+    as: 'superb'
+  get 'the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-three-the-cervical-supremacy',
+    to: 'application#supremacy',
+    as: 'supremacy'
 
   get 'apocalypse',
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse')
@@ -16,6 +22,8 @@ Rails.application.routes.draw do
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-one-the-knights-of-raw-phwoar')
   get 'apocalypse/2-soviet-sluts-superb',
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-two-the-soviet-sluts-superb')
+  get 'apocalypse/3-cervical-supremacy',
+    to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-three-the-cervical-supremacy')
 
   comfy_route :blog_admin, path: 'admin'
   comfy_route :blog, path: "blog"

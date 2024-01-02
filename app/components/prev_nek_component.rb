@@ -33,13 +33,12 @@ class PrevNekComponent < ViewComponent::Base
     classes.join ' '
   end
 
-  def css_classes_for_category_label(category)
-    classes = %w(text-center text-lg px-4 sm:px-1 py-1 h-8 -my-4 sm:h-auto sm:my-auto w-auto sm:w-20 mx-auto sm:-mx-10 md:w-24 md:-mx-12 -my-0 z-10 rounded font-bold opacity-80 sm:opacity-90 leading-tight hover:outline shadow-lg)
-    classes += if category.present?
-      PostIndexComponent::CAT_CSS[category.label.parameterize]
-    else
-      ['bg-gray-100']
-    end
+  def css_classes_for_category
+    label = @category.present? ? @category.label.parameterize : 'all-posts'
+
+    classes = %w(text-center text-lg px-4 sm:px-1 py-1 h-8 -my-4 sm:h-auto sm:my-auto w-auto sm:w-20 mx-auto sm:-mx-10 md:w-24 md:-mx-12 -my-0 z-10 font-bold opacity-80 sm:opacity-90 leading-tight shadow-lg)
+    classes << PostIndexComponent::CAT_COMMON_CSS
+    classes << PostIndexComponent::CAT_UNIQUE_CSS[label]
     
     classes.join ' '
   end
