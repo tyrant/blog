@@ -67,7 +67,7 @@ class ApplicationController < ActionController::Base
     @nav_items = [
       { 
         key: 'sexyverse',
-        label: 'Sexyverse',
+        label: 'The Sexyverse Novels',
         path: apocalypse_path,
         children: [{ 
           key: 'phwoar',
@@ -84,7 +84,7 @@ class ApplicationController < ActionController::Base
         }]
       }, { 
         key: 'all-posts',
-        label: 'Blog',
+        label: 'Blog Posts',
         path: comfy_blog_posts_path,
         children: Comfy::Cms::Category.public_names.select(:label).map do |cat|
           { 
