@@ -4,6 +4,7 @@ class ApplicationController < ActionController::Base
   before_action :unstringly_type_nsfw_cookies
   before_action :instanceify_nsfw_cookies
   before_action :init_nav_items
+  before_action :init_amazon_tlds, only: [:phwoar, :superb, :supremacy]
 
   STR_TO_BOOL = [true, false].map { |b| [b.to_s, b] }.to_h
   COOKIES = [
@@ -95,5 +96,9 @@ class ApplicationController < ActionController::Base
         end
       }
     ]
+  end
+
+  def init_amazon_tlds
+    @amazon_tlds = %w(.com .nl .co.jp .de .com.au .ca .fr .com.br .es .co.uk .com.mx .it)
   end
 end

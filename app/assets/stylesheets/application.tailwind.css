@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.amazon-mk {
+  @apply flex items-center justify-center;
+
+  img {
+    @apply h-14;
+  }
+  span {
+    @apply text-2xl -ml-2.5 font-['Amazon_Ember'] text-[#0d2636];
+  }
+} 
