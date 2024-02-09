@@ -12,3 +12,9 @@
     @apply text-base sm:text-2xl -ml-1.5 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
   }
 } 
+
+.text-fit-h {
+  @apply inline-block;
+  /* Figures of 7.75 and 9.3 arrived at after vast amounts of trial and error. 7.75vi denotes exact <span> container width at which font-size shrinking begins; 9.3px denotes shrinking rate. */ 
+  font-size: min(calc(7.75vi - 9.3px), 1.5rem);
+}
