@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  get 'blog', to: 'posts#index'
   get 'posts/:id/prev_nek', to: 'posts#prev_nek', as: 'prev_nek'
   root to: 'application#index'
 
