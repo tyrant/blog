@@ -4,7 +4,7 @@ class ApplicationController < ActionController::Base
   before_action :unstringly_type_nsfw_cookies
   before_action :instanceify_nsfw_cookies
   before_action :init_nav_items
-  before_action :init_amazon_tlds, only: [:phwoar, :superb, :supremacy]
+  before_action :init_amazon_tlds, only: [:phwoar, :superb, :supremacy, :praetorian]
 
   STR_TO_BOOL = [true, false].map { |b| [b.to_s, b] }.to_h
   COOKIES = [
@@ -82,6 +82,10 @@ class ApplicationController < ActionController::Base
           key: 'supremacy',
           label: 'Apocalypse 3/6: the Cervical Supremacy',
           path: supremacy_path
+        }, {
+          key: 'praetorian',
+          label: 'Apocalypse 4/6: the Praetorian Prostitutes',
+          path: praetorian_path
         }]
       }, { 
         key: 'all-posts',

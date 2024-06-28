@@ -16,6 +16,9 @@ Rails.application.routes.draw do
   get 'the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-three-the-cervical-supremacy',
     to: 'application#supremacy',
     as: 'supremacy'
+  get 'the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-four-the-praetorian-prostitutes',
+    to: 'application#praetorian',
+    as: 'praetorian'
 
   get 'apocalypse',
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse')
@@ -25,6 +28,8 @@ Rails.application.routes.draw do
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-two-the-soviet-sluts-superb')
   get 'apocalypse/3-cervical-supremacy',
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-three-the-cervical-supremacy')
+  get 'apocalypse/4-praetorian-prostitutes',
+    to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-four-the-praetorian-prostitutes')
 
   comfy_route :blog_admin, path: 'admin'
   comfy_route :blog, path: "blog"
