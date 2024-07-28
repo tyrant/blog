@@ -1,0 +1,14 @@
+<div class="grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-6 md:gap-8 m-4">
+  <% @amazon_tlds.each do |tld| %>
+    <%= link_to "https://www.amazon#{tld}/dp/#{@amazon}/", class: 'amazon-mk' do %>
+      <%= image_tag 'amazon-a.png' %>
+      <span><%= tld %></span>
+    <% end %>
+  <% end %>
+
+  <% @non_amazons.each do |book| %>
+    <%= link_to book[:url],
+                class: 'col-span-3 sm:col-span-4 md:col-span-2 h-12 sm:h-16 bg-contain bg-no-repeat bg-center p-4 hover:scale-[1.05] duration-150',
+                style: "background-image:url(#{asset_path book[:img]})" do; end %>
+  <% end %>
+</div>

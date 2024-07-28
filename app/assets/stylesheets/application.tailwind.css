@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 .amazon-mk {
-  @apply flex items-center justify-center;
+  @apply flex items-center justify-center p-1 hover:scale-[1.05] duration-150 col-span-2 sm:col-span-3 md:col-span-1;
 
   img {
-    @apply h-8 sm:h-12;
+    @apply h-10 sm:h-12;
   }
   span {
     @apply text-base sm:text-2xl -ml-1.5 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];

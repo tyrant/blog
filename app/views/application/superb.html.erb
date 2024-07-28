@@ -31,44 +31,5 @@
 
   <h1 class="font-medium text-3xl sm:text-5xl my-6 text-blue-600 text-center">Grab your copy at</h1>
 
-  <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mb-4">
-    <% @amazon_tlds.each do |tld| %>
-      <%= link_to "https://www.amazon#{tld}/dp/B0CNXPRP6R/", class: 'amazon-mk' do %>
-        <%= image_tag 'amazon-a.png' %>
-        <span><%= tld %></span>
-      <% end %>
-    <% end %>
-
-    <%= link_to 'https://books.apple.com/nz/book/id6473009270', class: 'col-span-2' do %>
-      <%= image_tag 'apple_books2.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.barnesandnoble.com/w/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/1144406893?ean=2940167623583', class: 'col-span-2' do %>
-      <%= image_tag 'barnes_and_noble.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.kobo.com/nz/en/ebook/the-sex-commandos-thwart-the-third-vaginal-apocalypse-1', class: 'col-span-2' do %>
-      <%= image_tag 'rakutenkobo.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.everand.com/book/686942507/The-Sex-Commandos-Thwart-The-Third-Vaginal-Apocalypse-Part-2-6-The-Soviet-Sluts-Superb', class: 'col-span-2' do %>
-      <%= image_tag 'logo-everand-2x.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.24symbols.com/book/english/mikey-clarke/the-sex-commandos-thwart-the-third-vaginal-apocalypse---part-2-6-the-soviet-sluts-superb?id=4606234', class: 'col-span-2' do %>
-      <%= image_tag '24symbols.jpg' %>
-    <% end %>
-
-    <%= link_to 'https://books.rakuten.co.jp/rk/47c27c2f87c537ae8376abd6a31a4893/', class: 'col-span-2' do %>
-      <%= image_tag 'rakuten_jp_logo_header.png' %>
-    <% end %>
-
-    <%= link_to 'https://kk.bookmate.com/books/vzDvMUQ3', class: 'col-span-2' do %>
-      <%= image_tag 'bookmate2.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.booktopia.com.au/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/ebook/6610000492497.html', class: 'col-span-2' do %>
-      <%= image_tag 'booktopia-logo-positive.png' %>
-    <% end %>
-  </div>
+  <%= render 'purchase_links' %>
 </div>

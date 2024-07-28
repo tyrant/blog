@@ -23,44 +23,5 @@
 
   <h1 class="font-medium text-3xl sm:text-5xl my-6 text-blue-600 text-center">Grab your copy at</h1>
 
-  <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mb-4">
-    <% @amazon_tlds.each do |tld| %>
-      <%= link_to "https://www.amazon#{tld}/dp/B0CKBRWKC3/", class: 'amazon-mk' do %>
-        <%= image_tag 'amazon-a.png' %>
-        <span><%= tld %></span>
-      <% end %>
-    <% end %>
-
-    <%= link_to 'https://books.apple.com/nz/book/the-sex-commandos-thwart-the-third-vaginal-apocalypse/id6468569184', class: 'col-span-2' do %>
-      <%= image_tag 'apple_books2.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.barnesandnoble.com/w/1144217726', class: 'col-span-2' do %>
-      <%= image_tag 'barnes_and_noble.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.kobo.com/nz/en/ebook/the-sex-commandos-thwart-the-third-vaginal-apocalypse', class: 'col-span-2' do %>
-      <%= image_tag 'rakutenkobo.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.everand.com/book/675241188', class: 'col-span-2' do %>
-      <%= image_tag 'logo-everand-2x.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.24symbols.com/book/english/mikey-clarke/?id=4564179', class: 'col-span-2' do %>
-      <%= image_tag '24symbols.jpg' %>
-    <% end %>
-
-    <%= link_to 'https://books.rakuten.co.jp/rk/433d4edd900b3c52b18dc25f4a077cae/', class: 'col-span-2' do %>
-      <%= image_tag 'rakuten_jp_logo_header.png' %>
-    <% end %>
-
-    <%= link_to 'https://kk.bookmate.com/books/PPZnTTOA', class: 'col-span-2' do %>
-      <%= image_tag 'bookmate2.png' %>
-    <% end %>
-
-    <%= link_to 'https://www.booktopia.com.au/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/ebook/9798890082770.html', class: 'col-span-2' do %>
-      <%= image_tag 'booktopia-logo-positive.png' %>
-    <% end %>
-  </div>
+  <%= render 'purchase_links' %>
 </div>

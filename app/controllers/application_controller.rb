@@ -22,12 +22,131 @@ class ApplicationController < ActionController::Base
   end
 
   def phwoar
+    @amazon = 'B0CKBRWKC3'
+    @non_amazons = [{
+      url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=oivcEAAAQBAJ',
+      img: 'google-play.png'
+    }, {
+      url: 'https://books.apple.com/nz/book/the-sex-commandos-thwart-the-third-vaginal-apocalypse/id6468569184',
+      img: 'apple-books.png'
+    }, {
+      url: 'https://www.barnesandnoble.com/w/1144217726',
+      img: 'barnes_and_noble.png'
+    }, {
+      url: 'https://www.kobo.com/nz/en/ebook/the-sex-commandos-thwart-the-third-vaginal-apocalypse',
+      img: 'rakutenkobo.png'
+    }, {
+      url: 'https://www.everand.com/book/675241188',
+      img: 'logo-everand-2x.png'
+    }, {
+      url: 'https://www.24symbols.com/book/english/mikey-clarke/?id=4564179',
+      img: '24symbols.png'
+    }, {
+      url: 'https://books.rakuten.co.jp/rk/433d4edd900b3c52b18dc25f4a077cae/',
+      img: 'rakuten_jp_logo_header.png'
+    }, {
+      url: 'https://kk.bookmate.com/books/PPZnTTOA',
+      img: 'bookmate2.png'
+    }, {
+      url: 'https://www.booktopia.com.au/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/ebook/9798890082770.html',
+      img: 'booktopia-logo-positive.png'
+    }]
   end
 
   def superb
+    @amazon = 'B0CNXPRP6R'
+    @non_amazons = [{
+      url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=nGLlEAAAQBAJ',
+      img: 'google-play.png'
+    }, {
+      url: 'https://books.apple.com/nz/book/id6473009270',
+      img: 'apple-books.png'
+    }, {
+      url: 'https://www.barnesandnoble.com/w/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/1144406893?ean=2940167623583',
+      img: 'barnes_and_noble.png'
+    }, {
+      url: 'https://www.kobo.com/nz/en/ebook/the-sex-commandos-thwart-the-third-vaginal-apocalypse-1',
+      img: 'rakutenkobo.png'
+    }, {
+      url: 'https://www.everand.com/book/686942507/The-Sex-Commandos-Thwart-The-Third-Vaginal-Apocalypse-Part-2-6-The-Soviet-Sluts-Superb',
+      img: 'logo-everand-2x.png'
+    }, {
+      url: 'https://www.24symbols.com/book/english/mikey-clarke/the-sex-commandos-thwart-the-third-vaginal-apocalypse---part-2-6-the-soviet-sluts-superb?id=4606234',
+      img: '24symbols.png'
+    }, {
+      url: 'https://books.rakuten.co.jp/rk/47c27c2f87c537ae8376abd6a31a4893/',
+      img: 'rakuten_jp_logo_header.png'
+    }, {
+      url: 'https://kk.bookmate.com/books/vzDvMUQ3',
+      img: 'bookmate2.png'
+    }, {
+      url: 'https://www.booktopia.com.au/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/ebook/6610000492497.html',
+      img: 'booktopia-logo-positive.png'
+    }]
   end
 
   def supremacy
+    @amazon = 'B0CTHHZM15'
+    @non_amazons = [{
+      url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=Zz_xEAAAQBAJ',
+      img: 'google-play.png'
+    }, {
+      url: 'https://books.apple.com/nz/book/the-sex-commandos-thwart-the-third-vaginal-apocalypse/id6476866040',
+      img: 'apple-books.png'
+    }, {
+      url: 'https://www.barnesandnoble.com/w/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/1144744255?ean=2940168047364',
+      img: 'barnes_and_noble.png'
+    }, {
+      url: 'https://www.kobo.com/nz/en/ebook/the-sex-commandos-thwart-the-third-vaginal-apocalypse-2',
+      img: 'rakutenkobo.png'
+    }, {
+      url: 'https://www.everand.com/book/702129151/The-Sex-Commandos-Thwart-The-Third-Vaginal-Apocalypse-Part-3-6-The-Cervical-Supremacy',
+      img: 'logo-everand-2x.png'
+    }, {
+      url: 'https://www.24symbols.com/book/english/mikey-clarke/the-sex-commandos-thwart-the-third-vaginal-apocalypse---part-3-6-the-cervical-supremacy?id=4653266',
+      img: '24symbols.png'
+    }, {
+      url: 'https://books.rakuten.co.jp/rk/0c8271b63edc34169c6efc4ef60fc39a/',
+      img: 'rakuten_jp_logo_header.png'
+    }, {
+      url: 'https://kk.bookmate.com/books/CWGRBSAT',
+      img: 'bookmate2.png'
+    }, {
+      url: 'https://www.booktopia.com.au/the-sex-commandos-thwart-the-third-vaginal-apocalypse-mikey-clarke/ebook/6610000516087.html',
+      img: 'booktopia-logo-positive.png'
+    }]
+  end
+  
+  def praetorian
+    @amazon = 'B0D88MR374'
+    @non_amazons = [{
+      url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=skgQEQAAQBAJ',
+      img: 'google-play.png'
+    }, {
+      url: 'https://books.apple.com/nz/book/the-sex-commandos-thwart-the-third-vaginal/id6504763043',
+      img: 'apple-books.png'
+    }, {
+      url: 'https://www.barnesandnoble.com/w/the-sex-commandos-thwart-the-third-vaginal-apocalypse-part-4-6-mikey-clarke/1145886676?ean=2940168133104',
+      img: 'barnes_and_noble.png'
+    }, {
+      url: 'https://www.kobo.com/nz/en/ebook/the-sex-commandos-thwart-the-third-vaginal-apocalypse-part-4-6',
+      img: 'rakutenkobo.png'
+    }, {
+      url: 'https://www.everand.com/book/744896872/The-Sex-Commandos-Thwart-The-Third-Vaginal-Apocalypse-part-4-6-The-Praetorian-Prostitutes',
+      img: 'logo-everand-2x.png'
+    }, {
+      url: 'https://www.24symbols.com/book/english/mikey-clarke/the-sex-commandos-thwart-the-third-vaginal-apocalypse-part-4-6---the-praetorian-prostitutes?id=4770213',
+      img: '24symbols.png'
+    }, {
+      url: 'https://books.rakuten.co.jp/rk/d1cb253a0ed438dca2f7d440f44a193a/',
+      img: 'rakuten_jp_logo_header.png'
+    }, {
+      url: 'https://kk.bookmate.com/books/efUCrhsm',
+      img: 'bookmate2.png'
+    }, {
+      url: 'https://www.booktopia.com.au/the-sex-commandos-thwart-the-third-vaginal-apocalypse-part-4-6-mikey-clarke/ebook/6610000601967.html',
+      img: 'booktopia-logo-positive.png'
+    }]
   end
 
   private
@@ -103,6 +222,6 @@ class ApplicationController < ActionController::Base
   end
 
   def init_amazon_tlds
-    @amazon_tlds = %w(.com .nl .co.jp .de .com.au .ca .fr .com.br .es .co.uk .com.mx .it)
+    @amazon_tlds = %w(.com .co.uk .co.jp .de .ca .com.au .fr .es .com.br .it .nl .com.mx)
   end
 end
