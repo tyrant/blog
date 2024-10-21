@@ -8,8 +8,8 @@ export default class extends Controller {
     if (!(this.isBroughtOn() || Math.random() > 0.98)) return;
 
     setTimeout(() => {
-      document.getElementById('modal_stim')
-        .dispatchEvent(new CustomEvent('open-irritate-modal'));
+      document.getElementById('modal_irritate')
+        .dispatchEvent(new CustomEvent('open-modal'));
     }, randomInteger({ floor: 1000, ceil: 3000 }));
   }
   

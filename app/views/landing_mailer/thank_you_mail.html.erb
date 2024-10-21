@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  </head>
+  <body>
+    <%= image_tag '1-phwoar-thumb.jpg', height: 192 %>
+    <%= image_tag '2-superb-thumb.jpg', height: 192 %>
+    <%= image_tag '3-supremacy-thumb.jpg', height: 192 %>
+    <%= image_tag '4-praetorian-thumb.jpg', height: 192 %>
+
+    <h1>Welcome aboard, <%= @user.name %></h1>
+
+    <p>Thanks for joining my reader's group!</p>
+
+    <p>As promised, <%= link_to "here's your free book.", download_landing_index_url(token: Tokens::Generator.execute) %></p>
+
+    <%= link_to "Click here to unsubscribe", mailkick_unsubscribe_url(@user, "list") %>
+
+  </body>
+</html>

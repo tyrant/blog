@@ -1,11 +1,11 @@
-<div id="modal_stim"
+<div id="modal_<%= @type %>"
      class="relative 
             z-10"
      aria-labelledby="modal-title"
      aria-modal="true"
      role="dialog"
      x-data="{ isOpen: false }"
-     x-on:open-irritate-modal="isOpen=true"
+     x-on:open-modal="isOpen=true"
      data-controller="modal">
 
   <div class="fixed 
@@ -54,49 +54,10 @@
                   transition-all 
                   sm:my-8 
                   sm:max-w-lg 
-                  sm:w-full">
+                  sm:w-full"      
+                  <% unless @type == 'irritate' %>x-on:click.outside="isOpen=false"<% end %>>
               
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <%= content_for :modal_body %>
-        </div>
-  
-        <div class="px-4
-                    py-5
-                    sm:px-6
-                    sm:flex
-                    sm:flex-row-reverse">
-
-          <% if content_for? :modal_button_cancel %>
-            <button class="mt-3
-                           w-full
-                           inline-flex
-                           justify-center
-                           rounded-md
-                           border
-                           border-gray-300
-                           shadow-sm
-                           px-4
-                           py-2
-                           bg-white
-                           text-base
-                           font-medium
-                           text-gray-700
-                           hover:bg-gray-50
-                           focus:outline-none
-                           focus:ring-2
-                           focus:ring-offset-2
-                           focus:ring-indigo-500
-                           sm:mt-0
-                           sm:ml-3
-                           sm:w-auto
-                           sm:text-sm"
-                      x-on:click="isOpen=false">
-              Cancel
-            </button>
-          <% end %>
-          
-          <%= content_for :modal_button if content_for? :modal_button %>
-        </div>
+        <%= content %>
       </div>
     </div>
   </div>

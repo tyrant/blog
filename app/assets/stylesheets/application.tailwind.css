@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  @font-face {
+    font-family: 'Chuck Five';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/ChuckFive-Regular.otf);
+  }
+}
+
 .amazon-mk {
   @apply flex items-center justify-center p-1 hover:scale-[1.05] duration-150 col-span-2 sm:col-span-3 md:col-span-1 w-auto;
 }
@@ -18,4 +28,8 @@
   @apply inline-block;
   /* Figures of 7.75 and 9.3 arrived at after vast amounts of trial and error. 7.75vi denotes exact <span> container width at which font-size shrinking begins; 9.3px denotes shrinking rate. */ 
   font-size: min(calc(7.75vi - 9.3px), 1.5rem);
+}
+
+.btn-landing {
+  @apply bg-emerald-600 hover:bg-emerald-300 hover:-translate-y-0.5 hover:cursor-pointer text-white duration-150 py-2 px-6 rounded-xl uppercase;
 }

@@ -16,6 +16,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        'chuck-five': ['Chuck Five'],
         sans: ['Inter var', ...defaultTheme.fontFamily.sans],
       },
     },

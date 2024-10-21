@@ -17,7 +17,7 @@
     <%= stylesheet_link_tag 'tailwind', 'data-turbo-track': 'reload' %>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Great+Vibes">
-    <link href="https://fonts.cdnfonts.com/css/amazon-ember" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/amazon-ember">
     
     <% if Rails.env.production? %>
       <!-- Global site tag (gtag.js) - Google Analytics -->
@@ -33,64 +33,68 @@
   </head>
 
   <body>
-    <%= render NavComponent.new(nav_items: @nav_items) %>
+    <%= render NavComponent.new(nav_items: @nav_items) unless @no_nav %>
     <%= render FlashComponent.new(message: flash.notice) %>
 
-    <div class="container mx-auto">
+    <div class="<%= @no_nav ? '' : 'container mx-auto' %>">
       <%= yield %>
       <%= content_for :footer if content_for? :footer %>  
     </div>
 
-    <% content_for :modal_body do %>
-      <h1 class="absolute top-[15%] right-[8%] text-white xs:text-2xl sm:text-3xl uppercase">We interrupt this blog</h1>
-      <h2 class="absolute top-[32%] right-[22%] text-white">to annoy you</h2>
-      <h2 class="absolute top-[48%] right-[43%] text-white">and make things</h2>
-      <h2 class="absolute top-[62%] right-[70%] text-white">generally</h2>
-      <%= image_tag 'bbc-globe.jpg' %>
-      <%= image_tag 'idle-wink-nudge-cropped.jpg' %>
-    <% end %>
+    <%= render ModalComponent.new(type: 'irritate') do %>
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <h1 class="absolute top-[15%] right-[8%] text-white xs:text-2xl sm:text-3xl uppercase">We interrupt this blog</h1>
+        <h2 class="absolute top-[32%] right-[22%] text-white">to annoy you</h2>
+        <h2 class="absolute top-[48%] right-[43%] text-white">and make things</h2>
+        <h2 class="absolute top-[62%] right-[70%] text-white">generally</h2>
+        <%= image_tag 'bbc-globe.jpg' %>
+        <%= image_tag 'idle-wink-nudge-cropped.jpg' %>
+      </div>
 
-    <% content_for :modal_button do %>
-      <button class="w-full
-                     inline-flex
-                     justify-center
-                     rounded-md
-                     border
-                     border-transparent
-                     shadow-sm
-                     px-4
-                     py-2
-                     bg-red-800
-                     text-base
-                     font-medium
-                     text-white
-                     hover:bg-red-700
-                     hover:tracking-widest
-                     hover:before:content-['😱']
-                     hover:after:content-['😱']
-                     hover:focus:before:content-['😱😱']
-                     hover:focus:after:content-['😱😱']
-                     hover:focus:bg-red-500
-                     hover:focus:tracking-[.4em]
-                     hover:focus:font-normal
-                     focus:outline-none
-                     focus:ring-2
-                     focus:ring-offset-2
-                     focus:ring-red-500
-                     focus:tracking-[.5em]
-                     focus:before:content-['😱😱😱']
-                     focus:after:content-['😱😱😱']
-                     focus:uppercase
-                     focus:font-bold
-                     focus:bg-red-400
-                     sm:ml-3
-                     sm:w-auto
-                     sm:text-sm"
-              x-on:click="isOpen=false">
-        irritating
-      </button>
+      <div class="px-4
+                  py-5
+                  sm:px-6
+                  sm:flex
+                  sm:flex-row-reverse">
+        <button class="w-full
+                      inline-flex
+                      justify-center
+                      rounded-md
+                      border
+                      border-transparent
+                      shadow-sm
+                      px-4
+                      py-2
+                      bg-red-800
+                      text-base
+                      font-medium
+                      text-white
+                      hover:bg-red-700
+                      hover:tracking-widest
+                      hover:before:content-['😱']
+                      hover:after:content-['😱']
+                      hover:focus:before:content-['😱😱']
+                      hover:focus:after:content-['😱😱']
+                      hover:focus:bg-red-500
+                      hover:focus:tracking-[.4em]
+                      hover:focus:font-normal
+                      focus:outline-none
+                      focus:ring-2
+                      focus:ring-offset-2
+                      focus:ring-red-500
+                      focus:tracking-[.5em]
+                      focus:before:content-['😱😱😱']
+                      focus:after:content-['😱😱😱']
+                      focus:uppercase
+                      focus:font-bold
+                      focus:bg-red-400
+                      sm:ml-3
+                      sm:w-auto
+                      sm:text-sm"
+                x-on:click="isOpen=false">
+          irritating
+        </button>
+      </div>
     <% end %>
-
-    <%= render ModalComponent.new %>
   </body>
 </html>

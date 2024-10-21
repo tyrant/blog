@@ -13,10 +13,6 @@ class ApplicationController < ActionController::Base
     { code: 'always',    name: 'unblur_nsfw_always',       default: false }
   ]
 
-  def index
-    redirect_to comfy_blog_posts_path
-  end
-
   def apocalypse
     redirect_to phwoar_path
   end
