@@ -23,6 +23,10 @@ gem 'bcrypt_pbkdf'
 # https://stackoverflow.com/questions/70500220/rails-7-ruby-3-1-loaderror-cannot-load-such-file-net-smtp
 gem 'mail', '~> 2.8.0'
 
+gem 'mailkick'
+gem 'jwt'
+gem 'service_interface'
+
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'
@@ -38,6 +42,8 @@ group :development do
   gem "capistrano-bundler"
   gem "capistrano-passenger", '~> 0.2.0'
   #gem 'capistrano-local-precompile', '~> 1.2.0', require: false
+  gem 'letter_opener'
+  gem 'letter_opener_web'
 end
 
 group :test do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2023_07_16_051134) do
+ActiveRecord::Schema.define(version: 2024_10_13_063806) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -179,6 +179,31 @@ ActiveRecord::Schema.define(version: 2023_07_16_051134) do
     t.index ["is_published"], name: "index_comfy_cms_translations_on_is_published"
     t.index ["locale"], name: "index_comfy_cms_translations_on_locale"
     t.index ["page_id"], name: "index_comfy_cms_translations_on_page_id"
+  end
+
+  create_table "emails", force: :cascade do |t|
+    t.string "address", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["address"], name: "index_emails_on_address"
+  end
+
+  create_table "mailkick_subscriptions", force: :cascade do |t|
+    t.string "subscriber_type"
+    t.bigint "subscriber_id"
+    t.string "list"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["subscriber_type", "subscriber_id", "list"], name: "index_mailkick_subscriptions_on_subscriber_and_list", unique: true
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "email"
+    t.string "name"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["email"], name: "index_users_on_email"
+    t.index ["name"], name: "index_users_on_name"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

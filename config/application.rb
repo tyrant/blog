@@ -21,5 +21,9 @@ module Blog
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    host = 'http://localhost:3000'
+    config.action_mailer.asset_host = host
+    config.action_mailer.default_url_options = { host: host }
   end
 end
