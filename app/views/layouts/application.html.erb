@@ -36,7 +36,7 @@
     <%= render NavComponent.new(nav_items: @nav_items) unless @no_nav %>
     <%= render FlashComponent.new(message: flash.notice) %>
 
-    <div class="<%= @no_nav ? '' : 'container mx-auto' %>">
+    <div class="<%= @wide_bg ? '' : 'container mx-auto' %>">
       <%= yield %>
       <%= content_for :footer if content_for? :footer %>  
     </div>

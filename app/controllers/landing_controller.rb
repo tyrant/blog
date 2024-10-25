@@ -2,6 +2,7 @@ class LandingController < ApplicationController
 
   def index
     @no_nav = true
+    @wide_bg = true
   end
 
   def submit
@@ -15,6 +16,7 @@ class LandingController < ApplicationController
   end
 
   def download
+    @wide_bg = true
     notice = if params[:token].blank? 
         "I'd love to send you a free book! By all means click that GET MY FREE BOOK NOW button below. I hear it sends you free books."
       elsif !Tokens::Validator.execute(token: params[:token])
