@@ -23,7 +23,7 @@ class LandingController < ApplicationController
         "Oh come on, it's been ages. There's got to be a statute of limitations of some kind on these email links, you know. I'd still love to send you that book, mind you - should you click that GET MY FREE BOOK NOW button below and enter your email again, you'll get emailed a nice fresh download link. Use that."
       end
 
-    redirect_to landing_index_path, notice: notice
+    redirect_to landing_index_path, notice: notice if notice
   end
 
   private
