@@ -1,39 +1,79 @@
-<nav class="bg-gray-100 border-gray-200 dark:bg-gray-900 dark:border-gray-700" data-controller="nav" data-action="click@window->nav#closeShite">
+<nav class="bg-white border-gray-200" data-controller="nav">
   <div class="max-w-screen-xl flex flex-row-reverse flex-wrap items-center justify-between mx-auto p-2">
-    <%= link_to root_path, class: 'flex items-center space-x-3 rtl:space-x-reverse' do %>
-      <span class="self-center text-fit-h sm:text-2xl font-semibold whitespace-nowrap dark:text-white">Your Beloved Bourgeois Filth</span>
+    
+    <%= link_to root_path, class: 'flex items-center space-x-3 mr-6 rtl:space-x-reverse' do %>
+      <span class="self-center text-fit-h sm:text-2xl font-semibold whitespace-nowrap text-gray-600">Mikey Clarke</span>
       <%= image_tag 'kissy-transparent.png', class: 'h-9 w-auto' %>
     <% end %>
-    <button data-action="click->nav#toggleMobile" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+
+    <button data-action="click->nav#toggleMobile" type="button" class="inline-flex items-center p-2 ml-4 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
       <span class="sr-only">Open main menu</span>
       <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
       </svg>
     </button>
-    <div class="hidden w-full md:block md:w-auto" data-nav-target="mobile">
-      <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+
+    <div class="w-full block md:hidden ml-6 text-sm text-gray-600 font-medium nav" data-nav-target="mobile">
+      <ul>
         <% @nav_items.each do |nav_item| %>
-          <li>
-            <% if nav_item.key? :children %>
-              <div id="<%= nav_item[:key].gsub('-', '') %>Icon" class="flex items-center justify-between w-full py-2 px-3 text-gray-900 rounded-lg hover:bg-gray-200 md:hover:bg-transparent md:border-0 md:p-0 md:w-auto">
-                <%= link_to nav_item[:label], nav_item[:path], class: 'md:hover:text-blue-700' %>
-                <a href="" class="focus:outline-none focus:ring-2 focus:ring-gray-300 hover:bg-gray-300 p-2 ms-2 rounded-lg cursor-pointer" data-action="click->nav#toggle<%= nav_item[:key].gsub('-', '').capitalize %>Submenu">
-                  <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
-                  </svg>
-                </a>
-              </div>
-              <div data-nav-target="<%= nav_item[:key].gsub('-', '') %>Submenu" class="z-10 hidden font-normal bg-white divide-y divide-gray-100 w-auto rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 absolute m-1">
-                <ul class="py-2 text-sm text-gray-700 dark:text-gray-400">
-                  <% nav_item[:children].each do |nav_child| %>
+          <li class="my-4">
+            <div class="uppercase">
+              <%= link_to nav_item.label, nav_item.path %>
+            </div>
+            <% if nav_item.children.present? %>
+              <ul class="ml-4">
+                <% nav_item.children.each do |nav_sprog| %>
+                  <li class="">
+                    <%= link_to nav_sprog.label, nav_sprog.path %>
+                    <% if nav_sprog.children.present? %>
+                      <ul class="ml-4">
+                        <% nav_sprog.children.each do |nav_grandsprog| %>
+                          <li class="italic">
+                            <%= link_to nav_grandsprog.label, nav_grandsprog.path %>
+                          </li>
+                        <% end %>
+                      </ul>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+
+    <div class="hidden md:block w-full md:w-auto ml-6 text-gray-600 nav">
+      <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0">
+
+        <% @nav_items.each do |nav_item| %>
+
+          <li data-nav-target="<%= nav_item.key%>Menu" data-action="mouseover->nav#open<%= nav_item.key.capitalize %>Submenu mouseout->nav#close<%= nav_item.key.capitalize %>Submenu">
+
+            <div class="flex items-center justify-between w-full py-2 px-3 rounded-lg hover:bg-gray-200 md:hover:bg-transparent md:border-0 md:p-0 md:w-auto uppercase">
+              <%= link_to nav_item.label, nav_item.path %>
+            </div>
+
+            <% if nav_item.children.present? %>
+              <div data-nav-target="<%= nav_item.key %>Submenu" class="z-10 hidden font-normal bg-white divide-y divide-gray-100 w-auto rounded-lg shadow absolute">
+                <ul class="py-2 text-sm text-gray-700">
+                  <% nav_item.children.each do |nav_child| %>
                     <li>
-                      <%= link_to nav_child[:label], nav_child[:path], class: 'block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white' %>
+                      <%= link_to nav_child.label, nav_child.path, class: 'block px-4 py-2' %>
+                      <% if nav_child.children.present? %>
+                        <ul>
+                        <% nav_child.children.each do |nav_grandkid| %>
+                          <li>
+                            <%= link_to nav_grandkid.label, nav_grandkid.path, class: 'block pl-8 pr-4 py-1 italic' %>
+                          </li>
+                        <% end %>
+                        </ul>
+                      <% end %>
                     </li> 
                   <% end %>
                 </ul>
               </div>
-            <% else %>
-              <%= link_to nav_item[:label], nav_item[:path], class: 'block py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700 md:p-0 md:dark:text-blue-500 dark:bg-blue-600 md:dark:bg-transparent' %>
+
             <% end %>
           </li>
         <% end %>

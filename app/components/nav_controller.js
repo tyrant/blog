@@ -2,31 +2,33 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
 
-  static targets = ['sexyverseSubmenu', 'allpostsSubmenu', 'mobile'];
+  static targets = ['booksMenu', 'booksSubmenu', 'blogMenu', 'blogSubmenu', 'mobile'];
 
-  closeShite(e) {
-    if (e.target.closest('#sexyverseIcon') == null) {
-      this.sexyverseSubmenuTarget.classList.add('hidden');
-      this.sexyverseSubmenuTarget.classList.remove('block');
-    }
-    if (e.target.closest('#allpostsIcon') == null) {
-      this.allpostsSubmenuTarget.classList.add('hidden');
-      this.allpostsSubmenuTarget.classList.remove('block');
-    }
+  openBooksSubmenu(e) {
+    e.preventDefault();
+    this.booksSubmenuTarget.classList.replace('hidden', 'block');
   }
 
-  toggleSexyverseSubmenu(e) {
+  // This event-handler function is attached on the <li> root node enclosing
+  // both our 'Novels' nav-item text and its open/close submenu ... and fires
+  // upon mouse-outing any of them. If we mouseout from the submenu we'd like
+  // to close it ... unless we're moving the pointer to the nav-text. Then keep
+  // it open. The conditional detects this and early-returns.
+  closeBooksSubmenu(e) {
     e.preventDefault();
-    ['hidden', 'block'].forEach(c => {
-      this.sexyverseSubmenuTarget.classList.toggle(c);
-    });
+    if (e.target.closest(this.booksMenu)) return;
+    this.booksSubmenuTarget.classList.replace('block', 'hidden');
+  }
+ 
+  openBlogSubmenu(e) {
+    e.preventDefault();
+    this.blogSubmenuTarget.classList.replace('hidden', 'block');
   }
 
-  toggleAllpostsSubmenu(e) {
+  closeBlogSubmenu(e) {
     e.preventDefault();
-    ['hidden', 'block'].forEach(c => {
-      this.allpostsSubmenuTarget.classList.toggle(c);
-    });
+    if (e.target.closest(this.blogMenu)) return;
+    this.blogSubmenuTarget.classList.replace('block', 'hidden');
   }
 
   toggleMobile() {
