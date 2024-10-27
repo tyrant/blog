@@ -54,4 +54,14 @@ class PostIndexComponent < ViewComponent::Base
 
     classes.join ' '
   end
+
+  def css_classes_for_datebg
+    classes = %w(absolute h-64 w-full top-0 left-0 z-10 transition)
+
+    if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])
+      classes += %w(blur-sm)
+    end
+
+    classes.join ' '
+  end
 end
