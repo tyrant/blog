@@ -3,7 +3,7 @@ import ConsentIsSexyYoController from './consent_is_sexy_yo_controller';
 
 export default class extends Controller {
 
-  static targets = ['link', 'categories', 'scale'];
+  static targets = ['date', 'link', 'categories', 'scale'];
 
   static values = { 
     nsfw: Boolean, 
@@ -94,11 +94,11 @@ export default class extends Controller {
   }
 
   #scalables() {
-    return [this.scaleTarget];
+    return [this.scaleTarget, this.dateTarget];
   }
 
   #hoverables() { 
-    return [this.linkTarget, this.categoriesTarget];
+    return [this.dateTarget, this.linkTarget, this.categoriesTarget];
   }
 
   #blurrables() { 
