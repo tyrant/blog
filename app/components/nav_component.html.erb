@@ -48,23 +48,25 @@
 
         <% @nav_items.each do |nav_item| %>
 
-          <li data-nav-target="<%= nav_item.key%>Menu" data-action="mouseover->nav#open<%= nav_item.key.capitalize %>Submenu mouseout->nav#close<%= nav_item.key.capitalize %>Submenu">
+          <li class="py-2 px-3 rounded-lg" 
+              data-nav-target="<%= nav_item.key%>Menu" 
+              data-action="mouseover->nav#open<%= nav_item.key.capitalize %>Submenu mouseout->nav#close<%= nav_item.key.capitalize %>Submenu">
 
-            <div class="flex items-center justify-between w-full py-2 px-3 rounded-lg hover:bg-gray-200 md:hover:bg-transparent md:border-0 md:p-0 md:w-auto uppercase">
-              <%= link_to nav_item.label, nav_item.path %>
-            </div>
+            <%= link_to nav_item.label, nav_item.path, class: 'uppercase' %>            
 
             <% if nav_item.children.present? %>
-              <div data-nav-target="<%= nav_item.key %>Submenu" class="z-10 hidden font-normal bg-white divide-y divide-gray-100 w-auto rounded-lg shadow absolute">
-                <ul class="py-2 text-sm text-gray-700">
+              <div data-nav-target="<%= nav_item.key %>Submenu" class="z-10 hidden bg-white rounded-lg shadow absolute">
+                <ul class="text-sm text-gray-700 py-2">
                   <% nav_item.children.each do |nav_child| %>
-                    <li>
-                      <%= link_to nav_child.label, nav_child.path, class: 'block px-4 py-2' %>
+                    <li class="block px-4 py-1">
+
+                      <%= link_to nav_child.label, nav_child.path %>
+                      
                       <% if nav_child.children.present? %>
                         <ul>
                         <% nav_child.children.each do |nav_grandkid| %>
                           <li>
-                            <%= link_to nav_grandkid.label, nav_grandkid.path, class: 'block pl-8 pr-4 py-1 italic' %>
+                            <%= link_to nav_grandkid.label, nav_grandkid.path, class: 'block px-4 pt-1 italic' %>
                           </li>
                         <% end %>
                         </ul>
