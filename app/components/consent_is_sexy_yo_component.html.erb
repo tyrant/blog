@@ -2,7 +2,7 @@
      data-consent-is-sexy-yo-banish-value="<%= banish? %>"
      data-consent-is-sexy-yo-mouseover-value="<%= mouseover? %>"
      data-consent-is-sexy-yo-always-value="<%= always? %>"
-     class="flex flex-col sm:flex-row sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
+     class="flex flex-col sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
 
   <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
     Consent is sexy<em>❤</em>
@@ -10,20 +10,19 @@
 
   <ul class="flex flex-row lg:flex-col mx-auto shadow-md rounded-md">
     <li id="banish-li"
-        class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
+        class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md bg-white hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
     
       <label class="cursor-pointer flex">
 
-        <div class="mr-1.5 my-auto ml-2">
-          <input id="banish"
-                 class="cursor-pointer"
-                 type="checkbox"
-                 role="switch"
-                 <% if banish? %>checked="checked"<% end %>
-                 <% if banish_disabled? %>disabled="disabled"<% end %>
-                 data-consent-is-sexy-yo-target="banish"
-                 data-action="click->consent-is-sexy-yo#handleClickBanishNsfwCompletely">
-        </div>
+        <input id="banish"
+                class="mr-1.5 my-auto ml-2 cursor-pointer"
+                type="checkbox"
+                role="switch"
+                <% if banish? %>checked="checked"<% end %>
+                <% if banish_disabled? %>disabled="disabled"<% end %>
+                data-consent-is-sexy-yo-target="banish"
+                data-action="click->consent-is-sexy-yo#handleClickBanishNsfwCompletely">
+        
         <div class="text-center my-2 mr-2">
           Hide 
           <span class="inline-block">
@@ -56,23 +55,22 @@
 
     <li id="unblur_on_mouseover-li"
         title="<%= mouseover_title %>" 
-        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 hover:bg-gray-50 block text-sm text-gray-700 
+        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 bg-white hover:bg-gray-50 block text-sm text-gray-700 
                cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
 
       <label class="flex
                     cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %> 
                     <% if mouseover_disabled? %>opacity-40<% end %>">
 
-        <div class="mr-1.5 my-auto ml-2">
-          <input id="unblur_on_mouseover"
-                 class="cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
-                 type="checkbox"
-                 role="switch"
-                 <% if mouseover? %>checked<% end %>
-                 <% if mouseover_disabled? %>disabled<% end %>
-                 data-consent-is-sexy-yo-target="mouseover"
-                 data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
-        </div>
+        <input id="unblur_on_mouseover"
+                class="mr-1.5 my-auto ml-2 cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>"
+                type="checkbox"
+                role="switch"
+                <% if mouseover? %>checked<% end %>
+                <% if mouseover_disabled? %>disabled<% end %>
+                data-consent-is-sexy-yo-target="mouseover"
+                data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
+
         <div class="text-center my-2 mr-2">
           Unblur on hover
         </div>
@@ -80,22 +78,22 @@
     </li>
 
     <li id="unblur_always-li"
-        class="border-gray-300 border rounded-r-md lg:rounded-t-none lg:rounded-b-md hover:bg-gray-50 block text-sm text-gray-700
+        class="border-gray-300 border rounded-r-md lg:rounded-t-none lg:rounded-b-md bg-white hover:bg-gray-50 block text-sm text-gray-700
                cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
       
       <label class="flex
                     cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>
                     <% if always_disabled? %>opacity-40<% end %>">
-        <div class="mr-1.5 my-auto ml-2">
-          <input id="unblur_always"
-                 class="cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
-                 type="checkbox"
-                 role="switch"
-                 <% if always? %>checked<% end %>
-                 <% if always_disabled? %>disabled<% end %>
-                 data-consent-is-sexy-yo-target="always"
-                 data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">
-        </div>
+
+        <input id="unblur_always"
+                class="mr-1.5 my-auto ml-2 cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>"
+                type="checkbox"
+                role="switch"
+                <% if always? %>checked<% end %>
+                <% if always_disabled? %>disabled<% end %>
+                data-consent-is-sexy-yo-target="always"
+                data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">
+
         <div class="text-center my-2 mr-2">
           Unblur always
         </div>

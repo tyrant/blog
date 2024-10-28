@@ -6,22 +6,16 @@
   <%= params[:category].presence || 'Blog' %>
 </h1>
 
-<p>
-  Writing insane crap is seriously underrated.
-</p>
-
 <div class="flex flex-col lg:flex-row-reverse sm:gap-1 mb-4">
 
   <div class="lg:basis-64">
     <%= render ConsentIsSexyYoComponent.new nsfw_options: @nsfw_options %>
   </div>
-  
-  <hr>
 
   <div class="lg:basis-full">
     <%= content_for :paginate %>
 
-    <div class="grid gap-7 py-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div class="grid gap-9 py-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
       <%= render PostIndexComponent.with_collection @blog_posts, cms_site: @cms_site, nsfw_options: @nsfw_options %>
     </div>
     
