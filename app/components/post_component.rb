@@ -1,4 +1,4 @@
-class PostIndexComponent < ViewComponent::Base
+class PostComponent < ViewComponent::Base
 
   # Remember, we can't just slap on any old number, Tailwind has preset defaults:
   # https://tailwindcss.com/docs/transition-duration
@@ -12,14 +12,14 @@ class PostIndexComponent < ViewComponent::Base
     'shite-advice' => %w(bg-lime-100 text-lime-800 outline-lime-800)
   }
 
-  POST_INDEX_CAT_CSS = {
+  POST_CAT_CSS = {
     'whimsy' => %w(cat-blurrable),
     'nsfw' => %w(),
     'shite-advice' => %w(cat-blurrable)
   }
 
-  def initialize(post_index:, cms_site:, nsfw_options:)
-    @post = post_index
+  def initialize(post:, cms_site:, nsfw_options:)
+    @post = post
     @cms_site = cms_site
     @nsfw_options = nsfw_options
   end
@@ -27,7 +27,7 @@ class PostIndexComponent < ViewComponent::Base
   private
 
   def css_classes
-    classes = %w(post-index relative transition) << "duration-#{DURATION}"
+    classes = %w(post relative transition) << "duration-#{DURATION}"
     classes += %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
 
     classes.join ' '
@@ -46,7 +46,7 @@ class PostIndexComponent < ViewComponent::Base
   def css_classes_for_category(category)
     label = category.label.parameterize
 
-    classes = %w(inline-block text-xs font-medium mb-2 px-2.5 py-1 float-right clear-both opacity-90 transition) << CAT_COMMON_CSS << CAT_UNIQUE_CSS[label] << POST_INDEX_CAT_CSS[label] << "duration-#{DURATION}"
+    classes = %w(inline-block text-xs font-medium mb-2 px-2.5 py-1 float-right clear-both opacity-90 transition) << CAT_COMMON_CSS << CAT_UNIQUE_CSS[label] << POST_CAT_CSS[label] << "duration-#{DURATION}"
     
     if (@post.nsfw? && label != 'nsfw') && !@nsfw_options['always']
       classes += %w(blur-sm)

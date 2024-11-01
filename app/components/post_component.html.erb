@@ -1,18 +1,18 @@
-<div data-controller="post-index" 
-     data-post-index-nsfw-value="<%= @post.nsfw? %>"
-     data-post-index-duration-value="<%= PostIndexComponent::DURATION %>"
+<div data-controller="post" 
+     data-post-nsfw-value="<%= @post.nsfw? %>"
+     data-post-duration-value="<%= PostComponent::DURATION %>"
      class="<%= css_classes %>">
 
-  <div class="<%= css_classes_for_datebg %>" data-post-index-target="datebg">
+  <div class="<%= css_classes_for_datebg %>" data-post-target="datebg">
     <div class="h-14 rounded-t-xl bg-gradient-to-t from-transparent to-neutral-700">
     </div>
   </div>
 
-  <div class="absolute w-full top-0 left-0 z-10 p-3 text-sm text-white font-bold" data-post-index-target="date">
+  <div class="absolute w-full top-0 left-0 z-10 p-3 text-sm text-white font-bold" data-post-target="date">
     <%= @post.published_at.strftime "%-d %b %Y" %>
   </div>
   
-  <div class="absolute top-3 right-3 z-10" data-post-index-target="categories">
+  <div class="absolute top-3 right-3 z-10" data-post-target="categories">
     <% @post.categories.public_names.nsfw_first.each do |category| %>
       <%= link_to comfy_blog_posts_path(category: category.label) do %>
         <span class="<%= css_classes_for_category(category) %>">
@@ -24,9 +24,9 @@
 
   <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug),
       class: css_classes_for_link,
-      data: { 'post-index-target': 'link' } do %>
+      data: { 'post-target': 'link' } do %>
 
-    <div class="duration-150" data-post-index-target="scale">
+    <div class="duration-150" data-post-target="scale">
       <%= image_tag @post.resized_blob_or_orig_or_placeholder_url,
           class: 'object-cover w-full h-64 shadow-xl rounded-xl scale-100 ease-in duration-150' %>
 

@@ -37,8 +37,8 @@ class PrevNekComponent < ViewComponent::Base
     label = @category.present? ? @category.label.parameterize : 'all-posts'
 
     classes = %w(text-center text-lg px-4 sm:px-1 py-1 h-8 -my-4 sm:h-auto sm:my-auto w-auto sm:w-20 mx-auto sm:-mx-10 md:w-24 md:-mx-12 -my-0 z-10 font-bold opacity-80 sm:opacity-90 leading-tight shadow-lg)
-    classes << PostIndexComponent::CAT_COMMON_CSS
-    classes << PostIndexComponent::CAT_UNIQUE_CSS[label]
+    classes << PostComponent::CAT_COMMON_CSS
+    classes << PostComponent::CAT_UNIQUE_CSS[label]
     
     classes.join ' '
   end
@@ -46,7 +46,7 @@ class PrevNekComponent < ViewComponent::Base
   private
 
   def common_css_classes
-    %w(w-full sm:w-auto flex basis-1/2 bg-white border shadow-md hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 transition) + ["duration-#{PostIndexComponent::DURATION}"]
+    %w(w-full sm:w-auto flex basis-1/2 bg-white border shadow-md hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 transition) + ["duration-#{PostComponent::DURATION}"]
   end
 
   def nsfw_css_classes

@@ -11,7 +11,7 @@ export default class extends Controller {
   };
 
   static getNsfwStims() {
-    return window.getStimsBy({ name: 'post-index' }).filter(s => s.nsfwValue);
+    return window.getStimsBy({ name: 'post' }).filter(s => s.nsfwValue);
   }
 
   connect() {

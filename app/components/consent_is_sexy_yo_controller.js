@@ -1,5 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
-import PostIndexController from './post_index_controller';
+import PostController from './post_controller';
 import PrevNekController from './prev_nek_controller';
 
 export default class extends Controller {
@@ -28,12 +28,12 @@ export default class extends Controller {
     this.updateUnblurOnHoverCss();
     this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
-    this.updateNsfwPostIndexStimsBanish();
+    this.updateNsfwPostStimsBanish();
     this.updateNsfwPrevNekStimsBanish();
   }
 
-  updateNsfwPostIndexStimsBanish() {
-    PostIndexController.getNsfwStims().forEach(stim => {
+  updateNsfwPostStimsBanish() {
+    PostController.getNsfwStims().forEach(stim => {
       this.banishValue ? stim.banishNow() : stim.unbanishNow();
     });
   }
@@ -48,16 +48,16 @@ export default class extends Controller {
 
     this.alwaysTarget.disabled = this.isAlwaysDisabled();
     this.updateUnblurAlwaysCss();
-    this.updatePostIndexStimsPossiblyBlur();
+    this.updatePostStimsPossiblyBlur();
     this.updatePrevNekStimsPossiblyBlurOnMouseover();
 
     window.setCookies({ unblur_nsfw_on_mouseover: this.mouseoverValue });
   }
 
-  updatePostIndexStimsPossiblyBlur() {
+  updatePostStimsPossiblyBlur() {
     if (!this.alwaysValue) return;
 
-    PostIndexController.getNsfwStims().forEach(stim => {
+    PostController.getNsfwStims().forEach(stim => {
       this.mouseoverValue ? stim.unblurBlurrablesNow() : stim.blurBlurrablesNow();
     });
   }
@@ -91,13 +91,13 @@ export default class extends Controller {
   handleClickUnblurNsfwAlways() {
     this.alwaysValue = this.alwaysTarget.checked;
 
-    this.updateNsfwPostIndexStimsUnblurAlways();
+    this.updateNsfwPostStimsUnblurAlways();
     this.updatePrevNekStimsUnblurAlways();
     window.setCookies({ unblur_nsfw_always: this.alwaysValue });
   }
 
-  updateNsfwPostIndexStimsUnblurAlways() {
-    PostIndexController.getNsfwStims().forEach(stim => {
+  updateNsfwPostStimsUnblurAlways() {
+    PostController.getNsfwStims().forEach(stim => {
       this.alwaysValue ? stim.unblurBlurrablesNow() : stim.blurBlurrablesNow();
     });
   }
