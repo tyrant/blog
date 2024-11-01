@@ -8,11 +8,11 @@
 
 <div class="flex flex-col lg:flex-row-reverse sm:gap-1 mb-4">
 
-  <div class="lg:basis-64">
+  <div class="lg:basis-1/4">
     <%= render ConsentIsSexyYoComponent.new nsfw_options: @nsfw_options %>
   </div>
 
-  <div class="lg:basis-full">
+  <div class="lg:basis-3/4">
     <%= content_for :paginate %>
 
     <div class="grid gap-9 py-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
