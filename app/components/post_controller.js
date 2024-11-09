@@ -3,7 +3,7 @@ import ConsentIsSexyYoController from './consent_is_sexy_yo_controller';
 
 export default class extends Controller {
 
-  static targets = ['datebg', 'date', 'link', 'categories', 'scale'];
+  static targets = ['datebg', 'date', 'body', 'categories', 'scale'];
 
   static values = { 
     nsfw: Boolean, 
@@ -94,18 +94,26 @@ export default class extends Controller {
   }
 
   #scalables() {
-    return [this.datebgTarget, this.scaleTarget];
+    return [
+        this.datebgTarget,
+        this.scaleTarget
+      ];
   }
 
   #hoverables() { 
-    return [this.datebgTarget, this.dateTarget, this.linkTarget, this.categoriesTarget];
+    return [
+        this.datebgTarget,
+        this.dateTarget, 
+        this.bodyTarget, 
+        this.categoriesTarget
+      ];
   }
 
   #blurrables() { 
     return [
-      this.datebgTarget,
-      this.linkTarget,
-      ...this.element.getElementsByClassName('cat-blurrable')
-    ];
+        this.datebgTarget,
+        this.bodyTarget,
+        ...this.element.getElementsByClassName('cat-blurrable')
+      ];
   }
 };

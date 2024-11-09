@@ -14,7 +14,6 @@ class ApplicationController < ActionController::Base
   ]
 
   def apocalypse
-    redirect_to phwoar_path
   end
 
   def phwoar
@@ -180,32 +179,37 @@ class ApplicationController < ActionController::Base
   end
 
   def init_nav_items
-    @nav_items = [OpenStruct.new({ 
-      key:   'books',
-      label: 'Books',
-      path:  apocalypse_path,
-      children: [OpenStruct.new({
-        key:   'apocalypse',
-        label: 'The Sex Commandos Thwart The Third Vaginal Apocalypse',
+    @nav_items = [
+      OpenStruct.new({ 
+        key:   'books',
+        label: 'Books',
         path:  apocalypse_path,
-        children: [OpenStruct.new({
-            key:   'phwoar',
-            label: 'Part 1/6: The Knights of Raw Phwoar',
-            path:  phwoar_path
-          }), OpenStruct.new({ 
-            key:   'superb',
-            label: 'Part 2/6: The Soviet Sluts Superb', 
-            path:  superb_path 
-          }), OpenStruct.new({ 
-            key:   'supremacy',
-            label: 'Part 3/6: The Cervical Supremacy',
-            path:  supremacy_path
-          }), OpenStruct.new({
-            key:   'praetorian',
-            label: 'Part 4/6: The Praetorian Prostitutes',
-            path:   praetorian_path
-          })]
-        })]
+        children: [
+          OpenStruct.new({
+            key:   'apocalypse',
+            label: 'The Sex Commandos Thwart The Third Vaginal Apocalypse',
+            path:  apocalypse_path,
+            children: [
+              OpenStruct.new({
+                key:   'phwoar',
+                label: 'Part 1/6: The Knights of Raw Phwoar',
+                path:  phwoar_path
+              }), OpenStruct.new({ 
+                key:   'superb',
+                label: 'Part 2/6: The Soviet Sluts Superb', 
+                path:  superb_path 
+              }), OpenStruct.new({ 
+                key:   'supremacy',
+                label: 'Part 3/6: The Cervical Supremacy',
+                path:  supremacy_path
+              }), OpenStruct.new({
+                key:   'praetorian',
+                label: 'Part 4/6: The Praetorian Prostitutes',
+                path:   praetorian_path
+              })
+            ]
+          })
+        ]
       }), OpenStruct.new({ 
         key:   'blog',
         label: 'Blog',

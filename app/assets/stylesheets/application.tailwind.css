@@ -12,18 +12,8 @@
   }
 }
 
-.amazon-mk {
-  @apply flex items-center justify-center p-1 hover:scale-[1.05] duration-150 col-span-2 sm:col-span-3 md:col-span-1 w-auto;
-}
 
-.amazon-mk img {
-  @apply h-12;
-}
-
-.amazon-mk span {
-  @apply text-base sm:text-2xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
-}
-
+/* Incredibly custom CSS for the nav-title */
 .text-fit-h {
   @apply inline-block;
   /* Figures of 7.75 and 9.3 arrived at after vast amounts of trial and error. 7.75vi denotes exact <span> container width at which font-size shrinking begins; 9.3px denotes shrinking rate. */ 
@@ -36,4 +26,66 @@
 
 .nav a {
   @apply cursor-pointer hover:text-blue-500 transition;
+}
+
+.title {
+  @apply mt-8 mb-12 mx-0 sm:mx-12 text-gray-700 text-center tracking-tight;
+}
+
+.title .main {
+  @apply mb-2 text-lg uppercase text-gray-400 leading-[1.1rem];
+}
+
+.title .part {
+  @apply mt-3 mb-2 text-2xl font-['Great_Vibes'];
+}
+
+.title .sub {
+  @apply text-5xl uppercase tracking-tight font-['Racing_Sans_One'] leading-[2.1rem];
+}
+
+.book {
+  @apply mx-8 lg:mx-12 flex flex-col md:flex-row gap-12;
+}
+
+.book .image {
+  @apply grow-0 basis-full md:basis-1/2 flex flex-col justify-center;
+}
+
+.book .image img {
+  @apply sm:max-h-[75vh] sm:mx-16 md:mx-0 md:max-h-screen shadow-xl;
+}
+
+.book .blurb {
+  @apply basis-full md:basis-1/2;
+}
+
+.book .blurb p { 
+  @apply text-gray-700 leading-tight text-justify mb-4;
+}
+
+/* Custom styling for each book-purchase page's overall purchase icons */
+.purchase h1 {
+  @apply font-medium text-3xl sm:text-5xl mt-6 text-center text-gray-700 uppercase font-['Racing_Sans_One'];
+}
+
+.purchase .purchase-links {
+  @apply grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3 md:gap-5 my-4 mx-4 sm:mx-16;
+}
+
+.purchase .purchase-links .non-amazon {
+  @apply col-span-3 sm:col-span-4 md:col-span-2 h-12 sm:h-16 bg-contain bg-no-repeat bg-center p-4 hover:scale-[1.05] duration-150;
+}
+
+/* Further custom styling for each book-purchase page's Amazon icons */
+.amazon-mk {
+  @apply flex items-center justify-center p-1 hover:scale-[1.05] duration-150 col-span-2 sm:col-span-3 md:col-span-1 w-auto;
+}
+
+.amazon-mk img {
+  @apply h-12;
+}
+
+.amazon-mk span {
+  @apply text-base sm:text-2xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
 }

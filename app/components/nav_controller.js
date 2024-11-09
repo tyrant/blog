@@ -31,6 +31,9 @@ export default class extends Controller {
     this.blogSubmenuTarget.classList.replace('block', 'hidden');
   }
 
+  openAboutSubmenu() {}
+  closeAboutSubmenu() {}
+
   toggleMobile() {
     ['hidden', 'block'].forEach(c => {
       this.mobileTarget.classList.toggle(c);

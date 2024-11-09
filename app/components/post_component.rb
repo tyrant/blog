@@ -5,6 +5,7 @@ class PostComponent < ViewComponent::Base
   DURATION = 150
 
   CAT_COMMON_CSS = %w(hover:outline rounded)
+
   CAT_UNIQUE_CSS = {
     'all-posts' => %w(bg-gray-100),
     'whimsy' => %w(bg-indigo-100 text-indigo-800 outline-indigo-800),
@@ -26,14 +27,26 @@ class PostComponent < ViewComponent::Base
 
   private
 
+  def post_link
+    comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug)
+  end
+
+  def post_image_path
+    @post.resized_blob_or_orig_or_placeholder_url
+  end
+
+  def post_content
+    Nokogiri::HTML(@post.content_cache.gsub('</h2>', "</h2>\r\n").gsub('</p>', "</p>\r\n")).text.truncate(120)
+  end
+
   def css_classes
-    classes = %w(post relative transition) << "duration-#{DURATION}"
+    classes = %w(post transition bg-white p-3 rounded-xl shadow-lg) << "duration-#{DURATION}"
     classes += %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
 
     classes.join ' '
   end
 
-  def css_classes_for_link
+  def css_classes_for_body
     classes = %w(relative link transition) << "duration-#{DURATION}"
     
     if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])

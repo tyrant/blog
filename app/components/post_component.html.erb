@@ -3,48 +3,50 @@
      data-post-duration-value="<%= PostComponent::DURATION %>"
      class="<%= css_classes %>">
 
-  <div class="<%= css_classes_for_datebg %>" data-post-target="datebg">
-    <div class="h-14 rounded-t-xl bg-gradient-to-t from-transparent to-neutral-700">
-    </div>
-  </div>
+  <div class="relative">
+    <%= link_to post_link do %>
+      <div class="<%= css_classes_for_datebg %>" data-post-target="datebg">
+        <div class="h-14 bg-gradient-to-t from-transparent to-neutral-700">
+        </div>
+      </div>
 
-  <div class="absolute w-full top-0 left-0 z-10 p-3 text-sm text-white font-bold" data-post-target="date">
-    <%= @post.published_at.strftime "%-d %b %Y" %>
-  </div>
-  
-  <div class="absolute top-3 right-3 z-10" data-post-target="categories">
-    <% @post.categories.public_names.nsfw_first.each do |category| %>
-      <%= link_to comfy_blog_posts_path(category: category.label) do %>
-        <span class="<%= css_classes_for_category(category) %>">
-          <%= category.label %>
-        </span>
-      <% end %>
+      <div class="absolute w-full top-0 left-0 z-10 p-3 text-xs text-white" data-post-target="date">
+        <%= @post.published_at.strftime "%-d %b %Y" %>
+      </div>
     <% end %>
-  </div>
 
-  <%= link_to comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug),
-      class: css_classes_for_link,
-      data: { 'post-target': 'link' } do %>
+    <div class="absolute top-3 right-3 z-10" data-post-target="categories">
+      <% @post.categories.public_names.nsfw_first.each do |category| %>
+        <%= link_to comfy_blog_posts_path(category: category.label) do %>
+          <span class="<%= css_classes_for_category(category) %>">
+            <%= category.label %>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
 
-    <div class="duration-150" data-post-target="scale">
-      <%= image_tag @post.resized_blob_or_orig_or_placeholder_url,
-          class: 'object-cover w-full h-64 shadow-xl rounded-xl scale-100 ease-in duration-150' %>
+    <%= link_to post_link,
+        class: css_classes_for_body,
+        data: { 'post-target': 'body' } do %>
 
-      <div class="w-full h-20 bg-gradient-to-b from-transparent to-neutral-700 absolute top-44 left-0 rounded-b-xl">
-        <div class="p-3 absolute bottom-0 left-0">
-          <h5 class="text-center text-md font-bold text-gray-100 leading-tight">
+      <div class="duration-150" data-post-target="scale">
+        <%= image_tag post_image_path,
+            class: 'object-cover w-full h-64 shadow-lg scale-100 ease-in duration-150' %>
+
+        <div class="w-full h-20 bg-gradient-to-b from-transparent to-neutral-700 absolute top-44 left-0">
+          <h5 class="p-3 absolute bottom-0 left-0 text-center text-md font-bold text-gray-100 leading-tight">
             <%= @post.title %>
           </h5>
         </div>
       </div>
-    </div>
 
-    <div class="px-2 mt-2 mb-4">
-      <div class="text-sm text-gray-600 leading-relaxed">
-        <% cache "post-#{@post.id}-preview" do %>
-          <%= Nokogiri::HTML(@post.content_cache.gsub('</h2>', "</h2>\r\n").gsub('</p>', "</p>\r\n")).text.truncate(120) %>
-        <% end %>
+      <div class="px-2 mt-2 mb-4">
+        <div class="text-sm text-gray-600 leading-tight">
+          <% cache "post-#{@post.id}-preview" do %>
+            <%= post_content %>
+          <% end %>
+        </div>
       </div>
-    </div>
-  <% end %>
+    <% end %>
+  </div>
 </div>

@@ -6,10 +6,10 @@ export default class extends Controller {
 
   static targets = ['banish', 'mouseover', 'always'];
   static values = {
-    banish: Boolean,
-    mouseover: Boolean,
-    always: Boolean
-  }
+      banish:    Boolean,
+      mouseover: Boolean,
+      always:    Boolean
+    };
 
   static instance() {
     return window.getStimsBy({ name: 'consent-is-sexy-yo' })[0];
@@ -104,7 +104,7 @@ export default class extends Controller {
 
   updatePrevNekStimsUnblurAlways() {
     PrevNekController.getNsfwContainingStims().forEach(stim => {
-      this.alwaysValue ? stim.unblurBlurrablesNow() : stim.blurBlurrablesNow();
+      this.alwaysValue ? stim.unblurNow() : stim.blurNow();
     });
   }
 
