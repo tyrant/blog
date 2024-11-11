@@ -28,19 +28,23 @@
   @apply cursor-pointer hover:text-blue-500 transition;
 }
 
-.title {
-  @apply mt-8 mb-12 mx-0 sm:mx-12 text-gray-700 text-center tracking-tight;
+.title-bg {
+  @apply relative w-full h-56 md:h-72 bg-cover bg-center;
 }
 
-.title .main {
-  @apply mb-2 text-lg uppercase text-gray-400 leading-[1.1rem];
+.title-bg .transparency {
+  @apply flex flex-col justify-center gap-3 bg-cyan-700/70 w-full h-full mb-12 px-12 text-cyan-100 text-center tracking-tight;
 }
 
-.title .part {
-  @apply mt-3 mb-2 text-2xl font-['Great_Vibes'];
+.title-bg .transparency .main {
+  @apply text-lg uppercase leading-[1.1rem];
 }
 
-.title .sub {
+.title-bg .transparency .part {
+  @apply text-2xl font-['Great_Vibes'];
+}
+
+.title-bg .transparency .sub {
   @apply text-5xl uppercase tracking-tight font-['Racing_Sans_One'] leading-[2.1rem];
 }
 

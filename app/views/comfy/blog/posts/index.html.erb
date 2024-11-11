@@ -2,11 +2,19 @@
   <%= render PaginationComponent.new page_no: params[:page] %>
 <% end %>
 
-<h1 class="font-medium text-5xl mt-4 mb-4 text-blue-600">
-  <%= params[:category].presence || 'Blog' %>
-</h1>
+<% content_for :banner do %>
+  <div class="relative w-full h-48 md:h-64 bg-cover bg-center" 
+       style="background-image: url(<%= image_path @blog_posts.sample.resized_blob_or_orig_or_placeholder_url %>)">
+    <div class="flex flex-col justify-center gap-3 bg-cyan-900/40 w-full h-full">
 
-<div class="flex flex-col lg:flex-row-reverse sm:gap-1 mb-4">
+      <h1 class="text-3xl md:text-4xl text-cyan-100 text-center px-12 leading-[1.5rem] md:leading-[2rem] font-['Racing_Sans_One']">
+        <%= params[:category].presence || 'Blog' %>
+      </h1>
+    </div>
+  </div>
+<% end %>
+
+<div class="flex flex-col lg:flex-row-reverse sm:gap-1 my-6">
 
   <div class="lg:basis-1/4">
     <%= render ConsentIsSexyYoComponent.new nsfw_options: @nsfw_options %>
@@ -15,7 +23,7 @@
   <div class="lg:basis-3/4">
     <%= content_for :paginate %>
 
-    <div class="grid gap-6 py-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
+    <div class="grid gap-6 py-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 mx-4">
       <%= render PostComponent.with_collection @blog_posts, cms_site: @cms_site, nsfw_options: @nsfw_options %>
     </div>
     
