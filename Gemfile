@@ -24,6 +24,7 @@ gem 'bcrypt_pbkdf'
 gem 'mail', '~> 2.8.0'
 
 gem 'mailkick'
+gem 'base64', '~> 0.2.0'
 gem 'jwt'
 gem 'service_interface'
 
