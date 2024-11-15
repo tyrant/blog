@@ -150,6 +150,10 @@ class ApplicationController < ActionController::Base
     }]
   end
 
+  def contact
+    redirect_to apocalypse_path
+  end
+
   private
 
   # Much faffing implies this is the least crap location I can find for these
