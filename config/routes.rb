@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get 'blog', to: 'posts#index'
   get 'posts/:id/prev_nek', to: 'posts#prev_nek', as: 'prev_nek'
   get 'privacy', to: 'application#privacy'
+  get 'contact', to: 'application#contact'
   resources :landing, only: [:index] do
     collection do
       post :submit
