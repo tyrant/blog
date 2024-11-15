@@ -14,6 +14,8 @@ class ApplicationController < ActionController::Base
   ]
 
   def apocalypse
+    all_bgs = ['1-phwoar', '2-superb', '3-supremacy', '4-praetorian']
+    @random_cover_image = "#{all_bgs.sample}-web-bg-only.jpg"
   end
 
   def phwoar

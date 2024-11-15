@@ -1,38 +1,45 @@
+<% content_for :banner do %>
+  <div class="title-bg"
+       style="background-image: url(<%= image_path @random_cover_image %>);
+              background-position-y: <%= rand(40..60) %>%;">
+    <div class="transparency">
+      <h1 class="text-center text-3xl sm:text-4xl uppercase font-['Racing_Sans_One'] leading-[1.6rem] sm:leading-[1.8rem]">
+        The Sex Commandos<br> Thwart The Third<br> Vaginal Apocalypse
+      </h1>
 
-<h1 class="mt-16 mb-6 text-center text-3xl sm:text-4xl text-gray-700 uppercase font-['Racing_Sans_One'] leading-[1.6rem] sm:leading-[1.8rem]">
-  The Sex Commandos<br> Thwart The Third<br> Vaginal Apocalypse
-</h1>
+      <h2 class="text-center text-2xl sm:text-3xl font-['Great_Vibes'] leading-[1.5rem] sm:leading-[1.7rem]">
+        A hilarious and romantic romp<br> through irresistibly sexy military history
+      </h2>
+    </div>
+  </div>
+<% end %>
 
-<h2 class="mt-8 mb-16 text-center text-2xl sm:text-3xl text-gray-700 font-['Great_Vibes'] leading-[1.5rem] sm:leading-[1.7rem]">
-A hilarious and romantic romp<br> through irresistibly sexy military history
-</h2>
-
-<div class="mx-10 sm:mx-6 lg:mx-24 xl:mx-6 mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 text-center">
+<div class="mx-10 sm:mx-6 lg:mx-24 xl:mx-6 my-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 text-center">
   <%= render BookComponent.new(
         image_path: asset_path('1-phwoar-web.jpg'),
         link_path: phwoar_path,
         number: '1',
         title: 'The Knights Of Raw Phwoar',
-        blurb: "Shall Earth's free nations drown in French tornadoes of terrifying femme-foam? Not if the Royal Marines Sex Commandos have anything to say about it. Let's assassinate France's Imperatrix Brigitte Bardot!") %>
+        blurb: "Might Earth's free nations succumb to terrifying tornadoes of French femme-foam? Like hell, buster, crow Britain's Royal Marines Sex Commandos. Why not assassinate France's Imperatrix Brigitte Bardot?") %>
 
   <%= render BookComponent.new(
         image_path: asset_path('2-superb-web.jpg'),
         link_path: superb_path,
         number: '2',
         title: 'The Soviet Sluts Superb',
-        blurb: "Turns out out-flirting Imperatrix Bardot is like wanking-off Mt. Blanc when it's wanking you back. Plan B: skedaddle, rally, regroup, out-flirt the rest of France combined, and then it's stealthy-sneaky Round Two.") %>
+        blurb: "Out-flirting Imperatrix Bardot is like trying to wank off Mt. Blanc when it's wanking you back. Plan B: skedaddle, regroup, rally, out-flirt the entirety of France and get loads more practice, then it's stealthy-sneaky Round Two or bust.") %>
 
   <%= render BookComponent.new(
         image_path: asset_path('3-supremacy-web.jpg'),
         link_path: supremacy_path,
         number: '3',
         title: 'The Cervical Supremacy',
-        blurb: "Turns out flirting with every ladybro Rambo in France produces Rivals and Frenemies and Jilted Waifus galore. Smashing fun, but total Kryptonite for Imperial kill-plans. Ever tried assassinating a world leader whilst a billion fanb0is fondle your buttocks? Want to? Read on!") %>
+        blurb: "Turns out flirting with every ladybro Rambo in France produces Rivals and Frenemies and Jilted Waifus galore. Smashing fun, but total Kryptonite for Imperial kill-plans. Ever tried assassinating a world leader whilst a billion captivated fanb0is fondle your buttocks? Want to? Read on!") %>
 
   <%= render BookComponent.new(
         image_path: asset_path('4-praetorian-web.jpg'),
         link_path: praetorian_path,
         number: '4',
         title: 'The Praetorian Prostitutes',
-        blurb: "The game's up! The irresistible force of fanb0i-fondles has splatted the immovable object of infinity Paris cops on the prowl for Sex Commando cock. Crunch time: either explode one's newfound celebrity fame into a giant incandescent rocket-strike against Bardot, or perish forever in Darkest France.") %>
+        blurb: "The game's up! The irresistible force of fanb0i-fondlemainia has headbutted the immovable object of a gazillion furious Paris cops. They're on the warpath for Sex Commando patoot. Crunch time. Either explode one's newfound fame into one final rocket-strike against Bardot and France, or Earth's free nations fizzle forever.") %>
 </div>

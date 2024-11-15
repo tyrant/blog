@@ -42,8 +42,18 @@
 
     <div class="<%= @wide_bg ? '' : 'container mx-auto' %>">
       <%= yield %>
-      <%= content_for :footer if content_for? :footer %>  
     </div>
+
+    <% unless @no_nav %>
+      <div class="footer">
+        <span class="copyright">© Copyright ... idk, 2004? 17.3? We still on the Julian calendar?</span>
+        <span class="links">
+          <%= link_to "The Knights of Raw Phowar FREE omg", landing_index_path %>
+          <%= link_to "Privacy", privacy_path %>
+          <%= link_to 'Contact', contact_path %>
+        </span>
+      </div>
+    <% end %>
 
     <%= render ModalComponent.new(type: 'irritate') do %>
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
