@@ -13,6 +13,10 @@ class ApplicationController < ActionController::Base
     { code: 'always',    name: 'unblur_nsfw_always',       default: false }
   ]
 
+  def index
+    redirect_to apocalypse_path
+  end
+
   def apocalypse
     all_bgs = ['1-phwoar', '2-superb', '3-supremacy', '4-praetorian']
     @random_cover_image = "#{all_bgs.sample}-web-bg-only.jpg"
@@ -223,10 +227,10 @@ class ApplicationController < ActionController::Base
             path:  comfy_blog_posts_path(category: cat.label)
           })
         end
-      }), OpenStruct.new({
-        key:   'about',
-        label: 'About',
-        path:  root_path
+      # }), OpenStruct.new({
+      #   key:   'about',
+      #   label: 'About',
+      #   path:  root_path
       })
     ]
   end
