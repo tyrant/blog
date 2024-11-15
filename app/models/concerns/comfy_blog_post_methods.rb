@@ -64,7 +64,7 @@ module ComfyBlogPostMethods
       return "http://picsum.photos/#{x}/#{y}" if src.nil?
       return src unless active_storage_url?(src)
 
-      resized_blob_variant_from(src, x: x, y: y)
+      Rails.application.routes.url_helpers.url_for(resized_blob_variant_from(src, x: x, y: y))
     end
 
     # We would like the Blob object, if any, that generated this post's banner/

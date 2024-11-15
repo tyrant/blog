@@ -25,5 +25,7 @@ module Blog
     host = 'http://localhost:3000'
     config.action_mailer.asset_host = host
     config.action_mailer.default_url_options = { host: host }
+    
+    Rails.application.routes.default_url_options[:host] = host
   end
 end
