@@ -20,13 +20,15 @@
 <div class="flex flex-col lg:flex-row-reverse justify-evenly my-6">
 
   <div class="lg:basis-1/4">
-    <%= render ConsentIsSexyYoComponent.new nsfw_options: @nsfw_options %>
+    
   </div>
 
   <div class="lg:basis-3/4 post-body prose leading-snug">
     <%= @cms_post.content_cache.html_safe %>
   </div>
 </div>
+
+<%= render ConsentIsSexyYoComponent.new(mode: 'row', nsfw_options: @nsfw_options) %>
 
 <turbo-frame id="prev_nek" src="<%= prev_nek_path(@cms_post) %>" target="_top">
   <%= 

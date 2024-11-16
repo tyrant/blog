@@ -2,15 +2,15 @@
      data-consent-is-sexy-yo-banish-value="<%= banish? %>"
      data-consent-is-sexy-yo-mouseover-value="<%= mouseover? %>"
      data-consent-is-sexy-yo-always-value="<%= always? %>"
-     class="flex flex-col sm:items-center lg:flex-col mb-2 sm:mb-0 place-content-center">
+     class="flex flex-col sm:items-center mb-2 sm:mb-0 place-content-center">
 
   <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
     Consent is sexy<em>❤</em>
   </h3>
 
-  <ul class="flex flex-row lg:flex-col mx-auto shadow-md rounded-md">
+  <ul class="flex flex-row <% if col? %>lg:flex-col<% end %> mx-auto shadow-md rounded-md">
     <li id="banish-li"
-        class="border-gray-300 lg:my-0 border rounded-l-md lg:rounded-l-none lg:rounded-t-md bg-white hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
+        class="border-gray-300 lg:my-0 border rounded-l-md <% if col? %>lg:rounded-l-none lg:rounded-t-md<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
     
       <label class="cursor-pointer flex">
 
@@ -55,7 +55,7 @@
 
     <li id="unblur_on_mouseover-li"
         title="<%= mouseover_title %>" 
-        class="border-gray-300 border-t border-b lg:border-l lg:border-r lg:border-t-0 lg:border-b-0 bg-white hover:bg-gray-50 block text-sm text-gray-700 
+        class="border-gray-300 border-t border-b <% if col? %>lg:border-l lg:border-r lg:border-t-0 lg:border-b-0<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700 
                cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
 
       <label class="flex
@@ -78,7 +78,7 @@
     </li>
 
     <li id="unblur_always-li"
-        class="border-gray-300 border rounded-r-md lg:rounded-t-none lg:rounded-b-md bg-white hover:bg-gray-50 block text-sm text-gray-700
+        class="border-gray-300 border rounded-r-md <% if col? %>lg:rounded-t-none lg:rounded-b-md<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700
                cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
       
       <label class="flex

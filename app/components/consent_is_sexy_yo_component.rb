@@ -1,6 +1,10 @@
 class ConsentIsSexyYoComponent < ViewComponent::Base
 
-  def initialize(nsfw_options:)
+  def initialize(mode: 'col', nsfw_options:)
+    # Mode: either 'row' or 'col'. We show 'col' on the index page, with the 
+    # three checkboxes a stacked column, and 'row' on the show page.
+    @mode = mode
+
     @nsfw_options = nsfw_options
   end
 
@@ -43,4 +47,11 @@ class ConsentIsSexyYoComponent < ViewComponent::Base
     banish? || !mouseover?
   end
 
+  def col?
+    @mode == 'col'
+  end
+
+  def row?
+    @mode == 'row'
+  end
 end
