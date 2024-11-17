@@ -56,11 +56,11 @@
     <% end %>
 
     <%= render ModalComponent.new(type: 'irritate') do %>
-      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-        <h1 class="absolute w-[calc(100%-3rem)] font-['Racing_Sans_One'] top-[15%] text-center text-white xs:text-2xl sm:text-3xl uppercase">We interrupt this blog</h1>
-        <h2 class="absolute top-[32%] w-[calc(100%-3rem)] text-center text-white">to annoy you</h2>
-        <h2 class="absolute top-[48%] w-[calc(100%-3rem)] text-center text-white">and make things</h2>
-        <h2 class="absolute top-[62%] w-[calc(100%-3rem)] text-center text-white">generally</h2>
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 font-['Racing_Sans_One'] text-center text-white">
+        <h1 class="absolute w-[calc(100%-3rem)] top-[15%] text-2xl sm:text-4xl uppercase leading-[1.1rem]">We interrupt this blog</h1>
+        <h2 class="absolute top-[32%] w-[calc(100%-3rem)] text-lg sm:text-xl">to annoy you</h2>
+        <h2 class="absolute top-[48%] w-[calc(100%-3rem)] text-lg sm:text-xl">and make things</h2>
+        <h2 class="absolute top-[62%] w-[calc(100%-3rem)] text-lg sm:text-xl">generally</h2>
         <%= image_tag 'bbc-globe.jpg' %>
         <%= image_tag 'idle-wink-nudge-cropped.jpg' %>
       </div>
