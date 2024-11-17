@@ -65,7 +65,7 @@
 }
 
 .book .blurb p { 
-  @apply text-gray-700 leading-normal text-justify mb-4;
+  @apply text-gray-700 leading-tight text-justify mb-4;
 }
 
 /* Custom styling for each book-purchase page's overall purchase icons */
