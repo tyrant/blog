@@ -34,18 +34,20 @@
     <% end %>
   </head>
 
-  <body class="bg-gray-100 font-sans <% unless @no_nav %>pt-[3.25rem]<% end %>">
-    <%= render NavComponent.new(nav_items: @nav_items) unless @no_nav %>
-    <%= render FlashComponent.new(message: flash.notice) %>
+  <body class="min-h-screen flex flex-col bg-gray-100">
+    <div class="font-sans <% unless @no_nav %>pt-[3.25rem]<% end %>">
+      <%= render NavComponent.new(nav_items: @nav_items) unless @no_nav %>
+      <%= render FlashComponent.new(message: flash.notice) %>
 
-    <%= content_for :banner if content_for? :banner %>
+      <%= content_for :banner if content_for? :banner %>
 
-    <div class="<%= @wide_bg ? '' : 'container mx-auto' %>">
-      <%= yield %>
+      <div class="<%= @wide_bg ? '' : 'container mx-auto' %>">
+        <%= yield %>
+      </div>
     </div>
-
+  
     <% unless @no_nav %>
-      <div class="footer">
+      <div class="footer mt-auto">
         <span class="copyright">© Copyright ... idk, 2004? 17.3? We still on the Julian calendar?</span>
         <span class="links">
           <%= link_to "The Knights of Raw Phowar FREE omg", landing_index_path %>
