@@ -33,7 +33,7 @@
 }
 
 .title-bg .transparency {
-  @apply flex flex-col justify-center gap-3 bg-cyan-700/70 w-full h-full mb-12 px-12 text-cyan-100 text-center tracking-tight;
+  @apply flex flex-col justify-center gap-3 bg-cyan-900/80 w-full h-full mb-12 px-12 text-cyan-100 text-center tracking-tight;
 }
 
 .title-bg .transparency .main {

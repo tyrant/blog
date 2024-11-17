@@ -57,26 +57,23 @@
 
     <%= render ModalComponent.new(type: 'irritate') do %>
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-        <h1 class="absolute top-[15%] right-[8%] text-white xs:text-2xl sm:text-3xl uppercase">We interrupt this blog</h1>
-        <h2 class="absolute top-[32%] right-[22%] text-white">to annoy you</h2>
-        <h2 class="absolute top-[48%] right-[43%] text-white">and make things</h2>
-        <h2 class="absolute top-[62%] right-[70%] text-white">generally</h2>
+        <h1 class="absolute w-[calc(100%-3rem)] font-['Racing_Sans_One'] top-[15%] text-center text-white xs:text-2xl sm:text-3xl uppercase">We interrupt this blog</h1>
+        <h2 class="absolute top-[32%] w-[calc(100%-3rem)] text-center text-white">to annoy you</h2>
+        <h2 class="absolute top-[48%] w-[calc(100%-3rem)] text-center text-white">and make things</h2>
+        <h2 class="absolute top-[62%] w-[calc(100%-3rem)] text-center text-white">generally</h2>
         <%= image_tag 'bbc-globe.jpg' %>
         <%= image_tag 'idle-wink-nudge-cropped.jpg' %>
       </div>
 
-      <div class="px-4
-                  py-5
-                  sm:px-6
-                  sm:flex
-                  sm:flex-row-reverse">
-        <button class="w-full
-                      inline-flex
-                      justify-center
+      <div class="px-4 sm:px-6
+                  pb-4 sm:pb-6
+                  flex 
+                  justify-center">
+        <button class="min-w-fit
                       rounded-md
                       border
                       border-transparent
-                      shadow-sm
+                      shadow-xl
                       px-4
                       py-2
                       bg-red-800
@@ -101,10 +98,7 @@
                       focus:after:content-['😱😱😱']
                       focus:uppercase
                       focus:font-bold
-                      focus:bg-red-400
-                      sm:ml-3
-                      sm:w-auto
-                      sm:text-sm"
+                      focus:bg-red-400"
                 x-on:click="isOpen=false">
           irritating
         </button>
