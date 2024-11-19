@@ -15,6 +15,8 @@
 
     <p>As promised, <%= link_to "here's your free book.", download_landing_index_url(token: Tokens::Generator.execute) %></p>
 
+    <p>By the way, this email service isn't some soulless automaton, blindly squirting off emails upon the proper reader-magnet-y stimulus. Well. Not quite. I mean at face value it totally is, but (1) I'd coded every line of mikeyclarke.co.nz myself so it's still basically me doing it, and (2) I happily reply to, or, time allowing, certainly read, every reply emailed back to this address. Go ooon. Do reply if you'd like to.</p>
+
     <%= link_to "Click here to unsubscribe", mailkick_unsubscribe_url(@user, "list") %>
 
   </body>

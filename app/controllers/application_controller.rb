@@ -151,7 +151,6 @@ class ApplicationController < ActionController::Base
   end
 
   def contact
-    redirect_to apocalypse_path
   end
 
   private
@@ -192,7 +191,7 @@ class ApplicationController < ActionController::Base
     @nav_items = [
       OpenStruct.new({ 
         key:   'books',
-        label: 'Books',
+        label: 'BOOKS',
         path:  apocalypse_path,
         children: [
           OpenStruct.new({
@@ -222,7 +221,7 @@ class ApplicationController < ActionController::Base
         ]
       }), OpenStruct.new({ 
         key:   'blog',
-        label: 'Blog',
+        label: 'BLOG',
         path:  comfy_blog_posts_path,
         children: Comfy::Cms::Category.public_names.select(:label).map do |cat|
           OpenStruct.new({ 
@@ -231,10 +230,11 @@ class ApplicationController < ActionController::Base
             path:  comfy_blog_posts_path(category: cat.label)
           })
         end
-      # }), OpenStruct.new({
-      #   key:   'about',
-      #   label: 'About',
-      #   path:  root_path
+      }), OpenStruct.new({
+        key:   'contact',
+        label: "'Sup d00d",
+        path:  contact_path,
+        options: { lowercase: true }
       })
     ]
   end

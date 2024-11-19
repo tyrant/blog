@@ -16,8 +16,8 @@
 /* Incredibly custom CSS for the nav-title */
 .text-fit-h {
   @apply inline-block;
-  /* Figures of 7.75 and 9.3 arrived at after vast amounts of trial and error. 7.75vi denotes exact <span> container width at which font-size shrinking begins; 9.3px denotes shrinking rate. */ 
-  font-size: min(calc(7.75vi - 9.3px), 1.5rem);
+  /* Figures of 13 and 13 arrived at after vast amounts of trial and error. 13vi denotes exact <span> container width at which font-size shrinking begins; 13px denotes shrinking rate. */ 
+  font-size: min(calc(13vi - 13px), 1.5rem);
 }
 
 .btn-landing {

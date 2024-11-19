@@ -1,0 +1,12 @@
+<% content_for :banner do %>
+  <div class="title-bg"
+       style="background-image: url(<%= image_path 'praetorian-1a.jpg' %>); background-position-y: 32%;">
+    <div class="transparency">
+      <h1 class="text-center text-3xl sm:text-4xl uppercase font-['Racing_Sans_One'] leading-[1.4rem] sm:leading-[1.7rem] mb-2 sm:mb-3">
+        Contact
+      </h1>
+    </div>
+  </div>
+<% end %>
+
+<p class="my-12 sm:mx-12 text-center">I'd love to hear from you. If you'd like to reach out and say hi, or perhaps "good god man what actually goes on in that head of yours", or hell, why not both, then by all means <strong>email me at <%= link_to 'omg@sexyverse.email', 'mailto:omg@sexyverse.email', class: 'underline hover:text-blue-500' %>.</strong></p>
