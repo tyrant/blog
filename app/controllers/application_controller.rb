@@ -18,11 +18,13 @@ class ApplicationController < ActionController::Base
   end
 
   def apocalypse
+    @only_paid_books = true
     all_bgs = ['1-phwoar', '2-superb', '3-supremacy', '4-praetorian']
     @random_cover_image = "#{all_bgs.sample}-web-bg-only.jpg"
   end
 
   def phwoar
+    @show_other_books = true
     @amazon = 'B0CKBRWKC3'
     @non_amazons = [{
       url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=oivcEAAAQBAJ',
@@ -55,6 +57,7 @@ class ApplicationController < ActionController::Base
   end
 
   def superb
+    @show_other_books = true
     @amazon = 'B0CNXPRP6R'
     @non_amazons = [{
       url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=nGLlEAAAQBAJ',
@@ -87,6 +90,7 @@ class ApplicationController < ActionController::Base
   end
 
   def supremacy
+    @show_other_books = true
     @amazon = 'B0CTHHZM15'
     @non_amazons = [{
       url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=Zz_xEAAAQBAJ',
@@ -119,6 +123,7 @@ class ApplicationController < ActionController::Base
   end
   
   def praetorian
+    @show_other_books = true
     @amazon = 'B0D88MR374'
     @non_amazons = [{
       url: 'https://play.google.com/store/books/details/Mikey_Clarke_The_Sex_Commandos_Thwart_The_Third_Va?id=skgQEQAAQBAJ',
