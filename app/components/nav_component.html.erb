@@ -2,9 +2,10 @@
 
   <div class="flex justify-center w-full h-10 bg-cyan-900 text-cyan-300 duration-200"
        data-nav-target="landingDiv">
-    <%= link_to 'Flirts GALORE: read The Knights of Raw Phwoar FREE omg',
-                landing_index_path,
-                class: "my-auto text-sm font-bold" %>
+    <%= link_to landing_index_path,
+                class: "my-auto text-sm font-bold" do %>
+      Flirts GALORE: read <em>The Knights of Raw Phwoar</em> FREE omg
+    <% end %>
     <svg xmlns="http://www.w3.org/2000/svg" 
          fill="none" 
          viewBox="0 0 24 24" 
