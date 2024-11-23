@@ -45,7 +45,7 @@
 }
 
 .title-bg .transparency .sub {
-  @apply text-5xl uppercase tracking-tight font-['Racing_Sans_One'] leading-[2.1rem];
+  @apply text-5xl tracking-tight font-['Racing_Sans_One'] leading-[2.1rem];
 }
 
 .book {

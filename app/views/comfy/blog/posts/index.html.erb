@@ -3,11 +3,10 @@
 <% end %>
 
 <% content_for :banner do %>
-  <div class="relative w-full h-48 md:h-64 bg-cover bg-center" 
+  <div class="title-bg" 
        style="background-image: url(<%= image_path @blog_posts.sample.resized_blob_or_orig_or_placeholder_url %>)">
-    <div class="flex flex-col justify-center gap-3 bg-cyan-900/40 w-full h-full">
-
-      <h1 class="text-3xl md:text-4xl text-cyan-100 text-center px-12 leading-[1.5rem] md:leading-[2rem] font-['Racing_Sans_One']">
+    <div class="transparency">
+      <h1 class="sub">
         <%= params[:category].presence || 'Blog' %>
       </h1>
     </div>
@@ -15,7 +14,6 @@
 <% end %>
 
 <div class="flex flex-col lg:flex-row-reverse sm:gap-1 my-6">
-
   <div class="lg:basis-1/4">
     <%= render ConsentIsSexyYoComponent.new nsfw_options: @nsfw_options %>
   </div>

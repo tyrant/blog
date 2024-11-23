@@ -8,11 +8,11 @@
 <% end %>
 
 <% content_for :banner do %>
-  <div class="relative w-full h-56 md:h-72 bg-cover bg-center" 
+  <div class="title-bg" 
        style="background-image: url(<%= image_path @cms_post.resized_blob_or_orig_or_placeholder_url %>)">
-    <div class="flex flex-col justify-center gap-3 bg-cyan-900/80 w-full h-full">
+    <div class="transparency">
 
-      <h1 class="text-2xl md:text-4xl text-cyan-100 text-center px-12 leading-[1.5rem] md:leading-[2rem] font-['Racing_Sans_One']">
+      <h1 class="sub">
         <%= @cms_post.title %>
       </h1>
       <p class="text-sm text-cyan-100 text-center font-bold">
