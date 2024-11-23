@@ -52,7 +52,7 @@ class PrevNekComponent < ViewComponent::Base
   def css_classes_for_category
     label = @category.present? ? @category.label.parameterize : 'all-posts'
 
-    classes = %w(text-center text-2xl px-4 sm:px-1 py-2 h-9 -my-4 sm:h-auto sm:my-auto w-auto sm:w-26 mx-auto sm:-mx-13 md:w-24 md:-mx-12 -my-0 z-10 leading-[1.3rem] shadow-lg font-['Racing_Sans_One'])
+    classes = %w(text-center text-2xl px-4 sm:px-1 py-2 h-9 -my-4 sm:h-auto sm:my-auto w-auto mx-auto sm:w-[6.5rem] sm:-mx-[3.25rem] -my-0 z-10 leading-[1.3rem] shadow-lg font-['Racing_Sans_One'])
     classes << PostComponent::CAT_COMMON_CSS
     classes << PostComponent::CAT_UNIQUE_CSS[label]
     
