@@ -35,7 +35,7 @@
   </head>
 
   <body class="min-h-screen flex flex-col bg-gray-100">
-    <div class="font-sans <% unless @no_nav %>pt-[3.25rem]<% end %>">
+    <div class="font-sans <% unless @no_nav %>pt-[5.75rem]<% end %>">
       <%= render NavComponent.new(nav_items: @nav_items) unless @no_nav %>
       <%= render FlashComponent.new(message: flash.notice) %>
 

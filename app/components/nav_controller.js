@@ -55,7 +55,7 @@ export default class extends Controller {
     let firstEvent = true;
     document.addEventListener('scroll', e => {
       let landingDivHeight = this.landingDivTarget.offsetHeight
-      if (window.scrollY == 0) {
+      if (window.scrollY < landingDivHeight) {
         this.landingDivTarget.style.marginTop = 0;
       } else {
         if (!firstEvent)
