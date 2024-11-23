@@ -2,7 +2,12 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
 
-  static targets = ['booksMenu', 'booksSubmenu', 'blogMenu', 'blogSubmenu', 'mobile'];
+  static targets = ['booksMenu', 'booksSubmenu', 'blogMenu', 'blogSubmenu', 'mobile', 'landingDiv', 'arrow'];
+
+  initialize() {
+    this.landingDivShowHide();
+    this.landingLinkArrowMove();
+  }
 
   openBooksSubmenu(e) {
     e.preventDefault();
@@ -37,6 +42,34 @@ export default class extends Controller {
   toggleMobile() {
     ['hidden', 'block'].forEach(c => {
       this.mobileTarget.classList.toggle(c);
+    });
+  }
+
+  // Shows/hides the landing-page link.
+  // Odd bug, or unexpected behaviour: if you Cmd-R the page when scrolled
+  // down, scroll events don't start firing until actual scrolling happens ...
+  // but if you click the Refresh button, a single scroll event happens on page
+  // load, meaning that the landing-page link renders and immediately
+  // disappears. Odd. This `firstEvent` flag-hack sidesteps it.
+  landingDivShowHide() {
+    let firstEvent = true;
+    document.addEventListener('scroll', e => {
+      if (window.scrollY == 0) {
+        this.landingDivTarget.classList.remove('-mt-10');
+      } else {
+        if (!firstEvent)
+          this.landingDivTarget.classList.add('-mt-10');
+        firstEvent = false;
+      }
+    });
+  }
+
+  landingLinkArrowMove() {
+    this.landingDivTarget.addEventListener('mouseover', () => {
+      this.arrowTarget.classList.add('translate-x-2');
+    });
+    this.landingDivTarget.addEventListener('mouseout', () => {
+      this.arrowTarget.classList.remove('translate-x-2');
     });
   }
 }
