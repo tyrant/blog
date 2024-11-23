@@ -36,7 +36,7 @@
       </div>
       <div class="w-2/3 text-center flex flex-col justify-center gap-2">
         <%= turbo_frame_tag 'landing_form' do %>
-          <p class="text-sm mb-2">Grab your free copy of The Knights Of Raw Phwoar now!</p>
+          <p class="text-sm mb-2">Grab your free copy of <em>The Knights Of Raw Phwoar</em> now!</p>
           <%= form_with model: User.new, url: submit_landing_index_path do |f| %>
             <%= f.text_field :email, type: 'email', required: true, placeholder: 'Your email here ...', class: 'w-full text-center rounded-xl mb-2' %>
             <%= f.text_field :name, required: true, placeholder: 'Your name here ...', class: 'w-full text-center rounded-xl mb-2' %>
