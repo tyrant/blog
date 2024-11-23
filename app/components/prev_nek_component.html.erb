@@ -6,17 +6,20 @@
      >
 
   <div class="flex flex-col sm:flex-row items-center gap-0">
-    <% if prev.present? %>
-      <%= link_to comfy_blog_post_path(@site.path, prev.year, prev.month, prev.slug), 
-          class: prev_css_classes,
-          data: { 'prev-nek-target': 'prev' } do %>
+    <%= link_to prev_path, 
+        class: prev_css_classes,
+        data: { 'prev-nek-target': 'prev' } do %>
 
-        <div class="grow flex flex-col p-2">
-          <div class="grow">
-            <h5 class="tracking-tight leading-tight text-gray-900 dark:text-white max-h-6 sm:max-h-10 mb-0 overflow-hidden text-ellipsis font-bold">
-              <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
-            </h5>
-          </div>
+      <div class="grow flex flex-col justify-between p-2">
+        <h5 class="tracking-tight leading-[1.1rem] text-gray-600 dark:text-white max-h-6 sm:max-h-10 overflow-hidden text-ellipsis text-lg font-['Racing_Sans_One'] <%= prev.present? ? '' : 'my-auto' %>">
+          <% if prev.present? %>
+            <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
+          <% else %>
+            No earlier posts! Oodles of others though.
+          <% end %>
+        </h5>
+
+        <% if prev.present? %>
           <div>
             <span class="float-left">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
@@ -28,32 +31,47 @@
               <%= prev.published_at.strftime "%-d %b %Y" %>
             </span>
           </div>
-        </div>
+        <% end %>
+      </div>
 
-        <%= image_tag prev.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
-            class: 'flex-none object-cover w-[4.5rem] sm:w-24 md:w-32 h-[4.5rem] sm:h-24 rounded-tr-lg sm:rounded-tr-none' %>
-      <% end %>
+      <div class="flex-none object-cover w-[4.5rem] sm:w-24 md:w-32 h-[4.5rem] sm:h-24 rounded-tr-lg sm:rounded-tr-none">
+        <% if prev.present? %>
+          <%= image_tag prev.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
+              class: 'w-full h-full rounded-tr-lg sm:rounded-tr-none' %>
+        <% else %>
+          <%= image_tag 'kissy-transparent.png', class: 'h-full mx-auto p-3' %>
+        <% end %>
+      </div>
     <% end %>
 
     <%= link_to comfy_blog_posts_path(category: @category&.label),
-       class: css_classes_for_category do %>
+                class: css_classes_for_category do %>
       <%= @category&.label || 'All Posts' %>
     <% end %>
 
-    <% if nek.present? %>
-      <%= link_to comfy_blog_post_path(@site.path, nek.year, nek.month, nek.slug),
-          class: nek_css_classes,
-          data: { 'prev-nek-target': 'nek' } do %>
+    <%= link_to nek_path,
+        class: nek_css_classes,
+        data: { 'prev-nek-target': 'nek' } do %>
 
+      <div class="flex-none object-cover w-[4.5rem] sm:w-24 md:w-32 h-[4.5rem] sm:h-24 rounded-tr-lg sm:rounded-tr-none">
+      <% if nek.present? %>
         <%= image_tag nek.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
-            class: 'flex-none object-cover w-[4.5rem] sm:w-24 md:w-32 h-[4.5rem] sm:h-24 rounded-bl-lg sm:rounded-bl-none' %>
+            class: 'w-full h-full rounded-bl-lg sm:rounded-bl-none' %>
+      <% else %>
+        <%= image_tag 'kissy-transparent.png', class: 'h-full mx-auto p-3' %>
+      <% end %>
+      </div>
 
-        <div class="grow flex flex-col p-2">
-          <div class="grow">
-            <h5 class="tracking-tight leading-tight text-gray-900 dark:text-white max-h-6 sm:max-h-10 mb-0 font-bold overflow-hidden text-ellipsis">
-              <%= nek.title %>
-            </h5>
-          </div>
+      <div class="grow flex flex-col justify-between p-2">
+        <h5 class="tracking-tight leading-[1.1rem] text-gray-600 dark:text-white max-h-6 sm:max-h-10 font-bold overflow-hidden text-ellipsis text-lg font-['Racing_Sans_One'] <%= nek.present? ? '' : 'my-auto' %>">
+          <% if nek.present? %>
+            <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
+          <% else %>
+            No later posts! Oodles of others though.
+          <% end %>
+        </h5>
+        
+        <% if nek.present? %>
           <div>
             <span class="text-slate-500 text-sm">
               <%= nek.published_at.strftime "%-d %b %Y" %>
@@ -66,8 +84,8 @@
               </svg>
             </span>
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     <% end %>
 
   </div>
