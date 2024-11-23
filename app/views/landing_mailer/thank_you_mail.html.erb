@@ -1,23 +1,20 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
-  </head>
-  <body>
-    <%= image_tag '1-phwoar-thumb.jpg', height: 192 %>
-    <%= image_tag '2-superb-thumb.jpg', height: 192 %>
-    <%= image_tag '3-supremacy-thumb.jpg', height: 192 %>
-    <%= image_tag '4-praetorian-thumb.jpg', height: 192 %>
+<div style="width: 653px; margin: auto;">
+  <div>
+    <%= image_tag image_url('1-phwoar-thumb.jpg'), style: 'width: 160px;' %>
+    <%= image_tag image_url('2-superb-thumb.jpg'), style: 'width: 160px;' %>
+    <%= image_tag image_url('3-supremacy-thumb.jpg'), style: 'width: 160px;' %>
+    <%= image_tag image_url('4-praetorian-thumb.jpg'), style: 'width: 160px;' %>
+  </div>
 
-    <h1>Welcome aboard, <%= @user.name %></h1>
+  <h1 style="font-family: Racing Sans One;">Welcome aboard, <%= @user.name %></h1>
 
-    <p>Thanks for joining my reader's group!</p>
+  <p style="font-family: Arial; color: #444;">Thanks for joining my reader's group!</p>
 
-    <p>As promised, <%= link_to "here's your free book.", download_landing_index_url(token: Tokens::Generator.execute) %></p>
+  <p style="font-family: Arial; color: #444;">As promised, <%= link_to "here's your free book.", download_landing_index_url(token: Tokens::Generator.execute) %></p>
 
-    <p>By the way, this email service isn't some soulless automaton, blindly squirting off emails upon the proper reader-magnet-y stimulus. Well. Not quite. I mean at face value it totally is, but (1) I'd coded every line of mikeyclarke.co.nz myself so it's still basically me doing it, and (2) I happily reply to, or, time allowing, certainly read, every reply emailed back to this address. Go ooon. Do reply if you'd like to.</p>
+  <p style="font-family: Arial; color: #444;">By the way, this email service isn't some soulless automaton, blindly squirting off emails upon your reader-magnet-y stimulus. Well. Not quite. I mean at face value it totally is, but (1) I'd coded every line of mikeyclarke.co.nz myself so it's still basically me doing it, and (2) I happily reply to, or, time allowing, certainly read, every reply emailed back to this address. Go ooon. Do reply if you'd like to.</p>
 
-    <%= link_to "Click here to unsubscribe", mailkick_unsubscribe_url(@user, "list") %>
-
-  </body>
-</html>
+  <p style="font-family: Arial; color: #444;">
+    <%= link_to "click here to unsubscribe", mailkick_unsubscribe_url(@user, "list") %>.
+  </p>
+</div>
