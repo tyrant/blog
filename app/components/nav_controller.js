@@ -54,11 +54,12 @@ export default class extends Controller {
   landingDivShowHide() {
     let firstEvent = true;
     document.addEventListener('scroll', e => {
+      let landingDivHeight = this.landingDivTarget.offsetHeight
       if (window.scrollY == 0) {
-        this.landingDivTarget.classList.remove('-mt-10');
+        this.landingDivTarget.style.marginTop = 0;
       } else {
         if (!firstEvent)
-          this.landingDivTarget.classList.add('-mt-10');
+          this.landingDivTarget.style.marginTop = `-${landingDivHeight}px`;
         firstEvent = false;
       }
     });
