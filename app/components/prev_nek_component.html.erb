@@ -10,7 +10,7 @@
         class: prev_css_classes,
         data: { 'prev-nek-target': 'prev' } do %>
 
-      <div class="flex flex-col justify-between p-2">
+      <div class="grow flex flex-col justify-between p-2">
         <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 dark:text-white sm:max-h-9 overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= prev.present? ? 'max-h-6 ' : 'max-h-9 my-auto' %>">
           <% if prev.present? %>
             <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
@@ -54,12 +54,12 @@
         data: { 'prev-nek-target': 'nek' } do %>
 
       <div class="flex-none object-cover w-[4.5rem] sm:w-24 md:w-32 h-[4.5rem] sm:h-24 rounded-tr-lg sm:rounded-tr-none">
-      <% if nek.present? %>
-        <%= image_tag nek.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
-            class: 'w-full h-full rounded-bl-lg sm:rounded-bl-none' %>
-      <% else %>
-        <%= image_tag 'kissy-transparent.png', class: 'h-full mx-auto p-3' %>
-      <% end %>
+        <% if nek.present? %>
+          <%= image_tag nek.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72),
+              class: 'w-full h-full rounded-bl-lg sm:rounded-bl-none' %>
+        <% else %>
+          <%= image_tag 'kissy-transparent.png', class: 'h-full mx-auto p-3' %>
+        <% end %>
       </div>
 
       <div class="grow flex flex-col justify-between p-2">
