@@ -1,4 +1,7 @@
-<% @show_other_books = true %>
+<% 
+  @show_other_books = true 
+  @only_paid_books = true
+%>
 
 <% content_for :title do %>
   The Sexyverse PRESENTS: <%= @cms_post.title %>
