@@ -14,32 +14,6 @@
   </div>
 <% end %>
 
-<div class="mx-10 sm:mx-6 lg:mx-24 xl:mx-6 my-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 text-center">
-  <%= render BookComponent.new(
-        image_path: asset_path('1-phwoar-web.jpg'),
-        link_path: phwoar_path,
-        number: '1',
-        title: 'The Knights Of Raw Phwoar',
-        blurb: "Might Earth's free nations drown under terrifying tornadoes of French femme-foam? Like hell, shout Britain's Royal Marines Sex Commandos. Let's assassinate France's Imperatrix Brigitte Bardot! Come on. What's the worst that could happen?") %>
-
-  <%= render BookComponent.new(
-        image_path: asset_path('2-superb-web.jpg'),
-        link_path: superb_path,
-        number: '2',
-        title: 'The Soviet Sluts Superb',
-        blurb: "Turns out out-flirting Imperatrix Bardot is like trying to wank off Mt. Blanc when it's wanking you back. Plan B: skedaddle, regroup, out-flirt the entirety of France and get loads more practice, then it's stealthy-sneaky Round Two or bust.") %>
-
-  <%= render BookComponent.new(
-        image_path: asset_path('3-supremacy-web.jpg'),
-        link_path: supremacy_path,
-        number: '3',
-        title: 'The Cervical Supremacy',
-        blurb: "Turns out flirting with every ladybro Rambo in France produces Rivals and Frenemies and Jilted Waifus galore. Smashing fun, but utter Kryptonite for Imperial kill-plans. Like, ever tried knocking off a world leader whilst a billion fanb0is fondle your buttocks? Desire to? Read on!") %>
-
-  <%= render BookComponent.new(
-        image_path: asset_path('4-praetorian-web.jpg'),
-        link_path: praetorian_path,
-        number: '4',
-        title: 'The Praetorian Prostitutes',
-        blurb: "The game's up! The irresistible force of fanb0i-fondlemania has headbutted the immovable object of a gazillion furious Paris cops. They too thirst for Sex Commando patoot. Crunch time. Either launch one final rocket-strike against Bardot and France, or Earth's free nations forever perish.") %>
+<div class="mx-10 sm:mx-6 lg:mx-24 xl:mx-6 my-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+  <%= render 'all_books', only_paid: false %>
 </div>

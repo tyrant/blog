@@ -1,6 +1,8 @@
 class PostsController < Comfy::Blog::PostsController
 
   def index
+    @show_other_books = true
+    
     scope =
       if params[:year]
         scope = @cms_site.blog_posts.published.for_year(params[:year])

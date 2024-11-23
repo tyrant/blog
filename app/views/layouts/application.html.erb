@@ -44,6 +44,17 @@
       <div class="<%= @wide_bg ? '' : 'container mx-auto' %>">
         <%= yield %>
       </div>
+
+      <% if @show_other_books %>
+        <div class="bg-cyan-900 mt-6 py-6">
+          <h1 class="w-full text-center text-2xl text-cyan-300 font-['Racing_Sans_One']">
+            Other Books You May Like
+          </h1>
+          <div class="container  w-auto lg:w-[55rem] mx-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-3 px-3 pt-6 ">
+            <%= render 'application/all_books', only_paid: true %>
+          </div>
+        </div>
+      <% end %>
     </div>
   
     <% unless @no_nav %>
