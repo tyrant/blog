@@ -10,8 +10,8 @@
         class: prev_css_classes,
         data: { 'prev-nek-target': 'prev' } do %>
 
-      <div class="grow flex flex-col justify-between p-2">
-        <h5 class="tracking-tight leading-[1.1rem] text-gray-600 dark:text-white max-h-6 sm:max-h-10 overflow-hidden text-ellipsis text-lg font-['Racing_Sans_One'] <%= prev.present? ? '' : 'my-auto' %>">
+      <div class="flex flex-col justify-between p-2">
+        <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 dark:text-white sm:max-h-9 overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= prev.present? ? 'max-h-6 ' : 'max-h-9 my-auto' %>">
           <% if prev.present? %>
             <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
           <% else %>
@@ -21,13 +21,13 @@
 
         <% if prev.present? %>
           <div>
-            <span class="float-left">
+            <span class="text-gray-600 float-left">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18" />
               </svg>
               Earlier
             </span> 
-            <span class="text-slate-500 text-sm">
+            <span class="text-gray-600 text-sm">
               <%= prev.published_at.strftime "%-d %b %Y" %>
             </span>
           </div>
@@ -63,7 +63,7 @@
       </div>
 
       <div class="grow flex flex-col justify-between p-2">
-        <h5 class="tracking-tight leading-[1.1rem] text-gray-600 dark:text-white max-h-6 sm:max-h-10 font-bold overflow-hidden text-ellipsis text-lg font-['Racing_Sans_One'] <%= nek.present? ? '' : 'my-auto' %>">
+        <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 dark:text-white  sm:max-h-9 font-bold overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= nek.present? ? 'max-h-6' : 'max-h-9 my-auto' %>">
           <% if nek.present? %>
             <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
           <% else %>
@@ -73,11 +73,11 @@
         
         <% if nek.present? %>
           <div>
-            <span class="text-slate-500 text-sm">
+            <span class="text-gray-600 text-sm">
               <%= nek.published_at.strftime "%-d %b %Y" %>
             </span>
             
-            <span class="float-right">
+            <span class="text-gray-600 float-right">
               Later
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
