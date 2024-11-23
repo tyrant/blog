@@ -31,12 +31,4 @@
 <%= render ConsentIsSexyYoComponent.new(mode: 'row', nsfw_options: @nsfw_options) %>
 
 <turbo-frame id="prev_nek" src="<%= prev_nek_path(@cms_post) %>" target="_top">
-  <%= 
-    render PrevNekComponent.with_collection(
-      [nil, *@cms_post.categories.public_names.nsfw_banished(@nsfw_options['banish'])], 
-      site: @cms_site,
-      post: @cms_post,
-      nsfw_options: @nsfw_options
-    )
-  %>
 </turbo-frame>
