@@ -13,7 +13,7 @@
     <li id="banish-li"
         class="border-gray-300 lg:my-0 border rounded-l-md <% if col? %>lg:rounded-l-none lg:rounded-t-md<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
     
-      <label class="cursor-pointer flex">
+      <label class="h-full cursor-pointer flex">
 
         <input id="banish"
                 class="mr-1.5 my-auto ml-2 cursor-pointer"
@@ -24,32 +24,37 @@
                 data-consent-is-sexy-yo-target="banish"
                 data-action="click->consent-is-sexy-yo#handleClickBanishNsfwCompletely">
         
-        <div class="text-center my-2 mr-2">
-          Hide 
-          <span class="inline-block">
-            NSFW<sup x-data="{ isOpen: false }"
-                     class="inline-block">
-              <span x-on:mouseover="isOpen = true" 
-                    x-on:mouseleave="isOpen = false"
-                    class="hover:underline">(?)</span>
-              <div x-cloak
-                   x-show.transition="isOpen"
-                   class="relative">
-                <div class="absolute top-0 z-10 w-48 p-2 -mt-1 text-[8.5pt] leading-[0.95rem] text-white transform -translate-x-1/2 translate-y-5 bg-black rounded-lg shadow-lg">
-                  If you don't know, "NSFW" means "Not Safe For Work". PG/R/X-rated content. Raunch! Basically, all the good stuff.
-                </div>
-                <svg class="absolute z-10 w-6 h-6 text-black transform -translate-x-2 translate-y-2 fill-current stroke-current"
-                     width="8"
-                     height="8">
-                  <rect x="13"
-                        y="-10"
-                        width="8"
-                        height="8"
-                        transform="rotate(45)" />
-                </svg>
-              </div></sup>
-          </span>
-          posts
+        <div class="flex flex-col justify-center
+                    my-2 mr-2 
+                    text-center text-xs sm:text-sm
+                    leading-[0.8rem] sm:leading-auto">
+          <div>
+            Hide 
+            <span class="inline-block">
+              NSFW<sup x-data="{ isOpen: false }"
+                      class="inline-block">
+                <span x-on:mouseover="isOpen = true" 
+                      x-on:mouseleave="isOpen = false"
+                      class="hover:underline">(?)</span>
+                <div x-cloak
+                    x-show.transition="isOpen"
+                    class="relative">
+                  <div class="absolute top-0 z-10 w-48 p-2 -mt-1 text-[8.5pt] leading-[0.95rem] text-white transform -translate-x-1/2 translate-y-5 bg-black rounded-lg shadow-lg">
+                    If you don't know, "NSFW" means "Not Safe For Work". PG/R/X-rated content. Raunch! Basically, all the good stuff.
+                  </div>
+                  <svg class="absolute z-10 w-6 h-6 text-black transform -translate-x-2 translate-y-2 fill-current stroke-current"
+                      width="8"
+                      height="8">
+                    <rect x="13"
+                          y="-10"
+                          width="8"
+                          height="8"
+                          transform="rotate(45)" />
+                  </svg>
+                </div></sup>
+            </span>
+            posts
+          </div>
         </div>
       </label>
     </li>
@@ -59,7 +64,7 @@
         class="border-gray-300 border-t border-b <% if col? %>lg:border-l lg:border-r lg:border-t-0 lg:border-b-0<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700 
                cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
 
-      <label class="flex
+      <label class="flex h-full
                     cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %> 
                     <% if mouseover_disabled? %>opacity-40<% end %>">
 
@@ -72,8 +77,11 @@
                 data-consent-is-sexy-yo-target="mouseover"
                 data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwOnMouseover">
 
-        <div class="text-center my-2 mr-2">
-          Unblur on hover
+        <div class="flex flex-col justify-center
+                    my-2 mr-2
+                    text-center text-xs sm:text-sm
+                    leading-[0.8rem] sm:leading-auto">
+            <div>Unblur on hover</div>
         </div>
       </label>
     </li>
@@ -82,7 +90,7 @@
         class="border-gray-300 border rounded-r-md <% if col? %>lg:rounded-t-none lg:rounded-b-md<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700
                cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
       
-      <label class="flex
+      <label class="flex h-full
                     cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>
                     <% if always_disabled? %>opacity-40<% end %>">
 
@@ -95,8 +103,11 @@
                 data-consent-is-sexy-yo-target="always"
                 data-action="click->consent-is-sexy-yo#handleClickUnblurNsfwAlways">
 
-        <div class="text-center my-2 mr-2">
-          Unblur always
+        <div class="flex flex-col justify-center
+                    my-2 mr-2
+                    text-center text-xs sm:text-sm
+                    leading-[0.8rem] sm:leading-auto">
+          <div>Unblur always</div>
         </div>
       </label>
     </li>
