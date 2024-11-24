@@ -3,7 +3,7 @@
        style="background-image: url(<%= image_path @random_cover_image %>);
               background-position-y: <%= rand(40..60) %>%;">
     <div class="transparency">
-      <h1 class="text-center text-3xl sm:text-4xl uppercase font-['Racing_Sans_One'] leading-[1.4rem] sm:leading-[1.7rem] mb-2 sm:mb-3">
+      <h1 class="text-center text-2xl sm:text-4xl uppercase font-['Racing_Sans_One'] leading-[1.15rem] sm:leading-[1.7rem] mb-2 sm:mb-3">
         The Sex Commandos<br> Thwart The Third<br> Vaginal Apocalypse
       </h1>
 
@@ -14,6 +14,6 @@
   </div>
 <% end %>
 
-<div class="mx-10 sm:mx-6 lg:mx-24 xl:mx-6 my-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+<div class="m-3 sm:m-6 lg:mx-24 xl:mx-6 grid gap-3 sm:gap-6 grid-cols-1 xs:grid-cols-2 xl:grid-cols-4">
   <%= render 'all_books' %>
 </div>

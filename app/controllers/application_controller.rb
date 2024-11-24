@@ -245,6 +245,6 @@ class ApplicationController < ActionController::Base
   end
 
   def init_amazon_tlds
-    @amazon_tlds = %w(.com .co.uk .co.jp .de .com.au .ca .fr .com.br .es .it .com.mx .nl)
+    @amazon_tlds = %w(.com .es .com.br .de .co.jp .ca .com.au .fr .co.uk .it .com.mx .nl)
   end
 end

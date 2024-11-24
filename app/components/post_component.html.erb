@@ -34,7 +34,11 @@
             class: 'object-cover w-full h-64 shadow-lg scale-100 ease-in duration-150' %>
 
         <div class="w-full h-20 bg-gradient-to-b from-transparent to-neutral-900 absolute top-44 left-0">
-          <h5 class="w-full p-2 h-15 absolute bottom-0 left-0 text-center text-2xl text-ellipsis font-bold text-gray-100 leading-[1.4rem] font-['Racing_Sans_One']">
+          <h5 class="absolute w-full p-2 h-15 bottom-0 left-0 
+                     font-['Racing_Sans_One'] font-bold 
+                     text-ellipsis text-center text-gray-100 
+                     text-lg sm:text-xl md:text-2xl 
+                     leading-[1.1rem] sm:leading-[1.3rem] md:leading-[1.4rem]">
             <%= @post.title.truncate(48) %>
           </h5>
         </div>

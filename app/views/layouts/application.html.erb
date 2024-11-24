@@ -41,34 +41,23 @@
 
       <%= content_for :banner if content_for? :banner %>
 
-      <div class="<%= @wide_bg ? '' : 'container mx-auto' %>">
+      <div class="<%= @wide_bg ? '' : 'sm:container sm:mx-auto' %>">
         <%= yield %>
       </div>
 
       <% if @show_other_books %>
-        <div class="bg-cyan-900 mt-6 py-6">
-          <h1 class="w-full text-center text-2xl text-cyan-300 font-['Racing_Sans_One'] leading-[1.3rem]">
+        <div class="bg-cyan-900 py-6 py-6">
+          <h1 class="px-6 w-full text-center text-2xl text-cyan-300 font-['Racing_Sans_One'] leading-[1.3rem]">
             Books You May Find Surprisingly Snazzy
           </h1>
-          <div class="container  w-auto lg:w-[55rem] mx-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-3 px-3 pt-6 ">
+          <div class="sm:container sm:w-auto lg:w-[55rem] mx-auto grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3 px-3 pt-6 ">
             <%= render 'application/all_books' %>
           </div>
         </div>
       <% end %>
     </div>
   
-    <% unless @no_nav %>
-      <div class="footer mt-auto">
-        <span class="copyright">© Copyright ... idk, 2004? 17.3? We still on the Julian calendar?</span>
-        <span class="links">
-          <%= link_to landing_index_path do %>
-            Read <em>The Knights of Raw Phowar</em> FREE omg
-          <% end %>
-          <%= link_to "Privacy", privacy_path %>
-          <%= link_to 'Contact', contact_path %>
-        </span>
-      </div>
-    <% end %>
+    <%= render 'layouts/footer' unless @no_nav %>
 
     <%= render ModalComponent.new(type: 'irritate') do %>
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 font-['Racing_Sans_One'] text-center text-white">
