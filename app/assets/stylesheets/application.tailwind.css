@@ -28,6 +28,7 @@
   @apply cursor-pointer hover:text-blue-500 transition;
 }
 
+/* Standard title formatting across all pages */
 .title-bg {
   @apply relative w-full h-56 md:h-72 bg-cover bg-center;
 }
@@ -48,6 +49,7 @@
   @apply text-3xl sm:text-5xl leading-[1.35rem] sm:leading-[2.1rem] sm:tracking-tight font-['Racing_Sans_One'];
 }
 
+/* Book splash-pages */
 .book {
   @apply m-4 lg:mx-12 flex flex-col md:flex-row gap-12;
 }
@@ -98,6 +100,16 @@
   @apply text-base sm:text-2xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
 }
 
+/* Post#show stuff */
+.post-body {
+  @apply mb-6;
+}
+
+.post-body h2 {
+  @apply font-['Racing_Sans_One'] text-4xl;
+}
+
+/* Footer stuff */
 .footer {
   @apply w-full h-16 bg-cyan-900 text-cyan-300 text-xs font-bold flex justify-between items-center;
 }
