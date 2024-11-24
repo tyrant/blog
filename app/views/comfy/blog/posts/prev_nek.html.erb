@@ -1,4 +1,5 @@
-<turbo-frame id="prev_nek" target="_top">
+<turbo-frame id="prev_nek" 
+             target="_top">
   <%=
     render PrevNekComponent.with_collection(
       [nil, *Comfy::Cms::Category.public_names.nsfw_banished(@nsfw_options['banish'])], 
