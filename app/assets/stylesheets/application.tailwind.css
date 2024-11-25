@@ -51,7 +51,7 @@
 
 /* Book splash-pages */
 .book {
-  @apply m-4 lg:mx-12 flex flex-col md:flex-row gap-12;
+  @apply mx-4 lg:mx-12 flex flex-col md:flex-row gap-12;
 }
 
 .book .image {
