@@ -55,11 +55,11 @@
 }
 
 .book .image {
-  @apply grow-0 basis-full md:basis-1/2 flex flex-col justify-center;
+  @apply grow-0 basis-full md:basis-1/2 flex flex-col justify-center mx-8 xs:mx-18 sm:mx-24 md:mx-4;
 }
 
 .book .image img {
-  @apply mx-8 xs:mx-12 sm:mx-16 md:mx-4 aspect-[141/225] shadow-xl;
+  @apply aspect-[141/225] shadow-xl;
 }
 
 .book .blurb {
