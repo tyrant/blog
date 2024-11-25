@@ -55,7 +55,7 @@
 }
 
 .book .image {
-  @apply grow-0 basis-full md:basis-1/2 flex flex-col justify-center mx-8 xs:mx-18 sm:mx-24 md:mx-4;
+  @apply grow-0 basis-full md:basis-1/2 flex flex-col justify-center mx-8 xs:mx-[4.5rem] sm:mx-24 md:mx-4;
 }
 
 .book .image img {
