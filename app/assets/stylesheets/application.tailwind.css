@@ -106,7 +106,7 @@
 }
 
 .post-body h2 {
-  @apply font-['Racing_Sans_One'] text-4xl;
+  @apply font-['Racing_Sans_One'] text-4xl mt-2 mb-1;
 }
 
 .post-body p {
