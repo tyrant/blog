@@ -80,24 +80,38 @@
 }
 
 .purchase .purchase-links {
-  @apply grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6 gap-4 sm:gap-5 md:gap-6 my-4 mx-4 xs:mx-16 lg:w-[42rem] lg:mx-auto;
+  @apply grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6
+         gap-4 justify-items-start
+         my-4 mx-4 xs:mx-16 md:mx-4 lg:w-[48rem] lg:mx-auto;
+}
+
+.purchase-links.non-amazons {
+  @apply gap-6;
 }
 
 .purchase .purchase-links .non-amazon {
-  @apply col-span-3 sm:col-span-4 md:col-span-2 h-12 sm:h-16 bg-contain bg-no-repeat bg-center p-4 hover:scale-[1.05] duration-150;
+  @apply col-span-3 sm:col-span-4 md:col-span-2 
+         w-full
+         hover:scale-[1.05] duration-150;
+}
+
+.non-amazon .v-align {
+  @apply flex flex-col justify-center h-full;
 }
 
 /* Further custom styling for each book-purchase page's Amazon icons */
 .amazon-mk {
-  @apply flex items-center justify-center p-1 hover:scale-[1.05] duration-150 col-span-2 sm:col-span-3 md:col-span-1 w-auto;
+  @apply flex items-center justify-center 
+         col-span-2 sm:col-span-3 md:col-span-1
+         pl-4 hover:scale-[1.05] duration-150;
 }
 
 .amazon-mk img {
-  @apply h-12;
+  @apply max-h-12;
 }
 
 .amazon-mk span {
-  @apply text-base sm:text-2xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
+  @apply text-base xs:text-xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
 }
 
 /* Post#show stuff */

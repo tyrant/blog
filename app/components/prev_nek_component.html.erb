@@ -11,7 +11,7 @@
         data: { 'prev-nek-target': 'prev' } do %>
 
       <div class="grow flex flex-col justify-between p-2">
-        <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 dark:text-white sm:max-h-9 overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= prev.present? ? 'max-h-6 ' : 'max-h-9 my-auto' %>">
+        <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 sm:max-h-9 overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= prev.present? ? 'max-h-6 ' : 'max-h-9 my-auto' %>">
           <% if prev.present? %>
             <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
           <% else %>
@@ -63,7 +63,7 @@
       </div>
 
       <div class="grow flex flex-col justify-between p-2">
-        <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 dark:text-white  sm:max-h-9 overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= nek.present? ? 'max-h-6' : 'max-h-9 my-auto' %>">
+        <h5 class="tracking-tight leading-[1.1rem] sm:leading-[1.1rem] text-gray-600 sm:max-h-9 overflow-hidden text-ellipsis text-md sm:text-lg font-['Racing_Sans_One'] <%= nek.present? ? 'max-h-6' : 'max-h-9 my-auto' %>">
           <% if nek.present? %>
             <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
           <% else %>

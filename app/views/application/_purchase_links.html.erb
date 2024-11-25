@@ -8,11 +8,14 @@
         <span><%= tld %></span>
       <% end %>
     <% end %>
-
+  </div>  
+  <div class="purchase-links non-amazons">
     <% @non_amazons.each do |book| %>
-      <%= link_to book[:url],
-                  class: 'non-amazon',
-                  style: "background-image:url(#{asset_path book[:img]})" do; end %>
+      <%= link_to book[:url], class: 'non-amazon' do %>
+        <div class="v-align">
+          <%= image_tag asset_path(book[:img]) %>
+        </div>
+      <% end %>
     <% end %>
   </div>
 </div>
