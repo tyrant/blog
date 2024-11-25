@@ -415,7 +415,7 @@ DEPENDENCIES
   selenium-webdriver
   service_interface
   spring
-  tailwindcss-rails (~> 2.2, >= 2.0.29)
+  tailwindcss-rails (~> 2.0, >= 2.0.29)
   turbo-rails
   tzinfo-data
   view_component
