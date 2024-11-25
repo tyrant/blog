@@ -80,7 +80,7 @@
 }
 
 .purchase .purchase-links {
-  @apply grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6 gap-4 sm:gap-5 md:gap-6 my-4 mx-4 sm:mx-16 lg:w-[42rem] lg:mx-auto;
+  @apply grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6 gap-4 sm:gap-5 md:gap-6 my-4 mx-4 xs:mx-16 lg:w-[42rem] lg:mx-auto;
 }
 
 .purchase .purchase-links .non-amazon {
