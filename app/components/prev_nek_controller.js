@@ -8,7 +8,7 @@ export default class extends Controller {
     nekIsNsfw: Boolean
   }
 
-  static targets = ['prev', 'nek'];
+  static targets = ['prev', 'prevArrow', 'nek', 'nekArrow'];
 
   static getNsfwContainingStims() {
     return window.getStimsBy({ name: 'prev-nek' })
@@ -17,6 +17,11 @@ export default class extends Controller {
 
   // Courtesy https://leastbad.com/stimulus-power-move
   connect() { this.element.stimulusController = this; }
+
+  initialize() {
+    this.prevArrowMove();
+    this.nekArrowMove();
+  }
 
   unblurOnFutureMouseover(yes) {
     this.#nsfwTargets().forEach(el => {
@@ -31,6 +36,24 @@ export default class extends Controller {
 
   unblurNow() {
     this.#nsfwTargets().forEach(el => el.classList.remove('blur-sm'));
+  }
+
+  prevArrowMove() {
+    this.prevTarget.addEventListener('mouseover', () => {
+      this.prevArrowTarget.classList.add('-translate-x-4');
+    });
+    this.prevTarget.addEventListener('mouseout', () => {
+      this.prevArrowTarget.classList.remove('-translate-x-4');
+    });
+  }
+
+  nekArrowMove() {
+    this.nekTarget.addEventListener('mouseover', () => {
+      this.nekArrowTarget.classList.add('translate-x-4');
+    });
+    this.nekTarget.addEventListener('mouseout', () => {
+      this.nekArrowTarget.classList.remove('translate-x-4');
+    });
   }
 
   #nsfwTargets() {

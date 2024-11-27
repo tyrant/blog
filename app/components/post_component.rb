@@ -7,15 +7,15 @@ class PostComponent < ViewComponent::Base
   CAT_COMMON_CSS = %w(hover:outline rounded)
 
   CAT_UNIQUE_CSS = {
-    'all-posts' => %w(bg-gray-100),
-    'whimsy' => %w(bg-indigo-100 text-indigo-800 outline-indigo-800),
-    'nsfw' => %w(bg-red-800 text-red-100 outline-red-100),
+    'all-posts'    => %w(bg-gray-100),
+    'whimsy'       => %w(bg-indigo-100 text-indigo-800 outline-indigo-800),
+    'nsfw'         => %w(bg-red-800 text-red-100 outline-red-100),
     'shite-advice' => %w(bg-lime-100 text-lime-800 outline-lime-800)
   }
 
   POST_CAT_CSS = {
-    'whimsy' => %w(cat-blurrable),
-    'nsfw' => %w(),
+    'whimsy'       => %w(cat-blurrable),
+    'nsfw'         => %w(),
     'shite-advice' => %w(cat-blurrable)
   }
 

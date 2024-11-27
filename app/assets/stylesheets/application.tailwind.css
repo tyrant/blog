@@ -79,6 +79,10 @@
   @apply font-medium text-3xl sm:text-5xl my-6 text-center text-gray-700 uppercase font-['Racing_Sans_One'];
 }
 
+.purchase a {
+  @apply hover:cursor-pointer;
+}
+
 .purchase .purchase-links {
   @apply grid grid-cols-6 sm:grid-cols-12 md:grid-cols-6
          gap-4 justify-items-start
@@ -86,7 +90,7 @@
 }
 
 .purchase-links.non-amazons {
-  @apply gap-6;
+  @apply gap-6 md:gap-8;
 }
 
 .purchase .purchase-links .non-amazon {
@@ -103,7 +107,8 @@
 .amazon-mk {
   @apply flex items-center justify-center 
          col-span-2 sm:col-span-3 md:col-span-1
-         pl-4 hover:scale-[1.05] duration-150;
+         pl-4 
+         hover:scale-[1.05] duration-150;
 }
 
 .amazon-mk img {
