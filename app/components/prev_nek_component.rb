@@ -85,7 +85,7 @@ class PrevNekComponent < ViewComponent::Base
   private
 
   def common_css_classes
-    classes = %w(w-full sm:w-auto h-20 sm:h-24 p-2
+    classes = %w(w-full sm:w-auto h-20 p-2
                  basis-1/2
                  bg-center bg-no-repeat bg-white
                  cursor-pointer shadow-md transition)
