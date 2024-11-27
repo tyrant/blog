@@ -19,7 +19,7 @@ class PrevNekComponent < ViewComponent::Base
 
   def prev_thumb_or_kiss
     if prev.present?
-      prev.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72)
+      prev.resized_blob_or_orig_or_placeholder_url
     else
       'kissy-transparent.png'
     end
@@ -27,7 +27,7 @@ class PrevNekComponent < ViewComponent::Base
 
   def nek_thumb_or_kiss
     if nek.present?
-      nek.resized_blob_or_orig_or_placeholder_url(x: 96, y: 72)
+      nek.resized_blob_or_orig_or_placeholder_url
     else
       'kissy-transparent.png'
     end
