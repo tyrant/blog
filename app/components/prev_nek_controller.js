@@ -40,15 +40,15 @@ export default class extends Controller {
 
   prevArrowMove() {
     [this.prevTarget, this.prevArrowTarget].forEach(t => {
-      t.addEventListener('mouseover', () => { this.prevArrowTarget.classList.add('-translate-x-4'); });
-      t.addEventListener('mouseout', () => { this.prevArrowTarget.classList.remove('-translate-x-4'); });
+      t.addEventListener('mouseover', () => this.prevArrowTarget.classList.add('-translate-x-4'));
+      t.addEventListener('mouseout', () => this.prevArrowTarget.classList.remove('-translate-x-4'));
     });
   }
 
   nekArrowMove() {
     [this.nekTarget, this.nekArrowTarget].forEach(t => {
-      t.addEventListener('mouseover', () => { this.nekArrowTarget.classList.add('translate-x-4'); });
-      t.addEventListener('mouseout', () => { this.nekArrowTarget.classList.remove('translate-x-4'); });
+      t.addEventListener('mouseover', () => this.nekArrowTarget.classList.add('translate-x-4'));
+      t.addEventListener('mouseout', () => this.nekArrowTarget.classList.remove('translate-x-4'));
     });
   }
 
