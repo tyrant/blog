@@ -5,17 +5,20 @@
 
   <div class="relative">
     <%= link_to post_link do %>
-      <div class="<%= css_classes_for_datebg %>" data-post-target="datebg">
-        <div class="h-14 bg-gradient-to-t from-transparent to-neutral-700">
+      <div class="<%= css_classes_for_datebg %>" 
+           data-post-target="datebg">
+        <div class="h-14 bg-gradient-to-t from-transparent to-70% to-neutral-700/70">
         </div>
       </div>
 
-      <div class="absolute w-full top-0 left-0 z-10 p-3 text-xs text-white" data-post-target="date">
+      <div class="absolute w-full top-0 left-0 z-10 p-3 text-xs text-white"
+           data-post-target="date">
         <%= @post.published_at.strftime "%-d %b %Y" %>
       </div>
     <% end %>
 
-    <div class="absolute top-3 right-3 z-10" data-post-target="categories">
+    <div class="absolute top-3 right-3 z-10" 
+         data-post-target="categories">
       <% @post.categories.public_names.nsfw_first.each do |category| %>
         <%= link_to comfy_blog_posts_path(category: category.label) do %>
           <span class="<%= css_classes_for_category(category) %>">
@@ -29,17 +32,18 @@
         class: css_classes_for_body,
         data: { 'post-target': 'body' } do %>
 
-      <div class="duration-150" data-post-target="scale">
+      <div class="duration-150" 
+           data-post-target="scale">
         <%= image_tag post_image_path,
             class: 'object-cover w-full h-64 shadow-lg scale-100 ease-in duration-150' %>
 
-        <div class="w-full h-20 bg-gradient-to-b from-transparent to-neutral-700 absolute top-44 left-0">
+        <div class="w-full h-24 bg-gradient-to-b from-transparent to-50% to-neutral-800/70 absolute top-40 left-0">
           <h5 class="absolute w-full p-2 h-15 bottom-0 left-0 
                      font-['Racing_Sans_One'] font-bold 
-                     text-ellipsis text-center text-gray-100 
+                     text-center text-gray-100 
                      text-lg sm:text-xl md:text-2xl 
                      leading-[1.1rem] sm:leading-[1.3rem] md:leading-[1.4rem]">
-            <%= @post.title.truncate(48) %>
+            <%= post_title %>
           </h5>
         </div>
       </div>

@@ -10,27 +10,27 @@ class PrevNekComponent < ViewComponent::Base
   end
 
   def prev
-    @post.prev category: @category, nsfw: !@nsfw_options['banish']
+    @cached_prev ||= @post.prev category: @category, nsfw: !@nsfw_options['banish']
   end
 
   def nek
-    @post.nek category: @category, nsfw: !@nsfw_options['banish']
+    @cached_nek ||= @post.nek category: @category, nsfw: !@nsfw_options['banish']
   end
 
   def prev_thumb_or_kiss
-    if prev.present?
-      prev.resized_blob_or_orig_or_placeholder_url
-    else
-      'kissy-transparent.png'
-    end
+    @cached_prev_thumb_or_kiss ||= if prev.present?
+        prev.resized_blob_or_orig_or_placeholder_url
+      else
+        'kissy-transparent.png'
+      end
   end
 
   def nek_thumb_or_kiss
-    if nek.present?
-      nek.resized_blob_or_orig_or_placeholder_url
-    else
-      'kissy-transparent.png'
-    end
+    @cached_nek_thumb_or_kiss ||= if nek.present?
+        nek.resized_blob_or_orig_or_placeholder_url
+      else
+        'kissy-transparent.png'
+      end
   end
 
   def prev_path

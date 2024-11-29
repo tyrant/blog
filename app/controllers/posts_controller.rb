@@ -20,6 +20,13 @@ class PostsController < Comfy::Blog::PostsController
   end
 
   def prev_nek
-    @cms_post = Comfy::Blog::Post.find(params[:id])
+    @cms_post = Comfy::Blog::Post.includes(categorizations: :category)
+                                 .find(params[:id])
+    @possibly_all_categories = [
+        nil,
+        *Comfy::Cms::Category.public_names
+                             .nsfw_banished(@nsfw_options['banish'])
+                             .order(:label)
+      ]
   end
 end

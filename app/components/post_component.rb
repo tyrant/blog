@@ -27,16 +27,28 @@ class PostComponent < ViewComponent::Base
 
   private
 
+  def post_title
+    @post.title.truncate 72, separator: ' ', omission: ' ...'
+  end
+
   def post_link
     comfy_blog_post_path(@cms_site.path, @post.year, @post.month, @post.slug)
   end
 
   def post_image_path
-    @post.resized_blob_or_orig_or_placeholder_url
+    @cached_post_image_path ||= @post.resized_blob_or_orig_or_placeholder_url
   end
 
   def post_content
-    Nokogiri::HTML(@post.content_cache.gsub('</h2>', "</h2>\r\n").gsub('</p>', "</p>\r\n")).text.truncate(120)
+    @cached_post_content ||= begin 
+        html_content = @post
+          .content_cache
+          .gsub('</h2>', "</h2>\r\n")
+          .gsub('</p>', "</p>\r\n")
+        Nokogiri::HTML(html_content)
+          .text
+          .truncate(120, separator: ' ', omission: ' ...')
+      end
   end
 
   def css_classes

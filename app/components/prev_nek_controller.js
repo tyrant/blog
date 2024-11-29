@@ -18,43 +18,40 @@ export default class extends Controller {
   // Courtesy https://leastbad.com/stimulus-power-move
   connect() { this.element.stimulusController = this; }
 
-  initialize() {
-    this.prevArrowMove();
-    this.nekArrowMove();
-  }
+  initialize() { this.prevNekArrowsMove(); }
 
   unblurOnFutureMouseover(yes) {
-    this.#nsfwTargets().forEach(el => {
-      if (yes) el.classList.add('hover:blur-none');
-      else     el.classList.remove('hover:blur-none');
+    this.#nsfwClasslists().forEach(c => {
+      if (yes) c.add('hover:blur-none');
+      else     c.remove('hover:blur-none');
     });
   }
 
   blurNow() {
-    this.#nsfwTargets().forEach(el => el.classList.add('blur-sm'));
+    this.#nsfwClasslists().forEach(c => c.add('blur-sm'));
   }
 
   unblurNow() {
-    this.#nsfwTargets().forEach(el => el.classList.remove('blur-sm'));
+    this.#nsfwClasslists().forEach(c => c.remove('blur-sm'));
   }
 
-  prevArrowMove() {
+  prevNekArrowsMove() {
     [this.prevTarget, this.prevArrowTarget].forEach(t => {
-      t.addEventListener('mouseover', () => this.prevArrowTarget.classList.add('-translate-x-4'));
-      t.addEventListener('mouseout', () => this.prevArrowTarget.classList.remove('-translate-x-4'));
+      const pc = this.prevArrowTarget.classList;
+      t.addEventListener('mouseover', () => pc.add('-translate-x-4'));
+      t.addEventListener('mouseout',  () => pc.remove('-translate-x-4'));
     });
-  }
 
-  nekArrowMove() {
     [this.nekTarget, this.nekArrowTarget].forEach(t => {
-      t.addEventListener('mouseover', () => this.nekArrowTarget.classList.add('translate-x-4'));
-      t.addEventListener('mouseout', () => this.nekArrowTarget.classList.remove('translate-x-4'));
+      const nc = this.nekArrowTarget.classList;
+      t.addEventListener('mouseover', () => nc.add('translate-x-4'));
+      t.addEventListener('mouseout',  () => nc.remove('translate-x-4'));
     });
   }
 
-  #nsfwTargets() {
+  #nsfwClasslists() {
     return ['prev', 'nek'].map(pn => {
       if (this[`${pn}IsNsfwValue`]) return this[`${pn}Target`];
-    }).filter(Boolean);
+    }).filter(Boolean).map(n => n.classList);
   }
 }
