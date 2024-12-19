@@ -70,6 +70,35 @@
   @apply text-gray-700 leading-tight mb-4;
 }
 
+/* Book quotation widgets */
+.quotation {
+  @apply mx-auto text-center;
+}
+
+.quotation svg {
+  @apply w-10 h-10 mx-auto mb-1 text-gray-400;
+}
+
+.quotation blockquote {
+  @apply text-2xl italic font-medium leading-7 text-gray-900 mb-3;
+}
+
+.quotation figcaption {
+  @apply flex items-center justify-center mb-10 space-x-3;
+}
+
+.quotation figcaption .name {
+  @apply font-medium text-gray-900 leading-tight;
+}
+
+.quotation figcaption img {
+  @apply w-10 h-10 rounded-full inline;
+}
+
+.quotation figcaption .link {
+  @apply text-sm text-gray-500;
+}
+
 /* Custom styling for each book-purchase page's overall purchase icons */
 .purchase {
   @apply my-12;
