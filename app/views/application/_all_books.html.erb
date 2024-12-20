@@ -25,11 +25,13 @@
         blurb: "Turns out flirting with every ladybro Rambo in France produces Rivals and Frenemies and Jilted Waifus galore. Smashing fun, but utter Kryptonite for Imperial kill-plans. Like, ever tried noshing off a world leader whilst a billion fanb0is fondle your buttocks? Want to? Read on!") %>
 <% end %>
 
-<% if !current_page?(praetorian_path) %>
-  <%= render BookComponent.new(
-        image_path: asset_path('4-praetorian-web.jpg'),
-        link_path: praetorian_path,
-        number: '4',
-        title: 'The Praetorian Prostitutes',
-        blurb: "The game's up! The irresistible force of fanb0i-fondlemania has headbutted the immovable object of a gazillion furious Paris cops. They too thirst for Sex Commando patoot. Crunch time. Either launch one final rocket-strike against Bardot and France, or Earth's free nations forever perish.") %>
-<% end %>
+<div class="hidden sm:block">
+  <% if !current_page?(praetorian_path) %>
+    <%= render BookComponent.new(
+          image_path: asset_path('4-praetorian-web.jpg'),
+          link_path: praetorian_path,
+          number: '4',
+          title: 'The Praetorian Prostitutes',
+          blurb: "The game's up! The irresistible force of fanb0i-fondlemania has headbutted the immovable object of a gazillion furious Paris cops. They too thirst for Sex Commando patoot. Crunch time. Either launch one final rocket-strike against Bardot and France, or Earth's free nations forever perish.") %>
+  <% end %>
+</div>
