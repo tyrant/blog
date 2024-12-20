@@ -51,7 +51,7 @@
 
 /* Book splash-pages */
 .book {
-  @apply m-4 lg:mx-12 flex flex-col md:flex-row gap-12;
+  @apply m-4 lg:mx-12 flex flex-col md:flex-row gap-3 lg:gap-8;
 }
 
 .book .image {
@@ -72,7 +72,7 @@
 
 /* Book quotation widgets */
 .quotation {
-  @apply mx-auto text-center;
+  @apply mx-auto text-center mt-3;
 }
 
 .quotation svg {
@@ -84,7 +84,7 @@
 }
 
 .quotation figcaption {
-  @apply flex items-center justify-center mb-10 space-x-3;
+  @apply flex flex-row flex-wrap items-center justify-center mb-10 gap-3;
 }
 
 .quotation figcaption .name {
