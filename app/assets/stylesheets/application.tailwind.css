@@ -91,10 +91,6 @@
   @apply font-medium text-gray-900 leading-tight;
 }
 
-.quotation figcaption img {
-  @apply w-10 h-10 rounded-full inline;
-}
-
 .quotation figcaption .link {
   @apply text-sm text-gray-500;
 }
