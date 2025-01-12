@@ -1,30 +1,36 @@
-<div class="p-3 md:p-4 lg:p-5 bg-white rounded-lg shadow-lg text-center"
+<div class="p-[5%] h-full
+            bg-white rounded-lg shadow-lg text-center"
      data-controller="book">
   <%= link_to @link_path do %>
-    <%= image_tag @image_path, class: 'shadow-xl w-full duration-150 ease-in hover:scale-[1.01]' %>
+    <%= image_tag @image_path, class: 'shadow-xl w-full duration-100 ease-in hover:scale-[1.015]' %>
 
     <div class="mt-2">
       <div class="text-sm text-gray-600">
         
-        <span class="inline-block uppercase text-xs md:text-sm text-gray-400 py-2 md:py-3 leading-[0.7rem] md:leading-[0.8rem]">
+        <span class="inline-block uppercase
+                     text-xs md:text-sm text-gray-400 leading-[0.7rem] md:leading-[0.8rem]
+                     py-2 md:py-3">
           The Sex Commandos Thwart The Third Vaginal Apocalypse
         </span>
 
         <br>
         
-        <span class="inline-block pb-1 font-['Great_Vibes'] text-lg md:text-lg lg:text-xl">
+        <span class="inline-block pb-1
+                     font-['Great_Vibes'] text-lg md:text-lg lg:text-xl">
           ~~ Part&nbsp;&nbsp;<%= @number %>/6 ~~
         </span>
         
         <br>
 
-        <span class="inline-block pb-3 font-['Racing_Sans_One'] text-xl md:text-2xl lg:text-3xl uppercase leading-[0.9rem] md:leading-[1.1rem] lg:leading-[1.35rem]">
+        <span class="inline-block pb-3
+                     font-['Racing_Sans_One'] text-xl md:text-2xl lg:text-3xl uppercase leading-[0.9rem] md:leading-[1.1rem] lg:leading-[1.35rem]">
           <%= @title %>
         </span>
         
         <br>
 
-        <span class="inline-block pt-1 text-xs text-gray-400 leading-[0.8rem]">
+        <span class="inline-block pt-1
+                     text-xs text-gray-400 leading-[0.8rem]">
           <%= @blurb %>
         </span>
       </div>

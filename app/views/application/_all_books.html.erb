@@ -52,12 +52,22 @@
   %>
 <% end %>
 
-<% book_previews.each_with_index do |book_preview, i| %>
-  <% if i < 2 %>
+<% book_previews.shuffle.each_with_index do |book_preview, i| %>
+  <% 
+    classes = if i < 2
+         ''
+       elsif i < 3
+         'hidden sm:block'
+       elsif i < 4
+         'hidden lg:block'
+       elsif i < 5
+         'hidden xl:block'
+       else
+         'hidden'
+     end 
+  %>
+
+  <div class="w-1/2 <%= classes %>">
     <%= book_preview %>
-  <% else %>
-    <div class="hidden sm:block">
-      <%= book_preview %>
-    </div>
-  <% end %>
+  </div>
 <% end %>

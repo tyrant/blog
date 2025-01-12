@@ -52,7 +52,7 @@ class PostComponent < ViewComponent::Base
   end
 
   def css_classes
-    classes = %w(post transition bg-white p-3 rounded-xl shadow-lg) << "duration-#{DURATION}"
+    classes = %w(post transition bg-white p-[4%] rounded-xl shadow-lg) << "duration-#{DURATION}"
     classes += %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
 
     classes.join ' '
