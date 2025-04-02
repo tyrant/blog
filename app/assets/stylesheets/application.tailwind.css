@@ -67,7 +67,7 @@
 }
 
 .book .blurb p { 
-  @apply text-gray-700 leading-tight mb-4;
+  @apply text-gray-700 dark:text-gray-400 leading-tight mb-4;
 }
 
 /* Book quotation widgets */
@@ -80,7 +80,7 @@
 }
 
 .quotation blockquote {
-  @apply text-2xl italic font-medium leading-7 text-gray-900 mb-3;
+  @apply text-2xl italic font-medium leading-7 text-gray-900 dark:text-gray-300 mb-3;
 }
 
 .quotation figcaption {
@@ -88,11 +88,11 @@
 }
 
 .quotation figcaption .name {
-  @apply font-medium text-gray-900 leading-tight;
+  @apply font-medium text-gray-900 dark:text-gray-300 leading-tight;
 }
 
 .quotation figcaption .link {
-  @apply text-sm text-gray-500;
+  @apply text-sm text-gray-500 dark:text-gray-400;
 }
 
 /* Custom styling for each book-purchase page's overall purchase icons */
@@ -101,7 +101,7 @@
 }
 
 .purchase h1 {
-  @apply font-medium text-3xl sm:text-5xl my-6 text-center text-gray-700 uppercase font-['Racing_Sans_One'];
+  @apply font-medium text-3xl sm:text-5xl my-6 text-center text-gray-700 dark:text-gray-300 uppercase font-['Racing_Sans_One'];
 }
 
 .purchase a {
@@ -136,17 +136,21 @@
          hover:scale-[1.05] duration-150;
 }
 
+.purchase img {
+  @apply dark:invert;
+}
+
 .amazon-mk img {
   @apply max-h-12;
 }
 
 .amazon-mk span {
-  @apply text-base xs:text-xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636];
+  @apply text-base xs:text-xl -ml-2 sm:ml-[-9px] font-['Amazon_Ember'] text-[#0d2636] dark:text-gray-300;
 }
 
 /* Post#show stuff */
 .post-body {
-  @apply mb-6;
+  @apply mb-6 text-gray-700 dark:text-gray-300;
 }
 
 .post-body h2 {
@@ -155,6 +159,10 @@
 
 .post-body p {
   @apply text-ellipsis overflow-hidden;
+}
+
+.post-body a {
+  @apply dark:text-gray-100;
 }
 
 /* Footer stuff */

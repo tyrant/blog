@@ -7,7 +7,7 @@ class PostComponent < ViewComponent::Base
   CAT_COMMON_CSS = %w(hover:outline rounded)
 
   CAT_UNIQUE_CSS = {
-    'all-posts'    => %w(bg-gray-100),
+    'all-posts'    => %w(bg-gray-100 text-gray-900 dark:text-gray-900),
     'whimsy'       => %w(bg-indigo-100 text-indigo-800 outline-indigo-800),
     'nsfw'         => %w(bg-red-800 text-red-100 outline-red-100),
     'shite-advice' => %w(bg-lime-100 text-lime-800 outline-lime-800)
@@ -52,7 +52,7 @@ class PostComponent < ViewComponent::Base
   end
 
   def css_classes
-    classes = %w(post transition bg-white p-[4%] rounded-xl shadow-lg) << "duration-#{DURATION}"
+    classes = %w(post transition bg-white dark:bg-gray-800 p-[4%] rounded-xl shadow-lg) << "duration-#{DURATION}"
     classes += %w(hidden opacity-0) if @post.nsfw? && @nsfw_options['banish']
 
     classes.join ' '

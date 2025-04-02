@@ -5,13 +5,13 @@
      class="flex flex-col place-content-center sm:items-center
             mb-2 sm:mb-0 mx-3 sm:mx-auto">
 
-  <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2">
+  <h3 class="mx-auto font-['Great_Vibes'] text-3xl sm:mt-2 dark:text-gray-300">
     Consent is sexy<em>❤</em>
   </h3>
 
   <ul class="flex flex-row <% if col? %>lg:flex-col<% end %> mx-auto shadow-md rounded-md">
     <li id="banish-li"
-        class="border-gray-300 lg:my-0 border rounded-l-md <% if col? %>lg:rounded-l-none lg:rounded-t-md<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700 cursor-pointer">
+        class="border-gray-300 dark:border-gray-600 lg:my-0 border rounded-l-md <% if col? %>lg:rounded-l-none lg:rounded-t-md<% end %> bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 block text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
     
       <label class="h-full cursor-pointer flex">
 
@@ -61,7 +61,7 @@
 
     <li id="unblur_on_mouseover-li"
         title="<%= mouseover_title %>" 
-        class="border-gray-300 border-t border-b <% if col? %>lg:border-l lg:border-r lg:border-t-0 lg:border-b-0<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700 
+        class="border-gray-300 dark:border-gray-600 border-t border-b <% if col? %>lg:border-l lg:border-r lg:border-t-0 lg:border-b-0<% end %> bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 block text-sm text-gray-700 dark:text-gray-300 
                cursor-<%= mouseover_disabled? ? 'not-allowed' : 'pointer' %>">
 
       <label class="flex h-full
@@ -87,7 +87,7 @@
     </li>
 
     <li id="unblur_always-li"
-        class="border-gray-300 border rounded-r-md <% if col? %>lg:rounded-t-none lg:rounded-b-md<% end %> bg-white hover:bg-gray-50 block text-sm text-gray-700
+        class="border-gray-300 dark:border-gray-600 border rounded-r-md <% if col? %>lg:rounded-t-none lg:rounded-b-md<% end %> bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 block text-sm text-gray-700 dark:text-gray-300
                cursor-<%= always_disabled? ? 'not-allowed' : 'pointer' %>">
       
       <label class="flex h-full

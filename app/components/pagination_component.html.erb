@@ -3,7 +3,7 @@
   <div class="flex-1 flex justify-between xs:hidden mx-3">
     <%= link_to 'Previous', 
                 comfy_blog_posts_path(page: prev_page_no), 
-                class: "relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 shadow-md bg-white hover:bg-gray-50" %>
+                class: "relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 shadow-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700" %>
     <%= link_to 'Next', 
                 comfy_blog_posts_path(page: next_page_no), 
                 class: "ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 shadow-md bg-white hover:bg-gray-50" %>
@@ -11,7 +11,7 @@
 
   <div class="hidden xs:flex xs:flex-1 xs:items-center xs:justify-between">
     <div class="w-full flex flex-col">
-      <div class="text-sm text-gray-700 mx-auto mb-1 mt-2">
+      <div class="text-sm text-gray-700 dark:text-gray-300 mx-auto mb-1 mt-2">
         Showing
         <span class="font-medium"><%= cur_page_floor %></span>
         to
@@ -24,7 +24,7 @@
       <div class="mx-auto">
         <nav class="relative z-0 inline-flex rounded-md shadow-md -space-x-px" aria-label="Pagination">
           <%= link_to comfy_blog_posts_path(page: prev_page_no, category: params[:category]), 
-                      class: "relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+                      class: "relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" do %>
             <span class="sr-only">Previous</span>
 
             <!-- Heroicon name: solid/chevron-left -->
@@ -37,27 +37,27 @@
             <% if n == @cur_page_no %>
               <%= link_to n,
                           comfy_blog_posts_path(page: n, category: params[:category]), 
-                          class: "z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium", 
+                          class: "z-10 bg-indigo-50 dark:bg-indigo-900 border-indigo-500 text-indigo-600 dark:text-indigo-300 relative inline-flex items-center px-4 py-2 border text-sm font-medium", 
                           aria: { current: 'page' } %>
 
             <% elsif n_near_start_cur_end?(n: n) %>
               <%= link_to n,
                           comfy_blog_posts_path(page: n, category: params[:category]), 
-                          class: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium" %>
+                          class: "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 relative inline-flex items-center px-4 py-2 border text-sm font-medium" %>
 
             <% elsif n < @cur_page_no && !@already_displayed_1_to_n_ellipsis %>
-              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"> ... </span>
+              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300"> ... </span>
               <% @already_displayed_1_to_n_ellipsis = true %>
 
             <% elsif n > @cur_page_no && !@already_displayed_n_to_page_count_ellipsis %>
-              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"> ... </span>
+              <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300"> ... </span>
               <% @already_displayed_n_to_page_count_ellipsis = true %>
 
             <% end %>
           <% end %>
 
           <%= link_to comfy_blog_posts_path(page: next_page_no, category: params[:category]), 
-                      class: "relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+                      class: "relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" do %>
             <span class="sr-only">Next</span>
 
             <!-- Heroicon name: solid/chevron-right -->

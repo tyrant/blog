@@ -1,14 +1,14 @@
 <div class="p-[5%] h-full
-            bg-white rounded-lg shadow-lg text-center"
+            bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center"
      data-controller="book">
   <%= link_to @link_path do %>
     <%= image_tag @image_path, class: 'shadow-xl w-full duration-100 ease-in hover:scale-[1.015]' %>
 
     <div class="mt-2">
-      <div class="text-sm text-gray-600">
+      <div class="text-sm text-gray-600 dark:text-gray-300">
         
         <span class="inline-block uppercase
-                     text-xs md:text-sm text-gray-400 leading-[0.7rem] md:leading-[0.8rem]
+                     text-xs md:text-sm text-gray-400 dark:text-gray-500 leading-[0.7rem] md:leading-[0.8rem]
                      py-2 md:py-3">
           The Sex Commandos Thwart The Third Vaginal Apocalypse
         </span>
@@ -30,7 +30,7 @@
         <br>
 
         <span class="inline-block pt-1
-                     text-xs text-gray-400 leading-[0.8rem]">
+                     text-xs text-gray-400 dark:text-gray-500 leading-[0.8rem]">
           <%= @blurb %>
         </span>
       </div>
