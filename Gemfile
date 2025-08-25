@@ -28,6 +28,9 @@ gem 'base64', '0.1.1'
 gem 'jwt'
 gem 'service_interface'
 
+gem 'aws-sdk-s3', require: false
+gem 'active_storage_validations'
+
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'
