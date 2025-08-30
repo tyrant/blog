@@ -10,7 +10,8 @@ set :repo_url, "git@github.com:tyrant/blog.git"
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
 
 # Default deploy_to directory is /var/www/my_app_name
-set :deploy_to, "/home/app-user/blog"
+#set :deploy_to, "/home/app-user/blog"
+set :deploy_to, '/home/noob/blog'
 
 # Default value for :format is :airbrussh.
 # set :format, :airbrussh
@@ -40,7 +41,8 @@ append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/pack
 # Uncomment the following to require manually verifying the host key before first deploy.
 # set :ssh_options, verify_host_key: :secure
 
-set :rbenv_path, '/home/app-user/.rbenv'
+#set :rbenv_path, '/home/app-user/.rbenv'
+set :rbenv_path, '/home/noob/.rbenv'
 
 set :bundle_binstubs, -> { shared_path.join('bin') }
 
