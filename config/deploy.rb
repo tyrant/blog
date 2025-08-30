@@ -30,7 +30,10 @@ append :linked_files, 'config/database.yml', 'config/credentials/production.key'
 append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/packs", "public/system", '.bundle', "node_modules"
 
 # Default value for default_env is {}
-# set :default_env, { path: "/opt/ruby/bin:$PATH" }
+set :default_env, { 
+  path: "/opt/ruby/bin:$PATH",
+  NODE_OPTIONS: "--openssl-legacy-provider"
+}
 
 # Default value for local_user is ENV['USER']
 # set :local_user, -> { `git config user.name`.chomp }
