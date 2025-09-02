@@ -20,5 +20,5 @@
 # Learn more: http://github.com/javan/whenever
 
 every 1.day, at: '2:00 am' do
-  command "backup perform -t blog_backup"
+  command "bash /home/noob/blog/backup_script.sh"
 end
