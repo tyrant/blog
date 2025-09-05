@@ -62,7 +62,7 @@
     <%= render 'layouts/footer' unless @no_nav %>
 
     <%= render ModalComponent.new(type: 'irritate') do %>
-      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 font-['Racing_Sans_One'] text-center text-white">
+      <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 font-['Racing_Sans_One'] text-center text-white">
         <h1 class="absolute w-[calc(100%-3rem)] top-[15%] text-2xl sm:text-4xl uppercase leading-[1.1rem]">We interrupt this blog</h1>
         <h2 class="absolute top-[32%] w-[calc(100%-3rem)] text-lg sm:text-xl">to annoy you</h2>
         <h2 class="absolute top-[48%] w-[calc(100%-3rem)] text-lg sm:text-xl">and make things</h2>
@@ -71,7 +71,8 @@
         <%= image_tag 'idle-wink-nudge-cropped.jpg' %>
       </div>
 
-      <div class="px-4 sm:px-6
+      <div class="bg-white dark:bg-gray-800 
+                  px-4 sm:px-6
                   pb-4 sm:pb-6
                   flex 
                   justify-center">
