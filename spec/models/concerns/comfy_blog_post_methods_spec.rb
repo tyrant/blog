@@ -4,9 +4,9 @@ describe ComfyBlogPostMethods do
 
   let!(:site)   { create :site }
   let!(:layout) { create :layout, site: site }
-  let!(:sa)     { Comfy::Cms::Category.find_by label: 'Shite Advice' }
-  let!(:whimsy) { Comfy::Cms::Category.find_by label: 'Whimsy' }
-  let!(:nsfw)   { Comfy::Cms::Category.find_by label: 'NSFW' }
+  let!(:sa)     { create :category, label: 'Shite Advice', site: site }
+  let!(:whimsy) { create :category, label: 'Whimsy', site: site }
+  let!(:nsfw)   { create :category, label: 'NSFW', site: site }
 
   describe '#nsfw?' do
 

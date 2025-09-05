@@ -4,17 +4,17 @@ require 'rails_helper'
 
 shared_examples 'Naughty posts CSS-hidden' do |wait|
   before { sleep 1 if wait }
-  it { expect(all('.post-index:not(.hidden)').length).to eq posts_count_page_1_without_nsfw }
+  it { expect(all('.post:not(.hidden)').length).to eq posts_count_page_1_without_nsfw }
 end
 
 shared_examples 'Naughty posts CSS-showing' do |wait|
   before { sleep 1 if wait }
-  it { expect(all('.post-index:not(.hidden)').length).to eq ComfyBlog.config.posts_per_page }
+  it { expect(all('.post:not(.hidden)').length).to eq ComfyBlog.config.posts_per_page }
 end
 
 shared_examples 'Webkit blur effect disappears on hover' do |wait|
   before { sleep 1 if wait }
-  it { expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+  it { expect { find("[data-post-nsfw-value=\'true\']", match: :first).hover }
          .to change { webkit_blur_pixels }
          .from('blur(4px)')
          .to('none') }
@@ -22,18 +22,18 @@ end
 
 shared_examples "Webkit blur effect unaffected by hover" do |wait|
   before { sleep 1 if wait }
-  it { expect { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+  it { expect { find("[data-post-nsfw-value=\'true\']", match: :first).hover }
          .not_to change { webkit_blur_pixels } }
 end
 
 shared_examples "Webkit blur effect remains on hover" do
-  before { find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+  before { find("[data-post-nsfw-value=\'true\']", match: :first).hover }
   it { expect(webkit_blur_pixels).to eq 'blur(4px)' }
 end
 
 shared_examples "Webkit blur effect absent on hover" do |wait|
   before { sleep 1 if wait
-           find("[data-post-index-nsfw-value=\'true\']", match: :first).hover }
+           find("[data-post-nsfw-value=\'true\']", match: :first).hover }
   it { expect(webkit_blur_pixels).to eq 'none' }
 end
 
@@ -63,10 +63,13 @@ end
 
 describe 'ConsentIsSexy component usage', type: :system do
 
-  # Ensure there's always at least one NSFW post in the first page
-  # The probability of there being zero is (2/3)^12=~0.0077 ... but can't hurt
-  # to be thorough. A test intermittently failing ~1% of the time is too much.
   before do
+    Rails.application.load_tasks # https://stackoverflow.com/a/10061815 :scream:
+    Rake::Task['db:seed'].invoke
+
+    # Ensure there's always at least one NSFW post in the first page
+    # The probability of there being zero is (2/3)^12=~0.0077 ... but can't hurt
+    # to be thorough. A test intermittently failing ~1% of the time is too much.
     Comfy::Cms::Categorization.find_or_create_by!(
       category: Comfy::Cms::Category.find_by(label: 'NSFW'),
       categorized: Comfy::Blog::Post.order(:updated_at).last
@@ -80,7 +83,7 @@ describe 'ConsentIsSexy component usage', type: :system do
     def webkit_blur_pixels
       lol = <<~LOL
         (() => {
-          const css = "[data-post-index-nsfw-value='true'] > a.link";
+          const css = "[data-post-nsfw-value='true'] > div > a.link";
           const link = document.querySelector(css);
           return getComputedStyle(link).webkitFilter;
         })();

@@ -59,4 +59,11 @@ Rails.application.configure do
   # config.action_view.annotate_rendered_view_with_filenames = true
 
   config.assets.css_compressor = nil
+  
+  # Ensure assets are compiled for system tests
+  config.assets.compile = true
+  config.assets.debug = false
+  
+  # Webpacker configuration for system tests
+  config.webpacker.check_yarn_integrity = false
 end

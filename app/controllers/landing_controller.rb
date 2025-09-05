@@ -13,6 +13,8 @@ class LandingController < ApplicationController
     @user.update(name: landing_params[:name])
     @user.subscribe('list')
     LandingMailer.with(user: @user).thank_you_mail.deliver_later
+
+    head :no_content
   end
 
   def download

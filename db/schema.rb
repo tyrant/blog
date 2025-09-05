@@ -181,13 +181,6 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.index ["page_id"], name: "index_comfy_cms_translations_on_page_id"
   end
 
-  create_table "emails", force: :cascade do |t|
-    t.string "address", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["address"], name: "index_emails_on_address"
-  end
-
   create_table "mailkick_subscriptions", force: :cascade do |t|
     t.string "subscriber_type"
     t.bigint "subscriber_id"
