@@ -4,7 +4,7 @@ RSpec.describe PaginationComponent, type: :component do
   include ViewComponent::TestHelpers
 
   let(:page_no) { 1 }
-  let(:component) { described_class.new(page_no: page_no) }
+  subject { described_class.new page_no: page_no }
 
   # Mock ComfyBlog configuration and models
   before do
@@ -20,29 +20,18 @@ RSpec.describe PaginationComponent, type: :component do
   end
 
   describe '#initialize' do
-    it 'sets the current page number' do
-      expect(component.instance_variable_get(:@cur_page_no)).to eq(1)
-    end
-
-    it 'initializes ellipsis tracking variables' do
-      expect(component.instance_variable_get(:@already_displayed_1_to_n_ellipsis)).to be false
-      expect(component.instance_variable_get(:@already_displayed_n_to_page_count_ellipsis)).to be false
-    end
+    it { expect(subject.instance_variable_get(:@cur_page_no)).to eq(1) }
+    it { expect(subject.instance_variable_get(:@already_displayed_1_to_n_ellipsis)).to be false }
+    it { expect(subject.instance_variable_get(:@already_displayed_n_to_page_count_ellipsis)).to be false }
 
     context 'when page_no is nil' do
       let(:page_no) { nil }
-
-      it 'defaults to page 1' do
-        expect(component.instance_variable_get(:@cur_page_no)).to eq(1)
-      end
+      it { expect(subject.instance_variable_get(:@cur_page_no)).to eq(1) }
     end
 
     context 'when page_no is a string' do
       let(:page_no) { '3' }
-
-      it 'converts to integer' do
-        expect(component.instance_variable_get(:@cur_page_no)).to eq(3)
-      end
+      it { expect(subject.instance_variable_get(:@cur_page_no)).to eq(3) }
     end
   end
 
@@ -50,124 +39,88 @@ RSpec.describe PaginationComponent, type: :component do
     describe '#n_near_start_cur_end?' do
       let(:page_no) { 5 }
 
-      before do
-        # Mock 10 total pages
-        allow(component).to receive(:pages_total_count).and_return(10)
+      before { allow(subject).to receive(:pages_total_count).and_return(10) }
+
+      describe 'pages near start' do
+        it { expect(subject.send(:n_near_start_cur_end?, n: 1)).to be true }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 2)).to be true }
       end
 
-      it 'returns true for pages near start (within distance of 1)' do
-        expect(component.send(:n_near_start_cur_end?, n: 1)).to be true
-        expect(component.send(:n_near_start_cur_end?, n: 2)).to be true
+      describe 'pages near current' do
+        it { expect(subject.send(:n_near_start_cur_end?, n: 4)).to be true }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 5)).to be true }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 6)).to be true }
       end
 
-      it 'returns true for pages near current (within distance of 1)' do
-        expect(component.send(:n_near_start_cur_end?, n: 4)).to be true
-        expect(component.send(:n_near_start_cur_end?, n: 5)).to be true
-        expect(component.send(:n_near_start_cur_end?, n: 6)).to be true
+      describe 'pages near end' do
+        it { expect(subject.send(:n_near_start_cur_end?, n: 9)).to be true }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 10)).to be true }
       end
 
-      it 'returns true for pages near end (within distance of 1)' do
-        expect(component.send(:n_near_start_cur_end?, n: 9)).to be true
-        expect(component.send(:n_near_start_cur_end?, n: 10)).to be true
-      end
-
-      it 'returns false for pages not near start, current, or end' do
-        expect(component.send(:n_near_start_cur_end?, n: 3)).to be false
-        expect(component.send(:n_near_start_cur_end?, n: 7)).to be false
-        expect(component.send(:n_near_start_cur_end?, n: 8)).to be false
+      describe 'pages not near start, current, or end' do
+        it { expect(subject.send(:n_near_start_cur_end?, n: 3)).to be false }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 7)).to be false }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 8)).to be false }
       end
 
       context 'with custom distance' do
-        it 'uses the specified distance' do
-          expect(component.send(:n_near_start_cur_end?, n: 3, distance: 2)).to be true
-          expect(component.send(:n_near_start_cur_end?, n: 7, distance: 2)).to be true
-        end
+        it { expect(subject.send(:n_near_start_cur_end?, n: 3, distance: 2)).to be true }
+        it { expect(subject.send(:n_near_start_cur_end?, n: 7, distance: 2)).to be true }
       end
     end
 
     describe '#prev_page_no' do
       context 'when on first page' do
         let(:page_no) { 1 }
-
-        it 'returns 1' do
-          expect(component.send(:prev_page_no)).to eq(1)
-        end
+        it { expect(subject.send(:prev_page_no)).to eq(1) }
       end
 
       context 'when on page greater than 1' do
         let(:page_no) { 3 }
-
-        it 'returns previous page number' do
-          expect(component.send(:prev_page_no)).to eq(2)
-        end
+        it { expect(subject.send(:prev_page_no)).to eq(2) }
       end
     end
 
     describe '#next_page_no' do
-      before do
-        allow(component).to receive(:pages_total_count).and_return(5)
-      end
+      before { allow(subject).to receive(:pages_total_count).and_return(5) }
 
       context 'when on last page' do
         let(:page_no) { 5 }
-
-        it 'returns the last page number' do
-          expect(component.send(:next_page_no)).to eq(5)
-        end
+        it { expect(subject.send(:next_page_no)).to eq(5) }
       end
 
       context 'when not on last page' do
         let(:page_no) { 3 }
-
-        it 'returns next page number' do
-          expect(component.send(:next_page_no)).to eq(4)
-        end
+        it { expect(subject.send(:next_page_no)).to eq(4) }
       end
     end
 
     describe '#page_size' do
-      it 'returns the configured posts per page' do
-        expect(component.send(:page_size)).to eq(10)
-      end
+      it { expect(subject.send(:page_size)).to eq(10) }
     end
 
     describe '#cur_page_floor' do
       context 'on page 1' do
         let(:page_no) { 1 }
-
-        it 'returns 1' do
-          expect(component.send(:cur_page_floor)).to eq(1)
-        end
+        it { expect(subject.send(:cur_page_floor)).to eq(1) }
       end
 
       context 'on page 3' do
         let(:page_no) { 3 }
-
-        it 'returns 21' do
-          expect(component.send(:cur_page_floor)).to eq(21)
-        end
+        it { expect(subject.send(:cur_page_floor)).to eq(21) }
       end
     end
   end
 
   describe 'rendering' do
-    before do
-      # Mock params method on the component after rendering context is available
-      allow_any_instance_of(described_class).to receive(:params).and_return({ category: nil })
-    end
+    before { allow_any_instance_of(described_class).to receive(:params).and_return({ category: nil }) }
+    
+    let(:rendered) { render_inline(subject) }
 
-    subject { render_inline(component) }
-
-    it 'renders the component successfully' do
-      expect(subject).to be_present
-    end
-
-    it 'includes pagination logic methods' do
-      # Test that the component has the expected pagination methods
-      expect(component.private_methods).to include(:prev_page_no)
-      expect(component.private_methods).to include(:next_page_no)
-      expect(component.private_methods).to include(:page_size)
-      expect(component.private_methods).to include(:cur_page_floor)
-    end
+    it { expect(rendered).to be_present }
+    it { expect(subject.private_methods).to include(:prev_page_no) }
+    it { expect(subject.private_methods).to include(:next_page_no) }
+    it { expect(subject.private_methods).to include(:page_size) }
+    it { expect(subject.private_methods).to include(:cur_page_floor) }
   end
 end
