@@ -1,34 +1,12 @@
 require 'rails_helper'
 
 RSpec.describe 'Blog Pagination', type: :system do
-  let!(:site) { Comfy::Cms::Site.find_by(identifier: 'blog') || create(:site, identifier: 'blog', hostname: 'localhost', path: '/', label: 'Blog Site') }
-  let!(:layout) { site.layouts.first || create(:layout, site: site, identifier: 'default', label: 'Default Layout', content: '<html><body>{{ cms:page:content }}</body></html>') }
-  
-  let!(:posts) do
-    (1..8).map do |i|
-      post = create(:post, site: site, layout: layout, published_at: i.days.ago, is_published: true)
-      post.update!(title: "Test Post #{i}", slug: "test-post-#{i}")
-      post
-    end
-  end
+  let!(:site) { create :site }
+  let!(:layout) { create :layout, site: site }
+  let!(:posts) { (1..8).map { |i| create :post, site: site, layout: layout, published_at: i.days.ago } }
   
   before do
-    # Mock ComfyBlog configuration for small page size to test pagination
     allow(ComfyBlog.config).to receive(:posts_per_page).and_return(3)
-    
-    # Ensure the site is set as the default CMS site
-    allow(Comfy::Cms::Site).to receive(:find_site).and_return(site)
-    allow(Comfy::Cms::Site).to receive(:first).and_return(site)
-    
-    # Mock the CMS site detection that happens in the parent controller
-    allow_any_instance_of(PostsController).to receive(:load_cms_site) do |controller|
-      controller.instance_variable_set(:@cms_site, site)
-    end
-    
-    # Mock CMS methods to avoid rendering issues with unprocessed CMS tags
-    allow_any_instance_of(Comfy::Blog::Post).to receive(:resized_blob_or_orig_or_placeholder_url).and_return('http://picsum.photos/512/512')
-    allow_any_instance_of(Comfy::Blog::Post).to receive(:content_cache).and_return('<p>Test content</p>')
-    allow_any_instance_of(Comfy::Blog::Post).to receive(:render).and_return('<p>Test content</p>')
   end
 
   describe 'Pagination display' do
