@@ -12,74 +12,64 @@ RSpec.describe ComfyCmsCategoryMethods, type: :model do
 
   describe 'scopes' do
     describe '.nsfw_first' do
-      it 'returns NSFW category first, then non-NSFW categories' do
-        categories = Comfy::Cms::Category.nsfw_first
-        expect(categories.first).to eq nsfw
-        expect(categories[1..-1]).to include(shite_advice, whimsy, other)
-        expect(categories[1..-1]).not_to include(nsfw) # Should not be duplicated in the rest
+      describe 'returning NSFW category first, then non-NSFW categories' do
+        let(:categories) { Comfy::Cms::Category.nsfw_first }
+        
+        it { expect(categories.first).to eq nsfw }
+        it { expect(categories[1..-1]).to include(shite_advice, whimsy, other) }
+        it { expect(categories[1..-1]).not_to include(nsfw) } # Should not be duplicated in the rest
       end
     end
 
     describe '.public_names' do
-      it 'returns only categories with public labels' do
-        public_categories = Comfy::Cms::Category.public_names
-        expect(public_categories).to include(shite_advice, whimsy, nsfw)
-        expect(public_categories).not_to include(other)
+      describe 'returning only categories with public labels' do
+        let(:public_categories) { Comfy::Cms::Category.public_names }
+
+        it { expect(public_categories).to include(shite_advice, whimsy, nsfw) }
+        it { expect(public_categories).not_to include(other) }
       end
     end
 
     describe '.nsfw_banished!' do
-      it 'excludes NSFW category' do
-        non_nsfw = Comfy::Cms::Category.nsfw_banished!
-        expect(non_nsfw).to include(shite_advice, whimsy, other)
-        expect(non_nsfw).not_to include(nsfw)
+      describe 'excluding NSFW category' do
+        let(:non_nsfw) { Comfy::Cms::Category.nsfw_banished! }
+        
+        it { expect(non_nsfw).to include(shite_advice, whimsy, other) }
+        it { expect(non_nsfw).not_to include(nsfw) }
       end
     end
 
     describe '.nsfw_banished' do
-      context 'when banish is true' do
-        it 'excludes NSFW category' do
-          result = Comfy::Cms::Category.nsfw_banished(true)
-          expect(result).to include(shite_advice, whimsy, other)
-          expect(result).not_to include(nsfw)
-        end
+      describe 'when banish is true' do
+        let(:result) { Comfy::Cms::Category.nsfw_banished(true) }
+        
+        it { expect(result).to include(shite_advice, whimsy, other) }
+        it { expect(result).not_to include(nsfw) }
       end
 
-      context 'when banish is false' do
-        it 'includes all categories' do
-          result = Comfy::Cms::Category.nsfw_banished(false)
-          expect(result).to include(shite_advice, whimsy, nsfw, other)
-        end
+      describe 'when banish is false' do
+        let(:result) { Comfy::Cms::Category.nsfw_banished(false) }
+        
+        it { expect(result).to include(shite_advice, whimsy, nsfw, other) }
       end
 
-      context 'when banish is nil' do
-        it 'includes all categories' do
-          result = Comfy::Cms::Category.nsfw_banished(nil)
-          expect(result).to include(shite_advice, whimsy, nsfw, other)
-        end
+      describe 'when banish is nil' do
+        let(:result) { Comfy::Cms::Category.nsfw_banished(nil) }
+        
+        it { expect(result).to include(shite_advice, whimsy, nsfw, other) }
       end
     end
   end
 
   describe '#nsfw?' do
-    context 'when category is NSFW' do
-      it 'returns true' do
-        expect(nsfw.nsfw?).to be true
-      end
+    describe 'when category is NSFW' do
+      it { expect(nsfw.nsfw?).to be true }
     end
 
-    context 'when category is not NSFW' do
-      it 'returns false for Shite Advice' do
-        expect(shite_advice.nsfw?).to be false
-      end
-
-      it 'returns false for Whimsy' do
-        expect(whimsy.nsfw?).to be false
-      end
-
-      it 'returns false for other categories' do
-        expect(other.nsfw?).to be false
-      end
+    describe 'when category is not NSFW' do
+      it { expect(shite_advice.nsfw?).to be false }
+      it { expect(whimsy.nsfw?).to be false }
+      it { expect(other.nsfw?).to be false }
     end
   end
 end
