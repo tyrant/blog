@@ -4,7 +4,7 @@
 
 <% content_for :banner do %>
   <div class="title-bg" 
-       style="background-image: url(<%= image_path @blog_posts.sample.resized_blob_or_orig_or_placeholder_url %>)">
+       style="background-image: url(<%= image_path (@blog_posts.present? ? @blog_posts.sample.resized_blob_or_orig_or_placeholder_url : 'http://picsum.photos/512/512') %>)">
     <div class="transparency">
       <h1 class="sub">
         <%= params[:category].presence || 'Blog' %>
