@@ -10,17 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_10_13_063806) do
-
+ActiveRecord::Schema[8.0].define(version: 2025_09_10_031444) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
     t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
-    t.datetime "created_at", null: false
+    t.datetime "created_at", precision: nil, null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
@@ -32,8 +31,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.text "metadata"
     t.string "service_name", null: false
     t.bigint "byte_size", null: false
-    t.string "checksum", null: false
-    t.datetime "created_at", null: false
+    t.string "checksum"
+    t.datetime "created_at", precision: nil, null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -52,9 +51,9 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.integer "year", null: false
     t.integer "month", limit: 2, null: false
     t.boolean "is_published", default: true, null: false
-    t.datetime "published_at", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "published_at", precision: nil, null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.text "scratchpad"
     t.index ["created_at"], name: "index_comfy_blog_posts_on_created_at"
     t.index ["site_id", "is_published"], name: "index_comfy_blog_posts_on_site_id_and_is_published"
@@ -80,8 +79,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "label", default: "", null: false
     t.text "description"
     t.integer "position", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["site_id", "position"], name: "index_comfy_cms_files_on_site_id_and_position"
   end
 
@@ -92,9 +91,9 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "tag", default: "text", null: false
     t.text "content"
     t.boolean "boolean", default: false, null: false
-    t.datetime "datetime"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "datetime", precision: nil
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["boolean"], name: "index_comfy_cms_fragments_on_boolean"
     t.index ["datetime"], name: "index_comfy_cms_fragments_on_datetime"
     t.index ["identifier"], name: "index_comfy_cms_fragments_on_identifier"
@@ -111,8 +110,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.text "css"
     t.text "js"
     t.integer "position", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["parent_id", "position"], name: "index_comfy_cms_layouts_on_parent_id_and_position"
     t.index ["site_id", "identifier"], name: "index_comfy_cms_layouts_on_site_id_and_identifier", unique: true
   end
@@ -129,8 +128,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.integer "position", default: 0, null: false
     t.integer "children_count", default: 0, null: false
     t.boolean "is_published", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["is_published"], name: "index_comfy_cms_pages_on_is_published"
     t.index ["parent_id", "position"], name: "index_comfy_cms_pages_on_parent_id_and_position"
     t.index ["site_id", "full_path"], name: "index_comfy_cms_pages_on_site_id_and_full_path"
@@ -140,7 +139,7 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "record_type", null: false
     t.integer "record_id", null: false
     t.text "data"
-    t.datetime "created_at"
+    t.datetime "created_at", precision: nil
     t.index ["record_type", "record_id", "created_at"], name: "index_cms_revisions_on_rtype_and_rid_and_created_at"
   end
 
@@ -150,8 +149,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "hostname", null: false
     t.string "path"
     t.string "locale", default: "en", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["hostname"], name: "index_comfy_cms_sites_on_hostname"
   end
 
@@ -161,8 +160,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "identifier", null: false
     t.text "content"
     t.integer "position", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["site_id", "identifier"], name: "index_comfy_cms_snippets_on_site_id_and_identifier", unique: true
     t.index ["site_id", "position"], name: "index_comfy_cms_snippets_on_site_id_and_position"
   end
@@ -174,8 +173,8 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "label", null: false
     t.text "content_cache"
     t.boolean "is_published", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["is_published"], name: "index_comfy_cms_translations_on_is_published"
     t.index ["locale"], name: "index_comfy_cms_translations_on_locale"
     t.index ["page_id"], name: "index_comfy_cms_translations_on_page_id"
@@ -185,16 +184,16 @@ ActiveRecord::Schema.define(version: 2024_10_13_063806) do
     t.string "subscriber_type"
     t.bigint "subscriber_id"
     t.string "list"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["subscriber_type", "subscriber_id", "list"], name: "index_mailkick_subscriptions_on_subscriber_and_list", unique: true
   end
 
   create_table "users", force: :cascade do |t|
     t.string "email"
     t.string "name"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email"
     t.index ["name"], name: "index_users_on_name"
   end

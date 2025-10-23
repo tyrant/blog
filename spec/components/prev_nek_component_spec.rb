@@ -37,7 +37,7 @@ RSpec.describe PrevNekComponent, type: :component do
   describe 'rendering' do
     describe 'rendering the component' do
       before { render_inline(subject) }
-      it { expect(rendered_component).to be_present }
+      it { expect(rendered_content).to be_present }
     end
   end
 

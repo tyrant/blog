@@ -12,9 +12,9 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= favicon_link_tag asset_path('kissy-transparent.png') %>
-    <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
     
     <%= stylesheet_link_tag 'tailwind', 'data-turbo-track': 'reload' %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

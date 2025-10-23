@@ -1,18 +1,9 @@
-// This file is automatically compiled by Webpack, along with any other files
-// present in this directory. You're encouraged to place your actual application logic in
-// a relevant structure within app/javascript and only use these pack files to reference
-// that code so it'll be compiled.
+// Entry point for the build script in your package.json:
+import '@hotwired/turbo-rails'
 
-import Rails from "@rails/ujs";
-import * as ActiveStorage from "@rails/activestorage";
 import Alpine from 'alpinejs';
-import "channels";
-import "@hotwired/turbo-rails";
-import "../controllers";
-import "../components";
+import "./controllers";
 
-Rails.start();
-ActiveStorage.start();
 Alpine.start();
 
 // `name` must be dasherised: to, e.g., yoink all PostController instances, 

@@ -3,15 +3,17 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby File.read('.ruby-version').strip
 
-gem 'rails', '~> 6.1.4', '>= 6.1.4.1'
-gem 'pg'
-gem 'puma', '~> 5.0'
-gem 'webpacker', '~> 5.4'
+gem 'rails', '~> 8.0'
+gem 'pg', '~> 1.5'
+gem 'puma', '~> 6.0'
+gem 'propshaft'
+gem 'jsbundling-rails'
+gem 'cssbundling-rails'
 gem 'jbuilder', '~> 2.7'
-gem 'tailwindcss-rails', '~> 2.0', '>= 2.0.29'
+gem 'tailwindcss-rails', '~> 3.3.1'
 
 gem 'image_processing', '~> 1.2'
-gem 'bootsnap', '>= 1.4.4', require: false
+gem 'bootsnap', '>= 1.16.0', require: false
 gem 'view_component'
 gem 'matrix'
 gem 'turbo-rails'
@@ -21,10 +23,10 @@ gem 'ed25519'
 gem 'bcrypt_pbkdf'
 
 # https://stackoverflow.com/questions/70500220/rails-7-ruby-3-1-loaderror-cannot-load-such-file-net-smtp
-gem 'mail', '~> 2.8.0'
+gem 'mail', '>= 2.8.0'
 
 gem 'mailkick'
-gem 'base64', '0.1.1'
+gem 'base64'
 gem 'jwt'
 gem 'service_interface'
 
@@ -32,15 +34,15 @@ gem 'aws-sdk-s3', require: false
 gem 'active_storage_validations'
 
 group :development, :test do
-  gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+  gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'
 end
 
 group :development do
   gem 'web-console', '>= 4.1.0'
-  gem 'rack-mini-profiler', '~> 2.0'
-  gem 'listen', '~> 3.3'
-  gem 'spring'
+  gem 'rack-mini-profiler', '~> 3.0'
+  gem 'listen', '~> 3.8'
+  # gem 'spring' # Not needed in Rails 8
   gem 'capistrano-rails', '~> 1.6'
   gem 'capistrano-rbenv'
   gem "capistrano-bundler"
@@ -51,20 +53,24 @@ group :development do
 end
 
 group :test do
-  gem 'capybara', '>= 3.26'
-  gem 'selenium-webdriver'
-  gem 'rspec-rails'
-  gem 'factory_bot_rails'
+  gem 'capybara', '>= 3.39'
+  gem 'selenium-webdriver', '>= 4.0'
+  gem 'rspec-rails', '~> 6.0'
+  gem 'factory_bot_rails', '~> 6.4'
+  gem 'simplecov', require: false
+  gem 'simplecov-html', require: false
+  gem 'database_cleaner-active_record'
+  gem 'shoulda-matchers', '~> 6.0'
 end
 
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
-gem "comfortable_mexican_sofa", "~> 2.0.0"
 
-# https://github.com/comfy/comfy-blog/issues/88
-gem "comfy_blog", "~> 2.0.0", git: 'https://github.com/comfy/comfy-blog.git', branch: 'master'
+gem "comfortable_mexican_sofa", git: 'https://github.com/tyrant/comfortable-mexican-sofa.git', branch: 'master'
+gem "comfy_blog", git: 'https://github.com/tyrant/comfy-blog.git', branch: 'master'
+
 gem 'nokogiri'
 gem 'whenever'
 gem 'kaminari'
 
 # Use Redis for Action Cable
-gem 'redis', '~> 4.0'
+gem 'redis', '>= 4.0.1'

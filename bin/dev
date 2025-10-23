@@ -1,3 +1,6 @@
+# #!/usr/bin/env ruby
+#exec "./bin/rails", "server", *ARGV
+
 #!/usr/bin/env sh
 
 if ! gem list foreman -i --silent; then

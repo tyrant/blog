@@ -24,15 +24,15 @@ RSpec.describe ConsentIsSexyYoComponent, type: :component do
   end
 
   describe 'rendering' do
-    before { render_inline(subject) }
-    
     context 'in col mode' do
-      it { expect(rendered_component).to be_present }
+      before { render_inline(subject) }
+      it { expect(rendered_content).to be_present }
     end
 
     context 'in row mode' do
       let(:mode) { 'row' }
-      it { expect(rendered_component).to be_present }
+      before { render_inline(subject) }
+      it { expect(rendered_content).to be_present }
     end
   end
 

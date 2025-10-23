@@ -1,7 +1,7 @@
 # config valid for current version and patch releases of Capistrano
 lock "~> 3.17.1"
 
-set :rbenv_ruby, '3.1.2'
+
 
 set :application, "blog"
 set :repo_url, "git@github.com:tyrant/blog.git"
@@ -27,7 +27,7 @@ set :deploy_to, '/home/noob/blog'
 append :linked_files, 'config/database.yml', 'config/credentials/production.key'
 
 # Default value for linked_dirs is []
-append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/packs", "public/system", '.bundle', "node_modules"
+append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "app/assets/builds", "public/system", '.bundle', "node_modules"
 
 # Default value for default_env is {}
 set :default_env, { 
@@ -44,7 +44,7 @@ set :default_env, {
 # Uncomment the following to require manually verifying the host key before first deploy.
 # set :ssh_options, verify_host_key: :secure
 
-#set :rbenv_path, '/home/app-user/.rbenv'
+set :rbenv_ruby, '3.1.2'
 set :rbenv_path, '/home/noob/.rbenv'
 
 set :bundle_binstubs, -> { shared_path.join('bin') }

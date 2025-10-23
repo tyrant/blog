@@ -134,6 +134,12 @@ describe 'ConsentIsSexy component usage', type: :system, js: true do
     before do
       # Visit the blog posts index where the consent component is rendered
       visit '/blog'
+      
+      # Dismiss any modal that might be interfering with clicks
+      if page.has_css?('#modal_irritate [x-on\\:click="isOpen=false"]', visible: true)
+        find('#modal_irritate [x-on\\:click="isOpen=false"]').click
+        sleep 0.5 # Wait for modal to close
+      end
     end
 
     describe "Checking/unchecking 'Hide NSFW(?) posts'" do

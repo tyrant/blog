@@ -19,14 +19,13 @@ RSpec.describe PostComponent, type: :component do
   end
 
   describe 'rendering' do
-    let(:rendered) { render_inline(subject) }
     let(:expected_path) { "/blog/#{post.year}/#{post.month}/#{post.slug}" }
     let(:truncated_title) { post.title.truncate(72, separator: ' ', omission: ' ...') }
     
-    before { rendered }
-    it { expect(rendered_component).to be_present }
-    it { expect(rendered_component).to include(truncated_title) }
-    it { expect(rendered_component).to include(expected_path) }
+    before { render_inline(subject) }
+    it { expect(rendered_content).to be_present }
+    it { expect(rendered_content).to include(truncated_title) }
+    it { expect(rendered_content).to include(expected_path) }
   end
 
   describe 'CSS classes' do
