@@ -62,7 +62,21 @@ Rails.application.routes.draw do
   # Ensure that this route is defined last
   #comfy_route :cms_admin, path: 'admin'
   comfy_route_cms_admin
-  comfy_route :cms, path: "/"
+
+  # Comfy CMS catch-all route with constraint to exclude /rails/* paths
+  # ActiveStorage routes are automatically loaded by Rails as an engine
+  # This constraint prevents CMS from intercepting them
+  class ComfyCmsConstraint
+    def matches?(request)
+      # Allow CMS to handle everything EXCEPT /rails/* paths
+      !request.path.start_with?('/rails/')
+    end
+  end
+
+  # Manually define CMS routes instead of using comfy_route to apply constraint
+  constraints(ComfyCmsConstraint.new) do
+    get '(*cms_path)', to: 'comfy/cms/content#show', as: :comfy_cms_render_page
+  end
 
   # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
 end
