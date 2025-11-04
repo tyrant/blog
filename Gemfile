@@ -33,6 +33,8 @@ gem 'service_interface'
 gem 'aws-sdk-s3', require: false
 gem 'active_storage_validations'
 
+gem 'dotenv-rails'
+
 group :development, :test do
   gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'faker'
