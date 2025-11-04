@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base
+  NavItem = Struct.new(:key, :label, :path, :children, :options)
 
   before_action :unstringly_type_nsfw_cookies
   before_action :instanceify_nsfw_cookies
@@ -179,53 +180,43 @@ class ApplicationController < ActionController::Base
 
   def init_nav_items
     @nav_items = [
-      OpenStruct.new({ 
-        key:   'books',
-        label: 'BOOKS',
-        path:  apocalypse_path,
-        children: [
-          OpenStruct.new({
-            key:   'apocalypse',
-            label: 'The Sex Commandos Thwart The Third Vaginal Apocalypse',
-            path:  apocalypse_path,
-            children: [
-              OpenStruct.new({
-                key:   'phwoar',
-                label: 'Part 1/6: The Knights of Raw Phwoar',
-                path:  phwoar_path
-              }), OpenStruct.new({ 
-                key:   'superb',
-                label: 'Part 2/6: The Soviet Sluts Superb', 
-                path:  superb_path 
-              }), OpenStruct.new({ 
-                key:   'supremacy',
-                label: 'Part 3/6: The Cervical Supremacy',
-                path:  supremacy_path
-              }), OpenStruct.new({
-                key:   'praetorian',
-                label: 'Part 4/6: The Praetorian Prostitutes',
-                path:   praetorian_path
-              })
+      NavItem.new(
+        'books',
+        'BOOKS',
+        apocalypse_path,
+        [
+          NavItem.new(
+            'apocalypse',
+            'The Sex Commandos Thwart The Third Vaginal Apocalypse',
+            apocalypse_path,
+            [
+              NavItem.new('phwoar', 'Part 1/6: The Knights of Raw Phwoar', phwoar_path),
+              NavItem.new('superb', 'Part 2/6: The Soviet Sluts Superb', superb_path),
+              NavItem.new('supremacy', 'Part 3/6: The Cervical Supremacy', supremacy_path),
+              NavItem.new('praetorian', 'Part 4/6: The Praetorian Prostitutes', praetorian_path)
             ]
-          })
+          )
         ]
-      }), OpenStruct.new({ 
-        key:   'blog',
-        label: 'BLOG',
-        path:  comfy_blog_posts_path,
-        children: Comfy::Cms::Category.public_names.select(:label).map do |cat|
-          OpenStruct.new({ 
-            key:   cat.label.parameterize,
-            label: cat.label,
-            path:  comfy_blog_posts_path(category: cat.label)
-          })
+      ),
+      NavItem.new(
+        'blog',
+        'BLOG',
+        comfy_blog_posts_path,
+        Comfy::Cms::Category.public_names.select(:label).map do |cat|
+          NavItem.new(
+            cat.label.parameterize,
+            cat.label,
+            comfy_blog_posts_path(category: cat.label)
+          )
         end
-      }), OpenStruct.new({
-        key:   'contact',
-        label: "'Sup d00d",
-        path:  contact_path,
-        options: { lowercase: true }
-      })
+      ),
+      NavItem.new(
+        'contact',
+        "'Sup d00d",
+        contact_path,
+        nil,
+        { lowercase: true }
+      )
     ]
   end
 
