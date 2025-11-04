@@ -60,11 +60,16 @@ module ComfyBlogPostMethods
     # If, however, there's an image but it's an external and complete URL, just
     # use that. But if there's no image at all, just use a nifty placeholder.
     def resized_blob_or_orig_or_placeholder_url(x: 512, y: 512)
-      src = first_img_src
-      return "http://picsum.photos/#{x}/#{y}" if src.nil?
-      return src unless active_storage_url?(src)
+      placeholder_url = "http://picsum.photos/#{x}/#{y}"
 
-      Rails.application.routes.url_helpers.url_for(resized_blob_variant_from(src, x: x, y: y))
+      src = first_img_src
+      return placeholder_url if src.nil?
+      return src unless Comfy::Blog::Post.active_storage_url?(src)
+
+      resized = Comfy::Blog::Post.resized_blob_variant_from(src, x: x, y: y)
+      return placeholder_url if resized.blank?
+
+      Rails.application.routes.url_helpers.rails_representation_path(resized, only_path: true)
     end
 
     # We would like the Blob object, if any, that generated this post's banner/
@@ -75,9 +80,27 @@ module ComfyBlogPostMethods
     # uses that big honkin' hash-thing between 'redirect' and
     # 'dad-changing-a-diaper' to populate params[:signed_id], then pass it to 
     # ActiveStorage::Blob#find_signed!. Let's replicate that. Done.
-    def resized_blob_variant_from(src, x:, y:)
+    def self.resized_blob_variant_from(src, x:, y:)
       signed_id = src.split('/')[-2]
-      blob = ActiveStorage::Blob.find_signed!(signed_id)
+      #blob = ActiveStorage::Blob.find_signed!(signed_id)
+      # Try normal signature verification first (for new Rails 8 URLs)
+      blob = begin
+        ActiveStorage::Blob.find_signed!(signed_id)
+
+      # Fallback for URLs generated before Rails 8 upgrade:
+      rescue ActiveSupport::MessageVerifier::InvalidSignature => e
+        blob_id = self.blob_id_from_src(src: src)
+        return nil if blob_id.nil?
+        
+        begin
+          ActiveStorage::Blob.find(blob_id)
+        rescue ActiveRecord::RecordNotFound
+          Rails.logger.warn "ActiveStorage::Blob not found for id: #{blob_id}"
+          return nil
+        end
+      end
+      
+      return nil unless blob
       blob.variant(resize_to_fill: [x, y])
     end
 
@@ -85,7 +108,7 @@ module ComfyBlogPostMethods
     # <img> src that isn't of a bloody emoji. Yoink it.
     def first_img_src
       non_emojis = Nokogiri::HTML(self.content_cache).css('img').reject do |img|
-        a_bloody_emoji?(img)
+        Comfy::Blog::Post.a_bloody_emoji?(img)
       end
 
       if non_emojis.length == 0
@@ -99,15 +122,41 @@ module ComfyBlogPostMethods
     # alt="[the actual UTF8 emoji character]". We can detect this.
     # Manually going through every single emoji isn't the most elegant detection
     # method, but it'll do for now.
-    def a_bloody_emoji?(possibly_emoji_img)
+    def self.a_bloody_emoji?(possibly_emoji_img)
       %w(😂 😁 ❤️ 😞 😬 💫).include? possibly_emoji_img['alt']
     end
 
     # Clunky, but it'll have to do for now.
-    def active_storage_url?(url)
+    def self.active_storage_url?(url)
       url.include?('rails/active_storage/blobs')
     end
 
-    # Sample URL: 'http://localhost:3000/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBDdz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--0b23b9627bd78603f2b482f156ecc052aa618378/Dad-Changing-A-Diaper-1024x683.jpeg'
+
+    # Extracts the Blob ID from a Rails 6 or Rails 8 signed ActiveStorage <img> URL.
+    # Signed format: "BASE64_MESSAGE--SIGNATURE"
+    def self.blob_id_from_src(src:)
+      signed_id = src.split('/')[-2]
+      message = signed_id.split('--').first
+      decoded = JSON.parse(Base64.urlsafe_decode64(message))
+      
+      # Rails 8 format: data is directly in the JSON
+      if decoded.dig('_rails', 'data')
+        decoded.dig('_rails', 'data')
+      # Rails 6 format: data is Marshal-encoded in the 'message' field
+      elsif decoded.dig('_rails', 'message')
+        marshal_encoded = decoded.dig('_rails', 'message')
+        Marshal.load(Base64.decode64(marshal_encoded))
+      else
+        Rails.logger.warn "Could not extract blob_id from signed_id: #{signed_id}"
+        nil
+      end
+    rescue => e
+      Rails.logger.error "Failed to extract blob_id from src #{src}: #{e.message}"
+      nil
+    end
+
+    # Sample Rails 6 URL: 'http://localhost:3000/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBDdz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--0b23b9627bd78603f2b482f156ecc052aa618378/Dad-Changing-A-Diaper-1024x683.jpeg'
+    # 
+    # Sample Rails 8 URL: 'http://localhost:3000/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTIxMSwicHVyIjoiYmxvYl9pZCJ9fQ==--33788534f951b79669b0b8fb46bb3a00dfacc5c4/comedian_7688199.png'
   end
 end
