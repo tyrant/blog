@@ -7,3 +7,8 @@ ComfyBlog.configure do |config|
   # Number of posts per page. Default is 10
   config.posts_per_page = 12
 end
+
+Rails.application.config.to_prepare do
+  Comfy::Blog::Post.instance_eval { include ComfyBlogPostMethods }
+  Comfy::Cms::Category.instance_eval { include ComfyCmsCategoryMethods }
+end

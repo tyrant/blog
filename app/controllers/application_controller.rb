@@ -1,6 +1,5 @@
 class ApplicationController < ActionController::Base
 
-  before_action :comfy_doohickeys_instance_eval
   before_action :unstringly_type_nsfw_cookies
   before_action :instanceify_nsfw_cookies
   before_action :init_nav_items
@@ -159,20 +158,6 @@ class ApplicationController < ActionController::Base
   end
 
   private
-
-  # Much faffing implies this is the least crap location I can find for these
-  # particular .instance_eval calls. Still not perfect!
-  # I'd normally do .instance_eval calls for model-doohickeys inside /models ...
-  # but it seems doing these for third-party AR models, particularly for ones
-  # extending ActiveRecord::Base rather than ApplicationRecord, makes /models-
-  # based .instance_eval calls not stick. Unsure of the exact reason why, but
-  # don't feel inclined to squander even more time investigating. Rr. Hmph. 
-  # Fine. Do the includes here instead. Yes we're mixing app logic with data
-  # logic, but fuckit. It's my party, bee-hah-chiz <3 :*
-  def comfy_doohickeys_instance_eval
-    Comfy::Blog::Post.instance_eval { include ComfyBlogPostMethods }
-    Comfy::Cms::Category.instance_eval { include ComfyCmsCategoryMethods }
-  end
 
   # Our three NSFW-visibility-options cookies are all boolean. But cookies are
   # stringly typed. Convert all three, 'true'/'false', to true/false.
