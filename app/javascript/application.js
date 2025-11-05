@@ -1,3 +1,11 @@
+import jQuery from 'jquery';
+window.$ = jQuery;
+window.jQuery = jQuery;
+
+import Rails from '@rails/ujs';
+window.Rails = Rails;
+Rails.start();
+
 // Entry point for the build script in your package.json:
 import '@hotwired/turbo-rails'
 

@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/tyrant/comfortable-mexican-sofa.git
-  revision: dc0ad9c17c683306eece9fea520b1eb731a5f7c6
+  revision: ca8ad059d533ef6a9489d069ee65ed9806854634
   branch: master
   specs:
     comfortable_mexican_sofa (2.0.19)
@@ -16,7 +16,7 @@ GIT
 
 GIT
   remote: https://github.com/tyrant/comfy-blog.git
-  revision: 4f8bc35dbb6802dd81b8cfe08a2a3653329ad72b
+  revision: 2bcf5ffa9203a29fd9fbbe4bfaae02f195f7eb82
   branch: master
   specs:
     comfy_blog (2.0.7)
