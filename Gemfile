@@ -21,6 +21,7 @@ gem 'turbo-rails'
 # https://github.com/net-ssh/net-ssh/issues/565
 gem 'ed25519'
 gem 'bcrypt_pbkdf'
+gem 'net-ssh', '>= 7.2.0'  # OpenSSL 3.0 compatibility
 
 # https://stackoverflow.com/questions/70500220/rails-7-ruby-3-1-loaderror-cannot-load-such-file-net-smtp
 gem 'mail', '>= 2.8.0'
@@ -52,6 +53,7 @@ group :development do
   #gem 'capistrano-local-precompile', '~> 1.2.0', require: false
   gem 'letter_opener'
   gem 'letter_opener_web'
+  gem 'mutex_m'
 end
 
 group :test do

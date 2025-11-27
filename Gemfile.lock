@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/tyrant/comfortable-mexican-sofa.git
-  revision: ca8ad059d533ef6a9489d069ee65ed9806854634
+  revision: c3a7d20c921d79f99d64e86c0559ab64dace24fd
   branch: master
   specs:
     comfortable_mexican_sofa (2.0.19)
@@ -16,7 +16,7 @@ GIT
 
 GIT
   remote: https://github.com/tyrant/comfy-blog.git
-  revision: 2bcf5ffa9203a29fd9fbbe4bfaae02f195f7eb82
+  revision: a1ec20b3ddf2b4f80974c3a2809a3715a061dcd4
   branch: master
   specs:
     comfy_blog (2.0.7)
@@ -275,6 +275,7 @@ GEM
     mini_portile2 (2.8.9)
     minitest (5.26.0)
     msgpack (1.8.0)
+    mutex_m (0.3.0)
     net-imap (0.5.12)
       date
       net-protocol
@@ -286,7 +287,7 @@ GEM
       net-ssh (>= 2.6.5, < 8.0.0)
     net-smtp (0.5.1)
       net-protocol
-    net-ssh (7.0.1)
+    net-ssh (7.3.0)
     nio4r (2.7.4)
     nokogiri (1.18.10)
       mini_portile2 (~> 2.8.2)
@@ -487,6 +488,8 @@ DEPENDENCIES
   mail (>= 2.8.0)
   mailkick
   matrix
+  mutex_m
+  net-ssh (>= 7.2.0)
   nokogiri
   pg (~> 1.5)
   propshaft
