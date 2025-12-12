@@ -33,13 +33,11 @@ foreman start -f Procfile.dev
 Either that or `bin/dev`. Not `be bin/dev`! Foreman doesn't play nicely with
 Bundler. See Foreman's docs re why.
 
-## Webpacker
 
-Don't forget that we're using JS packs. To yoink our JS content into application_pack_tag+pals, Webpacker must run:
+## Prod dependencies
 
-`$ bundle exec ./bin/webpack-dev-server`
-
-Fire that shit up first, and thence all Stimulus controllers' content will remain current. Right now, this command is already inside `Procfile.dev`, so running `bin/dev` will handle this automatically, but just something to keep in mind.
+Now that we're on Rails 8, among other libraries, Prod requires libvps42 to do 
+its Blob variant resizing. 
 
 
 ## Rails Credentials
