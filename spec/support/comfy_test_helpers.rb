@@ -36,6 +36,15 @@ module ComfyTestHelpers
     end
   end
 
+  # Restore config to actual app settings (for system tests)
+  def restore_app_config
+    ComfyBlog.configure do |config|
+      config.posts_per_page   = 12
+      config.app_layout       = "layouts/application"
+      config.public_blog_path = "blog"
+    end
+  end
+
   def http_auth_headers
     {
       "HTTP_AUTHORIZATION" => ActionController::HttpAuthentication::Basic.encode_credentials(
@@ -48,4 +57,9 @@ end
 
 RSpec.configure do |config|
   config.include ComfyTestHelpers
+
+  # Restore app config before system tests to prevent pollution from unit tests
+  config.before(:each, type: :system) do
+    restore_app_config
+  end
 end
