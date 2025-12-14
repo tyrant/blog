@@ -92,9 +92,8 @@ RSpec.describe 'PostsController', type: :request do
 
     context 'when post does not exist' do
       it 'returns 404' do
-        expect {
-          get "/posts/999999/prev_nek"
-        }.to raise_error(ActiveRecord::RecordNotFound)
+        get "/posts/999999/prev_nek"
+        expect(response).to have_http_status(:not_found)
       end
     end
   end

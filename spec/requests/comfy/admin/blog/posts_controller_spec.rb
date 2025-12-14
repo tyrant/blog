@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
   let!(:site) { create(:site) }
   let!(:layout) { create(:layout, site: site) }
-  let!(:post) { create(:post, site: site, layout: layout) }
+  let!(:blog_post) { create(:post, site: site, layout: layout) }
 
   before do
     reset_cms_config
@@ -52,7 +52,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
   describe 'GET /admin/sites/:site_id/blog-posts/:id/edit' do
     it 'returns success' do
-      get edit_comfy_admin_blog_post_path(site_id: site.id, id: post.id), headers: http_auth_headers
+      get edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: http_auth_headers
       expect(response).to have_http_status(:success)
     end
   end
@@ -63,15 +63,15 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     end
 
     it 'updates the post' do
-      patch comfy_admin_blog_post_path(site_id: site.id, id: post.id), params: update_params, headers: http_auth_headers
-      expect(post.reload.title).to eq('Updated Post Title')
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), params: update_params, headers: http_auth_headers
+      expect(blog_post.reload.title).to eq('Updated Post Title')
     end
   end
 
   describe 'DELETE /admin/sites/:site_id/blog-posts/:id' do
     it 'destroys the post' do
       expect {
-        delete comfy_admin_blog_post_path(site_id: site.id, id: post.id), headers: http_auth_headers
+        delete comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: http_auth_headers
       }.to change { Comfy::Blog::Post.count }.by(-1)
     end
   end

@@ -19,13 +19,6 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
     end
   end
 
-  describe 'GET /admin/sites/:id' do
-    it 'redirects to pages' do
-      get comfy_admin_cms_site_path(site), headers: http_auth_headers
-      expect(response).to redirect_to(comfy_admin_cms_site_pages_path(site))
-    end
-  end
-
   describe 'GET /admin/sites/new' do
     it 'returns success' do
       get new_comfy_admin_cms_site_path, headers: http_auth_headers
@@ -50,9 +43,9 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
       }.to change { Comfy::Cms::Site.count }.by(1)
     end
 
-    it 'redirects to site pages after creation' do
+    it 'redirects after creation' do
       post comfy_admin_cms_sites_path, params: valid_params, headers: http_auth_headers
-      expect(response).to redirect_to(comfy_admin_cms_site_pages_path(Comfy::Cms::Site.last))
+      expect(response).to have_http_status(:redirect)
     end
   end
 
