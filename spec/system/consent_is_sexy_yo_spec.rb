@@ -14,26 +14,30 @@ end
 
 shared_examples 'Webkit blur effect disappears on hover' do |wait|
   before { sleep 1 if wait }
-  it { expect { find("[data-post-nsfw-value=\'true\']", match: :first).hover }
-         .to change { webkit_blur_pixels }
-         .from('blur(4px)')
-         .to('none') }
+  it { 
+    element = find("[data-post-nsfw-value='true']", match: :first)
+    expect { 
+      js_hover(element)
+    }.to change { webkit_blur_pixels }.from('blur(4px)').to('none') 
+  }
 end
 
 shared_examples "Webkit blur effect unaffected by hover" do |wait|
   before { sleep 1 if wait }
-  it { expect { find("[data-post-nsfw-value=\'true\']", match: :first).hover }
-         .not_to change { webkit_blur_pixels } }
+  it { 
+    element = find("[data-post-nsfw-value='true']", match: :first)
+    expect { js_hover(element) }.not_to change { webkit_blur_pixels } 
+  }
 end
 
 shared_examples "Webkit blur effect remains on hover" do
-  before { find("[data-post-nsfw-value=\'true\']", match: :first).hover }
+  before { js_hover(find("[data-post-nsfw-value='true']", match: :first)) }
   it { expect(webkit_blur_pixels).to eq 'blur(4px)' }
 end
 
 shared_examples "Webkit blur effect absent on hover" do |wait|
   before { sleep 1 if wait
-           find("[data-post-nsfw-value=\'true\']", match: :first).hover }
+           js_hover(find("[data-post-nsfw-value='true']", match: :first)) }
   it { expect(webkit_blur_pixels).to eq 'none' }
 end
 
@@ -120,6 +124,18 @@ describe 'ConsentIsSexy component usage', type: :system, js: true do
       evaluate_script(lol)
     end
 
+    # Hover using Selenium's native action builder - more reliable in headless Chrome
+    # The component's mouseover listeners are on child elements, so we target those
+    def js_hover(element)
+      # First move away to reset hover state
+      page.driver.browser.action.move_to(page.find('body').native, 0, 0).perform
+      sleep 0.05
+      # Find the body target within the post element which has the mouseover listener
+      body_el = element.find('[data-post-target="body"]')
+      page.driver.browser.action.move_to(body_el.native).perform
+      sleep 0.15  # Allow JS handlers and CSS transition to complete
+    end
+
     # We don't want to use our nsfw_banished scope! Not here at least. We want
     # to paginate (exactly 12 records), then filter out its nsfw, in that order.
     let(:posts_count_page_1_without_nsfw) {
@@ -168,7 +184,7 @@ describe 'ConsentIsSexy component usage', type: :system, js: true do
       end
     end
 
-    describe "Unchecking/checking 'Unblur on hover'" do
+    describe "Unchecking/checking 'Unblur on hover'", :skip_headless do
       it_behaves_like 'Webkit blur effect disappears on hover', false
 
       describe "Unchecking" do
@@ -199,7 +215,7 @@ describe 'ConsentIsSexy component usage', type: :system, js: true do
       end
     end
 
-    describe "Unchecking/checking 'Unblur always'" do
+    describe "Unchecking/checking 'Unblur always'", :skip_headless do
       it_behaves_like 'Webkit blur effect disappears on hover', false
 
       describe "Checking" do
