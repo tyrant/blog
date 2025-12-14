@@ -1,0 +1,38 @@
+nb:
+  activerecord:
+    models:
+      comfy/blog/post: Post
+    attributes:
+      comfy/blog/post:
+        title: Title
+        slug: Slug
+        published_at: Published at
+        is_published: Is Published
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: Blog Posts
+      blog:
+        posts:
+          created: Blog Post created
+          create_failure: Failed to create Blog Post
+          updated: Blog Post updated
+          update_failure: Failed to update Blog Post
+          deleted: Blog Post removed
+          not_found: Blog Post not found
+          index:
+            title: Blog Posts
+            new_link: New Blog Post
+            edit: Edit
+            delete: Delete
+            are_you_sure: Are you sure?
+          new:
+            title: New Blog Post
+          edit:
+            title: Edit Blog Post
+          form:
+            create: Create Post
+            update: Update Post
+            cancel: Cancel

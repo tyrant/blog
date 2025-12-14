@@ -1,0 +1,29 @@
+.redactor-box {
+  margin-bottom: 0px;
+}
+
+.redactor-box textarea,
+.redactor-box .redactor-editor {
+  resize: vertical;
+}
+
+#redactor-modal header.ui-draggable-handle {
+  padding: 20px;
+}
+
+#redactor-modal #redactor-modal-body section {
+  padding: 0 20px 20px 20px;
+}
+
+#redactor-modal #redactor-modal-body section #redactor-droparea-placeholder input[type=file] {
+  display: inline;
+}
+
+#redactor-modal #redactor-modal-body section #redactor-image-manager-box img {
+  margin: 0 5px 5px 0;
+  opacity: 0.75;
+}
+
+#redactor-modal #redactor-modal-body section #redactor-image-manager-box img:hover {
+  opacity: 1;
+}

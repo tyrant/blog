@@ -1,0 +1,38 @@
+zh-TW:
+  activerecord:
+    models:
+      comfy/blog/post: 網誌
+    attributes:
+      comfy/blog/post:
+        title: 標題
+        slug: 路徑名
+        published_at: 發佈于
+        is_published: 發佈
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: 網誌
+      blog:
+        posts:
+          created: 網誌創建成功
+          create_failure: 網誌創建失敗
+          updated: 網誌更新成功
+          update_failure: 網誌更新失敗
+          deleted: 網誌刪除成功
+          not_found: 網誌不存在
+          index:
+            title: 網誌
+            new_link: 創建新網誌
+            edit: 編輯
+            delete: 刪除
+            are_you_sure: 確定刪除該網誌嗎?
+          new:
+            title: 新網誌
+          edit:
+            title: 編輯網誌
+          form:
+            create: 創建網誌
+            update: 跟新網誌
+            cancel: 取消

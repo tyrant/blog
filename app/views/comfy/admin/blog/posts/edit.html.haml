@@ -1,0 +1,9 @@
+- content_for :right_column do
+  - link = comfy_admin_blog_post_revisions_path(@site, @post)
+  = render "comfy/admin/cms/revisions/sidebar", record: @post, link: link
+
+.page-header
+  %h2= t('.title')
+
+= comfy_form_with model: @post, scope: :post, url: {action: :update}, html: {multipart: true} do |form|
+  = render form

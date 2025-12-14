@@ -1,0 +1,38 @@
+ru:
+  activerecord:
+    models:
+      comfy/blog/post: Запись блога
+    attributes:
+      comfy/blog/post:
+        title: Название
+        slug: Slug
+        published_at: Опубликовано в
+        is_published: Опубликовано
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: Записи блога
+      blog:
+        posts:
+          created: Запись блога создана
+          create_failure: Не удалось создать запись блога
+          updated: Запись блога обновлена
+          update_failure:  Не удалось обновить запись блога
+          deleted: Запись блога удалена
+          not_found: Запись блога не найдена
+          index:
+            title: Записи блога
+            new_link: Создать запись блога
+            edit: Редактировать
+            delete: Удалить
+            are_you_sure: Вы уверены?
+          new:
+            title: Новая запись блога
+          edit:
+            title: Редактирование записи блога
+          form:
+            create: Create Post
+            update: Update Post
+            cancel: Cancel

@@ -1,0 +1,37 @@
+- content_for :right_column do
+  = render "comfy/admin/cms/categories/index", type: "Comfy::Blog::Post"
+
+.page-header
+  = link_to t('.new_link'), new_comfy_admin_blog_post_path(@site), class: 'btn btn-secondary float-right'
+  %h2= t('.title')
+
+= comfy_admin_partial "comfy/admin/blog/partials/posts_before"
+
+= comfy_paginate @posts
+
+%ul.list
+  - @posts.each do |post|
+    %li
+      .row
+        .col-md-8.item
+          .item-content
+            .item-title
+              - published_css_class = post.is_published? ? "published" : "draft"
+              = link_to post.title, edit_comfy_admin_blog_post_path(@site, post), class: published_css_class
+            .item-meta
+              - link = post.url
+              = link_to link, link, target: "_blank"
+              %br
+              = post.published_at&.strftime('%Y-%m-%d %H:%M:%S')
+
+          .item-categories.ml-auto.d-flex.align-items-center
+            = render "comfy/admin/cms/categories/categories", object: post
+
+        .col-md-4.d-flex.align-items-center.justify-content-md-end
+          .btn-group.btn-group-sm
+            = link_to t('.edit'), edit_comfy_admin_blog_post_path(@site, post), class: 'btn btn-outline-secondary'
+            = link_to t('.delete'), comfy_admin_blog_post_path(@site, post), method: :delete, data: {confirm: t('.are_you_sure')}, class: 'btn btn-danger'
+
+= comfy_paginate @posts
+
+= comfy_admin_partial "comfy/admin/blog/partials/posts_after"

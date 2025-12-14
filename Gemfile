@@ -69,8 +69,13 @@ end
 
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
-gem "comfortable_mexican_sofa", git: 'https://github.com/tyrant/comfortable-mexican-sofa.git', branch: 'master'
-gem "comfy_blog", git: 'https://github.com/tyrant/comfy-blog.git', branch: 'master'
+# CMS dependencies (formerly from comfortable_mexican_sofa gem)
+gem 'rails-i18n'
+gem 'comfy_bootstrap_form'
+gem 'active_link_to'
+gem 'kramdown'
+gem 'jquery-rails'
+gem 'haml-rails'
 
 gem 'nokogiri'
 gem 'whenever'

@@ -23,7 +23,10 @@ module ComfyBlogPostMethods
     scope :nsfw_banished, -> (banish) { banish ? nsfw_banished! : where('1=1') }
     
     def nsfw?
-      categories.any? &:nsfw?
+      # count( , include: { categorizations: :categories })
+      # joins(categorizations: :categories).
+      categories.exists?(label: 'NSFW')
+      #categories.any? &:nsfw?
     end
 
     # We would like the immediate prev/nek posts straddling this post, ordered

@@ -1,0 +1,9 @@
+- content_for :right_column do
+  - link = comfy_admin_cms_site_snippet_revisions_path(@site, @snippet)
+  = render "comfy/admin/cms/revisions/sidebar", record: @snippet, link: link
+
+.page-header
+  %h2= t('.title')
+
+= comfy_form_with model: @snippet, scope: :snippet, url: {action: :update} do |form|
+  = render form

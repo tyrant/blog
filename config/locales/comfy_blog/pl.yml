@@ -1,0 +1,38 @@
+pl:
+  activerecord:
+    models:
+      comfy/blog/post: Wpis
+    attributes:
+      comfy/blog/post:
+        title: Tytuł
+        slug: Przyjazna ścieżka
+        published_at: Data publikacji
+        is_published: Opublikowano
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: Wpis
+      blog:
+        posts:
+          created: Wpis został utworzony
+          create_failure: Stworzenie wpisu się nie powiodło
+          updated: Wpis został zaktualizowany
+          update_failure: Aktualizacja wpisu się nie powiodła
+          deleted: Wpis został usunięty
+          not_found: Nie znaleziono wpisu
+          index:
+            title: Wpisy
+            new_link: Nowy wpis
+            edit: Edytuj
+            delete: Usuń
+            are_you_sure: Czy jesteś pewna/pewien?
+          new:
+            title: Nowy wpis
+          edit:
+            title: Edytuj wpis
+          form:
+            create: Stwórz wpis
+            update: Zaktualizuj wpis
+            cancel: Anuluj

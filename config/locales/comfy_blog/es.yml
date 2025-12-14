@@ -1,0 +1,38 @@
+es:
+  activerecord:
+    models:
+      comfy/blog/post: Entrada
+    attributes:
+      comfy/blog/post:
+        title: Título
+        slug: Slug
+        published_at: Publicada en
+        is_published: Publicada
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: Entradas
+      blog:
+        posts:
+          created: Entrada creada
+          create_failure: La Entrada no ha podido ser creada
+          updated: Entrada actualizada
+          update_failure: La Entrada no ha podido ser actualizada
+          deleted: Entrada borrada
+          not_found: Entrada no encontrada
+          index:
+            title: Entradas
+            new_link: Nueva Entrada
+            edit: Editar
+            delete: Borrar
+            are_you_sure: ¿Está seguro?
+          new:
+            title: Nueva Entrada
+          edit:
+            title: Editar Entrada
+          form:
+            create: Crear Entrada
+            update: Actualizar Entrada
+            cancel: Cancelar

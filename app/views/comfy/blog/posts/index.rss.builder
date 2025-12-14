@@ -3,8 +3,8 @@
 xml.instruct! :xml, version: "1.0"
 xml.rss version: "2.0" do
   xml.channel do
-    xml.title "Your Beloved Bourgeois Filth"
-    xml.description "No seriously"
+    xml.title "My Blog"
+    xml.description "My Blog Description"
     xml.link comfy_blog_posts_url(@cms_site.path)
 
     @blog_posts.each do |post|
@@ -12,7 +12,7 @@ xml.rss version: "2.0" do
 
       xml.item do
         xml.title post.title
-        xml.description post.content_cache.html_safe
+        xml.description "blog post content"
         xml.pubDate post.published_at.to_s(:rfc822)
         xml.link url
         xml.guid url

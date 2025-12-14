@@ -1,0 +1,38 @@
+de:
+  activerecord:
+    models:
+      comfy/blog/post: Beitrag
+    attributes:
+      comfy/blog/post:
+        title: Titel
+        slug: URL-Teil
+        published_at: Veröffentlicht am
+        is_published: Ist veröffentlicht
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: Beiträge
+      blog:
+        posts:
+          created: Blogbeitrag erstellt
+          create_failure: Erstellung des Blogbeitrags fehlgeschlagen
+          updated: Blogbeitrag aktualisiert
+          update_failure: Aktualisierung des Blogbeitrags fehlgeschlagen
+          deleted: Blogbeitrag gelöscht
+          not_found: Blogbeitrag nicht gefunden
+          index:
+            title: Blogbeiträge
+            new_link: Neuer Blogbeitrag
+            edit: Ändern
+            delete: Löschen
+            are_you_sure: Sind Sie sicher?
+          new:
+            title: Neuer Blogbeitrag
+          edit:
+            title: Blogbeitrag ändern
+          form:
+            create: Create Post
+            update: Update Post
+            cancel: Abbrechen

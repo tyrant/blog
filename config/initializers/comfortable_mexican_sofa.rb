@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Load CMS library (now integrated into the app)
+require_relative "../../lib/comfortable_mexican_sofa"
+
 ComfortableMexicanSofa.configure do |config|
   # Title of the admin area
   #   config.cms_title = 'ComfortableMexicanSofa CMS Engine'

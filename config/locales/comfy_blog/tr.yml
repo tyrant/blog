@@ -1,0 +1,38 @@
+tr:
+  activerecord:
+    models:
+      comfy/blog/post: Yazı
+    attributes:
+      comfy/blog/post:
+        title: Başlık
+        slug: Slug
+        published_at: Yayınlanma tarihi
+        is_published: Yayında mı?
+
+  comfy:
+    admin:
+      cms:
+        base:
+          posts: Blog Yazıları
+      blog:
+        posts:
+          created: Blog Yazısı oluşturuldu
+          create_failure: Blog Yazıdı oluşturulamadı
+          updated: Blog Yazısı güncellendi
+          update_failure: Blog Yazısıp güncellenemedi
+          deleted: Blog Yazısı silindi
+          not_found: Blog Yazısı bulunamadı
+          index:
+            title: Blog Yazıları
+            new_link: Yeni Blog Yazısı
+            edit: Düzenle
+            delete: Sil
+            are_you_sure: Emin misin?
+          new:
+            title: Yeni Blog Yazısı
+          edit:
+            title: Blog Yazısını Düzenle
+          form:
+            create: Yazı Oluştur
+            update: Yazıyı Güncelle
+            cancel: İptal
