@@ -5,6 +5,11 @@
 # The Blog functionality is loaded via config/initializers/comfy_blog.rb
 
 module ComfyBlog
+  # Stub module to satisfy Zeitwerk autoloading.
+  # Engine functionality is now integrated into the main Rails app.
+  module Engine
+  end
+
   module CmsSiteExtensions
     extend ActiveSupport::Concern
     included do
