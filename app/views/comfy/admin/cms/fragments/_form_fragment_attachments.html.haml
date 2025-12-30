@@ -2,7 +2,7 @@
   - attachments.each do |attachment|
     :ruby
       thumb_url = if attachment.variable?
-        rails_blob_path(attachment.variant(combine_options: Comfy::Cms::File::VARIANT_SIZE[:thumb]), only_path: true)
+        rails_blob_path(attachment.variant(Comfy::Cms::File::VARIANT_SIZE[:thumb]), only_path: true)
       end
       filename = attachment.filename.to_s
       truncated_filename = truncate(filename, length: 40, omission: "...#{filename.last(10)}")
