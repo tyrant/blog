@@ -41,10 +41,54 @@ RSpec.describe 'Comfy::Blog::PostsController', type: :request do
     end
 
     context 'for unpublished post' do
-      it { 
+      it {
         expect { get "/blog/#{unpublished_post.year}/#{unpublished_post.month}/#{unpublished_post.slug}" }
           .to raise_error ComfortableMexicanSofa::MissingPage
       }
+    end
+
+    context 'for stale slug (post slug changed)', versioning: true do
+      let(:old_slug) { 'old-post-slug' }
+      let(:new_slug) { 'new-post-slug' }
+      let!(:stale_post) do
+        p = create :post, site: site, layout: layout, is_published: true,
+                          published_at: Time.current, custom_slug: old_slug
+        p.update!(slug: new_slug)
+        p
+      end
+
+      before { get "/blog/#{stale_post.year}/#{stale_post.month}/#{old_slug}" }
+
+      it { expect(response).to have_http_status :redirect }
+      it { expect(response).to redirect_to "/blog/#{stale_post.year}/#{stale_post.month}/#{new_slug}" }
+    end
+
+    context 'for stale slug with multiple history entries', versioning: true do
+      let!(:stale_post) do
+        p = create :post, site: site, layout: layout, is_published: true,
+                          published_at: Time.current, custom_slug: 'first-slug'
+        p.update!(slug: 'second-slug')
+        p.update!(slug: 'final-slug')
+        p
+      end
+
+      before { get "/blog/#{stale_post.year}/#{stale_post.month}/second-slug" }
+
+      it { expect(response).to redirect_to "/blog/#{stale_post.year}/#{stale_post.month}/final-slug" }
+    end
+
+    context 'for completely unknown slug' do
+      it { expect { get '/blog/2026/1/nonexistent-slug' }.to raise_error ComfortableMexicanSofa::MissingPage }
+    end
+
+    context 'for stale slug of unpublished post', versioning: true do
+      let!(:unpub_post) do
+        p = create :post, site: site, layout: layout, is_published: false, custom_slug: 'old-unpub'
+        p.update!(slug: 'new-unpub')
+        p
+      end
+
+      it { expect { get "/blog/#{unpub_post.year}/#{unpub_post.month}/old-unpub" }.to raise_error ComfortableMexicanSofa::MissingPage }
     end
   end
 end

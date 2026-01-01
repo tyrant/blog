@@ -9,6 +9,8 @@ class Comfy::Blog::Post < ActiveRecord::Base
 
   cms_has_revisions_for :fragments_attributes
 
+  has_paper_trail only: [:slug]
+
   # -- Relationships -----------------------------------------------------------
   belongs_to :site,
     class_name: "Comfy::Cms::Site"

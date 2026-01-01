@@ -274,6 +274,9 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
+    paper_trail (17.0.0)
+      activerecord (>= 7.1)
+      request_store (~> 1.4)
     pg (1.6.2)
     pg (1.6.2-arm64-darwin)
     pg (1.6.2-x86_64-darwin)
@@ -347,6 +350,8 @@ GEM
     regexp_parser (2.11.2)
     reline (0.6.2)
       io-console (~> 0.5)
+    request_store (1.7.0)
+      rack (>= 1.4)
     rexml (3.4.4)
     rspec-core (3.13.5)
       rspec-support (~> 3.13.0)
@@ -470,6 +475,7 @@ DEPENDENCIES
   mutex_m
   net-ssh (>= 7.2.0)
   nokogiri
+  paper_trail
   pg (~> 1.5)
   propshaft
   puma (~> 6.0)

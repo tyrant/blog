@@ -21,18 +21,19 @@ class Comfy::Blog::PostsController < Comfy::Cms::BaseController
   end
 
   def show
-    load_post
-
-    render layout: app_layout
-
-  rescue ActiveRecord::RecordNotFound
-    render cms_page: "/404", status: 404
-  end
-
-private
-
-  def load_post
     post_scope = @cms_site.blog_posts.published.where(slug: params[:slug])
+
+    if post_scope.empty?
+      post_id = PaperTrail::Version.where(item_type: "Comfy::Blog::Post")
+        .where('object LIKE ?', "%slug: #{params[:slug]}%")
+        .order(created_at: :desc)
+        .first!
+        &.item_id
+      post = @cms_site.blog_posts.published.find(post_id)
+
+      redirect_to comfy_blog_post_path(year: post.year, month: post.month, slug: post.slug) and return
+    end
+
     @cms_post =
       if params[:year] && params[:month]
         post_scope.where(year: params[:year], month: params[:month]).first!
@@ -40,7 +41,14 @@ private
         post_scope.first!
       end
     @cms_layout = @cms_post.layout
+
+    render layout: app_layout
+
+  rescue ActiveRecord::RecordNotFound
+    render cms_page: "/404", status: 404
   end
+
+  private
 
   def app_layout
     return false unless @cms_layout

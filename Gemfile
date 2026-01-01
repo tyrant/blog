@@ -35,6 +35,7 @@ gem 'aws-sdk-s3', require: false
 gem 'active_storage_validations'
 
 gem 'dotenv-rails'
+gem 'paper_trail'
 
 group :development, :test do
   gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
