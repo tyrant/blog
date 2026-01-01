@@ -1,7 +1,8 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 describe ComfyBlogPostMethods do
-
   let!(:site)   { create :site }
   let!(:layout) { create :layout, site: site }
   let!(:sa)     { create :category, label: 'Shite Advice', site: site }
@@ -17,43 +18,29 @@ describe ComfyBlogPostMethods do
 
     context 'posting with an NSFW categorization' do
       let!(:cat) { create :categorization, category: nsfw, categorized: post }
+
       it { expect(post.nsfw?).to eq true }
     end
   end
 
   describe '#prev_nek' do
-    # Six posts; a smattering of categorizations.
-    
-    let!(:posts) { (0..5).map { |i| create :post,
-                                           site: site,
-                                           layout: layout,
-                                           published_at: DateTime.now + (i-8).days } }
+    let!(:posts) do
+      (0..5).map { |i| create :post, site: site, layout: layout, published_at: DateTime.now + (i - 8).days }
+    end
+    let!(:sa_posts) { [0, 2, 4].each { |i| create :categorization, category: sa, categorized: posts[i] } }
+    let!(:whimsy_posts) { [1, 3, 5].each { |i| create :categorization, category: whimsy, categorized: posts[i] } }
 
-    # Shite Advice: posts 0,2,4
-    let!(:sa_posts) { [0, 2, 4].each { |i| create :categorization,
-                                                  category: sa,
-                                                  categorized: posts[i] } }
-
-    # Whimsy: posts 1,3,5
-    let!(:whimsy_posts) { [1, 3, 5].each { |i| create :categorization,
-                                                      category: whimsy,
-                                                      categorized: posts[i] } }
-
-    # Raunch: middle two. We want to return posts 2, 3 ONLY if nsfw is truthy.
+    # Raunch: middle two. We want to return posts 2 and 3 ONLY if nsfw is truthy.
     # Otherwise they should never appear in prev/nek.
-    let!(:nsfw_posts) { [2, 3].each { |i| create :categorization,
-                                                  category: nsfw,
-                                                  categorized: posts[i] } }
+    let!(:nsfw_posts) { [2, 3].each { |i| create :categorization, category: nsfw, categorized: posts[i] } }
 
     describe 'No category filtering' do
       it { expect(posts[0].prev).to eq nil }
       it { expect(posts[0].nek).to eq posts[1] }
-
       it { expect(posts[2].prev).to eq posts[1] }
       it { expect(posts[2].nek).to eq posts[4] } # Not 3 - NSFW posts are hidden!
-
       it { expect(posts[5].prev).to eq posts[4] }
-      it { expect(posts[5].nek). to eq nil }
+      it { expect(posts[5].nek).to eq nil }
     end
 
     describe 'Category filtering' do
@@ -159,93 +146,83 @@ describe ComfyBlogPostMethods do
   end
 
   describe '.active_storage_url?' do
-    it 'returns true for ActiveStorage blob URLs' do
-      url = 'http://localhost:3000/rails/active_storage/blobs/redirect/xyz123/image.jpg'
-      expect(Comfy::Blog::Post.active_storage_url?(url)).to eq true
+    context 'with ActiveStorage blob URL' do
+      let(:url) { 'http://localhost:3000/rails/active_storage/blobs/redirect/xyz123/image.jpg' }
+
+      it { expect(Comfy::Blog::Post.active_storage_url?(url)).to eq true }
     end
 
-    it 'returns false for external URLs' do
-      url = 'https://example.com/image.jpg'
-      expect(Comfy::Blog::Post.active_storage_url?(url)).to eq false
+    context 'with external URL' do
+      let(:url) { 'https://example.com/image.jpg' }
+
+      it { expect(Comfy::Blog::Post.active_storage_url?(url)).to eq false }
     end
 
-    it 'returns false for relative paths' do
-      url = '/images/logo.png'
-      expect(Comfy::Blog::Post.active_storage_url?(url)).to eq false
+    context 'with relative path' do
+      let(:url) { '/images/logo.png' }
+
+      it { expect(Comfy::Blog::Post.active_storage_url?(url)).to eq false }
     end
   end
 
   describe '.a_bloody_emoji?' do
-    it 'returns true for emoji images' do
-      img = Nokogiri::HTML.fragment('<img alt="😂">').at('img')
-      expect(Comfy::Blog::Post.a_bloody_emoji?(img)).to eq true
+    context 'with emoji image' do
+      let(:img) { Nokogiri::HTML.fragment('<img alt="😂">').at('img') }
+
+      it { expect(Comfy::Blog::Post.a_bloody_emoji?(img)).to eq true }
     end
 
-    it 'returns false for non-emoji images' do
-      img = Nokogiri::HTML.fragment('<img alt="A cute cat">').at('img')
-      expect(Comfy::Blog::Post.a_bloody_emoji?(img)).to eq false
+    context 'with non-emoji image' do
+      let(:img) { Nokogiri::HTML.fragment('<img alt="A cute cat">').at('img') }
+
+      it { expect(Comfy::Blog::Post.a_bloody_emoji?(img)).to eq false }
     end
 
-    it 'returns false for images without alt text' do
-      img = Nokogiri::HTML.fragment('<img>').at('img')
-      expect(Comfy::Blog::Post.a_bloody_emoji?(img)).to eq false
+    context 'with image without alt text' do
+      let(:img) { Nokogiri::HTML.fragment('<img>').at('img') }
+
+      it { expect(Comfy::Blog::Post.a_bloody_emoji?(img)).to eq false }
     end
   end
 
   describe '.blob_id_from_src' do
     context 'with Rails 6 format URL (Marshal-encoded)' do
-      # Rails 6 format: {"_rails":{"message":"BAhpCw==","exp":null,"pur":"blob_id"}}
-      # where "BAhpCw==" is Marshal.dump(11) then Base64.encode64
       let(:blob_id) { 11 }
       let(:marshal_encoded) { Base64.strict_encode64(Marshal.dump(blob_id)) }
       let(:message) do
-        Base64.urlsafe_encode64({
-          _rails: {
-            message: marshal_encoded,
-            exp: nil,
-            pur: 'blob_id'
-          }
-        }.to_json, padding: false)
+        Base64.urlsafe_encode64({ _rails: { message: marshal_encoded, exp: nil, pur: 'blob_id' } }.to_json, padding: false)
       end
       let(:signed_id) { "#{message}--somesignature123" }
       let(:url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{signed_id}/image.jpg" }
 
-      it 'extracts the blob_id' do
-        expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to eq blob_id
-      end
+      it { expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to eq blob_id }
     end
 
     context 'with Rails 8 format URL (direct data)' do
-      # Rails 8 format: {"_rails":{"data":1211,"pur":"blob_id"}}
       let(:blob_id) { 1211 }
       let(:message) do
-        Base64.urlsafe_encode64({
-          _rails: {
-            data: blob_id,
-            pur: 'blob_id'
-          }
-        }.to_json, padding: false)
+        Base64.urlsafe_encode64({ _rails: { data: blob_id, pur: 'blob_id' } }.to_json, padding: false)
       end
       let(:signed_id) { "#{message}--33788534f951b79669b0b8fb46bb3a00dfacc5c4" }
       let(:url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{signed_id}/comedian.png" }
 
-      it 'extracts the blob_id' do
-        expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to eq blob_id
-      end
+      it { expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to eq blob_id }
     end
 
-    context 'with invalid URL format' do
-      it 'returns nil and logs warning for malformed signed_id' do
-        url = 'http://localhost:3000/rails/active_storage/blobs/redirect/notbase64/image.jpg'
-        expect(Rails.logger).to receive(:error)
-        expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to be_nil
-      end
+    context 'with malformed signed_id' do
+      let(:url) { 'http://localhost:3000/rails/active_storage/blobs/redirect/notbase64/image.jpg' }
 
-      it 'returns nil for URLs without signed_id' do
-        url = 'http://example.com/image.jpg'
-        expect(Rails.logger).to receive(:error)
-        expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to be_nil
-      end
+      before { allow(Rails.logger).to receive(:error) }
+
+      it { expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to be_nil }
+    end
+
+    context 'with URL without signed_id' do
+      let(:url) { 'http://example.com/image.jpg' }
+
+      before { allow(Rails.logger).to receive(:error) }
+
+      it { expect(Comfy::Blog::Post.blob_id_from_src(src: url)).to be_nil }
     end
   end
 
@@ -254,41 +231,26 @@ describe ComfyBlogPostMethods do
 
     context 'with no images in content_cache' do
       before { post.update_column(:content_cache, '<p>Just text, no images</p>') }
-      
-      it 'returns nil' do
-        expect(post.first_img_src).to be_nil
-      end
+
+      it { expect(post.first_img_src).to be_nil }
     end
 
     context 'with only emoji images' do
-      before do
-        post.update_column(:content_cache, '<p><img alt="😂"><img alt="❤️"></p>')
-      end
-      
-      it 'returns nil' do
-        expect(post.first_img_src).to be_nil
-      end
+      before { post.update_column(:content_cache, '<p><img alt="😂"><img alt="❤️"></p>') }
+
+      it { expect(post.first_img_src).to be_nil }
     end
 
     context 'with regular images' do
-      before do
-        post.update_column(:content_cache, '<p><img src="http://example.com/cat.jpg" alt="cat"></p>')
-      end
-      
-      it 'returns the first image src' do
-        expect(post.first_img_src).to eq 'http://example.com/cat.jpg'
-      end
+      before { post.update_column(:content_cache, '<p><img src="http://example.com/cat.jpg" alt="cat"></p>') }
+
+      it { expect(post.first_img_src).to eq 'http://example.com/cat.jpg' }
     end
 
     context 'with emoji images followed by regular images' do
-      before do
-        html = '<p><img alt="😂"><img src="http://example.com/real.jpg" alt="photo"></p>'
-        post.update_column(:content_cache, html)
-      end
-      
-      it 'skips emojis and returns first non-emoji image' do
-        expect(post.first_img_src).to eq 'http://example.com/real.jpg'
-      end
+      before { post.update_column(:content_cache, '<p><img alt="😂"><img src="http://example.com/real.jpg" alt="photo"></p>') }
+
+      it { expect(post.first_img_src).to eq 'http://example.com/real.jpg' }
     end
   end
 
@@ -297,96 +259,68 @@ describe ComfyBlogPostMethods do
 
     context 'when post has no images' do
       before { post.update_column(:content_cache, '<p>No images here</p>') }
-      
-      it 'returns placeholder URL' do
-        url = post.resized_blob_or_orig_or_placeholder_url(x: 100, y: 200)
-        expect(url).to eq 'http://picsum.photos/100/200'
-      end
+
+      it { expect(post.resized_blob_or_orig_or_placeholder_url(x: 100, y: 200)).to eq 'http://picsum.photos/100/200' }
     end
 
     context 'when post has external image URL' do
-      before do
-        post.update_column(:content_cache, '<img src="https://example.com/photo.jpg">')
-      end
-      
-      it 'returns the external URL unchanged' do
-        url = post.resized_blob_or_orig_or_placeholder_url
-        expect(url).to eq 'https://example.com/photo.jpg'
-      end
+      before { post.update_column(:content_cache, '<img src="https://example.com/photo.jpg">') }
+
+      it { expect(post.resized_blob_or_orig_or_placeholder_url).to eq 'https://example.com/photo.jpg' }
     end
 
     context 'when post has ActiveStorage image' do
-      let(:blob) { create(:active_storage_blob) }
+      let(:blob) { create :active_storage_blob }
       let(:signed_id) { blob.signed_id }
       let(:as_url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{signed_id}/image.jpg" }
-      
-      before do
-        post.update_column(:content_cache, "<img src=\"#{as_url}\">")
-      end
-      
-      it 'returns a variant representation path' do
-        url = post.resized_blob_or_orig_or_placeholder_url(x: 512, y: 512)
-        expect(url).to match(%r{^/rails/active_storage/representations})
-      end
+
+      before { post.update_column(:content_cache, "<img src=\"#{as_url}\">") }
+
+      it { expect(post.resized_blob_or_orig_or_placeholder_url(x: 512, y: 512)).to match(%r{^/rails/active_storage/representations}) }
     end
 
     context 'when ActiveStorage blob cannot be found' do
       let(:invalid_as_url) { 'http://localhost:3000/rails/active_storage/blobs/redirect/invalid/image.jpg' }
-      
+
       before do
         post.update_column(:content_cache, "<img src=\"#{invalid_as_url}\">")
         allow(Comfy::Blog::Post).to receive(:resized_blob_variant_from).and_return(nil)
       end
-      
-      it 'falls back to placeholder URL' do
-        url = post.resized_blob_or_orig_or_placeholder_url(x: 100, y: 100)
-        expect(url).to eq 'http://picsum.photos/100/100'
-      end
+
+      it { expect(post.resized_blob_or_orig_or_placeholder_url(x: 100, y: 100)).to eq 'http://picsum.photos/100/100' }
     end
   end
 
   describe '.resized_blob_variant_from' do
     context 'with valid Rails 8 signed URL' do
-      let(:blob) { create(:active_storage_blob) }
+      let(:blob) { create :active_storage_blob }
       let(:signed_id) { blob.signed_id }
       let(:url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{signed_id}/image.jpg" }
-      
-      it 'returns a variant' do
-        variant = Comfy::Blog::Post.resized_blob_variant_from(url, x: 100, y: 100)
-        expect(variant).to be_present
-        expect(variant.blob).to eq blob
-      end
+      let(:variant) { Comfy::Blog::Post.resized_blob_variant_from(url, x: 100, y: 100) }
+
+      it { expect(variant).to be_present }
+      it { expect(variant.blob).to eq blob }
     end
 
     context 'with Rails 6 signed URL (invalid signature in Rails 8)' do
-      let(:blob) { create(:active_storage_blob) }
+      let(:blob) { create :active_storage_blob }
       let(:blob_id) { blob.id }
       let(:marshal_encoded) { Base64.strict_encode64(Marshal.dump(blob_id)) }
       let(:message) do
-        Base64.urlsafe_encode64({
-          _rails: {
-            message: marshal_encoded,
-            exp: nil,
-            pur: 'blob_id'
-          }
-        }.to_json, padding: false)
+        Base64.urlsafe_encode64({ _rails: { message: marshal_encoded, exp: nil, pur: 'blob_id' } }.to_json, padding: false)
       end
       let(:signed_id) { "#{message}--oldsignature" }
       let(:url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{signed_id}/image.jpg" }
-      
-      it 'falls back to blob_id extraction and returns variant' do
-        variant = Comfy::Blog::Post.resized_blob_variant_from(url, x: 200, y: 200)
-        expect(variant).to be_present
-        expect(variant.blob.id).to eq blob_id
-      end
+      let(:variant) { Comfy::Blog::Post.resized_blob_variant_from(url, x: 200, y: 200) }
+
+      it { expect(variant).to be_present }
+      it { expect(variant.blob.id).to eq blob_id }
     end
 
     context 'with completely invalid URL' do
       let(:url) { 'http://example.com/not-activestorage/invalid/image.jpg' }
-      
-      it 'returns nil' do
-        expect(Comfy::Blog::Post.resized_blob_variant_from(url, x: 100, y: 100)).to be_nil
-      end
+
+      it { expect(Comfy::Blog::Post.resized_blob_variant_from(url, x: 100, y: 100)).to be_nil }
     end
   end
 end

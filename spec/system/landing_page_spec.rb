@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe 'Landing Page', type: :system do
-  let!(:site) { create(:site, identifier: 'landing-site', hostname: 'landing.localhost', path: '/', label: 'Landing Test Site') }
+  let!(:site) { create :site, identifier: 'landing-site', hostname: 'landing.localhost', path: '/', label: 'Landing Test Site' }
 
   describe 'Landing page access' do
     it 'loads the landing page successfully' do

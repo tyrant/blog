@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe 'Blog Pagination', type: :system do
@@ -77,10 +79,10 @@ RSpec.describe 'Blog Pagination', type: :system do
   end
 
   describe 'Pagination with category filters' do
-    let!(:category) { create(:category, site: site, label: 'Test Category') }
+    let!(:category) { create :category, site: site, label: 'Test Category' }
     let!(:categorizations) do
       posts[0..3].map do |post|
-        create(:categorization, categorized: post, category: category)
+        create :categorization, categorized: post, category: category
       end
     end
     

@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Comfy::Cms::Category, type: :model do
-  let!(:site) { create(:site) }
-  let!(:category) { create(:category, site: site) }
+  let!(:site) { create :site }
+  let!(:category) { create :category, site: site }
 
   before { reset_cms_config }
 
@@ -19,14 +19,12 @@ RSpec.describe Comfy::Cms::Category, type: :model do
   end
 
   describe 'scopes' do
-    let!(:page_category) { create(:category, site: site, categorized_type: 'Comfy::Cms::Page') }
-    let!(:file_category) { create(:category, site: site, categorized_type: 'Comfy::Cms::File') }
+    let!(:page_category) { create :category, site: site, categorized_type: 'Comfy::Cms::Page' }
+    let!(:file_category) { create :category, site: site, categorized_type: 'Comfy::Cms::File' }
 
     describe '.of_type' do
-      it 'filters by categorized_type' do
-        expect(Comfy::Cms::Category.of_type('Comfy::Cms::Page')).to include(page_category)
-        expect(Comfy::Cms::Category.of_type('Comfy::Cms::Page')).not_to include(file_category)
-      end
+      it { expect(Comfy::Cms::Category.of_type('Comfy::Cms::Page')).to include page_category }
+      it { expect(Comfy::Cms::Category.of_type('Comfy::Cms::Page')).to_not include file_category }
     end
   end
 end

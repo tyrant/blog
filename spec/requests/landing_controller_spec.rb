@@ -1,91 +1,74 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe 'LandingController', type: :request do
   let(:user_params) { { email: 'test@example.com', name: 'Test User' } }
 
   describe 'GET /landing' do
-    it 'renders successfully' do
-      get '/landing'
-      expect(response).to have_http_status(:success)
-    end
+    before { get '/landing' }
+
+    it { expect(response).to have_http_status :success }
   end
 
   describe 'POST /landing/submit' do
     let(:mailer_double) { double('mailer', deliver_later: true) }
     let(:mailer_class_double) { double('mailer_class', thank_you_mail: mailer_double) }
 
-    before do
-      allow(LandingMailer).to receive(:with).and_return(mailer_class_double)
-    end
+    before { allow(LandingMailer).to receive(:with).and_return(mailer_class_double) }
 
     context 'with valid user params' do
-      it 'creates a new user' do
-        expect {
-          post '/landing/submit', params: { user: user_params }
-        }.to change(User, :count).by(1)
-      end
+      it { expect { post '/landing/submit', params: { user: user_params } }.to change(User, :count).by(1) }
 
       it 'sends thank you email' do
         expect(LandingMailer).to receive(:with).with(user: an_instance_of(User))
         expect(mailer_double).to receive(:deliver_later)
-        
         post '/landing/submit', params: { user: user_params }
       end
 
-      it 'renders successfully' do
-        post '/landing/submit', params: { user: user_params }
-        expect(response).to have_http_status(:success)
+      context 'after submission' do
+        before { post '/landing/submit', params: { user: user_params } }
+
+        it { expect(response).to have_http_status :success }
       end
     end
 
     context 'with existing user' do
-      let!(:existing_user) { create(:user, email: user_params[:email], name: 'Old Name') }
+      let!(:existing_user) { create :user, email: user_params[:email], name: 'Old Name' }
 
-      it 'updates existing user name' do
-        post '/landing/submit', params: { user: user_params }
-        existing_user.reload
-        expect(existing_user.name).to eq user_params[:name]
-      end
+      before { post '/landing/submit', params: { user: user_params } }
 
-      it 'does not create duplicate user' do
-        expect {
-          post '/landing/submit', params: { user: user_params }
-        }.not_to change(User, :count)
-      end
+      it { expect(existing_user.reload.name).to eq user_params[:name] }
+      it { expect { post '/landing/submit', params: { user: user_params } }.to_not change(User, :count) }
     end
   end
 
   describe 'GET /landing/download' do
     context 'with blank token' do
-      it 'redirects with notice' do
-        get '/landing/download', params: { token: '' }
-        expect(response).to redirect_to('/landing')
-        expect(flash[:notice]).to include("I'd love to send you a free book!")
-      end
+      before { get '/landing/download', params: { token: '' } }
+
+      it { expect(response).to redirect_to '/landing' }
+      it { expect(flash[:notice]).to include "I'd love to send you a free book!" }
     end
 
     context 'with invalid token' do
       before do
         allow(Tokens::Validator).to receive(:execute).and_return(false)
+        get '/landing/download', params: { token: 'invalid_token' }
       end
 
-      it 'redirects with expired token notice' do
-        get '/landing/download', params: { token: 'invalid_token' }
-        expect(response).to redirect_to('/landing')
-        expect(flash[:notice]).to include("Oh come on, it's been ages")
-      end
+      it { expect(response).to redirect_to '/landing' }
+      it { expect(flash[:notice]).to include "Oh come on, it's been ages" }
     end
 
     context 'with valid token' do
       before do
         allow(Tokens::Validator).to receive(:execute).and_return(true)
+        get '/landing/download', params: { token: 'valid_token' }
       end
 
-      it 'renders successfully without redirect' do
-        get '/landing/download', params: { token: 'valid_token' }
-        expect(response).to have_http_status(:success)
-        expect(response).not_to be_redirect
-      end
+      it { expect(response).to have_http_status :success }
+      it { expect(response).to_not be_redirect }
     end
   end
 end

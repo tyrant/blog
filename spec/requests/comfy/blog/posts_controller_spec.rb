@@ -3,10 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe 'Comfy::Blog::PostsController', type: :request do
-  let!(:site) { create(:site, hostname: 'test.host') }
-  let!(:layout) { create(:layout, site: site) }
-  let!(:published_post) { create(:post, site: site, layout: layout, is_published: true, published_at: Time.current) }
-  let!(:unpublished_post) { create(:post, site: site, layout: layout, is_published: false) }
+  let!(:site) { create :site, hostname: 'test.host' }
+  let!(:layout) { create :layout, site: site }
+  let!(:published_post) { create :post, site: site, layout: layout, is_published: true, published_at: Time.current }
+  let!(:unpublished_post) { create :post, site: site, layout: layout, is_published: false }
 
   before do
     reset_cms_config
@@ -15,61 +15,36 @@ RSpec.describe 'Comfy::Blog::PostsController', type: :request do
   end
 
   describe 'GET /blog' do
-    it 'returns success' do
-      get '/blog'
-      expect(response).to have_http_status(:success)
-    end
+    before { get '/blog' }
 
-    it 'shows published posts' do
-      get '/blog'
-      expect(response).to have_http_status(:success)
-    end
-
-    it 'does not show unpublished posts' do
-      get '/blog'
-      expect(response.body).not_to include(unpublished_post.title)
-    end
+    it { expect(response).to have_http_status :success }
+    it { expect(response.body).to_not include unpublished_post.title }
   end
 
   describe 'GET /blog/:year' do
-    it 'returns success' do
-      get "/blog/#{published_post.year}"
-      expect(response).to have_http_status(:success)
-    end
+    before { get "/blog/#{published_post.year}" }
 
-    it 'filters posts by year' do
-      get "/blog/#{published_post.year}"
-      expect(response).to have_http_status(:success)
-    end
+    it { expect(response).to have_http_status :success }
   end
 
   describe 'GET /blog/:year/:month' do
-    it 'returns success' do
-      get "/blog/#{published_post.year}/#{published_post.month}"
-      expect(response).to have_http_status(:success)
-    end
+    before { get "/blog/#{published_post.year}/#{published_post.month}" }
 
-    it 'filters posts by year and month' do
-      get "/blog/#{published_post.year}/#{published_post.month}"
-      expect(response).to have_http_status(:success)
-    end
+    it { expect(response).to have_http_status :success }
   end
 
   describe 'GET /blog/:year/:month/:slug' do
-    it 'returns success for published post' do
-      get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}"
-      expect(response).to have_http_status(:success)
+    context 'for published post' do
+      before { get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}" }
+
+      it { expect(response).to have_http_status :success }
     end
 
-    it 'shows post content' do
-      get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}"
-      expect(response).to have_http_status(:success)
-    end
-
-    it 'returns 404 for unpublished post' do
-      expect {
-        get "/blog/#{unpublished_post.year}/#{unpublished_post.month}/#{unpublished_post.slug}"
-      }.to raise_error(ComfortableMexicanSofa::MissingPage)
+    context 'for unpublished post' do
+      it { 
+        expect { get "/blog/#{unpublished_post.year}/#{unpublished_post.month}/#{unpublished_post.slug}" }
+          .to raise_error ComfortableMexicanSofa::MissingPage
+      }
     end
   end
 end

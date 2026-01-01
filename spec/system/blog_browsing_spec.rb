@@ -1,26 +1,27 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe 'Blog Browsing', type: :system do
   let!(:site) { create :site, identifier: 'blog-browsing-site', hostname: 'blog-browsing.localhost', path: '/', label: 'Blog Browsing Test Site' }
-  let!(:layout) { create(:layout, site: site, identifier: 'default', label: 'Default Layout', content: '{{ cms:page:content:rich_text }}') }
-  
-  let!(:general_category) { create(:category, site: site, label: 'General') }
-  let!(:nsfw_category) { create(:category, site: site, label: 'NSFW') }
-  
+  let!(:layout) { create :layout, site: site, identifier: 'default', label: 'Default Layout', content: '{{ cms:page:content:rich_text }}' }
+  let!(:general_category) { create :category, site: site, label: 'General' }
+  let!(:nsfw_category) { create :category, site: site, label: 'NSFW' }
+
   let!(:published_post) do
-    post = create(:post, site: site, layout: layout, published_at: 1.day.ago, is_published: true)
+    post = create :post, site: site, layout: layout, published_at: 1.day.ago, is_published: true
     post.update!(title: 'Test Published Post', slug: 'test-published-post')
     post
   end
-  
+
   let!(:nsfw_post) do
-    post = create(:post, site: site, layout: layout, published_at: 2.days.ago, is_published: true)
+    post = create :post, site: site, layout: layout, published_at: 2.days.ago, is_published: true
     post.update!(title: 'NSFW Test Post', slug: 'nsfw-test-post')
     post
   end
-  
-  let!(:published_categorization) { create(:categorization, categorized: published_post, category: general_category) }
-  let!(:nsfw_categorization) { create(:categorization, categorized: nsfw_post, category: nsfw_category) }
+
+  let!(:published_categorization) { create :categorization, categorized: published_post, category: general_category }
+  let!(:nsfw_categorization) { create :categorization, categorized: nsfw_post, category: nsfw_category }
   
   before do
     # Mock ComfyBlog configuration
@@ -123,10 +124,10 @@ RSpec.describe 'Blog Browsing', type: :system do
   describe 'Navigation and user experience' do
     it 'provides working navigation between posts' do
       # Create additional posts for navigation testing using factories
-      older_post = create(:post, site: site, layout: layout, published_at: 3.days.ago, is_published: true)
+      older_post = create :post, site: site, layout: layout, published_at: 3.days.ago, is_published: true
       older_post.update!(title: 'Older Post', slug: 'older-post')
-      
-      newer_post = create(:post, site: site, layout: layout, published_at: Time.current, is_published: true)
+
+      newer_post = create :post, site: site, layout: layout, published_at: Time.current, is_published: true
       newer_post.update!(title: 'Newer Post', slug: 'newer-post')
       
       visit root_path

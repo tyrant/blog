@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Comfy::Cms::Snippet, type: :model do
-  let!(:site) { create(:site) }
-  let!(:snippet) { create(:snippet, site: site) }
+  let!(:site) { create :site }
+  let!(:snippet) { create :snippet, site: site }
 
   before { reset_cms_config }
 
@@ -19,18 +19,16 @@ RSpec.describe Comfy::Cms::Snippet, type: :model do
   end
 
   describe 'automatic label assignment' do
-    let(:snippet_without_label) { build(:snippet, site: site, identifier: 'test-snippet', label: nil) }
+    let(:snippet_without_label) { build :snippet, site: site, identifier: 'test-snippet', label: nil }
 
-    it 'assigns titleized label from identifier' do
-      snippet_without_label.valid?
-      expect(snippet_without_label.label).to eq('Test Snippet')
-    end
+    before { snippet_without_label.valid? }
+
+    it { expect(snippet_without_label.label).to eq 'Test Snippet' }
   end
 
   describe 'content' do
-    it 'stores HTML content' do
-      snippet.update(content: '<p>Test content</p>')
-      expect(snippet.content).to eq('<p>Test content</p>')
-    end
+    before { snippet.update(content: '<p>Test content</p>') }
+
+    it { expect(snippet.content).to eq '<p>Test content</p>' }
   end
 end

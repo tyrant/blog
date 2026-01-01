@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Comfy::Cms::Layout, type: :model do
-  let!(:site) { create(:site) }
-  let!(:layout) { create(:layout, site: site) }
+  let!(:site) { create :site }
+  let!(:layout) { create :layout, site: site }
 
   before { reset_cms_config }
 
@@ -21,30 +21,25 @@ RSpec.describe Comfy::Cms::Layout, type: :model do
   end
 
   describe 'automatic label assignment' do
-    let(:layout_without_label) { build(:layout, site: site, identifier: 'test-layout', label: nil) }
+    let(:layout_without_label) { build :layout, site: site, identifier: 'test-layout', label: nil }
 
-    it 'assigns titleized label from identifier' do
-      layout_without_label.valid?
-      expect(layout_without_label.label).to eq('Test Layout')
-    end
+    before { layout_without_label.valid? }
+
+    it { expect(layout_without_label.label).to eq 'Test Layout' }
   end
 
   describe 'nested layouts' do
-    let!(:child_layout) { create(:layout, site: site, parent: layout, identifier: 'child-layout') }
+    let!(:child_layout) { create :layout, site: site, parent: layout, identifier: 'child-layout' }
 
-    it 'has parent-child relationship' do
-      expect(child_layout.parent).to eq(layout)
-      expect(layout.children.reload).to include(child_layout)
-    end
+    it { expect(child_layout.parent).to eq layout }
+    it { expect(layout.children.reload).to include child_layout }
   end
 
   describe '#content_with_app_layout' do
     context 'when app_layout is set' do
       before { layout.update(app_layout: 'application') }
 
-      it 'wraps content with app layout yield' do
-        expect(layout.app_layout).to eq('application')
-      end
+      it { expect(layout.app_layout).to eq 'application' }
     end
   end
 end
