@@ -4,9 +4,9 @@ module.exports = {
   darkMode: 'class',
   content: [
     './app/**/*.html.erb',
-    './app/components/*.{js,rb}',
+    './app/components/*.{js,ts,rb}',
     './app/helpers/**/*.rb',
-    './app/javascript/**/*.js',
+    './app/javascript/**/*.{js,ts}',
     './app/views/**/*.{erb,html}',
     './public/*.html',
   ],

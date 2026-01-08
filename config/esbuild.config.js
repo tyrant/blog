@@ -4,7 +4,7 @@ const rails = require('esbuild-rails');
 const watch = process.argv.includes('--watch');
 
 require('esbuild').context({
-  entryPoints: ['app/javascript/application.js'],
+  entryPoints: ['app/javascript/application.ts'],
   bundle: true,
   outdir: 'app/assets/builds',
   absWorkingDir: path.join(process.cwd()),
@@ -12,6 +12,7 @@ require('esbuild').context({
   sourcemap: true,
   format: 'iife',
   loader: {
+    '.ts': 'ts',
     '.js': 'js',
     '.png': 'file',
     '.jpg': 'file',

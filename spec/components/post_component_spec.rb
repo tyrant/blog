@@ -22,7 +22,7 @@ RSpec.describe PostComponent, type: :component do
 
   describe 'rendering' do
     let(:expected_path) { "/blog/#{post.year}/#{post.month}/#{post.slug}" }
-    let(:truncated_title) { post.title.truncate(72, separator: ' ', omission: ' ...') }
+    let(:truncated_title) { CGI.escapeHTML(post.title.truncate(72, separator: ' ', omission: ' ...')) }
     
     before { render_inline(subject) }
     it { expect(rendered_content).to be_present }

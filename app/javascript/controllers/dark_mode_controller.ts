@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-export default class extends Controller {
-  connect() {
+export default class DarkModeController extends Controller {
+  connect(): void {
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark')
     } else {
@@ -9,7 +9,7 @@ export default class extends Controller {
     }
   }
 
-  toggle() {
+  toggle(): void {
     if (document.documentElement.classList.contains('dark')) {
       document.documentElement.classList.remove('dark')
       localStorage.theme = 'light'

@@ -1,15 +1,22 @@
 import { Controller } from "@hotwired/stimulus"
 
-export default class extends Controller {
-
+export default class NavController extends Controller {
   static targets = ['booksMenu', 'booksSubmenu', 'blogMenu', 'blogSubmenu', 'mobile', 'landingDiv', 'arrow'];
 
-  initialize() {
+  declare readonly booksMenuTarget: HTMLElement;
+  declare readonly booksSubmenuTarget: HTMLElement;
+  declare readonly blogMenuTarget: HTMLElement;
+  declare readonly blogSubmenuTarget: HTMLElement;
+  declare readonly mobileTarget: HTMLElement;
+  declare readonly landingDivTarget: HTMLElement;
+  declare readonly arrowTarget: HTMLElement;
+
+  initialize(): void {
     this.landingDivShowHide();
     this.landingLinkArrowMove();
   }
 
-  openBooksSubmenu(e) {
+  openBooksSubmenu(e: Event): void {
     e.preventDefault();
     this.booksSubmenuTarget.classList.replace('hidden', 'block');
   }
@@ -19,27 +26,27 @@ export default class extends Controller {
   // upon mouse-outing any of them. If we mouseout from the submenu we'd like
   // to close it ... unless we're moving the pointer to the nav-text. Then keep
   // it open. The conditional detects this and early-returns.
-  closeBooksSubmenu(e) {
+  closeBooksSubmenu(e: MouseEvent): void {
     e.preventDefault();
-    if (e.target.closest(this.booksMenu)) return;
+    if ((e.target as Element).closest(this.booksMenu)) return;
     this.booksSubmenuTarget.classList.replace('block', 'hidden');
   }
  
-  openBlogSubmenu(e) {
+  openBlogSubmenu(e: Event): void {
     e.preventDefault();
     this.blogSubmenuTarget.classList.replace('hidden', 'block');
   }
 
-  closeBlogSubmenu(e) {
+  closeBlogSubmenu(e: MouseEvent): void {
     e.preventDefault();
-    if (e.target.closest(this.blogMenu)) return;
+    if ((e.target as Element).closest(this.blogMenu)) return;
     this.blogSubmenuTarget.classList.replace('block', 'hidden');
   }
 
-  openContactSubmenu() {}
-  closeContactSubmenu() {}
+  openContactSubmenu(): void {}
+  closeContactSubmenu(): void {}
 
-  toggleMobile() {
+  toggleMobile(): void {
     ['hidden', 'block'].forEach(c => {
       this.mobileTarget.classList.toggle(c);
     });
@@ -51,12 +58,12 @@ export default class extends Controller {
   // but if you click the Refresh button, a single scroll event happens on page
   // load, meaning that the landing-page link renders and immediately
   // disappears. Odd. This `firstEvent` flag-hack sidesteps it.
-  landingDivShowHide() {
+  landingDivShowHide(): void {
     let firstEvent = true;
-    document.addEventListener('scroll', e => {
-      let landingDivHeight = this.landingDivTarget.offsetHeight
+    document.addEventListener('scroll', () => {
+      const landingDivHeight = this.landingDivTarget.offsetHeight
       if (window.scrollY < landingDivHeight) {
-        this.landingDivTarget.style.marginTop = 0;
+        this.landingDivTarget.style.marginTop = '0';
       } else {
         if (!firstEvent)
           this.landingDivTarget.style.marginTop = `-${landingDivHeight}px`;
@@ -65,7 +72,7 @@ export default class extends Controller {
     });
   }
 
-  landingLinkArrowMove() {
+  landingLinkArrowMove(): void {
     this.landingDivTarget.addEventListener('mouseover', () => {
       this.arrowTarget.classList.add('translate-x-2');
     });
