@@ -39,4 +39,6 @@ yarn-debug.log*
 /**/.DS_Store
 
 /app/assets/builds/*
+!/app/assets/builds/comfy_vendor.js
+
 /coverage/
