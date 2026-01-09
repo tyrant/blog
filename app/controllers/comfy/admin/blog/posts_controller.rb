@@ -36,12 +36,23 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
 
   def update
     @post.update!(post_params)
-    flash[:success] = t(".updated")
-    redirect_to action: :edit, id: @post
 
-  rescue ActiveRecord::RecordInvalid
-    flash.now[:danger] = t(".update_failure")
-    render action: :edit
+    respond_to do |format|
+      format.html do
+        flash[:success] = t(".updated")
+        redirect_to action: :edit, id: @post
+      end
+      format.json { render json: { success: true, updated_at: @post.updated_at } }
+    end
+
+  rescue ActiveRecord::RecordInvalid => e
+    respond_to do |format|
+      format.html do
+        flash.now[:danger] = t(".update_failure")
+        render action: :edit
+      end
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+    end
   end
 
   def destroy
@@ -75,6 +86,7 @@ protected
     @post = @site.blog_posts.new(post_params)
     @post.published_at ||= Time.zone.now
     @post.layout ||= layout
+    @post.is_published = false if @post.new_record?
   end
 
   def post_params

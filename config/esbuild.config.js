@@ -4,7 +4,10 @@ const rails = require('esbuild-rails');
 const watch = process.argv.includes('--watch');
 
 require('esbuild').context({
-  entryPoints: ['app/javascript/application.ts'],
+  entryPoints: [
+    'app/javascript/application.ts',
+    'app/javascript/comfy_admin.js'
+  ],
   bundle: true,
   outdir: 'app/assets/builds',
   absWorkingDir: path.join(process.cwd()),

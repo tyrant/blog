@@ -1,6 +1,9 @@
 = comfy_admin_partial "comfy/admin/cms/partials/html_footer"
 
-= javascript_include_tag "comfy/admin/cms/application", "data-turbolinks-track": "reload"
+-# Vendor bundle (CodeMirror, Bootstrap, Redactor, etc.) - static, rarely changes
+= javascript_include_tag "comfy_vendor", "data-turbolinks-track": "reload"
+-# CMS admin modules - bundled via esbuild
+= javascript_include_tag "comfy_admin", "data-turbolinks-track": "reload"
 
 - if content_for(:javascript)
   = yield :javascript

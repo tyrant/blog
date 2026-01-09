@@ -31,6 +31,7 @@
     CMS.fileLinks();
     CMS.fileUpload.init();
     CMS.diff();
+    CMS.autosave.init();
   };
 
   CMS.dispose = () => {
@@ -40,6 +41,7 @@
     CMS.fileUpload.dispose();
     CMS.sortableList.dispose();
     CMS.timepicker.dispose();
+    CMS.autosave.dispose();
   };
 
   CMS.getLocale = () => document.querySelector('meta[name="cms-locale"]').content;
