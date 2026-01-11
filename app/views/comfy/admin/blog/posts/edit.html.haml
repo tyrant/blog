@@ -2,6 +2,8 @@
   - link = comfy_admin_blog_post_revisions_path(@site, @post)
   = render "comfy/admin/cms/revisions/sidebar", record: @post, link: link
 
+= render "comfy/admin/blog/partials/post_navigation"
+
 .page-header
   %h2= t('.title')
 

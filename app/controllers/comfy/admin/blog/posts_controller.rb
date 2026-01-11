@@ -31,6 +31,8 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
   end
 
   def edit
+    @newer_post = @site.blog_posts.where('published_at > ?', @post.published_at).order(published_at: :asc).first
+    @older_post = @site.blog_posts.where('published_at < ?', @post.published_at).order(published_at: :desc).first
     render
   end
 

@@ -1,0 +1,9 @@
+.d-flex.justify-content-between.my-3
+  .newer-post
+    - if @newer_post
+      = link_to edit_comfy_admin_blog_post_path(@site, @newer_post), class: 'btn btn-outline-secondary' do
+        &larr; #{@newer_post.title.truncate(40)}
+  .older-post
+    - if @older_post
+      = link_to edit_comfy_admin_blog_post_path(@site, @older_post), class: 'btn btn-outline-secondary' do
+        #{@older_post.title.truncate(40)} &rarr;

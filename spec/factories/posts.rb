@@ -5,19 +5,25 @@ FactoryBot.define do
       custom_slug { nil }
     end
 
-    title { 'populated by after :build' }
-    slug  { 'populated by after :build' }
+    placeholder_title = 'populated by after :build'
+    title { placeholder_title }
+    slug  { placeholder_title }
+
     is_published { true }
     published_at { Faker::Time.between(from: DateTime.now - 1, to: DateTime.now + 1) }
 
     site
     layout
 
+    # We populate #title and #slug here so's we can use the same Faker sentence
+    # for both attributes.
     after :build do |post, evaluator|
       sentence = Faker::Hipster.sentence
-      post.title = evaluator.custom_title || sentence
-      post.slug = evaluator.custom_slug || sentence.parameterize
-      post.fragments << build(:fragment)
+
+      # Only populate if the attribute is still the placeholder value - a spec
+      # may have already set its own custom value.
+      post.title = evaluator.custom_title || sentence if post.title == placeholder_title
+      post.slug = evaluator.custom_slug || sentence.parameterize if post.slug == placeholder_title
     end
   end
 end

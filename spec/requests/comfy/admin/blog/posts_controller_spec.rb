@@ -64,6 +64,43 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     it { expect(response).to have_http_status :success }
   end
 
+  describe 'GET /admin/sites/:site_id/blog-posts/:id/edit (newer/older navigation)' do
+    let!(:older_post) { create :post, site: site, layout: layout, title: 'Older Post', slug: 'older', published_at: 3.days.ago }
+    let!(:middle_post) { create :post, site: site, layout: layout, title: 'Middle Post', slug: 'middle', published_at: 2.days.ago }
+    let!(:newer_post) { create :post, site: site, layout: layout, title: 'Newer Post', slug: 'newer', published_at: 1.day.ago }
+
+    # Just for this block! Only have the three posts above - the other one mucks
+    # up the older/newer post title presences/absences.
+    before { blog_post.destroy! }
+
+    context 'when viewing the middle post' do
+      before {
+        get edit_comfy_admin_blog_post_path(site_id: site.id, id: middle_post.id), headers: http_auth_headers
+      }
+
+      it { expect(response.body).to include('Newer Post') }
+      it { expect(response.body).to include('Older Post') }
+    end
+
+    context 'when viewing the newest post' do
+      before {
+        get edit_comfy_admin_blog_post_path(site_id: site.id, id: newer_post.id), headers: http_auth_headers
+      }
+
+      it { expect(response.body).to include('Middle Post') }
+      it { expect(response.body).to match(/<div class='newer-post'>\s*<\/div>/m) }
+    end
+
+    context 'when viewing the oldest post' do
+      before {
+        get edit_comfy_admin_blog_post_path(site_id: site.id, id: older_post.id), headers: http_auth_headers
+      }
+
+      it { expect(response.body).to include('Middle Post') }
+      it { expect(response.body).to match(/<div class='older-post'>\s*<\/div>/m) }
+    end
+  end
+
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id' do
     let(:update_params) { { post: { title: 'Updated Post Title' } } }
 
