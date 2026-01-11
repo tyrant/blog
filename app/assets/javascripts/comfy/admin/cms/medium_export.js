@@ -16,9 +16,6 @@ window.CMS.mediumExport = {
   copyForMedium: function() {
     // Get banner URL from data attribute (includes digest)
     const bannerUrl = this.button.dataset.bannerUrl;
-    // Get the title from the form
-    const titleInput = document.querySelector('input[name="post[title]"]');
-    const title = titleInput ? titleInput.value : '';
 
     // Get the wysiwyg content - sync from Redactor first if available
     this.syncEditors();
@@ -27,15 +24,15 @@ window.CMS.mediumExport = {
     const contentTextarea = document.querySelector('textarea[data-cms-rich-text]');
     const content = contentTextarea ? contentTextarea.value : '';
 
-    if (!title && !content) {
+    if (!content) {
       this.showStatus('No content to copy', 'error');
       return;
     }
 
     // Format for Medium: title, banner image, then content
     const bannerImg = `<img src="${bannerUrl}" alt="Bad Advice from the Sexyverse">`;
-    const html = `<h1>${this.escapeHtml(title)}</h1><p>${bannerImg}</p>\n${content}`;
-    console.log('html', html)
+    const html = `<p>${bannerImg}</p>\n${content}`;
+
     // Copy to clipboard as HTML
     this.copyHtmlToClipboard(html);
   },
@@ -67,7 +64,7 @@ window.CMS.mediumExport = {
       const clipboardItem = new ClipboardItem({ 'text/html': blob });
       
       navigator.clipboard.write([clipboardItem]).then(function() {
-        self.showStatus('Copied!', 'success');
+        self.showStatus('Post content copied!', 'success');
       }).catch(function(err) {
         console.error('Clipboard write failed:', err);
         self.fallbackCopy(html);
