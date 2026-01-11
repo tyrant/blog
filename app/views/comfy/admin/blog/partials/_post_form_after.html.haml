@@ -1,0 +1,6 @@
+- unless @post.new_record?
+  .form-group.mt-3
+    - banner_url = asset_path('orig-bad-advice-banner.jpg')
+    %button.btn.btn-outline-secondary{type: "button", id: "copy-for-medium", data: {post_id: @post.id, banner_url: banner_url}}
+      Copy for Medium
+    %span.medium-copy-status.ml-2{style: "display: none;"}
