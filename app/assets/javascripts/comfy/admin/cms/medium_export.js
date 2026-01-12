@@ -49,12 +49,6 @@ window.CMS.mediumExport = {
     }
   },
 
-  escapeHtml: function(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  },
-
   copyHtmlToClipboard: function(html) {
     const self = this;
     
