@@ -2,8 +2,11 @@
   .newer-post
     - if @newer_post
       = link_to edit_comfy_admin_blog_post_path(@site, @newer_post), class: 'btn btn-outline-secondary' do
-        &larr; #{@newer_post.title.truncate(40)}
+        &larr; #{@newer_post.title.truncate(30)}
+  .this-post.mx-1
+    = link_to @post.url, class: 'btn btn-outline-secondary' do
+      #{@post.title.truncate(30)}
   .older-post
     - if @older_post
       = link_to edit_comfy_admin_blog_post_path(@site, @older_post), class: 'btn btn-outline-secondary' do
-        #{@older_post.title.truncate(40)} &rarr;
+        #{@older_post.title.truncate(30)} &rarr;
