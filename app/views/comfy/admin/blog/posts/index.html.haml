@@ -13,7 +13,7 @@
   - @posts.each do |post|
     %li
       .row
-        .col-md-8.item
+        .col-md-10.item.flex.justify-content-between
           .item-content
             .item-title
               - published_css_class = post.is_published? ? "published" : "draft"
@@ -23,11 +23,10 @@
               = link_to link, link, target: "_blank"
               %br
               = post.published_at&.strftime('%Y-%m-%d %H:%M:%S')
-
-          .item-categories.ml-auto.d-flex.align-items-center
+          .item-categories.d-flex.flex-column.align-items-end.justify-content-center
             = render "comfy/admin/cms/categories/categories", object: post
 
-        .col-md-4.d-flex.align-items-center.justify-content-md-end
+        .col-md-2.d-flex.align-items-center.justify-content-md-end
           .btn-group.btn-group-sm
             = link_to t('.edit'), edit_comfy_admin_blog_post_path(@site, post), class: 'btn btn-outline-secondary'
             = link_to t('.delete'), comfy_admin_blog_post_path(@site, post), method: :delete, data: {confirm: t('.are_you_sure')}, class: 'btn btn-danger'
