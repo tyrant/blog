@@ -92,3 +92,12 @@ For development and test, any keys/values in config/credentials/*.yml will overr
 
 But not production! Turns out production is a special case. Its creds file doesn't inherit from credentials.yml. All its contents must be in only that file. Including secret_key_base. Make sure this exists within. Otherwise you'll never hear the end of it.
 
+
+## Comfortable Mexican Sofa
+
+There is a gem. [https://github.com/comfy/comfortable-mexican-sofa](https://github.com/comfy/comfortable-mexican-sofa). It's a CMS for Rails. It's been around for years and years. I first embraced it when building nzsf.org.nz back in 2014, using Rails 4. It's been great.
+
+You may notice that its GitHub page proudly proclaims support for Rails 5.2. At time of writing, 2026-01-19, Rails's latest-stable version is 8.1.1. Yyyyeah. It's been abandoned. Its [most recent commit](https://github.com/comfy/comfortable-mexican-sofa/commit/8f7e425a06aca9cfa8e21de6b7a10669c8495fc3) was on 2020-04-04. Huh. Maybe Covid got them.
+
+CMS had okay-ish compatibility with Rails 6 but not 7, so until late 2025 I'd kept this app at Rails 6.x. For years. This quite spectacularly hamstrung other upgrades like fleeing squeeing from Webpack. Ultimately I bit the bullet and forked both CMS and an extension, [ComfyBlog](https://github.com/comfy/comfy-blog); got both my local forks up to Rails 8 standards; got this app itself upgraded to Rails 8; chunked through quite a lot of nonessential-yet-fab upgrades; and finally just refactored both CMS and ComfyBlog into this app as if they'd always been part of the core app itself.
+
