@@ -45,9 +45,7 @@ class PostComponent < ViewComponent::Base
           .content_cache
           .gsub('</h2>', "</h2>\r\n")
           .gsub('</p>', "</p>\r\n")
-        Nokogiri::HTML(html_content)
-          .text
-          .truncate(120, separator: ' ', omission: ' ...')
+        Nokogiri::HTML(html_content).text.truncate(240, separator: ' ', omission: ' ...')
       end
   end
 

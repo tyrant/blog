@@ -11,7 +11,7 @@
         </div>
       </div>
 
-      <div class="absolute w-full top-0 left-0 z-10 p-3 text-xs text-white"
+      <div class="absolute w-full top-0 left-0 z-10 p-3 text-sm text-white text-outlined font-bold"
            data-post-target="date">
         <%= @post.published_at.strftime "%-d %b %Y" %>
       </div>
@@ -40,17 +40,16 @@
         <div class="w-full h-28 bg-gradient-to-b from-transparent to-60% to-neutral-800/75 absolute top-36 left-0">
           <h5 class="absolute w-full p-5 h-15 bottom-0 left-0 
                      font-['Racing_Sans_One']
-                     text-center text-gray-100 
+                     text-center text-gray-100 text-outlined
                      text-xl md:text-2xl 
-                     leading-[1.1rem] sm:leading-[1.3rem] md:leading-[1.4rem]"
-              style="-webkit-text-stroke: 0.2px black;">
+                     leading-[1.1rem] sm:leading-[1.3rem] md:leading-[1.4rem]">
             <%= post_title %>
           </h5>
         </div>
       </div>
 
-      <div class="px-2 mt-2 mb-4">
-        <div class="text-sm text-gray-600 dark:text-gray-300 leading-tight">
+      <div class="px-4 mt-2 mb-4">
+        <div class="text-sm text-gray-600 dark:text-gray-300">
           <% cache "post-#{@post.id}-preview" do %>
             <%= post_content %>
           <% end %>

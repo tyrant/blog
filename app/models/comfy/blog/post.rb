@@ -39,6 +39,18 @@ class Comfy::Blog::Post < ActiveRecord::Base
     [site.url(relative: relative), post_path].join
   end
 
+  # For Medium, Substack, etc. Bit clunky, but works okay. 
+  # If a Post's categories list includes, say, Medium,
+  # then this inspects #scratchpad for a medium.com URL 
+  # and returns it. If not, it returns ''.
+  def socials_url_for(platform:)
+    return '' if categories.where(label: platform.capitalize).none?
+
+    scratchpad.split("\r\n").find do |chunk|
+      chunk.include? "#{platform}.com"
+    end || ''
+  end
+
 protected
 
   def set_slug

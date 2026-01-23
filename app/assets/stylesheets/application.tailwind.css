@@ -188,3 +188,8 @@
 .footer a:hover {
   @apply text-cyan-100;
 }
+
+/* Text outline */
+.text-outlined {
+  -webkit-text-stroke: 0.2px black;
+}

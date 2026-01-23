@@ -5,7 +5,9 @@ require 'rails_helper'
 RSpec.describe Comfy::Blog::Post, type: :model do
   let!(:site) { create :site }
   let!(:layout) { create :layout, site: site }
-  let!(:post) { create :post, site: site, layout: layout }
+
+  let(:scratchpad) { '' }
+  let!(:post) { create :post, site: site, layout: layout, scratchpad: scratchpad }
 
   before do
     reset_cms_config
@@ -118,5 +120,41 @@ RSpec.describe Comfy::Blog::Post, type: :model do
 
       it { expect(post.is_published?).to be false }
     end
+  end
+
+  describe '#socials_url_for' do
+
+    let(:platform) { 'medium' }
+    subject { post.socials_url_for(platform: platform) }
+
+    context "Post has zero categories" do
+      it { is_expected.to eq '' }
+    end
+
+    context "Post has categories" do
+          
+      let!(:category) { create :category, label: platform.capitalize }
+      let!(:categorization) { create :categorization,
+                                    category: category,
+                                    categorized: post }
+
+      context "Post's category list doesn't include :platform" do
+        let(:platform) { 'twitter' }
+        it { is_expected.to eq '' }
+      end
+
+      context "Post's category list includes :platform" do
+
+        context "#scratchpad doesn't include a URL for :platform" do
+          it { is_expected.to eq '' }
+        end
+
+        context "#scratchpad contains corresponding URL" do
+          let(:scratchpad) { "\r\nhttps://medium.com/@pi_neutrino\r\nblargh\r\nblargh again\r\n" }
+          it { is_expected.to eq 'https://medium.com/@pi_neutrino' }
+        end
+      end
+    end
+
   end
 end

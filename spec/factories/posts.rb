@@ -12,6 +12,8 @@ FactoryBot.define do
     is_published { true }
     published_at { Faker::Time.between(from: DateTime.now - 1, to: DateTime.now + 1) }
 
+    scratchpad { '' }
+
     site
     layout
 
