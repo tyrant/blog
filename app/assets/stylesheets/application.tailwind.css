@@ -38,7 +38,7 @@
 }
 
 .title-bg .transparency .main {
-  @apply sm:text-lg uppercase leading-[0.9rem];
+  @apply sm:text-lg uppercase leading-[1.1rem];
 }
 
 .title-bg .transparency .part {
@@ -46,7 +46,7 @@
 }
 
 .title-bg .transparency .sub {
-  @apply text-3xl sm:text-5xl leading-[1.35rem] sm:leading-[2.1rem] sm:tracking-tight font-['Racing_Sans_One'];
+  @apply text-3xl sm:text-5xl leading-[1.65rem] sm:leading-[2.5rem] sm:tracking-tight font-['Racing_Sans_One'];
 }
 
 /* Book splash-pages */
