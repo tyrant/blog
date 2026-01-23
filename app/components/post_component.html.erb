@@ -50,9 +50,7 @@
 
       <div class="px-4 mt-2 mb-4">
         <div class="text-sm text-gray-600 dark:text-gray-300">
-          <% cache "post-#{@post.id}-preview" do %>
-            <%= post_content %>
-          <% end %>
+          <%= post_content %>
         </div>
       </div>
     <% end %>
