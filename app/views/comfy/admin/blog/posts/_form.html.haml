@@ -9,7 +9,7 @@
 #form-fragments-container
   = render "comfy/admin/cms/fragments/form_fragments", record: @post, scope: :post
 
-= form.text_area :scratchpad, rows: 5
+= form.text_area :scratchpad, style: 'field-sizing: content;'
 
 = render "comfy/admin/cms/categories/form", form: form
 
