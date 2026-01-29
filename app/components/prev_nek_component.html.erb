@@ -22,8 +22,9 @@
                   d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75 0 0 0-1.06-1.06l-3 3Z"
                   clip-rule="evenodd" />
           </svg>
-        </span> 
-        <span class="text-xl">Earlier</span>
+        </span>
+
+        <span class="text-2xl xs:text-lg sm:text-2xl">Earlier</span>
       </div>
       <% end %>
     <% end %>
@@ -39,8 +40,9 @@
                   bg-gradient-to-r from-10% from-cyan-300/90 via-50% via-transparent to-gray-800">
                   
         <h5 class="max-h-16 w-36 xs:w-[7.5rem] sm:w-42 md:w-48 lg:w-56
-                   tracking-tight leading-[0.95rem] xs:leading-[0.9rem] lg:leading-[1.1rem]
-                   text-white text-right text-md lg:text-lg
+                   tracking-tight leading-[0.95rem] xs:leading-[0.9rem] md:leading-[1.1rem]
+                   text-white text-right 
+                   text-md xs:text-sm sm:text-md md:text-lg
                    overflow-hidden">
 
           <% if prev.present? %>
@@ -64,7 +66,9 @@
                   text-xl text-cyan-900 dark:text-cyan-700
                   duration-200"
            data-prev-nek-target="nekArrow">
-          <span class="text-xl">Later</span>
+
+          <span class="text-2xl xs:text-lg sm:text-2xl">Later</span>
+
           <span class="ml-1">
             <svg xmlns="http://www.w3.org/2000/svg"
                  viewBox="0 0 24 24" 
@@ -91,8 +95,9 @@
                   bg-gradient-to-l from-10% from-cyan-300/90 via-50% via-transparent to-gray-800">
                   
         <h5 class="max-h-16 w-36 xs:w-[7.5rem] sm:w-42 md:w-48 lg:w-56
-                   tracking-tight leading-[0.95rem] xs:leading-[0.9rem] lg:leading-[1.1rem]
-                   text-white text-left text-md lg:text-lg
+                   tracking-tight leading-[0.95rem] xs:leading-[0.9rem] md:leading-[1.1rem]
+                   text-white text-left 
+                   text-md xs:text-sm sm:text-md md:text-lg
                    overflow-hidden">
 
           <% if nek.present? %>
