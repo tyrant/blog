@@ -35,18 +35,23 @@
                 data: { 'prev-nek-target': 'prev' } do %>
 
       <div class="flex items-center justify-end
-                  h-20 pr-3 xs:pr-[3rem] sm:pr-[4.25rem] py-3 -m-2
+                  h-20 pr-3 xs:pr-[3rem] sm:pr-[4.25rem] pl-20 xs:pl-16 sm:pl-20 md:pl-24 py-3 -m-2
                   rounded-t-xl xs:rounded-tr-none xs:rounded-l-xl
                   bg-gradient-to-r from-10% from-cyan-300/90 via-50% via-transparent to-gray-800">
                   
-        <h5 class="max-h-16 w-36 xs:w-[7.5rem] sm:w-42 md:w-48 lg:w-56
+        <h5 class="max-h-16 max-w-full
                    tracking-tight leading-[0.95rem] xs:leading-[0.9rem] md:leading-[1.1rem]
                    text-white text-right 
                    text-md xs:text-sm sm:text-md md:text-lg
-                   overflow-hidden">
+                   overflow-hidden text-clip">
 
           <% if prev.present? %>
-            <%= prev.title.truncate 50, separator: ' ', omission: ' ...' %>
+            <span class="xs:hidden sm:block">
+              <%= prev.title.truncate 65, separator: ' ', omission: ' ...' %>
+            </span>
+            <span class="hidden xs:inline-block sm:hidden overflow-hidden text-clip">
+              <%= prev.title.truncate 45, separator: ' ', omission: ' ...' %>
+            </span>
           <% else %>
             No earlier posts! Oodles of others though.
           <% end %>
@@ -90,18 +95,23 @@
                 data: { 'prev-nek-target': 'nek' } do %>
 
       <div class="flex items-center justify-start
-                  h-20 pl-3 xs:pl-[3rem] sm:pl-[4.25rem] py-3 -m-2
+                  h-20 pl-3 xs:pl-[3rem] sm:pl-[4.25rem] pr-20 xs:pr-16 sm:pr-20 md:pr-24 py-3 -m-2
                   rounded-b-xl xs:rounded-bl-none xs:rounded-r-xl
                   bg-gradient-to-l from-10% from-cyan-300/90 via-50% via-transparent to-gray-800">
                   
-        <h5 class="max-h-16 w-36 xs:w-[7.5rem] sm:w-42 md:w-48 lg:w-56
+        <h5 class="max-h-16 max-w-full
                    tracking-tight leading-[0.95rem] xs:leading-[0.9rem] md:leading-[1.1rem]
                    text-white text-left 
                    text-md xs:text-sm sm:text-md md:text-lg
-                   overflow-hidden">
+                   ">
 
           <% if nek.present? %>
-            <%= nek.title.truncate 50, separator: ' ', omission: ' ...' %>
+            <span class="xs:hidden sm:block">
+              <%= nek.title.truncate 65, separator: ' ', omission: ' ...' %>
+            </span>
+            <span class="hidden xs:inline-block sm:hidden overflow-hidden text-clip">
+              <%= nek.title.truncate 45, separator: ' ', omission: ' ...' %>
+            </span>
           <% else %>
             No later posts! Oodles of others though.
           <% end %>
