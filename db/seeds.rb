@@ -30,22 +30,18 @@ layout = Comfy::Cms::Layout.create!(
   app_layout: 'application',
   content: '{{ cms:wysiwyg content }}'
 )
-cats = Comfy::Cms::Category.create!([{
-  site: site,
-  label: 'Shite Advice',
-  categorized_type: 'Comfy::Blog::Post'
-}, {
-  site: site,
-  label: 'Whimsy',
-  categorized_type: 'Comfy::Blog::Post'
-}, {
-  site: site,
-  label: 'NSFW',
-  categorized_type: 'Comfy::Blog::Post'
-}])
+
+cats = ['Shite Advice', 'Whimsy', 'NSFW', 'Medium', 'Substack', 'Twitter', 'LinkedIn', 'FB'].each do |label|
+  Comfy::Cms::Category.create!(
+    site: site,
+    categorized_type: 'Comfy::Blog::Post',
+    label: label
+  )
+end
+
 
 50.times do |n|
-  sentence = Faker::Hipster.sentence
+  sentence = Faker::Lorem.sentence(word_count: rand(3..30))
   post = Comfy::Blog::Post.create!(
     site: site,
     layout: layout,
@@ -66,8 +62,8 @@ cats = Comfy::Cms::Category.create!([{
   post.published_at = Time.now + n.weeks
   post.save!(validate: false)
 
-  # For each post, create random categorisations: 0-3. Some posts will have
-  # zero categories; others 1, or 2, or 3.
+  # For each post, create random categorisations: 0-Category.count. Some posts will have
+  # zero categories; others more.
   rand_count = rand(Comfy::Cms::Category.count + 1)
   categorizations = Comfy::Cms::Category.limit(rand_count)
     .order('RANDOM()').map do |category|
@@ -78,4 +74,27 @@ cats = Comfy::Cms::Category.create!([{
     end
     
   Comfy::Cms::Categorization.create!(categorizations)
+
+  # Ensure each Post#scratchpad contains socials-URLs relevant to its socials-categories.
+  # I maintain these myself manually, remember.
+  scratchpad = []
+  if post.categories.any?{|c| c.label == 'Medium' }
+    scratchpad << "https://medium.com/@pi_neutrino"
+  end
+  if post.categories.any?{|c| c.label == 'Substack' }
+    scratchpad << "https://pi-neutrino.substack.com/"
+  end
+  if post.categories.any?{|c| c.label == 'Twitter' }
+    scratchpad << "https://twitter.com/pi_neutrino"
+  end
+  if post.categories.any?{|c| c.label == 'LinkedIn' }
+    scratchpad << "https://linkedin.com/in/pi_neutrino"
+  end
+  if post.categories.any?{|c| c.label == 'FB' }
+    scratchpad << "https://facebook.com/pi_neutrino"
+  end
+
+  # Calling `post.save(validate: false)` wipes the Post's category list. No idea why.
+  # I'm too harrumphy and impatient to get to the bottom of it, bah and dagnabbit.`
+  post.update_column :scratchpad, scratchpad.join("\r\n\r\n")
 end
