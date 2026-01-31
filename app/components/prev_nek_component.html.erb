@@ -41,12 +41,14 @@
                   
         <h5 class="max-h-16 max-w-full
                    tracking-tight leading-[0.95rem] xs:leading-[0.9rem] md:leading-[1.1rem]
-                   text-white text-right 
-                   text-md xs:text-sm sm:text-md md:text-lg
-                   overflow-hidden text-clip">
+                   text-white text-right text-outlined
+                   text-md xs:text-sm sm:text-md md:text-lg">
 
           <% if prev.present? %>
-            <span class="xs:hidden sm:block">
+            <span class="hidden lg:inline-block">
+              <%= prev.title.truncate 90, separator: ' ', omission: ' ...' %>
+            </span>
+            <span class="hidden sm:inline-block lg:hidden">
               <%= prev.title.truncate 65, separator: ' ', omission: ' ...' %>
             </span>
             <span class="hidden xs:inline-block sm:hidden overflow-hidden text-clip">
@@ -101,12 +103,15 @@
                   
         <h5 class="max-h-16 max-w-full
                    tracking-tight leading-[0.95rem] xs:leading-[0.9rem] md:leading-[1.1rem]
-                   text-white text-left 
+                   text-white text-left text-outlined
                    text-md xs:text-sm sm:text-md md:text-lg
                    ">
 
           <% if nek.present? %>
-            <span class="xs:hidden sm:block">
+            <span class="hidden lg:inline-block">
+              <%= nek.title.truncate 90, separator: ' ', omission: ' ...' %>
+            </span>
+            <span class="hidden sm:inline-block lg:hidden">
               <%= nek.title.truncate 65, separator: ' ', omission: ' ...' %>
             </span>
             <span class="hidden xs:inline-block sm:hidden overflow-hidden text-clip">
