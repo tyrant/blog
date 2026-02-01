@@ -70,9 +70,9 @@ class PrevNekComponent < ViewComponent::Base
   def css_classes_for_category
     classes = %w(h-6 xs:h-auto w-[7rem] xs:w-[4.5rem] sm:w-[6.5rem]
                  mx-auto xs:-mx-[2.25rem] sm:-mx-[3.25rem] -my-[0.75rem] xs:my-auto 
-                 px-1 py-2 z-10 
+                 px-0 py-2 z-10 
                  leading-[0.5rem] xs:leading-[0.95rem] sm:leading-[1.25rem]
-                 text-center xs:text-lg sm:text-2xl font-['Racing_Sans_One']
+                 text-center xs:text-lg sm:text-2xl font-bold
                  shadow-lg outline-[3px])
     classes << PostComponent::CAT_COMMON_CSS
 
@@ -88,7 +88,8 @@ class PrevNekComponent < ViewComponent::Base
     classes = %w(w-full sm:w-auto h-20 p-2
                  basis-1/2
                  bg-center bg-no-repeat bg-white
-                 cursor-pointer shadow-md transition)
+                 cursor-pointer shadow-md transition
+                 font-['Racing_Sans_One'])
     
     classes << "duration-#{PostComponent::DURATION}"
   end

@@ -2,7 +2,7 @@
      data-prev-nek-duration-value="<%= PostComponent::DURATION %>"
      data-prev-nek-prev-is-nsfw-value="<%= prev&.nsfw? == true %>"
      data-prev-nek-nek-is-nsfw-value="<%= nek&.nsfw? == true %>"
-     class="my-3 mx-6 font-['Racing_Sans_One']">
+     class="my-3 mx-6">
 
   <div class="relative flex flex-col xs:flex-row gap-0">
 
@@ -24,7 +24,7 @@
           </svg>
         </span>
 
-        <span class="text-2xl xs:text-lg sm:text-2xl">Earlier</span>
+        <span class="text-2xl xs:text-lg sm:text-2xl font-['Racing_Sans_One']">Earlier</span>
       </div>
       <% end %>
     <% end %>
@@ -74,7 +74,7 @@
                   duration-200"
            data-prev-nek-target="nekArrow">
 
-          <span class="text-2xl xs:text-lg sm:text-2xl">Later</span>
+          <span class="text-2xl xs:text-lg sm:text-2xl font-['Racing_Sans_One']">Later</span>
 
           <span class="ml-1">
             <svg xmlns="http://www.w3.org/2000/svg"
