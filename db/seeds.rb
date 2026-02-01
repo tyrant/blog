@@ -78,20 +78,16 @@ end
   # Ensure each Post#scratchpad contains socials-URLs relevant to its socials-categories.
   # I maintain these myself manually, remember.
   scratchpad = []
-  if post.categories.any?{|c| c.label == 'Medium' }
-    scratchpad << "https://medium.com/@pi_neutrino"
-  end
-  if post.categories.any?{|c| c.label == 'Substack' }
-    scratchpad << "https://pi-neutrino.substack.com/"
-  end
-  if post.categories.any?{|c| c.label == 'Twitter' }
-    scratchpad << "https://twitter.com/pi_neutrino"
-  end
-  if post.categories.any?{|c| c.label == 'LinkedIn' }
-    scratchpad << "https://linkedin.com/in/pi_neutrino"
-  end
-  if post.categories.any?{|c| c.label == 'FB' }
-    scratchpad << "https://facebook.com/pi_neutrino"
+  socials = [{ label: 'Medium', url: 'https://medium.com/@pi_neutrino' },
+             { label: 'Substack', url: 'https://pi-neutrino.substack.com/' },
+             { label: 'Twitter', url: 'https://twitter.com/pi_neutrino' },
+             { label: 'LinkedIn', url: 'https://linkedin.com/in/pi_neutrino' },
+             { label: 'FB', url: 'https://facebook.com/pi_neutrino' }]
+
+  socials.each do |social|
+    if post.categories.any?{|c| c.label == social[:label] }
+      scratchpad << social[:url]
+    end
   end
 
   # Calling `post.save(validate: false)` wipes the Post's category list. No idea why.
