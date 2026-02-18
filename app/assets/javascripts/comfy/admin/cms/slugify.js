@@ -24,11 +24,13 @@
   };
 
   window.CMS.slugify = () => {
-    const input = document.querySelector('input[data-slugify=true]');
-    const slugInput = document.querySelector('input[data-slug]');
-    if (input === null || slugInput === null) return;
-    input.addEventListener('input', () => {
-      slugInput.value = slugifyValue(input.value);
+    const $input = document.querySelector('input[data-slugify=true]');
+    const $slugInput = document.querySelector('input[data-slug]');
+
+    if ($input === null || $slugInput === null) return;
+
+    $input.addEventListener('input', () => {
+      $slugInput.value = slugifyValue($input.value);
     });
   };
 })();
