@@ -103,4 +103,149 @@ RSpec.describe PostComponent, type: :component do
       it { expect(post).to have_received(:resized_blob_or_orig_or_placeholder_url).once }
     end
   end
+
+  describe 'show_text parameter' do
+    context 'when show_text is not provided (default)' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options }
+      
+      it 'defaults to true' do
+        expect(subject.instance_variable_get(:@show_text)).to eq(true)
+      end
+    end
+
+    context 'when show_text is explicitly true' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: true }
+      
+      it 'sets show_text to true' do
+        expect(subject.instance_variable_get(:@show_text)).to eq(true)
+      end
+    end
+
+    context 'when show_text is false' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: false }
+      
+      it 'sets show_text to false' do
+        expect(subject.instance_variable_get(:@show_text)).to eq(false)
+      end
+    end
+  end
+
+  describe '#css_classes_for_image' do
+    context 'when show_text is true (default)' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: true }
+      let(:image_classes) { subject.send(:css_classes_for_image) }
+
+      it 'includes base image classes' do
+        expect(image_classes).to include('object-cover', 'w-full', 'h-64', 'shadow-lg', 'scale-100', 'ease-in', 'duration-150')
+      end
+
+      it 'includes rounded-t-xl for top corners only' do
+        expect(image_classes).to include('rounded-t-xl')
+      end
+
+      it 'does not include rounded-xl for all corners' do
+        expect(image_classes).not_to include('rounded-xl')
+      end
+    end
+
+    context 'when show_text is false' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: false }
+      let(:image_classes) { subject.send(:css_classes_for_image) }
+
+      it 'includes base image classes' do
+        expect(image_classes).to include('object-cover', 'w-full', 'h-64', 'shadow-lg', 'scale-100', 'ease-in', 'duration-150')
+      end
+
+      it 'includes rounded-xl for all corners' do
+        expect(image_classes).to include('rounded-xl')
+      end
+
+      it 'does not include rounded-t-xl' do
+        expect(image_classes).not_to include('rounded-t-xl')
+      end
+    end
+  end
+
+  describe '#css_classes_for_titlebg' do
+    context 'when show_text is true' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: true }
+      let(:titlebg_classes) { subject.send(:css_classes_for_titlebg) }
+
+      it 'includes base title background classes' do
+        expect(titlebg_classes).to include('w-full', 'h-28', 'bg-gradient-to-b', 'from-transparent', 'to-60%', 'to-neutral-800/75', 'absolute', 'top-36', 'left-0')
+      end
+
+      it 'does not include rounded-b-xl' do
+        expect(titlebg_classes).not_to include('rounded-b-xl')
+      end
+    end
+
+    context 'when show_text is false' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: false }
+      let(:titlebg_classes) { subject.send(:css_classes_for_titlebg) }
+
+      it 'includes base title background classes' do
+        expect(titlebg_classes).to include('w-full', 'h-28', 'bg-gradient-to-b', 'from-transparent', 'to-60%', 'to-neutral-800/75', 'absolute', 'top-36', 'left-0')
+      end
+
+      it 'includes rounded-b-xl for bottom corners' do
+        expect(titlebg_classes).to include('rounded-b-xl')
+      end
+    end
+  end
+
+  describe 'rendering with show_text' do
+    let(:truncated_content) { subject.send(:post_content) }
+
+    context 'when show_text is true (default)' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: true }
+      
+      before { render_inline(subject) }
+
+      it 'renders the text preview' do
+        expect(rendered_content).to include('text-sm text-gray-600 dark:text-gray-300')
+      end
+
+      it 'includes the post content text' do
+        expect(rendered_content).to include(CGI.escapeHTML(truncated_content))
+      end
+
+      it 'uses rounded-t-xl on image' do
+        expect(rendered_content).to include('rounded-t-xl')
+      end
+
+      it 'does not use rounded-xl on image' do
+        # Should not have rounded-xl in the image tag context
+        expect(rendered_content.scan(/rounded-xl/).count).to eq(1) # Only on the outer post div
+      end
+    end
+
+    context 'when show_text is false' do
+      subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options, show_text: false }
+      
+      before { render_inline(subject) }
+
+      it 'does not render the text preview div' do
+        # The px-4 mt-2 mb-2 div should not be present when show_text is false
+        expect(rendered_content).not_to match(/<div class="px-4 mt-2 mb-2">/)
+      end
+
+      it 'uses rounded-xl on image' do
+        expect(rendered_content).to include('rounded-xl')
+      end
+
+      it 'uses rounded-b-xl on title background' do
+        expect(rendered_content).to include('rounded-b-xl')
+      end
+
+      it 'still renders the post title' do
+        truncated_title = CGI.escapeHTML(post.title.truncate(72, separator: ' ', omission: ' ...'))
+        expect(rendered_content).to include(truncated_title)
+      end
+
+      it 'still renders the post image' do
+        expect(rendered_content).to include('object-cover')
+      end
+    end
+  end
 end
