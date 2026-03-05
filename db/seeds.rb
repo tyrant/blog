@@ -59,7 +59,9 @@ end
   # Those maniacs overwrite #published_at :O 
   # https://github.com/comfy/comfy-blog/blob/93c874fe928ed2fa5d8785e47aa6cf216aeb14f3/app/models/comfy/blog/post.rb#L51
   # Can't have that. We'll have to update it the old-fashioned way.
-  post.published_at = Time.now + n.weeks
+  
+  # Add a sprinkling of posts for the previous 200 weeks, ~4 years.
+  post.published_at = Time.now - (4*n).weeks
   post.save!(validate: false)
 
   # For each post, create random categorisations: 0-Category.count. Some posts will have
