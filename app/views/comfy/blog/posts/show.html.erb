@@ -27,8 +27,8 @@
   <div class="w-72 flex-none flex flex-col gap-6 mt-4 lg:mt-0">
     <% (@yearly_random_posts || []).each do |post| %>
       <div>
-        <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2 px-1">
-          random from <%= post.published_at.year %>
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">
+          best of <%= post.published_at.year %>
         </h3>
         <%= render PostComponent.new(post: post, cms_site: @cms_site, nsfw_options: @nsfw_options, show_text: false) %>
       </div>
