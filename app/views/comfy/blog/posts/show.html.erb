@@ -22,14 +22,23 @@
   </div>
 <% end %>
 
-<div class="flex flex-col lg:flex-row-reverse justify-evenly m-4">
+<div class="flex flex-col gap-12 lg:flex-row-reverse m-4">
 
-  <div class="lg:basis-1/4">
-    
+  <div class="w-72 flex-none flex flex-col gap-6 mt-4 lg:mt-0">
+    <% (@yearly_random_posts || []).each do |post| %>
+      <div>
+        <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2 px-1">
+          random from <%= post.published_at.year %>
+        </h3>
+        <%= render PostComponent.new(post: post, cms_site: @cms_site, nsfw_options: @nsfw_options, show_text: false) %>
+      </div>
+    <% end %>
   </div>
 
-  <div class="lg:basis-3/4 post-body prose leading-snug">
-    <%= @cms_post.content_cache.html_safe %>
+  <div class="grow">
+    <div class="post-body prose prose-lg max-w-none leading-snug">
+      <%= @cms_post.content_cache.html_safe %>
+    </div>
   </div>
 </div>
 

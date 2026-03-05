@@ -56,6 +56,8 @@ Rails.application.routes.draw do
   get 'apocalypse/4-praetorian-prostitutes',
     to: redirect('the-sex-commandos-thwart-the-third-vaginal-apocalypse/part-four-the-praetorian-prostitutes')
 
+  get 'blog/:year/:month/:slug', to: 'posts#show', constraints: { year: /\d{4}/, month: /\d{1,2}/ }
+
   comfy_route :blog_admin, path: 'admin'
   comfy_route :blog, path: "blog"
 

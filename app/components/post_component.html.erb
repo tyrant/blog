@@ -35,9 +35,9 @@
       <div class="duration-150" 
            data-post-target="scale">
         <%= image_tag post_image_path,
-            class: 'object-cover w-full h-64 shadow-lg scale-100 ease-in duration-150 rounded-t-xl' %>
+            class: css_classes_for_image %>
 
-        <div class="w-full h-28 bg-gradient-to-b from-transparent to-60% to-neutral-800/75 absolute top-36 left-0">
+        <div class="<%= css_classes_for_titlebg %>">
           <h5 class="absolute w-full p-5 h-15 bottom-0 left-0 
                      font-['Racing_Sans_One']
                      text-center text-gray-100 text-outlined
@@ -48,11 +48,13 @@
         </div>
       </div>
 
-      <div class="px-4 mt-2 mb-2">
-        <div class="text-sm text-gray-600 dark:text-gray-300">
-          <%= post_content %>
+      <% if @show_text %>
+        <div class="px-4 mt-2 mb-2">
+          <div class="text-sm text-gray-600 dark:text-gray-300">
+            <%= post_content %>
+          </div>
         </div>
-      </div>
+      <% end %>
     <% end %>
   </div>
 </div>

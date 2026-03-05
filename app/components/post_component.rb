@@ -19,10 +19,11 @@ class PostComponent < ViewComponent::Base
     'shite-advice' => %w(cat-blurrable)
   }
 
-  def initialize(post:, cms_site:, nsfw_options:)
+  def initialize(post:, cms_site:, nsfw_options:, show_text: true)
     @post = post
     @cms_site = cms_site
     @nsfw_options = nsfw_options
+    @show_text = show_text
   end
 
   private
@@ -85,6 +86,18 @@ class PostComponent < ViewComponent::Base
       classes += %w(blur-sm)
     end
 
+    classes.join ' '
+  end
+
+  def css_classes_for_image
+    classes = %w(object-cover w-full h-64 shadow-lg scale-100 ease-in duration-150)
+    classes += @show_text ? %w(rounded-t-xl) : %w(rounded-xl)
+    classes.join ' '
+  end
+
+  def css_classes_for_titlebg
+    classes = %w(w-full h-28 bg-gradient-to-b from-transparent to-60% to-neutral-800/75 absolute top-36 left-0)
+    classes += @show_text ? %w() : %w(rounded-b-xl) 
     classes.join ' '
   end
 end
