@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/aspect-ratio";
+
+@theme {
+  /* Custom breakpoints from tailwind.config.js */
+  --breakpoint-xs: 400px;
+  --breakpoint-3xl: 2000px;
+
+  /* Custom fonts from tailwind.config.js */
+  --font-chuck-five: "Chuck Five";
+  --font-sans: "Inter var", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
 
 @layer base {
   @font-face {

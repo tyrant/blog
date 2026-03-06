@@ -10,7 +10,6 @@ gem 'propshaft'
 gem 'jsbundling-rails'
 gem 'cssbundling-rails'
 gem 'jbuilder', '~> 2.7'
-gem 'tailwindcss-rails', '~> 3.3.1'
 
 gem 'image_processing', '~> 1.2'
 gem 'bootsnap', '>= 1.16.0', require: false

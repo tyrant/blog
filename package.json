@@ -3,19 +3,23 @@
   "private": true,
   "scripts": {
     "build": "node config/esbuild.config.js",
-    "build:css": "postcss ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css"
+    "build:css": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css",
+    "build:css:watch": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --watch"
   },
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.16",
     "@rails/ujs": "^7.1.0",
-    "@tailwindcss/typography": "^0.5.8",
     "alpinejs": "^3.10.2",
     "esbuild": "^0.25.5",
-    "jquery": "^3.7.1"
+    "jquery": "^3.7.1",
+    "tailwindcss": "^4.0.0"
   },
   "version": "0.1.0",
   "devDependencies": {
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.15",
     "@types/jquery": "^3.5.33",
     "autoprefixer": "^10.4.21",
     "esbuild-rails": "^1.0.7",

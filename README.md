@@ -147,10 +147,3 @@ The regular ol' asset pipeline makes all JS/CSS builds at app/assets/builds/* yo
 
 [TODO]
 
-
-TODO
-
-Turns out we're still using Tailwind 3, not 4. My bad. Needs upgrading. Among other side effects:
- * app/assets/builds/application.css has been untouched for months. Proabably dead code.
- * package.json's script's build:css, L6, seems unused. I can remove it and the app still works great. Removing L5's build, though for esbuild and JS, breaks Tailwind (3). TailwindCSS-Rails's docs say the 3->4 upgrade proces goes CSS-only and spurns JS config, so who knows, maybe 3->4 may make this task dead too.
- 
