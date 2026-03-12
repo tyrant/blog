@@ -15,6 +15,12 @@
   --breakpoint-xs: 400px;
   --breakpoint-3xl: 2000px;
 
+  /* Container query breakpoints - must match viewport breakpoints */
+  --container-xs: 400px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+
   /* Custom fonts from tailwind.config.js */
   --font-chuck-five: "Chuck Five";
   --font-sans: "Inter var", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";

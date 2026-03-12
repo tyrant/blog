@@ -4,12 +4,12 @@
      data-prev-nek-nek-is-nsfw-value="<%= nek&.nsfw? == true %>"
      class="my-3 mx-6">
 
-  <div class="relative flex flex-col xs:flex-row gap-0">
+  <div class="relative flex flex-col @xs:flex-row gap-0">
 
     <% if prev.present? %>
       <%= link_to prev_path do %>
       <div class="absolute flex flex-row justify-center items-center
-                  -left-4 h-1/2 xs:h-full z-10
+                  -left-4 h-1/2 @xs:h-full z-10
                   text-xl text-cyan-900 dark:text-cyan-700
                   duration-200"
            data-prev-nek-target="prevArrow">
@@ -24,7 +24,7 @@
           </svg>
         </span>
 
-        <span class="text-2xl xs:text-lg sm:text-2xl font-['Racing_Sans_One']">Earlier</span>
+        <span class="text-2xl @xs:text-lg @sm:text-2xl font-['Racing_Sans_One']">Earlier</span>
       </div>
       <% end %>
     <% end %>
@@ -35,23 +35,23 @@
                 data: { 'prev-nek-target': 'prev' } do %>
 
       <div class="flex items-center justify-end
-                  h-20 pr-3 xs:pr-[3rem] sm:pr-[4.25rem] pl-20 xs:pl-16 sm:pl-20 md:pl-24 py-3 -m-2
-                  rounded-t-xl xs:rounded-tr-none xs:rounded-l-xl
+                  h-20 pr-3 @xs:pr-[3rem] @sm:pr-[4.25rem] pl-20 @xs:pl-16 @sm:pl-20 @md:pl-24 py-3 -m-2
+                  rounded-t-xl @xs:rounded-tr-none @xs:rounded-l-xl
                   bg-gradient-to-r from-10% from-cyan-300/90 via-50% via-transparent to-gray-800">
                   
         <h5 class="max-h-16 max-w-full
-                   tracking-tight leading-[0.95rem] xs:leading-[0.9rem] sm:leading-[1rem] md:leading-[1.1rem]
+                   tracking-tight leading-[0.95rem] @xs:leading-[0.9rem] @sm:leading-[1rem] @md:leading-[1.1rem]
                    text-white text-right text-outlined
-                   text-md xs:text-sm sm:text-base md:text-lg">
+                   text-md @xs:text-sm @sm:text-base @md:text-lg">
 
           <% if prev.present? %>
-            <span class="hidden lg:inline-block">
+            <span class="hidden @lg:inline-block">
               <%= prev.title.truncate 90, separator: ' ', omission: ' ...' %>
             </span>
-            <span class="hidden sm:inline-block lg:hidden">
+            <span class="hidden @sm:inline-block @lg:hidden">
               <%= prev.title.truncate 65, separator: ' ', omission: ' ...' %>
             </span>
-            <span class="inline-block sm:hidden overflow-hidden text-clip">
+            <span class="inline-block @sm:hidden overflow-hidden text-clip">
               <%= prev.title.truncate 45, separator: ' ', omission: ' ...' %>
             </span>
           <% else %>
@@ -69,12 +69,12 @@
     <% if nek.present? %>
       <%= link_to nek_path do %>
       <div class="absolute flex flex-row justify-center items-center
-                  -right-4 h-1/2 xs:h-full z-10
+                  -right-4 h-1/2 @xs:h-full z-10
                   text-xl text-cyan-900 dark:text-cyan-700
                   duration-200"
            data-prev-nek-target="nekArrow">
 
-          <span class="text-2xl xs:text-lg sm:text-2xl font-['Racing_Sans_One']">Later</span>
+          <span class="text-2xl @xs:text-lg @sm:text-2xl font-['Racing_Sans_One']">Later</span>
 
           <span class="ml-1">
             <svg xmlns="http://www.w3.org/2000/svg"
@@ -97,24 +97,24 @@
                 data: { 'prev-nek-target': 'nek' } do %>
 
       <div class="flex items-center justify-start
-                  h-20 pl-3 xs:pl-[3rem] sm:pl-[4.25rem] pr-20 xs:pr-16 sm:pr-20 md:pr-24 py-3 -m-2
-                  rounded-b-xl xs:rounded-bl-none xs:rounded-r-xl
+                  h-20 pl-3 @xs:pl-[3rem] @sm:pl-[4.25rem] pr-20 @xs:pr-16 @sm:pr-20 @md:pr-24 py-3 -m-2
+                  rounded-b-xl @xs:rounded-bl-none @xs:rounded-r-xl
                   bg-gradient-to-l from-10% from-cyan-300/90 via-50% via-transparent to-gray-800">
                   
         <h5 class="max-h-16 max-w-full
-                   tracking-tight leading-[0.95rem] xs:leading-[0.9rem] sm:leading-[1rem] md:leading-[1.1rem]
+                   tracking-tight leading-[0.95rem] @xs:leading-[0.9rem] @sm:leading-[1rem] @md:leading-[1.1rem]
                    text-white text-left text-outlined
-                   text-md xs:text-sm sm:text-base md:text-lg
+                   text-md @xs:text-sm @sm:text-base @md:text-lg
                    ">
 
           <% if nek.present? %>
-            <span class="hidden lg:inline-block">
+            <span class="hidden @lg:inline-block">
               <%= nek.title.truncate 90, separator: ' ', omission: ' ...' %>
             </span>
-            <span class="hidden sm:inline-block lg:hidden">
+            <span class="hidden @sm:inline-block @lg:hidden">
               <%= nek.title.truncate 65, separator: ' ', omission: ' ...' %>
             </span>
-            <span class="inline-block sm:hidden overflow-hidden text-clip">
+            <span class="inline-block @sm:hidden overflow-hidden text-clip">
               <%= nek.title.truncate 45, separator: ' ', omission: ' ...' %>
             </span>
           <% else %>
