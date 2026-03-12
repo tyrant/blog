@@ -29,15 +29,15 @@ class PostsController < Comfy::Blog::PostsController
         .first!
         &.item_id
       post = @cms_site.blog_posts.published.find(post_id)
+
       redirect_to comfy_blog_post_path(year: post.year, month: post.month, slug: post.slug) and return
     end
 
-    @cms_post =
-      if params[:year] && params[:month]
-        post_scope.where(year: params[:year], month: params[:month]).first!
+    @cms_post = if params[:year] && params[:month]
+        post_scope.where(year: params[:year], month: params[:month])
       else
-        post_scope.first!
-      end
+        post_scope
+      end.first!
     @cms_layout = @cms_post.layout
 
     years = @cms_site.blog_posts.published
@@ -48,14 +48,13 @@ class PostsController < Comfy::Blog::PostsController
                      .reverse
 
     @yearly_random_posts = years.map do |year|
-      @cms_site.blog_posts.published
-               .where.not(id: @cms_post.id)
-               .where(Arel.sql("EXTRACT(YEAR FROM published_at)::int = ?"), year)
-               .order(Arel.sql("RANDOM()"))
-               .first
-    end.compact
+        @cms_site.blog_posts.published
+                .where.not(id: @cms_post.id)
+                .where(Arel.sql("EXTRACT(YEAR FROM published_at)::int = ?"), year)
+                .order(Arel.sql("RANDOM()"))
+                .first
+      end.compact || []
 
-    #debugger
 
     render layout: app_layout
 

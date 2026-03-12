@@ -25,7 +25,7 @@
 <div class="flex flex-col gap-24 lg:flex-row-reverse m-4">
 
   <div class="w-72 flex-none flex flex-col gap-6 mt-4 lg:mt-0">
-    <% (@yearly_random_posts || []).each do |post| %>
+    <% @yearly_random_posts.each do |post| %>
       <div>
         <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">
           best of <%= post.published_at.year %>
