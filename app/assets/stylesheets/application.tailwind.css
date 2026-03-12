@@ -4,6 +4,12 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/aspect-ratio";
 
+@source "../../views/**/*.html.erb";
+@source "../../components/**/*.html.erb";
+@source "../../components/**/*.rb";
+@source "../../javascript/**/*.js";
+@source "../../javascript/**/*.ts";
+
 @theme {
   /* Custom breakpoints from tailwind.config.js */
   --breakpoint-xs: 400px;
