@@ -98,7 +98,7 @@ class PrevNekComponent < ViewComponent::Base
     classes = %w(nsfw)
     
     classes << 'hover:blur-none' if @nsfw_options['mouseover']
-    classes << 'blur-sm' unless @nsfw_options['always']
+    classes << 'blur-xs' unless @nsfw_options['always']
 
     classes
   end

@@ -73,11 +73,11 @@ export default class PostController extends Controller {
   }
 
   unblurBlurrablesNow(): void {
-    this.blurrables().forEach(b => b.classList.remove('blur-sm'));
+    this.blurrables().forEach(b => b.classList.remove('blur-xs'));
   }
 
   blurBlurrablesNow(): void {
-    this.blurrables().forEach(b => b.classList.add('blur-sm'));
+    this.blurrables().forEach(b => b.classList.add('blur-xs'));
   }
 
   // Private methods (converted from # syntax for better TS compatibility)

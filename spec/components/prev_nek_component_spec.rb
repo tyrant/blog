@@ -163,7 +163,7 @@ RSpec.describe PrevNekComponent, type: :component do
           allow(subject).to receive(:prev).and_return(post3)
           allow(post3).to receive(:nsfw?).and_return(true)
         end
-        it { expect(css_classes).to include('nsfw', 'blur-sm') }
+        it { expect(css_classes).to include('nsfw', 'blur-xs') }
       end
 
       context 'when mouseover is enabled' do
@@ -184,7 +184,7 @@ RSpec.describe PrevNekComponent, type: :component do
           allow(post3).to receive(:nsfw?).and_return(true)
         end
         it { expect(css_classes).to include('nsfw') }
-        it { expect(css_classes).not_to include('blur-sm') }
+        it { expect(css_classes).not_to include('blur-xs') }
       end
     end
 

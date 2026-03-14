@@ -49,13 +49,13 @@ RSpec.describe PostComponent, type: :component do
 
       context 'when not always visible' do
         let(:body_classes) { subject.send(:css_classes_for_body) }
-        it { expect(body_classes).to include('blur-sm') }
+        it { expect(body_classes).to include('blur-xs') }
       end
 
       context 'when always visible' do
         let(:default_nsfw_options) { { 'banish' => false, 'mouseover' => true, 'always' => true } }
         let(:body_classes) { subject.send(:css_classes_for_body) }
-        it { expect(body_classes).not_to include('blur-sm') }
+        it { expect(body_classes).not_to include('blur-xs') }
       end
     end
   end
@@ -75,7 +75,7 @@ RSpec.describe PostComponent, type: :component do
     context 'for non-NSFW categories on NSFW posts' do
       subject { PostComponent.new post: nsfw_post, cms_site: site, nsfw_options: default_nsfw_options }
       let(:category_classes) { subject.send(:css_classes_for_category, category1) }
-      it { expect(category_classes).to include('blur-sm') }
+      it { expect(category_classes).to include('blur-xs') }
     end
   end
 

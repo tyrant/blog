@@ -42,11 +42,11 @@ export default class PrevNekController extends Controller {
   }
 
   blurNow(): void {
-    this.nsfwClasslists().forEach(c => c.add('blur-sm'));
+    this.nsfwClasslists().forEach(c => c.add('blur-xs'));
   }
 
   unblurNow(): void {
-    this.nsfwClasslists().forEach(c => c.remove('blur-sm'));
+    this.nsfwClasslists().forEach(c => c.remove('blur-xs'));
   }
 
   prevNekArrowsMove(): void {

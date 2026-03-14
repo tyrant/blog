@@ -61,7 +61,7 @@ class PostComponent < ViewComponent::Base
     classes = %w(relative link transition) << "duration-#{DURATION}"
     
     if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])
-      classes += %w(blur-sm)
+      classes += %w(blur-xs)
     end
 
     classes.join ' '
@@ -73,7 +73,7 @@ class PostComponent < ViewComponent::Base
     classes = %w(inline-block text-xs font-medium mb-2 px-2.5 py-1 float-right clear-both opacity-90 transition) << CAT_COMMON_CSS << CAT_UNIQUE_CSS[label] << POST_CAT_CSS[label] << "duration-#{DURATION}"
     
     if (@post.nsfw? && label != 'nsfw') && !@nsfw_options['always']
-      classes += %w(blur-sm)
+      classes += %w(blur-xs)
     end 
 
     classes.join ' '
@@ -83,7 +83,7 @@ class PostComponent < ViewComponent::Base
     classes = %w(absolute h-64 w-full top-0 left-0 z-10 transition)
 
     if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])
-      classes += %w(blur-sm)
+      classes += %w(blur-xs)
     end
 
     classes.join ' '
