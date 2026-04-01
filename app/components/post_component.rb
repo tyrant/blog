@@ -29,7 +29,24 @@ class PostComponent < ViewComponent::Base
   private
 
   def post_title
-    @post.title.truncate 72, separator: ' ', omission: ' ...'
+    @post_title ||= @post.title.truncate 72, separator: ' ', omission: ' ...'
+  end
+
+  def css_classes_for_title
+    classes = %w(absolute w-full p-5 bottom-0 left-0
+                 font-['Racing_Sans_One']
+                 text-center text-gray-100 text-outlined)
+                 
+    len = post_title.length
+    if len <= 30
+      classes << "text-xl md:text-2xl leading-[1.1rem] sm:leading-[1.3rem] md:leading-[1.4rem]"
+    elsif len <= 55
+      classes << "text-lg md:text-xl leading-[1.05rem] sm:leading-[1.2rem] md:leading-[1.3rem]"
+    else
+      classes << "text-base md:text-lg leading-[1.0rem] sm:leading-[1.1rem] md:leading-[1.2rem]"
+    end
+    
+    classes.join ' '
   end
 
   def post_link
