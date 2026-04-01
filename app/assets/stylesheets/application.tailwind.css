@@ -10,6 +10,8 @@
 @source "../../javascript/**/*.js";
 @source "../../javascript/**/*.ts";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Custom breakpoints from tailwind.config.js */
   --breakpoint-xs: 400px;
