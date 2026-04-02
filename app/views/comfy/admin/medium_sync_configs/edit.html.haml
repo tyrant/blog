@@ -1,0 +1,27 @@
+.page-header
+  %h2 Medium Sync Settings
+
+= comfy_form_with model: @config, scope: :medium_sync_config, url: comfy_admin_medium_sync_config_path, method: :patch do |form|
+
+  = form.text_area :title_template,
+                   label: "Title template — use {{title}}",
+                   style: "field-sizing: content; font-family: monospace;"
+
+  = form.text_area :subtitle,
+                   label: "Subtitle HTML (same for all posts — links inside it are preserved)",
+                   data: { 'cms-cm-mode': 'htmlmixed' }
+
+  = form.text_area :content_template,
+                   label: "Content template — use {{content}}",
+                   style: "field-sizing: content; font-family: monospace;"
+
+  = form.text_area :link_template,
+                   label: "Link-back template — use {{url}}",
+                   style: "field-sizing: content; font-family: monospace;"
+
+  = form.text_area :footer_html,
+                   label: "Footer HTML — paste the two <section> blocks from Medium DevTools (YOUR TURN + SEXYVERSE NOVELS)",
+                   data: { 'cms-cm-mode': 'htmlmixed' }
+
+  = form.form_actions do
+    = submit_tag "Save", class: "btn btn-primary ml-sm-1"

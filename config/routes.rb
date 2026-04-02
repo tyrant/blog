@@ -58,6 +58,15 @@ Rails.application.routes.draw do
 
   get 'blog/:year/:month/:slug', to: 'posts#show', constraints: { year: /\d{4}/, month: /\d{1,2}/ }
 
+  scope module: :comfy, as: :comfy do
+    scope module: :admin do
+      resource :medium_sync_config,
+               as: :admin_medium_sync_config,
+               path: "admin/medium-sync",
+               only: %i[edit update]
+    end
+  end
+
   comfy_route :blog_admin, path: 'admin'
   comfy_route :blog, path: "blog"
 
