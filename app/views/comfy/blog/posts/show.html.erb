@@ -25,6 +25,15 @@
 <div class="flex flex-col lg:flex-row gap-8 lg:gap-16 my-4 mx-2 xs:mx-6 sm:mx-8 md:mx-12">
 
   <div class="grow">
+    <% if admin_authenticated? %>
+      <div class="mb-4 flex justify-start">
+        <%= link_to "View in Admin", 
+                    edit_comfy_admin_blog_post_path(site_id: @cms_site.id, id: @cms_post.id),
+                    class: "inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-150",
+                    target: "_blank" %>
+      </div>
+    <% end %>
+
     <div class="post-body prose prose-lg max-w-none leading-snug">
       <%= @cms_post.content_cache.html_safe %>
     </div>

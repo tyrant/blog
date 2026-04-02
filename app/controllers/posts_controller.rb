@@ -1,4 +1,5 @@
 class PostsController < Comfy::Blog::PostsController
+  helper_method :admin_authenticated?
 
   def index
     @show_other_books = true
@@ -71,5 +72,14 @@ class PostsController < Comfy::Blog::PostsController
                              .nsfw_banished(@nsfw_options['banish'])
                              .order(:label)
       ]
+  end
+
+  private
+
+  def admin_authenticated?
+    authenticate_with_http_basic do |username, password|
+      username == ComfortableMexicanSofa::AccessControl::AdminAuthentication.username &&
+      password == ComfortableMexicanSofa::AccessControl::AdminAuthentication.password
+    end
   end
 end
