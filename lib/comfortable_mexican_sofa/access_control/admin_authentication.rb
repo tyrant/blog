@@ -15,9 +15,14 @@ module ComfortableMexicanSofa::AccessControl
     # this method should return +true+ if everything is great, or redirect user
     # to some other page, thus denying access to cms admin section.
     def authenticate
-      authenticate_or_request_with_http_basic do |username, password|
+      result = authenticate_or_request_with_http_basic do |username, password|
         self.username == username && self.password == password
       end
+      
+      # Set session flag when successfully authenticated
+      session[:comfy_admin_authenticated] = true if result
+      
+      result
     end
 
   end

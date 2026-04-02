@@ -77,9 +77,6 @@ class PostsController < Comfy::Blog::PostsController
   private
 
   def admin_authenticated?
-    authenticate_with_http_basic do |username, password|
-      username == ComfortableMexicanSofa::AccessControl::AdminAuthentication.username &&
-      password == ComfortableMexicanSofa::AccessControl::AdminAuthentication.password
-    end
+    session[:comfy_admin_authenticated] == true
   end
 end
