@@ -73,7 +73,7 @@ class PrevNekComponent < ViewComponent::Base
                  px-0 py-2 z-10 
                  leading-[0.5rem] @xs:leading-[0.95rem] @sm:leading-[1.25rem]
                  text-center @xs:text-lg @sm:text-2xl font-bold
-                 shadow-lg outline-[3px])
+                 shadow-lg outline)
     classes << PostComponent::CAT_COMMON_CSS
 
     label = @category.present? ? @category.label.parameterize : 'all-posts'

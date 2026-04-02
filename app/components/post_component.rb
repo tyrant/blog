@@ -4,7 +4,7 @@ class PostComponent < ViewComponent::Base
   # https://tailwindcss.com/docs/transition-duration
   DURATION = 150
 
-  CAT_COMMON_CSS = %w(hover:outline rounded)
+  CAT_COMMON_CSS = %w(hover:outline-2 rounded)
 
   CAT_UNIQUE_CSS = {
     'all-posts'    => %w(bg-gray-100 text-gray-900 dark:text-gray-900),
