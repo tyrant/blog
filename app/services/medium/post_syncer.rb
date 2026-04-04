@@ -15,7 +15,7 @@ module Medium
       subtitle   = config.subtitle.to_s
       link_label = config.link_template.gsub("{{url}}", "").strip
 
-      medium_url = post.socials_url_for(platform: "medium")
+      medium_url = post.scratchpad.to_s.split("\r\n").find { |line| line.include?("medium.com") }.to_s
       is_new     = medium_url.blank?
       edit_url   = is_new ? "https://medium.com/new-story" : "#{medium_url.sub(%r{/edit$}, "")}/edit"
 
@@ -321,11 +321,15 @@ module Medium
         sleep 1
       end
 
-      # Pass 0b: images — pasted as File ClipboardEvents so Medium's own upload
-      # handler fires and inserts an atomic image block at the cursor position
-      # (after subtitle, before body text). The body paste then naturally starts
-      # after the last figure via contentAnchor = figure || subtitleEl || titleEl.
-      images_for_paste.each { |img_data| drop_image_into_editor(driver, img_data) }
+      # Pass 0b: images — skip if a figure already exists in the editor (re-sync
+      # case). Dropping again would produce a duplicate image; the existing figure
+      # is already in the right position and the body paste will anchor to it.
+      existing_figure_count = driver.execute_script(
+        "return document.querySelectorAll('figure[data-testid=\"editorImageParagraph\"]').length"
+      )
+      if existing_figure_count.zero?
+        images_for_paste.each { |img_data| drop_image_into_editor(driver, img_data) }
+      end
 
       # Pass 1: body content.
       driver.execute_script(<<~JS, content)
@@ -366,17 +370,11 @@ module Medium
         } else {
           range.setStartAfter(rangeStart);
         }
-        // If rangeStart is the trailingP (or no separate trailingP exists), extend
-        // the range to cover it entirely so the paste replaces it. Otherwise stop
-        // just before the trailingP so it is preserved for the link paste (pass 2).
-        if (trailingP && trailingP !== rangeStart) {
-          range.setEndBefore(trailingP);
-        } else {
-          range.setEndAfter(inner.lastElementChild || rangeStart);
-        }
-        console.log('[MediumSync] body anchor: ' + rangeStart.tagName
-          + (fromInside ? ' (inside)' : ' (after)')
-          + ' trailingP=' + (trailingP ? trailingP.textContent.slice(0, 20) : 'none'));
+        // Always extend to the end of section-inner so that all existing body
+        // paragraphs and the link paragraph from a previous sync are swept out.
+        // The link paste (pass 2) unconditionally re-adds the link at the end.
+        range.setEndAfter(inner.lastElementChild || rangeStart);
+        console.log('[MediumSync] body anchor: ' + rangeStart.tagName + (fromInside ? ' (inside)' : ' (after)'));
         sel.removeAllRanges();
         sel.addRange(range);
 
@@ -400,19 +398,20 @@ module Medium
       driver.execute_script(<<~JS, post_url, link_label)
         const postUrl   = arguments[0];
         const linkLabel = arguments[1];
-        const linkHtml  = '<p><em>' + linkLabel + ' <a href="' + postUrl + '">' + postUrl + '</a></em></p>';
+        const linkHtml  = '<p>' + linkLabel + ' <a href="' + postUrl + '">' + postUrl + '</a></p>';
 
         const section1  = document.querySelector("section.section--first");
         const inner     = section1 && section1.querySelector(".section-inner");
         const editable  = document.querySelector(".postArticle-content[contenteditable='true']");
         if (!inner || !editable) { console.error('[MediumSync] editor not found for link pass'); return; }
 
-        const trailingP = inner.querySelector("p.graf--trailing");
+        const lastBlock = inner && inner.lastElementChild;
         const range     = document.createRange();
         const sel       = window.getSelection();
         editable.focus();
-        if (trailingP) {
-          range.selectNodeContents(trailingP);
+        if (lastBlock) {
+          range.selectNodeContents(lastBlock);
+          range.collapse(false);
         } else {
           range.selectNodeContents(inner);
           range.collapse(false);
@@ -421,7 +420,7 @@ module Medium
         sel.addRange(range);
 
         const dt = new DataTransfer();
-        dt.setData('text/html', linkHtml);
+        dt.setData('text/html', '<p></p>' + linkHtml);
         dt.setData('text/plain', linkLabel + ' ' + postUrl);
         console.log('[MediumSync] dispatching link paste');
         editable.dispatchEvent(new ClipboardEvent('paste', {
@@ -431,16 +430,53 @@ module Medium
 
       sleep 2
 
-      # Fire a trusted keystroke (End key — moves cursor, doesn't change content)
-      # after all pastes so Medium's autosave debounce treats the model as dirty
-      # and schedules a save.
+      # Apply italic to the link paragraph via a trusted keyboard shortcut.
+      # <em> in the HTML paste does not survive Medium's inline-style normalisation,
+      # so we select the paragraph content and toggle italic with a real keystroke.
+      # Draft.js uses metaKey (⌘) on macOS and ctrlKey on Linux for formatting.
+      italic_modifier = RbConfig::CONFIG["host_os"].include?("darwin") ? :meta : :control
       begin
         editable_el = driver.find_element(css: ".postArticle-content[contenteditable='true']")
-        editable_el.click
+        driver.execute_script(<<~JS, editable_el)
+          const editable  = arguments[0];
+          const section1  = document.querySelector("section.section--first");
+          const inner     = section1 && section1.querySelector(".section-inner");
+          const trailingP = inner && inner.querySelector("p.graf--trailing");
+          const linkP     = trailingP || (inner && inner.lastElementChild);
+          console.log('[MediumSync] italic target: ' + (linkP ? linkP.tagName + ' text=' + linkP.textContent.slice(0, 40) : 'none'));
+          if (!linkP || linkP.tagName !== 'P') return;
+          const range = document.createRange();
+          range.selectNodeContents(linkP);
+          const sel = window.getSelection();
+          editable.focus();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        JS
+        editable_el.send_keys([italic_modifier, "i"])
         editable_el.send_keys(:end)
       rescue Selenium::WebDriver::Error::NoSuchElementError
         nil
       end
+
+      # Remove any footer content left over from a previous sync:
+      # - Elements inside section-inner after the trailingP (appended by earlier syncs)
+      # - Separate <section> elements after section--first (Medium's own footer sections)
+      driver.execute_script(<<~JS)
+        const section1  = document.querySelector("section.section--first");
+        const inner     = section1 && section1.querySelector(".section-inner");
+        const trailingP = inner && inner.querySelector("p.graf--trailing");
+        if (inner && trailingP) {
+          let el = trailingP.nextElementSibling;
+          while (el) {
+            const next = el.nextElementSibling;
+            el.remove();
+            el = next;
+          }
+        }
+        document.querySelectorAll(".postArticle-content section:not(.section--first)").forEach(s => s.remove());
+        const editable = document.querySelector(".postArticle-content[contenteditable='true']");
+        if (editable) editable.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      JS
 
       # Pass 3: footer — ClipboardEvent paste after last block in section--first.
       #
@@ -649,8 +685,11 @@ module Medium
     end
 
     def set_field(driver, element, text)
+      # Cmd+A on macOS, Ctrl+A on Linux — Ctrl+A in a Mac browser moves the
+      # cursor to start-of-line rather than selecting all content.
+      select_all = RbConfig::CONFIG["host_os"].include?("darwin") ? :meta : :control
       element.click
-      element.send_keys([:control, "a"])
+      element.send_keys([select_all, "a"])
       element.send_keys(text)
     end
 
@@ -660,7 +699,7 @@ module Medium
         url = driver.current_url
         url&.include?("medium.com") && !url.end_with?("/new-story")
       end
-      driver.current_url&.sub(%r{/edit$}, "")
+      driver.current_url
     rescue Selenium::WebDriver::Error::TimeoutError,
            Selenium::WebDriver::Error::WebDriverError
       nil
