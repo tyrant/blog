@@ -17,7 +17,7 @@ module Medium
 
       medium_url = post.scratchpad.to_s.split("\r\n").find { |line| line.include?("medium.com") }.to_s
       is_new     = medium_url.blank?
-      edit_url   = is_new ? "https://medium.com/new-story" : "#{medium_url.sub(%r{/edit$}, "")}/edit"
+      edit_url   = is_new ? "https://medium.com/new-story" : medium_edit_url(medium_url)
 
       @attached_chrome = chrome_debug_port_open?
       driver = build_driver
@@ -97,6 +97,11 @@ module Medium
 
           console.log('[MediumSync] monitor active');
 
+          // Timestamp updated each time /_/batch returns 200. Polled by Ruby
+          // after the final paste to know when autosave has committed changes,
+          // replacing the previous blind sleep 20.
+          window.__mediumSyncLastBatchSuccessAt = 0;
+
           // Wrap fetch to capture failed Medium API calls.
           const _fetch = window.fetch;
           window.fetch = async function(...args) {
@@ -127,6 +132,7 @@ module Medium
                 console.error('[MediumSync XHR] ' + this.status + ' ' + url.split('?')[0] + ' | ' + (this.responseText || '').slice(0, 600));
               } else if (isBatch) {
                 console.log('[MediumSync batch] ' + this.status + ' | ' + (this.responseText || '').slice(0, 800));
+                if (this.status === 200) { window.__mediumSyncLastBatchSuccessAt = Date.now(); }
               } else if (isUpload) {
                 console.log('[MediumSync upload] ' + this.status + ' ' + url.split('?')[0] + ' | ' + (this.responseText || '').slice(0, 400));
               }
@@ -207,6 +213,15 @@ module Medium
     end
 
     def establish_cloudflare_clearance(profile_dir)
+      # Skip Phase 1 if we obtained a fresh cf_clearance recently. Cloudflare's
+      # clearance cookie is valid for ~30 minutes; using a 25-minute window gives
+      # a 5-minute safety margin before Phase 2 would hit a challenge.
+      stamp = Rails.root.join("tmp", "medium_sync_cf_cleared_at")
+      if stamp.exist? && (Time.now - stamp.mtime) < 25.minutes
+        Rails.logger.info("[MediumSync] CF clearance still valid (#{((Time.now - stamp.mtime) / 60).round}m old), skipping Phase 1")
+        return
+      end
+
       # Phase 1: launch Chrome without a remote-debugging port so that
       # navigator.webdriver is false and Cloudflare's Turnstile sees a real
       # browser. Navigate to medium.com to earn / renew cf_clearance, then
@@ -225,6 +240,7 @@ module Medium
       Process.kill("TERM", pid)
       sleep 1   # give Chrome time to flush cookies to disk
       clear_chrome_singleton_locks(profile_dir)
+      stamp.write(Time.now.to_s)
     rescue => e
       Rails.logger.warn("[MediumSync] CF clearance phase-1 failed: #{e.message}")
     end
@@ -318,7 +334,7 @@ module Medium
             clipboardData: dt, bubbles: true, cancelable: true, composed: true,
           }));
         JS
-        sleep 1
+        sleep 0.5
       end
 
       # Pass 0b: images — skip if a figure already exists in the editor (re-sync
@@ -392,7 +408,7 @@ module Medium
         console.log('[MediumSync] body paste dispatched, defaultPrevented: ' + pasteEvent.defaultPrevented);
       JS
 
-      sleep 2
+      sleep 0.5
 
       # Pass 2: link / trailing paragraph.
       driver.execute_script(<<~JS, post_url, link_label)
@@ -428,7 +444,7 @@ module Medium
         }));
       JS
 
-      sleep 2
+      sleep 0.5
 
       # Apply italic to the link paragraph via a trusted keyboard shortcut.
       # <em> in the HTML paste does not survive Medium's inline-style normalisation,
@@ -515,10 +531,27 @@ module Medium
             clipboardData: dt, bubbles: true, cancelable: true, composed: true,
           }));
         JS
-        sleep 2
+        sleep 0.5
       end
 
-      sleep 20
+      # Wait for Medium's autosave (/_/batch) to confirm all changes are saved,
+      # rather than sleeping a fixed 20 seconds. The XHR monitor sets
+      # window.__mediumSyncLastBatchSuccessAt whenever /_/batch returns 200;
+      # we record a marker just before waiting and poll for a newer timestamp.
+      # Falls back gracefully if no batch fires within 30 seconds.
+      begin
+        marker_ms = driver.execute_script("return Date.now()")
+        Selenium::WebDriver::Wait.new(timeout: 30).until do
+          driver.execute_script(
+            "return (window.__mediumSyncLastBatchSuccessAt || 0) > arguments[0]",
+            marker_ms
+          )
+        end
+        Rails.logger.info("[MediumSync] autosave confirmed")
+      rescue Selenium::WebDriver::Error::TimeoutError
+        Rails.logger.warn("[MediumSync] autosave timeout: /_/batch success not detected within 30s, proceeding")
+      end
+
       capture_debug_info(driver)
     end
 
@@ -703,6 +736,18 @@ module Medium
     rescue Selenium::WebDriver::Error::TimeoutError,
            Selenium::WebDriver::Error::WebDriverError
       nil
+    end
+
+    # Derive the Medium editor URL from any Medium URL format:
+    #   medium.com/p/HASH/edit       → already correct, return as-is
+    #   mikey-clarke.medium.com/HASH → unpublished show URL
+    #   medium.com/@user/slug-HASH   → published show URL
+    # All formats contain a 12-char hex post ID; construct medium.com/p/HASH/edit.
+    def medium_edit_url(url)
+      return url if url.match?(%r{medium\.com/p/[a-f0-9]+/edit$}i)
+
+      hash = url.match(%r{(?:/p/|[-/])([a-f0-9]{12})(?:/edit)?/?$}i)&.[](1)
+      hash ? "https://medium.com/p/#{hash}/edit" : "#{url.chomp("/edit")}/edit"
     end
 
     def append_medium_url_to_scratchpad(post, url)
