@@ -81,13 +81,6 @@ module Medium
       options.logging_prefs = { browser: "ALL" }
       driver = Selenium::WebDriver.for(:chrome, options: options)
 
-      # Grant clipboard read/write permission so we can set HTML clipboard content
-      # via navigator.clipboard.write() for trusted paste events.
-      driver.execute_cdp("Browser.grantPermissions", {
-        "permissions" => ["clipboardReadWrite"],
-        "origin"      => "https://medium.com"
-      })
-
       # Log failed Medium API calls to the browser console so capture_debug_info
       # can surface the exact backend error message.
       driver.execute_cdp("Page.addScriptToEvaluateOnNewDocument", source: <<~JS)
@@ -128,31 +121,19 @@ module Medium
               const url = this._msUrl || '';
               const isMedium = url.includes('medium.com') || url.startsWith('/');
               if (!isMedium) return;
-              const isBatch = url.includes('/_/batch');
+              const isBatch  = url.includes('/_/batch');
+              const isUpload = url.includes('/upload') || url.includes('/image');
               if (this.status >= 400) {
                 console.error('[MediumSync XHR] ' + this.status + ' ' + url.split('?')[0] + ' | ' + (this.responseText || '').slice(0, 600));
               } else if (isBatch) {
                 console.log('[MediumSync batch] ' + this.status + ' | ' + (this.responseText || '').slice(0, 800));
+              } else if (isUpload) {
+                console.log('[MediumSync upload] ' + this.status + ' ' + url.split('?')[0] + ' | ' + (this.responseText || '').slice(0, 400));
               }
             });
             return _xhrSend.apply(this, arguments);
           };
 
-          // Clipboard writer triggered by CDP F13 keydown.
-          // A CDP-dispatched keydown has isTrusted:true, satisfying Chrome's
-          // user-activation requirement for navigator.clipboard.write().
-          // Ruby sets window.__mediumSyncHtmlToPaste before firing F13, then
-          // polls window.__clipboardReady until it becomes true.
-          document.addEventListener('keydown', function(e) {
-            if (e.key !== 'F13' || !window.__mediumSyncHtmlToPaste) return;
-            navigator.clipboard.write([
-              new ClipboardItem({ 'text/html': new Blob([window.__mediumSyncHtmlToPaste], { type: 'text/html' }) })
-            ]).then(function() {
-              window.__clipboardReady = true;
-            }).catch(function(err) {
-              window.__clipboardReady = 'err:' + String(err);
-            });
-          });
         })();
       JS
 
@@ -296,100 +277,140 @@ module Medium
         nil
       end
 
-      # Pass 1: paste body content via trusted clipboard (navigator.clipboard.write + CDP keyDown).
-      # Synthetic ClipboardEvent with isTrusted:false updates the DOM but not Draft.js state,
-      # causing autosave to serialise title-only content. navigator.clipboard.write() produces
-      # a trusted paste event that Draft.js recognises.
-      #
-      # Step A: set subtitle if blank, then select the body range (no paste yet).
-      driver.execute_script(<<~JS, subtitle, content)
-        const subtitleHtml = arguments[0];
-        const bodyHtml     = arguments[1];
+      # Strip <img> tags from the body HTML and collect their bytes for separate
+      # file-paste insertion after the subtitle (Medium's paste handler ignores
+      # <img> tags in HTML pastes; only File ClipboardEvents create image blocks).
+      content, images_for_paste = upload_images_for_medium(driver, content)
 
+      # Pass 0: subtitle — ClipboardEvent paste targeting the subtitle paragraph so
+      # Draft.js updates ContentState (direct innerHTML assignment is DOM-only).
+      if subtitle.present?
+        driver.execute_script(<<~JS, subtitle)
+          const html      = arguments[0];
+          const section1  = document.querySelector("section.section--first");
+          const inner     = section1 && section1.querySelector(".section-inner");
+          const editable  = document.querySelector(".postArticle-content[contenteditable='true']");
+          if (!inner || !editable) return;
+          const titleEl   = inner.querySelector("h3[data-testid='editorTitleParagraph']");
+          const trailingP = inner.querySelector("p.graf--trailing");
+          const titleNext = titleEl && titleEl.nextElementSibling;
+          // Accept trailingP as subtitle target for new stories where the trailing
+          // paragraph doubles as the subtitle placeholder (no separate subtitle el yet).
+          // After pasting, Medium auto-creates a fresh trailing paragraph.
+          const subtitleEl = (titleNext && titleNext.tagName === "P") ? titleNext : null;
+          console.log('[MediumSync] subtitle: el=' + !!subtitleEl
+            + ' isTrailing=' + (subtitleEl === trailingP)
+            + ' text="' + (subtitleEl ? subtitleEl.textContent.slice(0, 60) : 'n/a') + '"');
+          if (!subtitleEl) return;
+
+          const range = document.createRange();
+          range.selectNodeContents(subtitleEl);
+          const sel = window.getSelection();
+          editable.focus();
+          sel.removeAllRanges();
+          sel.addRange(range);
+
+          const dt = new DataTransfer();
+          dt.setData('text/html', html.startsWith('<') ? html : '<p>' + html + '</p>');
+          dt.setData('text/plain', html.replace(/<[^>]*>/g, ''));
+          console.log('[MediumSync] dispatching subtitle paste');
+          editable.dispatchEvent(new ClipboardEvent('paste', {
+            clipboardData: dt, bubbles: true, cancelable: true, composed: true,
+          }));
+        JS
+        sleep 1
+      end
+
+      # Pass 0b: images — pasted as File ClipboardEvents so Medium's own upload
+      # handler fires and inserts an atomic image block at the cursor position
+      # (after subtitle, before body text). The body paste then naturally starts
+      # after the last figure via contentAnchor = figure || subtitleEl || titleEl.
+      images_for_paste.each { |img_data| drop_image_into_editor(driver, img_data) }
+
+      # Pass 1: body content.
+      driver.execute_script(<<~JS, content)
+        const html      = arguments[0];
         const section1  = document.querySelector("section.section--first");
         const inner     = section1 && section1.querySelector(".section-inner");
         const editable  = document.querySelector(".postArticle-content[contenteditable='true']");
-        if (!inner || !editable) return;
+        if (!inner || !editable) { console.error('[MediumSync] editor not found'); return; }
 
         const titleEl   = inner.querySelector("h3[data-testid='editorTitleParagraph']");
         const trailingP = inner.querySelector("p.graf--trailing");
         const figure    = inner.querySelector("figure[data-testid='editorImageParagraph']");
-
-        // Subtitle: first sibling after title that is a P but not the trailing link paragraph.
         const titleNext  = titleEl && titleEl.nextElementSibling;
-        const subtitleEl = (titleNext && titleNext.tagName === "P" && titleNext !== trailingP)
-          ? titleNext : null;
+        // Accept trailingP as subtitleEl for new stories (same fix as subtitle pass).
+        // After subtitle paste, Medium creates a fresh trailingP, so this will be
+        // the filled subtitle paragraph, not the new empty trailing one.
+        const subtitleEl = (titleNext && titleNext.tagName === "P") ? titleNext : null;
 
-        // Set subtitle via innerHTML — only when currently blank.
-        if (subtitleHtml.trim() && subtitleEl && !subtitleEl.textContent.trim()) {
-          subtitleEl.innerHTML = subtitleHtml;
+        // For a figure (atomic block), Draft.js prepends an empty block when the
+        // range starts *after* the figure node — producing a blank line. Fix: always
+        // start the range *inside* the first P after the figure so Draft.js treats
+        // it as "replace this text block" rather than "insert after atomic block".
+        // This applies whether the first P is a dedicated empty buffer or the trailingP.
+        let rangeStart = figure || subtitleEl || titleEl;
+        let fromInside = false;
+        if (figure) {
+          const afterFigure = figure.nextElementSibling;
+          if (afterFigure && afterFigure.tagName === 'P') {
+            rangeStart = afterFigure;
+            fromInside = true;
+          }
         }
-
-        // Content anchor: figure > subtitle > title.
-        const contentAnchor = figure || subtitleEl || titleEl;
-
         const range = document.createRange();
         const sel   = window.getSelection();
         editable.focus();
-        range.setStartAfter(contentAnchor);
-        // End before trailingP (preserving it) or at the last element if none exists.
-        if (trailingP) {
+        if (fromInside) {
+          range.setStart(rangeStart, 0);
+        } else {
+          range.setStartAfter(rangeStart);
+        }
+        // If rangeStart is the trailingP (or no separate trailingP exists), extend
+        // the range to cover it entirely so the paste replaces it. Otherwise stop
+        // just before the trailingP so it is preserved for the link paste (pass 2).
+        if (trailingP && trailingP !== rangeStart) {
           range.setEndBefore(trailingP);
         } else {
-          range.setEndAfter(inner.lastElementChild || contentAnchor);
+          range.setEndAfter(inner.lastElementChild || rangeStart);
         }
+        console.log('[MediumSync] body anchor: ' + rangeStart.tagName
+          + (fromInside ? ' (inside)' : ' (after)')
+          + ' trailingP=' + (trailingP ? trailingP.textContent.slice(0, 20) : 'none'));
         sel.removeAllRanges();
         sel.addRange(range);
 
-        // Store HTML on window for the async clipboard write below.
-        window.__mediumSyncBodyHtml = bodyHtml;
+        const dt = new DataTransfer();
+        dt.setData('text/html', html);
+        dt.setData('text/plain', html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+        const pasteEvent = new ClipboardEvent('paste', {
+          clipboardData: dt,
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        });
+        console.log('[MediumSync] dispatching body paste, html length: ' + html.length);
+        editable.dispatchEvent(pasteEvent);
+        console.log('[MediumSync] body paste dispatched, defaultPrevented: ' + pasteEvent.defaultPrevented);
       JS
 
-      # Step B: write to the real clipboard asynchronously.
-      driver.execute_async_script(<<~JS)
-        const done = arguments[arguments.length - 1];
-        const html = window.__mediumSyncBodyHtml || '';
-        navigator.clipboard.write([
-          new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) })
-        ]).then(() => done('ok')).catch(e => done('err:' + e));
-      JS
-
-      # Step C: send trusted Cmd+V (Mac) / Ctrl+V (Linux) via CDP to trigger the paste.
-      # CDP modifier bit field: Alt=1, Ctrl=2, Meta/Cmd=4, Shift=8.
-      paste_modifier = RUBY_PLATFORM.include?("darwin") ? 4 : 2
-      driver.execute_cdp("Input.dispatchKeyEvent", {
-        "type"      => "keyDown",
-        "key"       => "v",
-        "modifiers" => paste_modifier
-      })
-      driver.execute_cdp("Input.dispatchKeyEvent", {
-        "type"      => "keyUp",
-        "key"       => "v",
-        "modifiers" => paste_modifier
-      })
-
-      # Give Draft.js time to process the paste before the link paste.
       sleep 2
 
-      # Pass 2: paste link content into (or after) the trailing paragraph.
-      # Same three-step approach: select → clipboard.write → CDP keyDown.
-      #
-      # Step A: select the trailing paragraph contents.
+      # Pass 2: link / trailing paragraph.
       driver.execute_script(<<~JS, post_url, link_label)
         const postUrl   = arguments[0];
         const linkLabel = arguments[1];
+        const linkHtml  = '<p><em>' + linkLabel + ' <a href="' + postUrl + '">' + postUrl + '</a></em></p>';
 
         const section1  = document.querySelector("section.section--first");
         const inner     = section1 && section1.querySelector(".section-inner");
         const editable  = document.querySelector(".postArticle-content[contenteditable='true']");
-        if (!inner || !editable) return;
+        if (!inner || !editable) { console.error('[MediumSync] editor not found for link pass'); return; }
 
         const trailingP = inner.querySelector("p.graf--trailing");
-        const linkHtml  = linkLabel + '<a href="' + postUrl + '">' + postUrl + '</a>';
         const range     = document.createRange();
         const sel       = window.getSelection();
         editable.focus();
-
         if (trailingP) {
           range.selectNodeContents(trailingP);
         } else {
@@ -399,59 +420,66 @@ module Medium
         sel.removeAllRanges();
         sel.addRange(range);
 
-        window.__mediumSyncLinkHtml = trailingP ? linkHtml : '<p>' + linkHtml + '</p>';
+        const dt = new DataTransfer();
+        dt.setData('text/html', linkHtml);
+        dt.setData('text/plain', linkLabel + ' ' + postUrl);
+        console.log('[MediumSync] dispatching link paste');
+        editable.dispatchEvent(new ClipboardEvent('paste', {
+          clipboardData: dt, bubbles: true, cancelable: true, composed: true,
+        }));
       JS
 
-      # Step B: write link HTML to clipboard.
-      driver.execute_async_script(<<~JS)
-        const done = arguments[arguments.length - 1];
-        const html = window.__mediumSyncLinkHtml || '';
-        navigator.clipboard.write([
-          new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) })
-        ]).then(() => done('ok')).catch(e => done('err:' + e));
-      JS
-
-      # Step C: trusted paste keystroke.
-      driver.execute_cdp("Input.dispatchKeyEvent", {
-        "type"      => "keyDown",
-        "key"       => "v",
-        "modifiers" => paste_modifier
-      })
-      driver.execute_cdp("Input.dispatchKeyEvent", {
-        "type"      => "keyUp",
-        "key"       => "v",
-        "modifiers" => paste_modifier
-      })
-
-      # Give the link paste handler time to settle before injecting the footer.
       sleep 2
 
       # Fire a trusted keystroke (End key — moves cursor, doesn't change content)
       # after all pastes so Medium's autosave debounce treats the model as dirty
       # and schedules a save.
       begin
-        editable = driver.find_element(css: ".postArticle-content[contenteditable='true']")
-        editable.click
-        editable.send_keys(:end)
+        editable_el = driver.find_element(css: ".postArticle-content[contenteditable='true']")
+        editable_el.click
+        editable_el.send_keys(:end)
       rescue Selenium::WebDriver::Error::NoSuchElementError
         nil
       end
 
+      # Pass 3: footer — ClipboardEvent paste after last block in section--first.
+      #
+      # Cursor must be positioned at the END OF THE LAST BLOCK (inside section-inner),
+      # not at the end of the editable root. When the cursor is outside all blocks
+      # (after section.section--first in the editable), Draft.js has no block context
+      # and merges the pasted content into the preceding paragraph instead of creating
+      # new blocks — producing the link+footer single-paragraph merge bug.
       if footer_html.present?
         driver.execute_script(<<~JS, footer_html)
-          const footerHtml = arguments[0];
-          const editable   = document.querySelector(".postArticle-content[contenteditable='true']");
-          if (!editable) return;
+          const html      = arguments[0];
+          const editable  = document.querySelector(".postArticle-content[contenteditable='true']");
+          const section1  = document.querySelector("section.section--first");
+          const inner     = section1 && section1.querySelector(".section-inner");
+          const lastBlock = inner && inner.lastElementChild;
+          if (!editable || !lastBlock) { console.error('[MediumSync] footer: editor/lastBlock not found'); return; }
 
-          // Footer sections are Medium's publication CTAs — server-generated display elements
-          // that live outside the editor model. They must NOT go through the paste handler,
-          // which would convert them into story content and cause the backend to reject the save.
-          // Direct DOM insertion is correct here: they appear visually but are not serialised
-          // by Medium's editor when it saves.
-          document.querySelectorAll(".postArticle-content section:not(.section--first)")
-            .forEach(function(s) { s.remove(); });
-          editable.insertAdjacentHTML("beforeend", footerHtml);
+          // Cursor at end of last block content — Draft.js sees a proper block
+          // boundary and inserts the pasted content as new blocks after this one.
+          const range = document.createRange();
+          range.selectNodeContents(lastBlock);
+          range.collapse(false);
+          const sel = window.getSelection();
+          editable.focus();
+          sel.removeAllRanges();
+          sel.addRange(range);
+
+          // Prepend an empty <p> so that Draft.js appends nothing to the last block
+          // (the link paragraph) and starts the footer content in a new block.
+          // Without this, Draft.js merges the first footer block into the link paragraph.
+          const dt = new DataTransfer();
+          dt.setData('text/html', '<p></p>' + html);
+          dt.setData('text/plain', html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+          console.log('[MediumSync] dispatching footer paste');
+          editable.dispatchEvent(new ClipboardEvent('paste', {
+            clipboardData: dt, bubbles: true, cancelable: true, composed: true,
+          }));
         JS
+        sleep 2
       end
 
       sleep 20
@@ -474,6 +502,152 @@ module Medium
       Rails.logger.warn("[MediumSync] debug capture failed: #{e.message}")
     end
 
+    # Replace external <img src> URLs in +html+ with Medium CDN URLs by POSTing
+    # each image directly to Medium's /_/upload endpoint from within the
+    # authenticated browser session via execute_async_script + fetch.
+    # Strip <img> tags from +html+, download each image's bytes, and return
+    # [stripped_html, [{body:, content_type:}, ...]]. The caller pastes the
+    # image data as File ClipboardEvents so Medium's own upload handler fires.
+    def upload_images_for_medium(driver, html)
+      doc = Nokogiri::HTML.fragment(html)
+      imgs = doc.css("img[src]")
+      driver.execute_script(
+        "console.log('[MediumSync] images: ' + arguments[0])",
+        imgs.map { |i| i["src"].to_s }.join(", ")
+      )
+      return [html, []] if imgs.empty?
+
+      images_for_paste = []
+
+      imgs.each do |img|
+        src    = img["src"].to_s
+        parent = img.parent
+        img.remove
+        # If removing the img left its parent block completely empty, remove the
+        # parent too — otherwise it pastes as a blank line before the body text.
+        if parent && parent.element? &&
+            %w[p h1 h2 h3 h4 blockquote li pre].include?(parent.name) &&
+            parent.children.all? { |c| c.text? && c.text.strip.empty? }
+          parent.remove
+        end
+        next if src.blank? || src.start_with?("data:")
+
+        unless src.start_with?("http", "//")
+          src = "#{Rails.application.routes.url_helpers.root_url.chomp('/')}#{src}"
+        end
+
+        data = download_image_bytes(src)
+        images_for_paste << data if data
+      end
+
+      [doc.to_html, images_for_paste]
+    end
+
+    # Drop +img_data+ ({body:, content_type:}) into the editor using CDP
+    # Input.dispatchDragEvent with the image written to a temp file. CDP creates
+    # a real DataTransfer with a real File object — bypassing Chrome's security
+    # restriction that prevents synthetic ClipboardEvents from carrying files.
+    # Medium's drop handler then calls /_/upload and inserts the figure block.
+    def drop_image_into_editor(driver, img_data)
+      require "tempfile"
+      mime_type = img_data[:content_type]
+      ext       = (mime_type.split("/").last || "jpg").gsub("jpeg", "jpg")
+
+      temp = Tempfile.new(["medium_sync_image", ".#{ext}"])
+      temp.binmode
+      temp.write(img_data[:body])
+      temp.flush
+      temp.close
+
+      before_count = driver.execute_script(
+        "return document.querySelectorAll('figure[data-testid=\"editorImageParagraph\"]').length"
+      )
+
+      # Get drop coordinates: just below the subtitle (or title) element.
+      drop_coords = driver.execute_script(<<~JS)
+        var section1  = document.querySelector('section.section--first');
+        var inner     = section1 && section1.querySelector('.section-inner');
+        var titleEl   = inner && inner.querySelector('h3[data-testid="editorTitleParagraph"]');
+        var titleNext = titleEl && titleEl.nextElementSibling;
+        var subtitleEl = (titleNext && titleNext.tagName === 'P') ? titleNext : null;
+        var anchorEl  = subtitleEl || titleEl;
+        if (!anchorEl) return null;
+        var r = anchorEl.getBoundingClientRect();
+        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.bottom + 10) };
+      JS
+
+      if drop_coords.nil?
+        Rails.logger.warn("[MediumSync] drop_image_into_editor: anchor element not found")
+        return
+      end
+
+      x = drop_coords["x"].to_f
+      y = drop_coords["y"].to_f
+      drag_data = {
+        items:              [{ mimeType: mime_type, data: "" }],
+        files:              [temp.path],
+        dragOperationsMask: 1,
+      }
+
+      driver.execute_script("console.log('[MediumSync] image drop at ' + #{x.to_i} + ',' + #{y.to_i})")
+      driver.execute_cdp("Input.dispatchDragEvent", type: "dragEnter", x: x, y: y, data: drag_data)
+      sleep 0.1
+      driver.execute_cdp("Input.dispatchDragEvent", type: "dragOver",  x: x, y: y, data: drag_data)
+      sleep 0.1
+      driver.execute_cdp("Input.dispatchDragEvent", type: "drop",      x: x, y: y, data: drag_data)
+      driver.execute_script("console.log('[MediumSync] image drop dispatched')")
+
+      begin
+        Selenium::WebDriver::Wait.new(timeout: 45).until do
+          driver.execute_script(
+            "return document.querySelectorAll('figure[data-testid=\"editorImageParagraph\"]').length"
+          ) > before_count
+        end
+        driver.execute_script("console.log('[MediumSync] image figure appeared')")
+      rescue Selenium::WebDriver::Error::TimeoutError
+        driver.execute_script("console.error('[MediumSync] image figure did not appear after drop')")
+      end
+    rescue => e
+      Rails.logger.warn("[MediumSync] drop_image_into_editor failed: #{e.message}")
+    ensure
+      temp&.unlink rescue nil
+    end
+
+    def download_image_bytes(url, redirect_limit: 5)
+      # Fast path: read local ActiveStorage blobs directly from storage rather than
+      # making an HTTP round-trip back to the same Puma process (which can deadlock
+      # when the job runs in-process on the async adapter).
+      if (match = url.match(%r{/rails/active_storage/blobs/(?:redirect|inline)/([^/]+)/}))
+        begin
+          blob = ActiveStorage::Blob.find_signed!(match[1])
+          return { body: blob.download, content_type: blob.content_type || "image/jpeg" }
+        rescue => e
+          raise "ActiveStorage blob read failed (#{e.class}): #{e.message}"
+        end
+      end
+
+      require "net/http"
+      uri = URI(url)
+      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
+                      open_timeout: 10, read_timeout: 30) do |http|
+        response = http.get(uri.request_uri)
+        case response
+        when Net::HTTPSuccess
+          content_type = response["content-type"]&.split(";")&.first&.strip || "image/jpeg"
+          { body: response.body, content_type: content_type }
+        when Net::HTTPRedirection
+          raise "Too many redirects" if redirect_limit.zero?
+          download_image_bytes(response["location"], redirect_limit: redirect_limit - 1)
+        else
+          Rails.logger.warn("[MediumSync] image download got #{response.code} for #{url}")
+          nil
+        end
+      end
+    rescue => e
+      Rails.logger.warn("[MediumSync] image download failed for #{url}: #{e.message}")
+      nil
+    end
+
     def set_field(driver, element, text)
       element.click
       element.send_keys([:control, "a"])
@@ -494,7 +668,7 @@ module Medium
 
     def append_medium_url_to_scratchpad(post, url)
       parts = [post.scratchpad.to_s.rstrip, url].reject(&:empty?)
-      post.update!(scratchpad: parts.join("\r\n"))
+      post.update!(scratchpad: parts.join("\r\n\r\n"))
     end
 
     # Normalise blog HTML for Medium's paste handler and backend serialiser.
@@ -512,19 +686,21 @@ module Medium
     }.freeze
 
     # Attributes that carry semantic meaning and should survive normalisation.
-    KEEP_ATTRS = %w[href target rel].freeze
+    KEEP_ATTRS = %w[href target rel src alt].freeze
 
     # Elements with no Medium equivalent that must be removed entirely.
-    # img is included because Medium requires images on its own CDN — external
-    # src URLs cause the backend to reject the save with "Something is wrong".
-    REMOVE_TAGS = %w[img picture video audio iframe script style svg canvas
-                     form input button select textarea].freeze
+    # img/picture are handled separately: upload_images_for_medium replaces
+    # external src URLs with Medium CDN URLs before pasting. picture is unwrapped
+    # to expose its img child.
+    REMOVE_TAGS = %w[video audio iframe script style svg canvas
+                     form input button select textarea source].freeze
 
     # Generic container elements with no Medium block equivalent.
     # We unwrap these (keeping their children) rather than deleting them,
-    # so their text content is preserved.
+    # so their text content is preserved. picture is unwrapped to expose
+    # its img child (source/srcset elements are removed in REMOVE_TAGS).
     UNWRAP_TAGS = %w[div figure figcaption section article header footer
-                     aside nav main span].freeze
+                     aside nav main span picture].freeze
 
     def normalize_for_medium(html)
       doc = Nokogiri::HTML.fragment(html)
