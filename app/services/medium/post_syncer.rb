@@ -555,7 +555,28 @@ module Medium
         Rails.logger.warn("[MediumSync] autosave timeout: /_/batch success not detected within 30s, proceeding")
       end
 
+      suppress_beforeunload_dialog(driver)
       capture_debug_info(driver)
+    end
+
+    # Prevent Medium's beforeunload confirm dialog from appearing when the
+    # browser is closed after a sync. Medium registers a beforeunload handler
+    # that checks an internal dirty flag; even after /_/batch returns 200, the
+    # flag may still be set when driver.quit fires. We inject a capture-phase
+    # listener that fires first, stops Medium's handler from running at all, and
+    # clears returnValue — the three conditions Chrome requires to suppress the
+    # dialog. Also nulls window.onbeforeunload as a belt-and-braces measure.
+    def suppress_beforeunload_dialog(driver)
+      driver.execute_script(<<~JS)
+        window.onbeforeunload = null;
+        window.addEventListener('beforeunload', function(e) {
+          e.stopImmediatePropagation();
+          delete e.returnValue;
+        }, { capture: true });
+      JS
+      Rails.logger.info("[MediumSync] beforeunload suppressed")
+    rescue => e
+      Rails.logger.warn("[MediumSync] suppress_beforeunload_dialog: #{e.message}")
     end
 
     def capture_debug_info(driver)

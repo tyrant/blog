@@ -515,6 +515,41 @@ RSpec.describe Medium::PostSyncer do
   # ---------------------------------------------------------------------------
   # #download_image_bytes
   # ---------------------------------------------------------------------------
+  # #suppress_beforeunload_dialog
+  # ---------------------------------------------------------------------------
+  describe '#suppress_beforeunload_dialog' do
+    let(:driver) { instance_double(Selenium::WebDriver::Driver) }
+
+    context 'when execute_script succeeds' do
+      before { allow(driver).to receive(:execute_script) }
+
+      it 'removes the inline onbeforeunload handler and adds a capture-phase suppressor' do
+        syncer.send(:suppress_beforeunload_dialog, driver)
+        expect(driver).to have_received(:execute_script).with(a_string_including('onbeforeunload = null'))
+      end
+
+      it 'uses stopImmediatePropagation to prevent Medium\'s handler from firing' do
+        syncer.send(:suppress_beforeunload_dialog, driver)
+        expect(driver).to have_received(:execute_script).with(a_string_including('stopImmediatePropagation'))
+      end
+
+      it 'clears returnValue so Chrome does not show the confirm dialog' do
+        syncer.send(:suppress_beforeunload_dialog, driver)
+        expect(driver).to have_received(:execute_script).with(a_string_including('delete e.returnValue'))
+      end
+    end
+
+    context 'when execute_script raises (e.g. driver is closed)' do
+      before { allow(driver).to receive(:execute_script).and_raise(RuntimeError, 'session not found') }
+
+      it 'logs a warning and does not raise' do
+        expect(Rails.logger).to receive(:warn).with(a_string_matching(/suppress_beforeunload_dialog/))
+        expect { syncer.send(:suppress_beforeunload_dialog, driver) }.not_to raise_error
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   describe '#download_image_bytes' do
     subject { syncer.send(:download_image_bytes, url) }
 
