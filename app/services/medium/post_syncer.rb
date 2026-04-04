@@ -344,7 +344,10 @@ module Medium
         "return document.querySelectorAll('figure[data-testid=\"editorImageParagraph\"]').length"
       )
       if existing_figure_count.zero?
-        images_for_paste.each { |img_data| drop_image_into_editor(driver, img_data) }
+        images_for_paste.each do |img_data|
+          drop_image_into_editor(driver, img_data)
+          insert_image_caption(driver, img_data[:caption])
+        end
       end
 
       # Pass 1: body content.
@@ -571,12 +574,16 @@ module Medium
       Rails.logger.warn("[MediumSync] debug capture failed: #{e.message}")
     end
 
-    # Replace external <img src> URLs in +html+ with Medium CDN URLs by POSTing
-    # each image directly to Medium's /_/upload endpoint from within the
-    # authenticated browser session via execute_async_script + fetch.
     # Strip <img> tags from +html+, download each image's bytes, and return
-    # [stripped_html, [{body:, content_type:}, ...]]. The caller pastes the
-    # image data as File ClipboardEvents so Medium's own upload handler fires.
+    # [stripped_html, [{body:, content_type:, caption:}, ...]]. The caller drops
+    # image data via CDP DragEvent so Medium's upload handler fires, then inserts
+    # any caption into the figure's caption input.
+    #
+    # Caption extraction: if a plain <p> immediately follows the image's parent
+    # block it is treated as the image caption — removed from the body HTML and
+    # included as :caption in the image hash so the caller can paste it into
+    # Medium's caption field. A heading, media element, or multi-element block
+    # is not eligible and stays in the body.
     def upload_images_for_medium(driver, html)
       doc = Nokogiri::HTML.fragment(html)
       imgs = doc.css("img[src]")
@@ -591,6 +598,27 @@ module Medium
       imgs.each do |img|
         src    = img["src"].to_s
         parent = img.parent
+
+        # Check for a caption candidate BEFORE removing the img, so we can
+        # inspect what other content the parent block contains.
+        caption = nil
+        if parent && parent.element? &&
+            %w[p h1 h2 h3 h4 blockquote li pre].include?(parent.name)
+          # Only consider a caption when the img is the sole real content in
+          # its parent (no other elements or non-whitespace text alongside it).
+          other_content = parent.children.reject { |c| c == img || (c.text? && c.text.strip.empty?) }
+          if other_content.empty?
+            next_el = parent.next_element
+            if next_el &&
+                next_el.name == "p" &&
+                next_el.text.strip.present? &&
+                next_el.css("img, figure, video, audio, iframe").empty?
+              caption = next_el.inner_html.strip
+              next_el.remove
+            end
+          end
+        end
+
         img.remove
         # If removing the img left its parent block completely empty, remove the
         # parent too — otherwise it pastes as a blank line before the body text.
@@ -606,7 +634,7 @@ module Medium
         end
 
         data = download_image_bytes(src)
-        images_for_paste << data if data
+        images_for_paste << data.merge(caption: caption) if data
       end
 
       [doc.to_html, images_for_paste]
@@ -680,6 +708,57 @@ module Medium
       Rails.logger.warn("[MediumSync] drop_image_into_editor failed: #{e.message}")
     ensure
       temp&.unlink rescue nil
+    end
+
+    # After dropping an image, click the figure to trigger Medium's caption UI,
+    # then paste +caption+ (inner HTML of the source paragraph) into the figcaption.
+    # No-ops silently when caption is blank or the figcaption doesn't appear
+    # (e.g. Medium changes the DOM) so the rest of the sync is unaffected.
+    def insert_image_caption(driver, caption)
+      return if caption.blank?
+
+      begin
+        # The most recently dropped figure is always last in document order.
+        figures = driver.find_elements(css: "figure[data-testid='editorImageParagraph']")
+        return if figures.empty?
+
+        figure = figures.last
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'})", figure)
+        sleep 0.2
+        figure.click
+        sleep 0.3
+
+        # Medium renders a <figcaption> inside the figure once it's selected.
+        caption_el = Selenium::WebDriver::Wait.new(timeout: 5).until do
+          els = driver.find_elements(css: "figure[data-testid='editorImageParagraph'] figcaption")
+          els.last if els.any?
+        end
+
+        # Paste via ClipboardEvent so Draft.js updates ContentState, not just the DOM.
+        driver.execute_script(<<~JS, caption_el, caption)
+          const captionEl = arguments[0];
+          const html      = arguments[1];
+          captionEl.focus();
+          const range = document.createRange();
+          range.selectNodeContents(captionEl);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          const dt = new DataTransfer();
+          dt.setData('text/html', html.startsWith('<') ? html : '<p>' + html + '</p>');
+          dt.setData('text/plain', html.replace(/<[^>]*>/g, ''));
+          captionEl.dispatchEvent(new ClipboardEvent('paste', {
+            clipboardData: dt, bubbles: true, cancelable: true, composed: true,
+          }));
+        JS
+        driver.execute_script(
+          "console.log('[MediumSync] caption inserted: ' + arguments[0].slice(0, 60))",
+          caption.gsub(/<[^>]*>/, "").slice(0, 60)
+        )
+      rescue Selenium::WebDriver::Error::TimeoutError,
+             Selenium::WebDriver::Error::NoSuchElementError => e
+        Rails.logger.warn("[MediumSync] insert_image_caption: #{e.message}")
+      end
     end
 
     def download_image_bytes(url, redirect_limit: 5)

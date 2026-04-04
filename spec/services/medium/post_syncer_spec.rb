@@ -330,7 +330,7 @@ RSpec.describe Medium::PostSyncer do
       end
 
       it 'includes the downloaded image data in the second element' do
-        expect(subject[1]).to include({ body: 'bytes', content_type: 'image/jpeg' })
+        expect(subject[1]).to include(a_hash_including(body: 'bytes', content_type: 'image/jpeg'))
       end
     end
 
@@ -378,6 +378,136 @@ RSpec.describe Medium::PostSyncer do
 
       it 'does not add a nil entry to the images array' do
         expect(subject[1]).not_to include(nil)
+      end
+    end
+
+    context 'when a plain paragraph immediately follows the image block' do
+      let(:html) { '<p><img src="/uploads/photo.jpg"></p><p>Caption text</p><p>Body text</p>' }
+
+      before do
+        allow(syncer).to receive(:download_image_bytes).and_return({ body: 'bytes', content_type: 'image/jpeg' })
+      end
+
+      it 'includes the caption in the image data' do
+        expect(subject[1].first[:caption]).to eq 'Caption text'
+      end
+
+      it 'removes the caption paragraph from the returned HTML' do
+        expect(subject[0]).not_to include('Caption text')
+      end
+
+      it 'preserves non-caption body paragraphs in the HTML' do
+        expect(subject[0]).to include('Body text')
+      end
+    end
+
+    context 'when a heading (not a plain paragraph) follows the image block' do
+      let(:html) { '<p><img src="/uploads/photo.jpg"></p><h2>A Heading</h2><p>Body text</p>' }
+
+      before do
+        allow(syncer).to receive(:download_image_bytes).and_return({ body: 'bytes', content_type: 'image/jpeg' })
+      end
+
+      it 'does not treat the heading as a caption' do
+        expect(subject[1].first[:caption]).to be_nil
+      end
+
+      it 'leaves the heading in the body HTML' do
+        expect(subject[0]).to include('A Heading')
+      end
+    end
+
+    context 'when no paragraph follows the image block' do
+      let(:html) { '<p><img src="/uploads/photo.jpg"></p>' }
+
+      before do
+        allow(syncer).to receive(:download_image_bytes).and_return({ body: 'bytes', content_type: 'image/jpeg' })
+      end
+
+      it 'leaves caption as nil' do
+        expect(subject[1].first[:caption]).to be_nil
+      end
+    end
+
+    context 'when the following paragraph contains a media element' do
+      let(:html) { '<p><img src="/uploads/photo.jpg"></p><p><img src="/uploads/other.jpg"></p>' }
+
+      before do
+        allow(syncer).to receive(:download_image_bytes).and_return({ body: 'bytes', content_type: 'image/jpeg' })
+      end
+
+      it 'does not treat the media paragraph as a caption' do
+        expect(subject[1].first[:caption]).to be_nil
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # #insert_image_caption
+  # ---------------------------------------------------------------------------
+  describe '#insert_image_caption' do
+    let(:driver)     { instance_double(Selenium::WebDriver::Driver) }
+    let(:figure_el)  { instance_double(Selenium::WebDriver::Element) }
+    let(:caption_el) { instance_double(Selenium::WebDriver::Element) }
+
+    before do
+      allow(driver).to receive(:execute_script)
+      allow(driver).to receive(:find_elements)
+        .with(css: "figure[data-testid='editorImageParagraph']")
+        .and_return([figure_el])
+      allow(driver).to receive(:find_elements)
+        .with(css: "figure[data-testid='editorImageParagraph'] figcaption")
+        .and_return([caption_el])
+      allow(figure_el).to receive(:click)
+    end
+
+    context 'when caption is blank' do
+      it 'does nothing' do
+        expect(driver).not_to receive(:find_elements)
+        syncer.send(:insert_image_caption, driver, nil)
+      end
+
+      it 'does nothing for an empty string' do
+        expect(driver).not_to receive(:find_elements)
+        syncer.send(:insert_image_caption, driver, '')
+      end
+    end
+
+    context 'when caption is present and figcaption is found' do
+      it 'clicks the figure to trigger the caption UI' do
+        syncer.send(:insert_image_caption, driver, 'Caption text')
+        expect(figure_el).to have_received(:click)
+      end
+
+      it 'dispatches a paste event into the caption element' do
+        syncer.send(:insert_image_caption, driver, 'Caption text')
+        expect(driver).to have_received(:execute_script).with(anything, caption_el, 'Caption text')
+      end
+    end
+
+    context 'when no figures are present in the editor' do
+      before do
+        allow(driver).to receive(:find_elements)
+          .with(css: "figure[data-testid='editorImageParagraph']")
+          .and_return([])
+      end
+
+      it 'does nothing' do
+        expect(figure_el).not_to receive(:click)
+        syncer.send(:insert_image_caption, driver, 'Caption text')
+      end
+    end
+
+    context 'when the figcaption does not appear (TimeoutError)' do
+      before do
+        allow(driver).to receive(:find_elements)
+          .with(css: "figure[data-testid='editorImageParagraph'] figcaption")
+          .and_return([])
+      end
+
+      it 'logs a warning and does not raise' do
+        expect(Rails.logger).to receive(:warn).with(a_string_matching(/insert_image_caption/))
+        expect { syncer.send(:insert_image_caption, driver, 'Caption text') }.not_to raise_error
       end
     end
   end
