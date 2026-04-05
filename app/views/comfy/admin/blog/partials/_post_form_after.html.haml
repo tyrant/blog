@@ -3,4 +3,7 @@
     - banner_url = asset_path('orig-bad-advice-banner.jpg')
     %button.btn.btn-outline-secondary{type: "button", id: "copy-for-medium", data: {post_id: @post.id, banner_url: banner_url}}
       Copy for Medium
+    %button.btn.btn-outline-primary.ml-2{type: "button", id: "sync-to-medium", data: {sync_url: sync_to_medium_comfy_admin_blog_post_path(@site, @post)}}
+      Sync to Medium
     %span.medium-copy-status.ml-2{style: "display: none;"}
+    %span.medium-sync-status.ml-2{style: "display: none;"}

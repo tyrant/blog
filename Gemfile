@@ -56,9 +56,10 @@ group :development do
   gem 'mutex_m'
 end
 
+gem 'selenium-webdriver', '>= 4.0'
+
 group :test do
   gem 'capybara', '>= 3.39'
-  gem 'selenium-webdriver', '>= 4.0'
   gem 'rspec-rails', '~> 6.0'
   gem 'factory_bot_rails', '~> 6.4'
   gem 'simplecov', require: false

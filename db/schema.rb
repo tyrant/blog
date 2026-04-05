@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_20_024647) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_01_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -187,6 +187,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_20_024647) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["subscriber_type", "subscriber_id", "list"], name: "index_mailkick_subscriptions_on_subscriber_and_list", unique: true
+  end
+
+  create_table "medium_sync_configs", force: :cascade do |t|
+    t.text "title_template", default: "{{title}}"
+    t.text "subtitle"
+    t.text "content_template", default: "{{content}}"
+    t.text "link_template", default: "original: {{url}}"
+    t.text "footer_html"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|

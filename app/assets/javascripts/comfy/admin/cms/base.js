@@ -33,6 +33,7 @@
     CMS.diff();
     CMS.autosave.init();
     CMS.mediumExport.init();
+    CMS.mediumSync.init();
   };
 
   CMS.dispose = () => {
@@ -44,6 +45,7 @@
     CMS.timepicker.dispose();
     CMS.autosave.dispose();
     CMS.mediumExport.dispose();
+    CMS.mediumSync.dispose();
   };
 
   CMS.getLocale = () => document.querySelector('meta[name="cms-locale"]').content;
