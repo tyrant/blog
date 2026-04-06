@@ -166,7 +166,13 @@ The `ROOT_URL` environment variable (set in `.env` / `.env.production`) drives `
 
 ### Production setup
 
-Chrome must be installed on the production server (`/usr/bin/google-chrome-stable`). The `selenium-webdriver` gem handles communication via CDP — no separate chromedriver binary is needed.
+Chrome and xvfb must be installed on the production server:
+
+```bash
+sudo apt install -y google-chrome-stable xvfb
+```
+
+The `selenium-webdriver` gem handles communication via CDP — no separate chromedriver binary is needed. xvfb provides a virtual display so Chrome can run in headed mode on a headless server, bypassing Cloudflare's bot detection of `--headless`.
 
 **One-time login:** Before the first production sync, you must establish a Medium login session in the Chrome profile. Run:
 

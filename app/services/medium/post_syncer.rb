@@ -227,22 +227,30 @@ module Medium
       # browser. Navigate to medium.com to earn / renew cf_clearance, then
       # terminate Chrome so it commits the cookie to disk before Phase 2.
       #
-      # On headless servers (production), --headless=new is added. The "new"
-      # headless mode shares the same rendering engine as headed Chrome and is
-      # very difficult for Cloudflare to fingerprint. Combined with no
-      # --remote-debugging-port (so navigator.webdriver stays false), this
-      # gives cf_clearance a strong chance of being granted.
-      phase1_args = [
-        chrome_binary_path,
+      # On headless servers (production), xvfb-run provides a virtual display
+      # so Chrome runs in full headed mode. Cloudflare's Turnstile detects
+      # --headless=new, but cannot distinguish a real display from a virtual
+      # framebuffer. Combined with no --remote-debugging-port (so
+      # navigator.webdriver stays false), cf_clearance is granted normally.
+      chrome_args = [
         "--user-data-dir=#{profile_dir}",
         "--no-first-run",
         "--no-default-browser-check",
         "--window-size=1280,900",
       ]
+      chrome_args << "--no-sandbox" if headless?
+
       if headless?
-        phase1_args += %w[--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu]
+        xvfb = `which xvfb-run 2>/dev/null`.strip
+        if xvfb.empty?
+          Rails.logger.warn("[MediumSync] xvfb-run not found; skipping CF clearance Phase 1")
+          return
+        end
+        phase1_args = [xvfb, "--auto-servernum", "--server-args=-screen 0 1280x900x24",
+                       chrome_binary_path, *chrome_args, "https://medium.com"]
+      else
+        phase1_args = [chrome_binary_path, *chrome_args, "https://medium.com"]
       end
-      phase1_args << "https://medium.com"
       pid = Process.spawn(*phase1_args, [:out, :err] => File::NULL)
       Process.detach(pid)
       sleep 12  # allow medium.com to fully load and Cloudflare to set the cookie

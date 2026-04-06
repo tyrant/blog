@@ -26,22 +26,34 @@ namespace :medium do
 
     abort "Chrome binary not found. Set CHROME_BINARY env var." unless chrome_binary
 
-    args = [
-      chrome_binary,
+    headless_server = ENV["DISPLAY"].to_s.empty? && !RbConfig::CONFIG["host_os"].include?("darwin")
+
+    chrome_args = [
       "--remote-debugging-port=#{debug_port}",
       "--user-data-dir=#{profile_dir}",
       "--no-first-run",
       "--no-default-browser-check",
       "--window-size=1280,900",
+      "--no-sandbox",
     ]
 
-    # On a headless server, add headless flags but still expose the debug port
-    # so the user can connect via SSH tunnel + DevTools frontend.
-    if ENV["DISPLAY"].blank? && !RbConfig::CONFIG["host_os"].include?("darwin")
-      args += %w[--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu]
+    # On a headless server, use xvfb-run to provide a virtual display so Chrome
+    # runs in full headed mode. Cloudflare's Turnstile detects --headless=new,
+    # but cannot distinguish a real display from a virtual framebuffer.
+    if headless_server
+      xvfb = `which xvfb-run 2>/dev/null`.strip
+      if xvfb.empty?
+        abort <<~MSG
+          ERROR: xvfb-run is required on headless servers but was not found.
+          Install it with:  sudo apt install xvfb
+          Then re-run this task.
+        MSG
+      end
+      spawn_args = [xvfb, "--auto-servernum", "--server-args=-screen 0 1280x900x24",
+                    chrome_binary, *chrome_args, "https://medium.com"]
+    else
+      spawn_args = [chrome_binary, *chrome_args, "https://medium.com"]
     end
-
-    args << "https://medium.com"
 
     puts ""
     puts "=" * 70
@@ -51,18 +63,19 @@ namespace :medium do
     puts "Chrome is starting with the sync profile on debug port #{debug_port}."
     puts ""
 
-    if ENV["DISPLAY"].blank? && !RbConfig::CONFIG["host_os"].include?("darwin")
-      puts "REMOTE SERVER DETECTED — headless mode enabled."
+    if headless_server
+      puts "REMOTE SERVER DETECTED — using xvfb (virtual framebuffer)."
       puts ""
-      puts "From your local machine, open an SSH tunnel:"
+      puts "From your local machine, open an SSH tunnel (if not already open):"
       puts ""
       puts "  ssh -L #{debug_port}:127.0.0.1:#{debug_port} #{ENV['USER']}@<server-ip>"
       puts ""
-      puts "Then open Chrome DevTools in your local browser:"
+      puts "Then open this DevTools URL in your local browser:"
       puts ""
-      puts "  http://127.0.0.1:#{debug_port}"
+      puts "  http://localhost:#{debug_port}"
       puts ""
-      puts "Click the inspectable page to get a full browser view."
+      puts "You should see a list of inspectable pages. Click the medium.com"
+      puts "page to open a DevTools inspector with a live view of the page."
       puts "Navigate to https://medium.com and log in with your account."
     else
       puts "A Chrome window should open. Log in to Medium with your account."
@@ -73,7 +86,7 @@ namespace :medium do
     puts "-" * 70
     puts ""
 
-    pid = Process.spawn(*args, [:out, :err] => File::NULL)
+    pid = Process.spawn(*spawn_args, [:out, :err] => File::NULL)
     Process.detach(pid)
 
     # Wait for Chrome to start.
