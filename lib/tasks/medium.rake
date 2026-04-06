@@ -70,13 +70,14 @@ namespace :medium do
       puts ""
       puts "  ssh -L #{debug_port}:127.0.0.1:#{debug_port} #{ENV['USER']}@<server-ip>"
       puts ""
-      puts "Then open this DevTools URL in your local browser:"
+      puts "Then, in your local Chrome browser, go to:"
       puts ""
-      puts "  http://localhost:#{debug_port}"
+      puts "  chrome://inspect/#devices"
       puts ""
-      puts "You should see a list of inspectable pages. Click the medium.com"
-      puts "page to open a DevTools inspector with a live view of the page."
-      puts "Navigate to https://medium.com and log in with your account."
+      puts "Click 'Configure...' and add  localhost:#{debug_port}"
+      puts "The remote medium.com page should appear under 'Remote Target'."
+      puts "Click 'inspect' to get a live view you can interact with."
+      puts "Log in to Medium with your account."
     else
       puts "A Chrome window should open. Log in to Medium with your account."
     end
@@ -99,27 +100,48 @@ namespace :medium do
     require "json"
 
     begin
-      # Get the first page's WebSocket URL.
+      # Check for the Medium uid cookie via CDP to verify actual login.
       pages_uri = URI("http://127.0.0.1:#{debug_port}/json")
       pages_res = Net::HTTP.get(pages_uri)
       pages = JSON.parse(pages_res)
-      page_ws = pages.first&.dig("webSocketDebuggerUrl")
 
-      if page_ws
-        # Use the /json/version endpoint to confirm Chrome is alive,
-        # then check cookies via a simple HTTP call to the page.
-        cookies_uri = URI("http://127.0.0.1:#{debug_port}/json/version")
-        version_res = Net::HTTP.get(cookies_uri)
-        version = JSON.parse(version_res)
-        puts "Chrome version: #{version['Browser']}"
+      cookies_uri = URI("http://127.0.0.1:#{debug_port}/json/version")
+      version_res = Net::HTTP.get(cookies_uri)
+      version = JSON.parse(version_res)
+      puts "Chrome version: #{version['Browser']}"
+
+      # Read cookies from the page's cookie jar.
+      page_title = pages.first&.dig("title") || ""
+      page_url   = pages.first&.dig("url") || ""
+      has_uid = false
+
+      # Try to detect uid cookie via page title/URL heuristics.
+      # A page on medium.com (not "Just a moment...") with a logged-in
+      # indicator suggests success. For definitive verification we check
+      # the Chrome profile's Cookies SQLite file.
+      cookies_db = File.join(profile_dir, "Default", "Cookies")
+      if File.exist?(cookies_db)
+        require "open3"
+        out, _ = Open3.capture2("sqlite3", cookies_db,
+          "SELECT name FROM cookies WHERE host_key LIKE '%medium.com' AND name='uid' LIMIT 1;")
+        has_uid = out.strip == "uid"
       end
 
       puts ""
-      puts "Session cookies have been saved to the Chrome profile at:"
-      puts "  #{profile_dir}"
-      puts ""
-      puts "The Medium sync should now be able to use this profile."
-      puts "You can close this task."
+      if has_uid
+        puts "✓ Medium login verified (uid cookie found)."
+        puts ""
+        puts "Session cookies saved to the Chrome profile at:"
+        puts "  #{profile_dir}"
+        puts ""
+        puts "The Medium sync should now work. You can close this task."
+      else
+        puts "⚠ WARNING: Medium 'uid' cookie NOT found."
+        puts "  Current page: #{page_title} — #{page_url}"
+        puts ""
+        puts "  You may not have logged in yet. Re-run this task and use"
+        puts "  chrome://inspect to interact with the remote browser."
+      end
     rescue => e
       puts "Warning: Could not verify Chrome session: #{e.message}"
       puts "The profile may still be valid if you logged in successfully."

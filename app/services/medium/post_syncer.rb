@@ -147,19 +147,27 @@ module Medium
     end
 
     def launch_chrome_process(profile_dir)
-      args = [
-        chrome_binary_path,
+      chrome_args = [
         "--remote-debugging-port=#{SELF_LAUNCH_DEBUG_PORT}",
         "--user-data-dir=#{profile_dir}",
         "--no-first-run",
         "--no-default-browser-check",
       ]
       if headless?
-        args += %w[--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu]
+        chrome_args += %w[--no-sandbox --disable-dev-shm-usage --disable-gpu --window-size=1280,900]
+        xvfb = `which xvfb-run 2>/dev/null`.strip
+        if xvfb.empty?
+          Rails.logger.warn("[MediumSync] xvfb-run not found; falling back to --headless=new")
+          spawn_args = [chrome_binary_path, *chrome_args, "--headless=new"]
+        else
+          spawn_args = [xvfb, "--auto-servernum", "--server-args=-screen 0 1280x900x24",
+                        chrome_binary_path, *chrome_args]
+        end
       else
-        args << "--window-size=1280,900"
+        chrome_args << "--window-size=1280,900"
+        spawn_args = [chrome_binary_path, *chrome_args]
       end
-      @launched_chrome_pid = Process.spawn(*args, [:out, :err] => File::NULL)
+      @launched_chrome_pid = Process.spawn(*spawn_args, [:out, :err] => File::NULL)
       Process.detach(@launched_chrome_pid)
     end
 

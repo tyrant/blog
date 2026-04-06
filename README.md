@@ -153,10 +153,10 @@ Okay. `app/services/medium/post_syncer.rb` mirrors blog posts to Medium using br
 
 The sync uses a **two-phase Chrome launch** to work around Cloudflare's Turnstile bot detection:
 
-1. **Phase 1** — Chrome launches WITHOUT `--remote-debugging-port` so `navigator.webdriver` is `false`. It loads `medium.com` to earn/renew a `cf_clearance` cookie (~30 min validity). On headless servers, `--headless=new` is added (the new headless mode is very hard for Cloudflare to fingerprint).
-2. **Phase 2** — Chrome relaunches WITH `--remote-debugging-port` and navigates directly to the editor URL, skipping medium.com's homepage entirely so Turnstile never re-runs.
+1. **Phase 1** — Chrome launches WITHOUT `--remote-debugging-port` so `navigator.webdriver` is `false`. It loads `medium.com` to earn/renew a `cf_clearance` cookie (~30 min validity). On headless servers, `xvfb-run` provides a virtual display so Chrome runs in full headed mode — Cloudflare cannot distinguish this from a real display.
+2. **Phase 2** — Chrome relaunches WITH `--remote-debugging-port` (also via `xvfb-run` on servers) and navigates directly to the editor URL, skipping medium.com's homepage entirely so Turnstile never re-runs.
 
-In development, Chrome opens visibly. In production, it runs headless.
+In development, Chrome opens visibly. In production, Chrome runs inside a virtual framebuffer (`xvfb`).
 
 ### Configuration
 
@@ -184,7 +184,7 @@ ssh -L 9222:127.0.0.1:9222 noob@mikeyclarke.co.nz
 cd /home/noob/blog/current && RAILS_ENV=production bundle exec rake medium:setup
 ```
 
-Then open `http://127.0.0.1:9222` in your local browser, navigate to medium.com, and log in. Press Enter in the SSH session when done. Medium's session cookies persist for months in the Chrome profile at `tmp/medium_sync_chrome_profile/`.
+Then in your local Chrome, go to `chrome://inspect/#devices`, click **Configure...**, add `localhost:9222`, and click the **inspect** link on the remote medium.com page. This gives you a live interactive view of the server's Chrome — log in to Medium there. Press Enter in the SSH session when done (the task verifies the `uid` cookie was saved). Medium's session cookies persist for months in the Chrome profile at `tmp/medium_sync_chrome_profile/`.
 
 ### Triggering a sync
 
