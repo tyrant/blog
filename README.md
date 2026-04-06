@@ -133,9 +133,9 @@ Now we've got three JS build files ready for pipeline-yoinking: `app/assets/buil
 
 #### Compiling CSS
 
-Our main app CSS is a vast sprinkling of [Tailwind](https://tailwindcss.com/) utility classes sprinkled across the app's view and component files. The file locations to read these classes from are listed at `config/tailwind.config.js`, lines 5-12. The remaining app CSS is at `app/assets/stylesheets/application.tailwind.css`.
+As of 2026, this app uses [Tailwind CSS v4](https://tailwindcss.com/), which is fully CSS-native — no `tailwind.config.js` needed. All configuration lives in `app/assets/stylesheets/application.tailwind.css` via `@import`, `@plugin`, `@source`, `@theme`, and `@variant` directives.
 
-These are live-reloaded by Procfile.dev's line 3: `css: bundle exec bin/rails tailwindcss:watch`, which outputs `app/assets/builds/tailwind.css`, ready for pipeline-yoinking by `app/views/layouts/application.html.erb`, line 16.
+These are live-reloaded by Procfile.dev's line 3: `css: yarn build:css:watch`, which runs the Tailwind CLI and outputs `app/assets/builds/application.css`, ready for pipeline-yoinking by `app/views/layouts/application.html.erb`.
 
 
 #### Asset Pipeline
