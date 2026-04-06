@@ -110,40 +110,29 @@ namespace :medium do
       version = JSON.parse(version_res)
       puts "Chrome version: #{version['Browser']}"
 
-      # Read cookies from the page's cookie jar.
+      # Heuristic login check via CDP page info.
+      # A medium.com page that isn't the sign-in page and isn't a Cloudflare
+      # challenge ("Just a moment...") indicates a successful login.
       page_title = pages.first&.dig("title") || ""
       page_url   = pages.first&.dig("url") || ""
-      has_uid = false
-
-      # Try to detect uid cookie via page title/URL heuristics.
-      # A page on medium.com (not "Just a moment...") with a logged-in
-      # indicator suggests success. For definitive verification we check
-      # the Chrome profile's Cookies SQLite file.
-      cookies_db = File.join(profile_dir, "Default", "Cookies")
-      if File.exist?(cookies_db)
-        require "sqlite3"
-        db = SQLite3::Database.new(cookies_db, readonly: true)
-        result = db.get_first_value(
-          "SELECT name FROM cookies WHERE host_key LIKE '%medium.com' AND name='uid' LIMIT 1"
-        )
-        db.close
-        has_uid = result == "uid"
-      end
+      logged_in = page_url.include?("medium.com") &&
+                  !page_url.include?("/m/signin") &&
+                  !page_title.include?("Just a moment")
 
       puts ""
-      if has_uid
-        puts "✓ Medium login verified (uid cookie found)."
+      if logged_in
+        puts "✓ Medium login looks good (#{page_title.slice(0, 60)})."
         puts ""
         puts "Session cookies saved to the Chrome profile at:"
         puts "  #{profile_dir}"
         puts ""
         puts "The Medium sync should now work. You can close this task."
       else
-        puts "⚠ WARNING: Medium 'uid' cookie NOT found."
-        puts "  Current page: #{page_title} — #{page_url}"
+        puts "⚠ WARNING: Unexpected page — may not be logged in."
+        puts "  Title: #{page_title}"
+        puts "  URL:   #{page_url}"
         puts ""
-        puts "  You may not have logged in yet. Re-run this task and use"
-        puts "  chrome://inspect to interact with the remote browser."
+        puts "  Re-run this task and use chrome://inspect to log in."
       end
     rescue => e
       puts "Warning: Could not verify Chrome session: #{e.message}"
