@@ -69,7 +69,7 @@ module Medium
         # entirely, so Turnstile never runs again and cf_clearance stays valid.
         profile_dir = Rails.root.join("tmp", "medium_sync_chrome_profile")
         clear_chrome_singleton_locks(profile_dir)
-        establish_cloudflare_clearance(profile_dir) unless headless?
+        establish_cloudflare_clearance(profile_dir)
         launch_chrome_process(profile_dir)
         wait_for_chrome_debug_port(SELF_LAUNCH_DEBUG_PORT)
         SELF_LAUNCH_DEBUG_PORT
@@ -226,15 +226,24 @@ module Medium
       # navigator.webdriver is false and Cloudflare's Turnstile sees a real
       # browser. Navigate to medium.com to earn / renew cf_clearance, then
       # terminate Chrome so it commits the cookie to disk before Phase 2.
-      pid = Process.spawn(
+      #
+      # On headless servers (production), --headless=new is added. The "new"
+      # headless mode shares the same rendering engine as headed Chrome and is
+      # very difficult for Cloudflare to fingerprint. Combined with no
+      # --remote-debugging-port (so navigator.webdriver stays false), this
+      # gives cf_clearance a strong chance of being granted.
+      phase1_args = [
         chrome_binary_path,
         "--user-data-dir=#{profile_dir}",
         "--no-first-run",
         "--no-default-browser-check",
         "--window-size=1280,900",
-        "https://medium.com",
-        [:out, :err] => File::NULL
-      )
+      ]
+      if headless?
+        phase1_args += %w[--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu]
+      end
+      phase1_args << "https://medium.com"
+      pid = Process.spawn(*phase1_args, [:out, :err] => File::NULL)
       Process.detach(pid)
       sleep 12  # allow medium.com to fully load and Cloudflare to set the cookie
       Process.kill("TERM", pid)

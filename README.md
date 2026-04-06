@@ -143,6 +143,48 @@ These are live-reloaded by Procfile.dev's line 3: `css: yarn build:css:watch`, w
 The regular ol' asset pipeline makes all JS/CSS builds at app/assets/builds/* yoinkable from the browser, via view-file helpers. Same with images. Propshaft handles this.
 
 
+## Medium Sync
+
+This was all Claude. My word.
+
+Okay. `app/services/medium/post_syncer.rb` mirrors blog posts to Medium using browser automation (Selenium + Chrome DevTools Protocol). It manipulates Medium's Draft.js editor via ClipboardEvent pastes, image drag-and-drop, and keyboard shortcuts.
+
+### How it works
+
+The sync uses a **two-phase Chrome launch** to work around Cloudflare's Turnstile bot detection:
+
+1. **Phase 1** — Chrome launches WITHOUT `--remote-debugging-port` so `navigator.webdriver` is `false`. It loads `medium.com` to earn/renew a `cf_clearance` cookie (~30 min validity). On headless servers, `--headless=new` is added (the new headless mode is very hard for Cloudflare to fingerprint).
+2. **Phase 2** — Chrome relaunches WITH `--remote-debugging-port` and navigates directly to the editor URL, skipping medium.com's homepage entirely so Turnstile never re-runs.
+
+In development, Chrome opens visibly. In production, it runs headless.
+
+### Configuration
+
+Sync settings (title template, content template, link template, footer HTML) are managed via the `MediumSyncConfig` model, editable in ComfyAdmin.
+
+The `ROOT_URL` environment variable (set in `.env` / `.env.production`) drives `default_url_options` so that relative image URLs resolve correctly in all environments.
+
+### Production setup
+
+Chrome must be installed on the production server (`/usr/bin/google-chrome-stable`). The `selenium-webdriver` gem handles communication via CDP — no separate chromedriver binary is needed.
+
+**One-time login:** Before the first production sync, you must establish a Medium login session in the Chrome profile. Run:
+
+```bash
+# SSH into the server with a tunnel for Chrome DevTools:
+ssh -L 9222:127.0.0.1:9222 noob@mikeyclarke.co.nz
+
+# Run the setup task:
+cd /home/noob/blog/current && bundle exec rake medium:setup
+```
+
+Then open `http://127.0.0.1:9222` in your local browser, navigate to medium.com, and log in. Press Enter in the SSH session when done. Medium's session cookies persist for months in the Chrome profile at `tmp/medium_sync_chrome_profile/`.
+
+### Triggering a sync
+
+From ComfyAdmin's post edit page, click the "Sync to Medium" button. This calls `Medium::PostSyncer.execute(post_id:)` which handles title, subtitle, body content, images, link paragraph, footer, and autosave confirmation.
+
+
 ## ActiveStorage and AWS
 
 [TODO]
