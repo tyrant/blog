@@ -175,7 +175,7 @@ Chrome must be installed on the production server (`/usr/bin/google-chrome-stabl
 ssh -L 9222:127.0.0.1:9222 noob@mikeyclarke.co.nz
 
 # Run the setup task:
-cd /home/noob/blog/current && bundle exec rake medium:setup
+cd /home/noob/blog/current && RAILS_ENV=production bundle exec rake medium:setup
 ```
 
 Then open `http://127.0.0.1:9222` in your local browser, navigate to medium.com, and log in. Press Enter in the SSH session when done. Medium's session cookies persist for months in the Chrome profile at `tmp/medium_sync_chrome_profile/`.

@@ -3,18 +3,19 @@
 namespace :medium do
   desc "Launch Chrome with the Medium sync profile for interactive login. " \
        "On a remote server, use an SSH tunnel to access Chrome DevTools from your local browser."
-  task setup: :environment do
-    profile_dir = Rails.root.join("tmp", "medium_sync_chrome_profile")
+  task :setup do
+    project_root = File.expand_path("../..", __dir__)
+    profile_dir = File.join(project_root, "tmp", "medium_sync_chrome_profile")
     FileUtils.mkdir_p(profile_dir)
     debug_port = 9222
 
     # Clean stale locks from any previous Chrome process.
     %w[SingletonLock SingletonCookie SingletonSocket].each do |f|
-      path = profile_dir.join(f)
-      File.delete(path) if path.exist?
+      path = File.join(profile_dir, f)
+      File.delete(path) if File.exist?(path)
     end
 
-    chrome_binary = ENV["CHROME_BINARY"].presence ||
+    chrome_binary = (ENV["CHROME_BINARY"] unless ENV["CHROME_BINARY"].to_s.empty?) ||
       [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "/usr/bin/google-chrome",
@@ -116,8 +117,8 @@ namespace :medium do
 
     # Clean locks so the sync process can reuse the profile.
     %w[SingletonLock SingletonCookie SingletonSocket].each do |f|
-      path = profile_dir.join(f)
-      File.delete(path) if path.exist?
+      path = File.join(profile_dir, f)
+      File.delete(path) if File.exist?(path)
     end
 
     puts ""
