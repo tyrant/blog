@@ -121,10 +121,13 @@ namespace :medium do
       # the Chrome profile's Cookies SQLite file.
       cookies_db = File.join(profile_dir, "Default", "Cookies")
       if File.exist?(cookies_db)
-        require "open3"
-        out, _ = Open3.capture2("sqlite3", cookies_db,
-          "SELECT name FROM cookies WHERE host_key LIKE '%medium.com' AND name='uid' LIMIT 1;")
-        has_uid = out.strip == "uid"
+        require "sqlite3"
+        db = SQLite3::Database.new(cookies_db, readonly: true)
+        result = db.get_first_value(
+          "SELECT name FROM cookies WHERE host_key LIKE '%medium.com' AND name='uid' LIMIT 1"
+        )
+        db.close
+        has_uid = result == "uid"
       end
 
       puts ""
