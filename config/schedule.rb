@@ -20,5 +20,5 @@
 # Learn more: http://github.com/javan/whenever
 
 every 1.day, at: '2:00 am' do
-  command "bash /home/noob/blog/backup_script.sh"
+  command "/home/noob/monitor/venv/bin/python /home/noob/monitor/run_backup.py"
 end
