@@ -4,7 +4,7 @@ Personal blog built on Rails with ComfortableMexicanSofa CMS (merged into app, n
 
 ## Tech Stack
 
-- **Framework**: Rails 8.0, Ruby 3.4.3
+- **Framework**: Rails 8.0, Ruby 4.0.5
 - **Database**: PostgreSQL
 - **Image Processing**: libvips via ActiveStorage (not MiniMagick)
 - **Testing**: RSpec, FactoryBot, Capybara, Shoulda Matchers
