@@ -267,6 +267,7 @@ GEM
     nokogiri (1.18.10)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
+    ostruct (0.6.3)
     paper_trail (17.0.0)
       activerecord (>= 7.1)
       request_store (~> 1.4)
@@ -460,6 +461,7 @@ DEPENDENCIES
   mutex_m
   net-ssh (>= 7.2.0)
   nokogiri
+  ostruct
   paper_trail
   pg (~> 1.5)
   propshaft
@@ -481,7 +483,7 @@ DEPENDENCIES
   whenever
 
 RUBY VERSION
-   ruby 4.0.5p0
+  ruby 4.0.5p0
 
 BUNDLED WITH
-   4.0.10
+  4.0.10

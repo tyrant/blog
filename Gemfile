@@ -27,6 +27,7 @@ gem 'mail', '>= 2.8.0'
 
 gem 'mailkick'
 gem 'base64'
+gem 'ostruct' # removed from Ruby 4.0 default gems; needed by sshkit/capistrano
 gem 'jwt'
 gem 'service_interface'
 
