@@ -47,8 +47,6 @@ set :default_env, {
 set :rbenv_ruby, '4.0.5'
 set :rbenv_path, '/home/noob/.rbenv'
 
-set :bundle_binstubs, -> { shared_path.join('bin') }
-
 namespace :deploy do
   namespace :check do
     before :linked_files, :set_production_key do
