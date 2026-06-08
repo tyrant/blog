@@ -31,7 +31,7 @@ append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "tmp/medium_
 
 # Default value for default_env is {}
 set :default_env, { 
-  path: "/opt/ruby/bin:$PATH",
+  path: "/home/noob/.nodenv/shims:/opt/ruby/bin:$PATH",
   NODE_OPTIONS: "--openssl-legacy-provider"
 }
 
