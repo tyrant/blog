@@ -93,4 +93,12 @@ RSpec.describe 'PostsController', type: :request do
 
     it { expect(response).to have_http_status :success }
   end
+
+  describe 'GET /blog.rss' do
+    before { get '/blog.rss' }
+
+    it { expect(response).to have_http_status :success }
+    it { expect(response.body).to include post1.title }
+    it { expect(response.body).to include '<pubDate>' }
+  end
 end

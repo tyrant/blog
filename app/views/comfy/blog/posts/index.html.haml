@@ -8,7 +8,7 @@
         %h2
           = link_to post.title, comfy_blog_post_path(@cms_site.path, post.year, post.month, post.slug)
         .date
-          = post.published_at.to_s(:db)
+          = post.published_at.to_fs(:db)
 
       = comfy_paginate @blog_posts
 

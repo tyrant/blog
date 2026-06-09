@@ -13,7 +13,7 @@ xml.rss version: "2.0" do
       xml.item do
         xml.title post.title
         xml.description "blog post content"
-        xml.pubDate post.published_at.to_s(:rfc822)
+        xml.pubDate post.published_at.to_fs(:rfc822)
         xml.link url
         xml.guid url
       end
