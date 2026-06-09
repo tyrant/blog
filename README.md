@@ -96,7 +96,7 @@ You may notice that its GitHub page proudly proclaims support for Rails 5.2. At 
 
 Comfy, and an extension, [ComfyBlog](https://github.com/comfy/comfy-blog), have both had okay-ish compatibility with Rails 6, but not 7. I'd attempted to contact ComfyBlog's authors [by raising various GitHub Issues](https://github.com/comfy/comfy-blog/issues/88), but alas, crickets.
 
-So until late 2025 These had kept this app at Rails 6.x. This quite spectacularly hamstrung other upgrades like fleeing squeeing from Webpack (see below). Ultimately I bit the bullet and forked both Comfy and ComfyBlog; got both my local forks up to Rails 8 standards; got this app itself upgraded to Rails 8; chunked through quite a big backlog of nonessential-yet-fab upgrades; and finally just refactored both Comfy and ComfyBlog into this app as if they'd always been part of the core app itself. Done.
+So until late 2025, these had kept this app at Rails 6.x. This quite spectacularly hamstrung other upgrades like fleeing squeeing from Webpack (see below). Ultimately I bit the bullet and forked both Comfy and ComfyBlog; got both my local forks up to Rails 8 standards; got this app itself upgraded to Rails 8; chunked through quite a big backlog of nonessential-yet-fab upgrades; and finally just refactored both Comfy and ComfyBlog into this app as if they'd always been part of the core app itself. Done. I've got no plans to ever use Comfy elsewhere, so I don't mind spurning modularity and embracing monolith-arity.
 
 
 ## Asset Pipeline and client-side shenanigans
