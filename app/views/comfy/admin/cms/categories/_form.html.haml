@@ -1,5 +1,19 @@
 - object = form.object
 - if (categories = @site.categories.of_type(object.class.to_s)).present?
-  - options = {bootstrap: {check_inline: true, label: {text: t(".label"), class: "pt-0"}}}
-  = form.collection_check_boxes :category_ids, categories, :id, :label, options
-
+  - prefix = form.object_name
+  - cats_by_id = object.categorizations.index_by(&:category_id)
+  .form-group.categorizations-widget
+    %label.pt-0= t(".label")
+    %ul.list-unstyled.mb-0
+      = hidden_field_tag "#{prefix}[category_ids][]", ""
+      - categories.each do |category|
+        - categorization = cats_by_id[category.id]
+        - checked = categorization.present?
+        %li.mb-2
+          .form-check
+            = check_box_tag "#{prefix}[category_ids][]", category.id, checked, id: "category_#{category.id}", class: "form-check-input categorization-toggle"
+            = label_tag "category_#{category.id}", category.label, class: "form-check-label"
+          - unless category.boolean?
+            .categorization-fields.ml-4.mt-1{style: ("display:none;" unless checked)}
+              = text_field_tag "#{prefix}[categorizations_data][#{category.id}][url]", categorization&.url, placeholder: "url", class: "form-control form-control-sm mb-1"
+              = text_area_tag "#{prefix}[categorizations_data][#{category.id}][data]", (JSON.pretty_generate(categorization.data) if categorization && categorization.data.present?), rows: 3, placeholder: "data (JSON)", class: "form-control form-control-sm", style: "field-sizing: content;"

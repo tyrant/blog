@@ -111,6 +111,33 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     it { expect(blog_post.reload.title).to eq 'Updated Post Title' }
   end
 
+  describe 'PATCH /admin/sites/:site_id/blog-posts/:id (categorizations)' do
+    let!(:category) { create :category, site: site, label: 'Medium' }
+    let(:update_params) do
+      { post: { category_ids: ['', category.id.to_s],
+                categorizations_data: { category.id.to_s => { url: 'https://medium.com/x', data: '{"id":"abc"}' } } } }
+    end
+
+    before {
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), params: update_params, headers: http_auth_headers
+    }
+
+    it { expect(blog_post.categorizations.first.url).to eq 'https://medium.com/x' }
+    it { expect(blog_post.categorizations.first.data).to eq({ 'id' => 'abc' }) }
+  end
+
+  describe 'GET edit renders categorization fields' do
+    let!(:category) { create :category, site: site, label: 'Medium' }
+    let!(:categorization) { create :categorization, category: category, categorized: blog_post, url: 'https://medium.com/y' }
+
+    before {
+      get edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: http_auth_headers
+    }
+
+    it { expect(response.body).to include 'https://medium.com/y' }
+    it { expect(response.body).to include 'categorizations_data' }
+  end
+
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id.json (autosave)' do
     let(:update_params) { { post: { title: 'Autosaved Title' } } }
     let(:json_headers) { http_auth_headers.merge('Accept' => 'application/json') }

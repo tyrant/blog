@@ -122,6 +122,40 @@ RSpec.describe Comfy::Blog::Post, type: :model do
     end
   end
 
+  describe '#categorizations_data=' do
+
+    let!(:category) { create :category, site: site, label: 'Medium' }
+
+    before do
+      post.category_ids = [category.id]
+      post.categorizations_data = { category.id.to_s => { url: 'https://medium.com/x', data: data } }
+    end
+
+    context 'valid JSON data' do
+      let(:data) { '{"id":"abc123"}' }
+
+      before { post.save! }
+
+      it { expect(post.categorizations.first.url).to eq 'https://medium.com/x' }
+      it { expect(post.categorizations.first.data).to eq({ 'id' => 'abc123' }) }
+    end
+
+    context 'blank data' do
+      let(:data) { '' }
+
+      before { post.save! }
+
+      it { expect(post.categorizations.first.data).to eq({}) }
+    end
+
+    context 'invalid JSON data' do
+      let(:data) { 'not json' }
+
+      it { expect(post).to_not be_valid }
+      it { expect { post.save! }.to raise_error(ActiveRecord::RecordInvalid) }
+    end
+  end
+
   describe '#socials_url_for' do
 
     let(:platform) { 'medium' }
@@ -136,7 +170,9 @@ RSpec.describe Comfy::Blog::Post, type: :model do
       let!(:category) { create :category, label: platform.capitalize }
       let!(:categorization) { create :categorization,
                                     category: category,
-                                    categorized: post }
+                                    categorized: post,
+                                    url: url }
+      let(:url) { nil }
 
       context "Post's category list doesn't include :platform" do
         let(:platform) { 'twitter' }
@@ -145,12 +181,12 @@ RSpec.describe Comfy::Blog::Post, type: :model do
 
       context "Post's category list includes :platform" do
 
-        context "#scratchpad doesn't include a URL for :platform" do
+        context "categorization has no url" do
           it { is_expected.to eq '' }
         end
 
-        context "#scratchpad contains corresponding URL" do
-          let(:scratchpad) { "\r\nhttps://medium.com/@pi_neutrino\r\nblargh\r\nblargh again\r\n" }
+        context "categorization carries a url" do
+          let(:url) { 'https://medium.com/@pi_neutrino' }
           it { is_expected.to eq 'https://medium.com/@pi_neutrino' }
         end
       end

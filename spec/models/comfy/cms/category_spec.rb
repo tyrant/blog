@@ -18,6 +18,13 @@ RSpec.describe Comfy::Cms::Category, type: :model do
     it { is_expected.to validate_presence_of(:categorized_type) }
   end
 
+  describe '#boolean?' do
+    it { expect(create(:category, site: site, label: 'NSFW')).to be_boolean }
+    it { expect(category).to be_boolean }
+    it { expect(create(:category, site: site, label: 'Shite Advice')).to be_boolean }
+    it { expect(create(:category, site: site, label: 'Medium')).to_not be_boolean }
+  end
+
   describe 'scopes' do
     let!(:page_category) { create :category, site: site, categorized_type: 'Comfy::Cms::Page' }
     let!(:file_category) { create :category, site: site, categorized_type: 'Comfy::Cms::File' }

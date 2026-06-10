@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_01_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_10_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,6 +71,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_01_000001) do
     t.integer "category_id", null: false
     t.string "categorized_type", null: false
     t.integer "categorized_id", null: false
+    t.string "url"
+    t.jsonb "data", default: {}, null: false
     t.index ["category_id", "categorized_type", "categorized_id"], name: "index_cms_categorizations_on_cat_id_and_catd_type_and_catd_id", unique: true
   end
 

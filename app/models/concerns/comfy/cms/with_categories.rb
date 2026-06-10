@@ -14,8 +14,12 @@ module Comfy::Cms::WithCategories
       class_name: "Comfy::Cms::Category"
 
     attr_writer :category_ids
+    attr_reader :categorizations_data
+
+    validate :categorizations_data_is_valid_json
 
     after_save :sync_categories
+    after_save :sync_categorizations_data
 
     scope :for_category, ->(*categories) {
       if (categories = [categories].flatten.compact).present?
@@ -28,6 +32,12 @@ module Comfy::Cms::WithCategories
 
   def category_ids
     @category_ids ||= categories.pluck(:id)
+  end
+
+  # Hash keyed by category id, e.g. { "5" => { "url" => "...", "data" => "{...}" } }.
+  # #data arrives as a raw JSON string from the admin textarea.
+  def categorizations_data=(hash)
+    @categorizations_data = hash
   end
 
   def sync_categories
@@ -48,6 +58,41 @@ module Comfy::Cms::WithCategories
     # removing categorizations
     ids_to_remove = existing_ids - ids_to_add
     categorizations.where(category_id: ids_to_remove).destroy_all
+  end
+
+  # Runs after sync_categories, so newly-ticked categorizations already exist.
+  def sync_categorizations_data
+    return if categorizations_data.blank?
+
+    categorizations_data.each do |category_id, attrs|
+      categorization = categorizations.find_by(category_id: category_id)
+      next unless categorization
+
+      categorization.update!(
+        url:  attrs[:url].presence || attrs["url"].presence,
+        data: parse_categorization_data(attrs[:data] || attrs["data"])
+      )
+    end
+  end
+
+protected
+
+  def parse_categorization_data(raw)
+    return {} if raw.blank?
+    JSON.parse(raw)
+  end
+
+  def categorizations_data_is_valid_json
+    return if categorizations_data.blank?
+
+    categorizations_data.each do |category_id, attrs|
+      raw = attrs[:data] || attrs["data"]
+      next if raw.blank?
+      JSON.parse(raw)
+    rescue JSON::ParserError
+      label = Comfy::Cms::Category.find_by(id: category_id)&.label || category_id
+      errors.add(:base, "Invalid JSON in #{label} data")
+    end
   end
 
 end
