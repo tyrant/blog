@@ -67,6 +67,7 @@ group :test do
   gem 'simplecov-html', require: false
   gem 'database_cleaner-active_record'
   gem 'shoulda-matchers', '~> 6.0'
+  gem 'webmock'
 end
 
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]

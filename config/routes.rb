@@ -64,6 +64,10 @@ Rails.application.routes.draw do
                as: :admin_medium_sync_config,
                path: "admin/medium-sync",
                only: %i[edit update]
+
+      get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
+      post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
+      post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
     end
   end
 
