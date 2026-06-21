@@ -10,27 +10,30 @@
 - if @due.empty?
   %p.text-muted No text groups have a most-recent note older than #{@days} days.
 - else
-  %ul.list-unstyled
-    - @due.each do |due|
-      %li.card.mb-3
-        .card-body
-          %h5.card-title
-            = link_to due.categorization.categorized.title, comfy_blog_post_path(year: due.categorization.categorized.year, month: due.categorization.categorized.month, slug: due.categorization.categorized.slug)
-            = "(#{link_to 'admin', edit_comfy_admin_blog_post_path(site_id: due.categorization.categorized.site.id, id: due.categorization.categorized.id)})"
-          %p.text-muted.small
-            Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
-            · #{due.entry['notes'].size} note(s) in this group
-          %pre.border.p-2{ style: "white-space: pre-wrap;" }= due.entry["text"]
-          .d-flex.align-items-start
-            = form_with url: comfy_admin_substack_blizzard_create_note_path, method: :post, class: "mr-3" do
-              = hidden_field_tag :categorization_id, due.categorization.id
-              = hidden_field_tag :index, due.index
-              = hidden_field_tag :days, @days
-              = submit_tag "Create note now", class: "btn btn-primary", data: { confirm: "Post this text as a new Substack Note now?" }
-            = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
-              = hidden_field_tag :categorization_id, due.categorization.id
-              = hidden_field_tag :index, due.index
-              = hidden_field_tag :days, @days
-              = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
-              = text_field_tag :timestamp, nil, placeholder: "timestamp (ISO)", class: "form-control form-control-sm mr-1"
-              = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
+  - @due.group_by(&:categorization).each do |categorization, dues|
+    - post = categorization.categorized
+    %section.mb-4
+      %h5
+        = link_to post.title, comfy_blog_post_path(year: post.year, month: post.month, slug: post.slug)
+        = link_to "admin", edit_comfy_admin_blog_post_path(site_id: post.site_id, id: post.id), class: "small ml-2"
+      %ul.list-unstyled
+        - dues.each do |due|
+          %li.card.mb-2
+            .card-body
+              %p.text-muted.small
+                Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
+                · #{due.entry['notes'].size} note(s) in this group
+              %pre.border.p-2{ style: "white-space: pre-wrap;" }= due.entry["text"]
+              .d-flex.align-items-start
+                = form_with url: comfy_admin_substack_blizzard_create_note_path, method: :post, class: "mr-3" do
+                  = hidden_field_tag :categorization_id, due.categorization.id
+                  = hidden_field_tag :index, due.index
+                  = hidden_field_tag :days, @days
+                  = submit_tag "Create note now", class: "btn btn-primary", data: { confirm: "Post this text as a new Substack Note now?" }
+                = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
+                  = hidden_field_tag :categorization_id, due.categorization.id
+                  = hidden_field_tag :index, due.index
+                  = hidden_field_tag :days, @days
+                  = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
+                  = text_field_tag :timestamp, nil, placeholder: "timestamp (ISO)", class: "form-control form-control-sm mr-1"
+                  = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"

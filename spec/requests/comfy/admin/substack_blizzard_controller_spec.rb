@@ -25,6 +25,20 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'stale group text' }
 
+    context 'a post with multiple stale groups lists its title only once' do
+      let!(:blog_post) { create :post, site: site, layout: layout, title: 'Just Once Post' }
+      let(:data) do
+        { 'blizzard' => [
+          { 'text' => 'group one', 'body_json' => {}, 'notes' => [{ 'url' => 'u1', 'timestamp' => 90.days.ago.iso8601 }] },
+          { 'text' => 'group two', 'body_json' => {}, 'notes' => [{ 'url' => 'u2', 'timestamp' => 80.days.ago.iso8601 }] }
+        ] }
+      end
+
+      it { expect(response.body.scan('Just Once Post').size).to eq 1 }
+      it { expect(response.body).to include 'group one' }
+      it { expect(response.body).to include 'group two' }
+    end
+
     context 'days is clamped to 1..60' do
       before { get comfy_admin_substack_blizzard_path(days: 999), headers: http_auth_headers }
       it { expect(response.body).to include 'older than (days)' }
