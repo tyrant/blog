@@ -9,7 +9,7 @@ RSpec.describe 'Categorization JSON editor', type: :system do
   let!(:category) { create :category, site: site, label: 'Substack' }
   let!(:categorization) do
     create :categorization, category: category, categorized: blog_post,
-           data: { 'notes' => %w[a b], 'blizzard' => [] }
+           data: { 'blizzard' => [{ 'text' => 't', 'body_json' => { 'type' => 'doc', 'content' => [] }, 'notes' => [] }] }
   end
 
   let(:username) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.username }
@@ -26,5 +26,9 @@ RSpec.describe 'Categorization JSON editor', type: :system do
 
   it 'shows the JSON fold gutter (the +/- controls)' do
     expect(page).to have_css('.CodeMirror-foldgutter', wait: 4)
+  end
+
+  it 'folds body_json by default on load' do
+    expect(page).to have_css('.CodeMirror-foldgutter-folded', wait: 4)
   end
 end

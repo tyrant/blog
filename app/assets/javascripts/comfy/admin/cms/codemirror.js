@@ -1,5 +1,20 @@
 (() => {
   const codeMirrorInstances = [];
+
+  // JSON keys whose object/array value is collapsed on page load.
+  const FOLD_BY_DEFAULT = ['body_json'];
+
+  const autoFold = (cm, keys) => {
+    cm.operation(() => {
+      for (let line = 0; line < cm.lineCount(); line++) {
+        const text = cm.getLine(line);
+        if (keys.some((key) => text.includes(`"${key}"`))) {
+          cm.foldCode(CodeMirror.Pos(line, 0));
+        }
+      }
+    });
+  };
+
   window.CMS.codemirror = {
     init(root = document) {
       for (const textarea of root.querySelectorAll('textarea[data-cms-cm-mode]')) {
@@ -18,6 +33,9 @@
           options.gutters = ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'];
         }
         const codemirror = CodeMirror.fromTextArea(textarea, options);
+        if (mode === 'application/json') {
+          autoFold(codemirror, FOLD_BY_DEFAULT);
+        }
         codeMirrorInstances.push(codemirror);
       }
 
