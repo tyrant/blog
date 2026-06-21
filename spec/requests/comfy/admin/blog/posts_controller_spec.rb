@@ -19,6 +19,8 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       }
 
       it { expect(response).to have_http_status :success }
+      it { expect(response.body).to include 'Substack Blizzard' }
+      it { expect(response.body).to include comfy_admin_substack_blizzard_path }
     end
 
     context 'without authentication' do
