@@ -58,13 +58,17 @@ namespace :deploy do
         end
       end
     end
+  end
+end
 
-    before :linked_dirs, :copy_comfy_vendor_js do
-      on roles(:app) do
-        within repo_path do
-          execute :git, 'show', 'HEAD:app/assets/builds/comfy_vendor.js', '>', "#{shared_path}/app/assets/builds/comfy_vendor.js"
-        end
-      end
+# comfy_vendor.js lives in the (linked) builds dir, so refresh shared from the
+# just-deployed commit before assets:precompile reads it. Must run AFTER git:update
+# — doing it in deploy:check copies the previous deploy's stale bundle.
+before "deploy:assets:precompile", :copy_comfy_vendor_js do
+  on roles(:app) do
+    execute :mkdir, "-p", "#{shared_path}/app/assets/builds"
+    within repo_path do
+      execute :git, "show", "#{fetch(:branch)}:app/assets/builds/comfy_vendor.js", ">", "#{shared_path}/app/assets/builds/comfy_vendor.js"
     end
   end
 end
