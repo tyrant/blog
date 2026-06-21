@@ -74,6 +74,7 @@ module BlizzardBackfillRunner
       puts "CAT #{cat.id} (post #{cat.categorized_id}): #{result.blizzard.size} text group(s), #{notes} note(s)"
       result.flags.each { |f| puts "  ! #{f}" }
       flagged << cat.id if result.flags.any?
+      sleep 1 # gentle pacing to stay under Substack's rate limit
     end
 
     puts "\n#{commit ? 'Committed' : 'Dry run'}. #{cats.count} Substack categorizations. Flagged: #{flagged.join(', ')}"

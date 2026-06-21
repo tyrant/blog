@@ -15,6 +15,8 @@ module Substack
     class Error < StandardError; end
     class AuthError < Error; end
 
+    MAX_RETRIES = 5
+
     def initialize(session_cookie: SubstackSyncConfig.instance.session_cookie)
       @session_cookie = session_cookie
     end
@@ -51,11 +53,28 @@ module Substack
       req["Accept"]       = "application/json"
       req["User-Agent"]   = USER_AGENT
 
-      response = Net::HTTP.start(req.uri.host, req.uri.port, use_ssl: true) do |http|
-        http.request(req)
-      end
+      attempt = 0
+      loop do
+        attempt += 1
+        response = Net::HTTP.start(req.uri.host, req.uri.port, use_ssl: true) do |http|
+          http.request(req)
+        end
 
-      handle(response)
+        if response.code.to_i == 429 && attempt <= MAX_RETRIES
+          backoff_sleep(retry_after(response, attempt))
+          next
+        end
+
+        return handle(response)
+      end
+    end
+
+    def retry_after(response, attempt)
+      [response["Retry-After"].to_i, 10 * attempt].max
+    end
+
+    def backoff_sleep(seconds)
+      sleep(seconds)
     end
 
     def handle(response)

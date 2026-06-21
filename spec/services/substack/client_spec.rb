@@ -45,6 +45,28 @@ RSpec.describe Substack::Client do
     it { expect(client.delete_note(123)).to eq({}) }
   end
 
+  describe 'rate limiting' do
+    before { allow(client).to receive(:backoff_sleep) }
+
+    context 'retries after a 429 then succeeds' do
+      before do
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/1')
+          .to_return({ status: 429, headers: { 'Retry-After' => '0' } }, { status: 200, body: { 'ok' => true }.to_json })
+      end
+
+      it { expect(client.get_note(1)).to eq({ 'ok' => true }) }
+      it 'backs off before retrying' do
+        client.get_note(1)
+        expect(client).to have_received(:backoff_sleep)
+      end
+    end
+
+    context 'gives up after MAX_RETRIES of persistent 429' do
+      before { stub_request(:get, %r{substack\.com}).to_return(status: 429, body: 'Too Many Requests') }
+      it { expect { client.get_note(1) }.to raise_error(Substack::Client::Error, /429/) }
+    end
+  end
+
   describe 'error handling' do
     context 'auth failure' do
       before { stub_request(:get, %r{substack\.com}).to_return(status: 403, body: 'nope') }
