@@ -61,6 +61,15 @@ RSpec.describe Substack::Client do
       end
     end
 
+    context 'retries a transient 502 then succeeds' do
+      before do
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/1')
+          .to_return({ status: 502, body: '<html>' }, { status: 200, body: { 'ok' => true }.to_json })
+      end
+
+      it { expect(client.get_note(1)).to eq({ 'ok' => true }) }
+    end
+
     context 'gives up after MAX_RETRIES of persistent 429' do
       before { stub_request(:get, %r{substack\.com}).to_return(status: 429, body: 'Too Many Requests') }
       it { expect { client.get_note(1) }.to raise_error(Substack::Client::Error, /429/) }

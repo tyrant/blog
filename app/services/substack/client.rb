@@ -16,6 +16,7 @@ module Substack
     class AuthError < Error; end
 
     MAX_RETRIES = 5
+    RETRYABLE   = [429, 502, 503, 504].freeze
 
     def initialize(session_cookie: SubstackSyncConfig.instance.session_cookie)
       @session_cookie = session_cookie
@@ -60,7 +61,7 @@ module Substack
           http.request(req)
         end
 
-        if response.code.to_i == 429 && attempt <= MAX_RETRIES
+        if RETRYABLE.include?(response.code.to_i) && attempt <= MAX_RETRIES
           backoff_sleep(retry_after(response, attempt))
           next
         end

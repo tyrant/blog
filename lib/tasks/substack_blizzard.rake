@@ -68,16 +68,28 @@ module BlizzardBackfillRunner
       .where(comfy_cms_categories: { label: "Substack" }).order(:id)
     flagged = []
 
+    failed = []
+
     cats.find_each do |cat|
-      result = Substack::Blizzard::Backfiller.execute(categorization: cat, client: client, commit: commit)
-      notes  = result.blizzard.sum { |e| e["notes"].size }
+      begin
+        result = Substack::Blizzard::Backfiller.execute(categorization: cat, client: client, commit: commit)
+      rescue => e
+        puts "CAT #{cat.id} (post #{cat.categorized_id}): FAILED — #{e.message[0, 120]}"
+        failed << cat.id
+        next
+      ensure
+        sleep 1 # gentle pacing to stay under Substack's rate limit
+      end
+
+      notes = result.blizzard.sum { |e| e["notes"].size }
       puts "CAT #{cat.id} (post #{cat.categorized_id}): #{result.blizzard.size} text group(s), #{notes} note(s)"
       result.flags.each { |f| puts "  ! #{f}" }
       flagged << cat.id if result.flags.any?
-      sleep 1 # gentle pacing to stay under Substack's rate limit
     end
 
-    puts "\n#{commit ? 'Committed' : 'Dry run'}. #{cats.count} Substack categorizations. Flagged: #{flagged.join(', ')}"
+    puts "\n#{commit ? 'Committed' : 'Dry run'}. #{cats.count} Substack categorizations." \
+         " Flagged: #{flagged.join(', ').presence || 'none'}." \
+         " Failed (re-run to retry): #{failed.join(', ').presence || 'none'}."
   end
 end
 
