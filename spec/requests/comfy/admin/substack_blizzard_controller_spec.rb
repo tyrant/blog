@@ -8,7 +8,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   let!(:layout) { create :layout, site: site }
   let!(:blog_post) { create :post, site: site, layout: layout }
   let!(:category) { create :category, site: site, label: 'Substack' }
-  let!(:categorization) { create :categorization, category: category, categorized: blog_post, data: data }
+  let!(:categorization) { create :categorization, category: category, categorized: blog_post, url: 'https://mikeyclarke.substack.com/p/canonical', data: data }
 
   let(:data) do
     { 'blizzard' => [
@@ -24,6 +24,9 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'stale group text' }
+    it 'appends the Substack post URL to the copy block' do
+      expect(response.body).to include 'https://mikeyclarke.substack.com/p/canonical'
+    end
 
     context 'a post with multiple stale groups lists its title only once' do
       let!(:blog_post) { create :post, site: site, layout: layout, title: 'Just Once Post' }

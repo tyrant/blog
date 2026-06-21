@@ -15,7 +15,7 @@
     %section.mb-4
       %h5
         = link_to post.title, comfy_blog_post_path(year: post.year, month: post.month, slug: post.slug)
-        = link_to "admin", edit_comfy_admin_blog_post_path(site_id: post.site_id, id: post.id), class: "small ml-2"
+        = link_to "(admin)", edit_comfy_admin_blog_post_path(site_id: post.site_id, id: post.id), class: "small"
       %ul.list-unstyled
         - dues.each do |due|
           %li.card.mb-2
@@ -23,7 +23,7 @@
               %p.text-muted.small
                 Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
                 · #{due.entry['notes'].size} note(s) in this group
-              %pre.border.p-2{ style: "white-space: pre-wrap;" }= due.entry["text"]
+              %pre.border.p-2{ style: "white-space: pre-wrap;" }= [due.entry["text"], categorization.url.presence].compact.join("\n\n")
               %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
               = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
                 = hidden_field_tag :categorization_id, due.categorization.id
