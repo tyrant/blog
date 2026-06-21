@@ -10,6 +10,7 @@
 - if @due.empty?
   %p.text-muted No text groups have a most-recent note older than #{@days} days.
 - else
+  = comfy_paginate @due
   - @due.group_by(&:categorization).each do |categorization, dues|
     - post = categorization.categorized
     %section.mb-4
@@ -32,3 +33,4 @@
                 = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
                 = text_field_tag :timestamp, nil, placeholder: "timestamp e.g. 21 Jun at 19:00", class: "form-control form-control-sm mr-1"
                 = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
+  = comfy_paginate @due

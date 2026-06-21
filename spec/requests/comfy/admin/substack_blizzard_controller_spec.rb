@@ -42,6 +42,23 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(response.body).to include 'group two' }
     end
 
+    context 'pagination at 20 per page' do
+      let(:data) do
+        { 'blizzard' => (0..20).map { |n| { 'text' => "blizz group #{n}", 'body_json' => {}, 'notes' => [{ 'url' => "u#{n}", 'timestamp' => 90.days.ago.iso8601 }] } } }
+      end
+
+      context 'page 1' do
+        before { get comfy_admin_substack_blizzard_path(days: 14, page: 1), headers: http_auth_headers }
+        it { expect(response.body).to include 'blizz group 0 ' }
+        it { expect(response.body).to_not include 'blizz group 20 ' }
+      end
+
+      context 'page 2' do
+        before { get comfy_admin_substack_blizzard_path(days: 14, page: 2), headers: http_auth_headers }
+        it { expect(response.body).to include 'blizz group 20 ' }
+      end
+    end
+
     context 'days is clamped to 1..60' do
       before { get comfy_admin_substack_blizzard_path(days: 999), headers: http_auth_headers }
       it { expect(response.body).to include 'older than (days)' }

@@ -6,7 +6,8 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   def index
     @days = clamp_days(params[:days])
-    @due  = Substack::Blizzard::DueFinder.execute(max_age_days: @days)
+    due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days)
+    @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
   end
 
   def create_note
