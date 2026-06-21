@@ -24,16 +24,11 @@
                 Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
                 · #{due.entry['notes'].size} note(s) in this group
               %pre.border.p-2{ style: "white-space: pre-wrap;" }= due.entry["text"]
-              .d-flex.align-items-start
-                = form_with url: comfy_admin_substack_blizzard_create_note_path, method: :post, class: "mr-3" do
-                  = hidden_field_tag :categorization_id, due.categorization.id
-                  = hidden_field_tag :index, due.index
-                  = hidden_field_tag :days, @days
-                  = submit_tag "Create note now", class: "btn btn-primary", data: { confirm: "Post this text as a new Substack Note now?" }
-                = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
-                  = hidden_field_tag :categorization_id, due.categorization.id
-                  = hidden_field_tag :index, due.index
-                  = hidden_field_tag :days, @days
-                  = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
-                  = text_field_tag :timestamp, nil, placeholder: "timestamp (ISO)", class: "form-control form-control-sm mr-1"
-                  = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
+              %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
+              = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
+                = hidden_field_tag :categorization_id, due.categorization.id
+                = hidden_field_tag :index, due.index
+                = hidden_field_tag :days, @days
+                = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
+                = text_field_tag :timestamp, nil, placeholder: "timestamp (ISO)", class: "form-control form-control-sm mr-1"
+                = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
