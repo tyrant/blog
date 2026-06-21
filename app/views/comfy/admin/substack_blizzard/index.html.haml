@@ -23,7 +23,7 @@
               %p.text-muted.small
                 Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
                 · #{due.entry['notes'].size} note(s) in this group
-              %pre.border.p-2{ style: "white-space: pre-wrap;" }= [due.entry["text"], categorization.url.presence].compact.join("\n\n")
+              .border.p-2{ style: "white-space: pre-wrap;" }= [due.entry["text"], categorization.url.presence].compact.join("\n\n")
               %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
               = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
                 = hidden_field_tag :categorization_id, due.categorization.id
