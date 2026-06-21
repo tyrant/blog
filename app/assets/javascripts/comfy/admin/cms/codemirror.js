@@ -3,14 +3,21 @@
   window.CMS.codemirror = {
     init(root = document) {
       for (const textarea of root.querySelectorAll('textarea[data-cms-cm-mode]')) {
-        const codemirror = CodeMirror.fromTextArea(textarea, {
-          mode: textarea.dataset.cmsCmMode,
+        const mode = textarea.dataset.cmsCmMode;
+        const options = {
+          mode,
           tabSize: 2,
           lineWrapping: true,
           autoCloseTags: true,
           lineNumbers: true,
           viewportMargin: Infinity
-        });
+        };
+        // Collapsible +/- gutter for JSON structures (arrays/objects).
+        if (mode === 'application/json') {
+          options.foldGutter = true;
+          options.gutters = ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'];
+        }
+        const codemirror = CodeMirror.fromTextArea(textarea, options);
         codeMirrorInstances.push(codemirror);
       }
 

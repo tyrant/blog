@@ -5,6 +5,10 @@
       if (fields === null) return;
       toggle.addEventListener('change', () => {
         fields.style.display = toggle.checked ? 'block' : 'none';
+        // CodeMirror renders 0-height inside a hidden div; refresh once shown.
+        if (toggle.checked) {
+          fields.querySelectorAll('.CodeMirror').forEach((el) => el.CodeMirror && el.CodeMirror.refresh());
+        }
       });
     });
 

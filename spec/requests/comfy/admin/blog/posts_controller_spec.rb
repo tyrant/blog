@@ -138,6 +138,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
     it { expect(response.body).to include 'https://medium.com/y' }
     it { expect(response.body).to include 'categorizations_data' }
+    it { expect(response.body).to include 'data-cms-cm-mode="application/json"' }
   end
 
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id.json (autosave)' do

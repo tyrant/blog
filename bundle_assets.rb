@@ -12,6 +12,7 @@ puts "Bundling Comfortable Mexican Sofa assets for Propshaft..."
 css_files = [
   "app/assets/stylesheets/comfy/vendor/bootstrap.min.css",
   "app/assets/stylesheets/comfy/vendor/codemirror.css",
+  "app/assets/javascripts/comfy/vendor/codemirror/addon/fold/foldgutter.css",
   "app/assets/stylesheets/comfy/vendor/fontawesome.css",
   "app/assets/stylesheets/comfy/vendor/redactor.css",
   "app/assets/stylesheets/comfy/vendor/flatpickr.min.css",
@@ -56,6 +57,9 @@ js_files = [
   "app/assets/javascripts/comfy/vendor/codemirror/mode/markdown/markdown.js",
   "app/assets/javascripts/comfy/vendor/codemirror/mode/xml/xml.js",
   "app/assets/javascripts/comfy/vendor/codemirror/addon/edit/closetag.js",
+  "app/assets/javascripts/comfy/vendor/codemirror/addon/fold/foldcode.js",
+  "app/assets/javascripts/comfy/vendor/codemirror/addon/fold/brace-fold.js",
+  "app/assets/javascripts/comfy/vendor/codemirror/addon/fold/foldgutter.js",
   "app/assets/javascripts/comfy/vendor/sortable.min.js",
   "app/assets/javascripts/comfy/vendor/bootstrap.bundle.min.js",
   "app/assets/javascripts/comfy/vendor/diff/diff_match_patch.min.js",

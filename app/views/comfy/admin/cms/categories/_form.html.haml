@@ -16,4 +16,4 @@
           - unless category.boolean?
             .categorization-fields.mt-1{style: ("display:none;" unless checked)}
               = text_field_tag "#{prefix}[categorizations_data][#{category.id}][url]", categorization&.url, placeholder: "url", class: "form-control form-control-sm mb-1"
-              = text_area_tag "#{prefix}[categorizations_data][#{category.id}][data]", (JSON.pretty_generate(categorization.data) if categorization && categorization.data.present?), rows: 3, placeholder: "data (JSON)", class: "form-control form-control-sm", style: "field-sizing: content;"
+              = text_area_tag "#{prefix}[categorizations_data][#{category.id}][data]", (JSON.pretty_generate(categorization.data) if categorization && categorization.data.present?), rows: 3, placeholder: "data (JSON)", class: "form-control form-control-sm", data: { 'cms-cm-mode': 'application/json' }
