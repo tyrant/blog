@@ -14,7 +14,9 @@
     - @due.each do |due|
       %li.card.mb-3
         .card-body
-          %h5.card-title= due.categorization.categorized.try(:title) || "Post #{due.categorization.categorized_id}"
+          %h5.card-title
+            = link_to due.categorization.categorized.title, comfy_blog_post_path(year: due.categorization.categorized.year, month: due.categorization.categorized.month, slug: due.categorization.categorized.slug)
+            = "(#{link_to 'admin', edit_comfy_admin_blog_post_path(site_id: due.categorization.categorized.site.id, id: due.categorization.categorized.id)})"
           %p.text-muted.small
             Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
             · #{due.entry['notes'].size} note(s) in this group
