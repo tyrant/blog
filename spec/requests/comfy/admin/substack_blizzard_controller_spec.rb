@@ -61,6 +61,28 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
     end
 
+    context 'human-friendly timestamp is converted to ISO' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { categorization_id: categorization.id, index: 0,
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '21 Jun 2025 at 19:00', days: 14 },
+             headers: http_auth_headers
+      end
+
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2025-06-21T07:00:00Z' }
+    end
+
+    context 'unparseable timestamp is rejected' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { categorization_id: categorization.id, index: 0, url: 'u', timestamp: 'gibberish', days: 14 },
+             headers: http_auth_headers
+      end
+
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
+      it { expect(flash[:danger]).to be_present }
+    end
+
     context 'missing fields' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,

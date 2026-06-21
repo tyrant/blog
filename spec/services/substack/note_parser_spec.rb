@@ -26,6 +26,17 @@ RSpec.describe Substack::NoteParser do
     it { expect(described_class.timestamp({ 'createdAt' => '2025-08-02' })).to eq '2025-08-02' }
   end
 
+  describe '.parse_human_timestamp' do
+    # June = NZST (UTC+12), so 19:00 NZ -> 07:00 UTC
+    it { expect(described_class.parse_human_timestamp('21 Jun 2025 at 19:00')).to eq '2025-06-21T07:00:00Z' }
+    it { expect(described_class.parse_human_timestamp('21 Jun at 19:00')).to match(/\A\d{4}-06-21T07:00:00Z\z/) }
+    it 'accepts an ISO string too' do
+      expect(described_class.parse_human_timestamp('2025-06-21T07:00:00Z')).to eq '2025-06-21T07:00:00Z'
+    end
+    it { expect(described_class.parse_human_timestamp('')).to be_nil }
+    it { expect(described_class.parse_human_timestamp('not a date')).to be_nil }
+  end
+
   describe '.plaintext' do
     let(:body_json) do
       {

@@ -25,13 +25,14 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   def add_note
     categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
     entry = categorization.data.dig("blizzard", params[:index].to_i)
+    timestamp = Substack::NoteParser.parse_human_timestamp(params[:timestamp])
 
-    if entry && params[:url].present? && params[:timestamp].present?
-      entry["notes"] << { "url" => params[:url], "timestamp" => params[:timestamp] }
+    if entry && params[:url].present? && timestamp.present?
+      entry["notes"] << { "url" => params[:url], "timestamp" => timestamp }
       categorization.update!(data: categorization.data)
       flash[:success] = "Recorded note for that text group."
     else
-      flash[:danger] = "URL and timestamp are both required."
+      flash[:danger] = "A note URL and a readable timestamp (e.g. “21 Jun at 19:00”) are both required."
     end
 
     redirect_to comfy_admin_substack_blizzard_path(days: clamp_days(params[:days]))

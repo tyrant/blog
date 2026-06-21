@@ -10,8 +10,22 @@ module Substack
 
     COMMENT_ID = %r{/note/c-(\d+)}
 
+    # Substack renders note timestamps in the viewer's local zone (NZ), e.g.
+    # "21 Jun at 19:00". Manual paste-back times are entered in that form.
+    LOCAL_ZONE = "Pacific/Auckland"
+
     def comment_id_from_url(url)
       url.to_s[COMMENT_ID, 1]
+    end
+
+    # Parse a Substack footer timestamp ("21 Jun at 19:00", or an ISO string)
+    # into a UTC ISO8601 string. Returns nil if unparseable.
+    def parse_human_timestamp(text)
+      return nil if text.blank?
+
+      Time.find_zone(LOCAL_ZONE).parse(text.to_s.gsub(/\bat\b/i, " "))&.utc&.iso8601
+    rescue ArgumentError
+      nil
     end
 
     # The fetched comment object, regardless of whether the API wraps it.
