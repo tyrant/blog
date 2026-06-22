@@ -22,17 +22,20 @@ module Substack
 
       def execute
         @substack ||= Substack::Client.new
-        posted  = []
-        failed  = []
         skipped = []
 
-        due_groups.each do |group|
-          # Can't repost a group with no rich content — would publish an empty Note.
-          if group["body_json"].blank?
-            skipped << { "text" => group["text"], "reason" => "no body_json" }
-            next
-          end
+        # Drop groups with no rich content (would publish an empty Note) before
+        # applying the limit, so LIMIT caps actual posts, not skipped rows.
+        postable = due_groups.reject do |group|
+          next false if group["body_json"].present?
+          skipped << { "text" => group["text"], "reason" => "no body_json" }
+          true
+        end
+        postable = postable.first(@limit.to_i) if @limit
 
+        posted = []
+        failed = []
+        postable.each do |group|
           unless @commit
             posted << { "text" => group["text"], "dry_run" => true }
             next
@@ -52,8 +55,7 @@ module Substack
       private
 
       def due_groups
-        groups = JSON.parse(get("/admin/substack-blizzard/due.json?days=#{@days.to_i}"))
-        @limit ? groups.first(@limit.to_i) : groups
+        JSON.parse(get("/admin/substack-blizzard/due.json?days=#{@days.to_i}"))
       end
 
       def repost(group)

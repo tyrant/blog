@@ -49,11 +49,17 @@ RSpec.describe Substack::Blizzard::RemoteReposter do
     end
   end
 
-  context 'limit' do
-    let(:groups) { Array.new(3) { |n| { 'categorization_id' => n, 'index' => 0, 'text' => "g#{n}", 'body_json' => { 'type' => 'doc' }, 'template_url' => nil } } }
+  context 'limit caps posts, not skipped rows' do
+    # First group is skip-worthy (no body_json); limit 1 should still yield 1 postable.
+    let(:groups) do
+      [{ 'categorization_id' => 0, 'index' => 0, 'text' => 'empty', 'body_json' => nil, 'template_url' => nil },
+       { 'categorization_id' => 1, 'index' => 0, 'text' => 'g1', 'body_json' => { 'type' => 'doc' }, 'template_url' => nil },
+       { 'categorization_id' => 2, 'index' => 0, 'text' => 'g2', 'body_json' => { 'type' => 'doc' }, 'template_url' => nil }]
+    end
     subject(:result) { described_class.execute(base_url: base_url, username: 'u', password: 'p', days: 30, limit: 1, commit: false) }
 
-    it { expect(result.posted.size).to eq 1 }
+    it { expect(result.posted.map { |p| p['text'] }).to eq ['g1'] }
+    it { expect(result.skipped.size).to eq 1 }
   end
 
   context 'group without body_json is skipped, not posted' do
