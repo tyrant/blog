@@ -66,6 +66,7 @@ Rails.application.routes.draw do
                only: %i[edit update]
 
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
+      get  "admin/substack-blizzard/due",         to: "substack_blizzard#due",         as: :admin_substack_blizzard_due
       post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
     end

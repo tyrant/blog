@@ -56,6 +56,43 @@ namespace :substack do
     task backfill: :environment do
       BlizzardBackfillRunner.run(commit: true)
     end
+
+    # Run these LOCALLY (residential IP) — server-side note POSTs are Cloudflare-blocked.
+    #   DAYS=30 LIMIT=5 rails substack:blizzard:repost_dry_run
+    #   DAYS=30 LIMIT=5 rails substack:blizzard:repost
+    # Env: BLIZZARD_PROD_URL (default https://mikeyclarke.co.nz),
+    #      BLIZZARD_ADMIN_USER / BLIZZARD_ADMIN_PASS (default: app admin creds).
+    desc "Report which due groups would be reposted to Substack (no Notes created)"
+    task repost_dry_run: :environment do
+      BlizzardRemoteRepost.run(commit: false)
+    end
+
+    desc "Create new Substack Notes for due groups (run on your Mac) and record them on prod"
+    task repost: :environment do
+      BlizzardRemoteRepost.run(commit: true)
+    end
+  end
+end
+
+module BlizzardRemoteRepost
+  module_function
+
+  def run(commit:)
+    result = Substack::Blizzard::RemoteReposter.execute(
+      base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
+      username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
+      password: ENV["BLIZZARD_ADMIN_PASS"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.password,
+      days:     ENV.fetch("DAYS", 30),
+      limit:    ENV["LIMIT"],
+      commit:   commit
+    )
+
+    result.posted.each do |p|
+      puts "#{commit ? 'POSTED' : 'would post'}: #{p['text'].to_s[0, 70]}#{" -> #{p['url']}" if p['url']}"
+    end
+    result.failed.each { |f| puts "FAILED: #{f['text'].to_s[0, 60]} — #{f['error']}" }
+
+    puts "\n#{commit ? 'Posted' : 'Dry run'}: #{result.posted.size}. Failed: #{result.failed.size}."
   end
 end
 

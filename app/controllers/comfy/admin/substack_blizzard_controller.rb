@@ -4,10 +4,28 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   DEFAULT_DAYS = 14
 
+  # JSON API consumed by the local repost task (basic-auth is the auth).
+  skip_before_action :verify_authenticity_token, only: :add_note, raise: false,
+                     if: -> { request.format.json? }
+
   def index
     @days = clamp_days(params[:days])
     due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days)
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
+  end
+
+  # Due groups (with body_json) for the local repost task to post from.
+  def due
+    groups = Substack::Blizzard::DueFinder.execute(max_age_days: clamp_days(params[:days])).map do |d|
+      {
+        categorization_id: d.categorization.id,
+        index:             d.index,
+        text:              d.entry["text"],
+        body_json:         d.entry["body_json"],
+        template_url:      Array(d.entry["notes"]).map { |n| n["url"] }.compact.first
+      }
+    end
+    render json: groups
   end
 
   def create_note
@@ -27,16 +45,21 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
     entry = categorization.data.dig("blizzard", params[:index].to_i)
     timestamp = Substack::NoteParser.parse_human_timestamp(params[:timestamp])
+    ok = entry && params[:url].present? && timestamp.present?
 
-    if entry && params[:url].present? && timestamp.present?
+    if ok
       entry["notes"] << { "url" => params[:url], "timestamp" => timestamp }
       categorization.update!(data: categorization.data)
-      flash[:success] = "Recorded note for that text group."
-    else
-      flash[:danger] = "A note URL and a readable timestamp (e.g. “21 Jun at 19:00”) are both required."
     end
 
-    redirect_to back_path
+    respond_to do |format|
+      format.html do
+        flash[ok ? :success : :danger] = ok ? "Recorded note for that text group." :
+          "A note URL and a readable timestamp (e.g. “21 Jun at 19:00”) are both required."
+        redirect_to back_path
+      end
+      format.json { render json: { success: ok }, status: (ok ? :ok : :unprocessable_entity) }
+    end
   end
 
   private

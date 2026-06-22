@@ -65,6 +65,38 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
   end
 
+  describe 'GET due.json (local repost task API)' do
+    before { get comfy_admin_substack_blizzard_due_path(format: :json, days: 14), headers: http_auth_headers }
+
+    it { expect(response).to have_http_status :success }
+    it { expect(JSON.parse(response.body).first['body_json']).to eq({ 'type' => 'doc' }) }
+    it { expect(JSON.parse(response.body).first['template_url']).to include 'c-111' }
+    it { expect(JSON.parse(response.body).first['categorization_id']).to eq categorization.id }
+  end
+
+  describe 'POST add_note.json (local repost task API)' do
+    before do
+      post comfy_admin_substack_blizzard_add_note_path(format: :json),
+           params: { categorization_id: categorization.id, index: 0,
+                     url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-22T00:00:00Z' },
+           headers: http_auth_headers
+    end
+
+    it { expect(response).to have_http_status :success }
+    it { expect(JSON.parse(response.body)['success']).to be true }
+    it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
+
+    context 'invalid (missing url) returns 422' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path(format: :json),
+             params: { categorization_id: categorization.id, index: 0, url: '', timestamp: '2026-06-22T00:00:00Z' },
+             headers: http_auth_headers
+      end
+      it { expect(response).to have_http_status :unprocessable_entity }
+      it { expect(JSON.parse(response.body)['success']).to be false }
+    end
+  end
+
   describe 'POST add_note (manual paste-back)' do
     context 'with url and timestamp' do
       before do

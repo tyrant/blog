@@ -28,14 +28,9 @@ module Substack
 
       private
 
-      # New notes live on the same profile as the group's existing notes, so reuse
-      # an existing note URL and swap its comment id. Falls back to a bare URL.
       def note_url(entry, new_id)
         template = Array(entry["notes"]).map { |n| n["url"] }.compact.first
-        old_id   = template && NoteParser.comment_id_from_url(template)
-        return template.sub("c-#{old_id}", "c-#{new_id}") if old_id
-
-        "https://substack.com/note/c-#{new_id}"
+        NoteParser.build_note_url(template, new_id)
       end
     end
   end

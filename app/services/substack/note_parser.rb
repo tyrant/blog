@@ -77,5 +77,12 @@ module Substack
     def post_slug(url)
       url.to_s[%r{/p/([^/?#]+)}, 1]
     end
+
+    # A new note lives on the same profile as the group's existing notes, so build
+    # its URL by swapping the comment id of a template note URL.
+    def build_note_url(template_url, new_id)
+      old = comment_id_from_url(template_url)
+      old ? template_url.sub("c-#{old}", "c-#{new_id}") : "https://substack.com/note/c-#{new_id}"
+    end
   end
 end
