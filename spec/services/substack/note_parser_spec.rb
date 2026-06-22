@@ -26,6 +26,27 @@ RSpec.describe Substack::NoteParser do
     it { expect(described_class.timestamp({ 'createdAt' => '2025-08-02' })).to eq '2025-08-02' }
   end
 
+  describe '.append_post_url' do
+    let(:body) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hello' }] }] } }
+    let(:url) { 'https://mikeyclarke.substack.com/p/foo' }
+
+    it { expect(described_class.append_post_url(body, url)['content'].last['content'].first['text']).to eq url }
+    it { expect(described_class.append_post_url(body, url)['content'].last['content'].first['marks']).to eq [{ 'type' => 'link', 'attrs' => { 'href' => url } }] }
+
+    it 'is idempotent once the post is linked' do
+      once = described_class.append_post_url(body, url)
+      expect(described_class.append_post_url(once, url)).to eq once
+    end
+
+    it 'does not mutate the input' do
+      described_class.append_post_url(body, url)
+      expect(body['content'].size).to eq 1
+    end
+
+    it { expect(described_class.append_post_url(nil, url)).to be_nil }
+    it { expect(described_class.append_post_url(body, '')).to eq body }
+  end
+
   describe '.parse_human_timestamp' do
     # June = NZST (UTC+12), so 19:00 NZ -> 07:00 UTC
     it { expect(described_class.parse_human_timestamp('21 Jun 2025 at 19:00')).to eq '2025-06-21T07:00:00Z' }

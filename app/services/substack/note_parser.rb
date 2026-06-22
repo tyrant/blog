@@ -84,5 +84,22 @@ module Substack
       old = comment_id_from_url(template_url)
       old ? template_url.sub("c-#{old}", "c-#{new_id}") : "https://substack.com/note/c-#{new_id}"
     end
+
+    # Append the canonical post URL as a trailing link paragraph to a note's
+    # body_json, so reposts end with the post link. Idempotent (skips if that post
+    # is already linked). Returns the (possibly unchanged) body_json.
+    def append_post_url(body_json, post_url)
+      return body_json if body_json.blank? || post_url.blank?
+
+      slug = post_slug(post_url)
+      return body_json if slug && link_hrefs(body_json).any? { |h| post_slug(h) == slug }
+
+      doc = body_json.deep_dup
+      doc["content"] = Array(doc["content"]) + [{
+        "type"    => "paragraph",
+        "content" => [{ "type" => "text", "text" => post_url, "marks" => [{ "type" => "link", "attrs" => { "href" => post_url } }] }]
+      }]
+      doc
+    end
   end
 end

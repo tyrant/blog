@@ -57,6 +57,16 @@ namespace :substack do
       BlizzardBackfillRunner.run(commit: true)
     end
 
+    desc "Report appending the canonical post URL to each blizzard body_json (no writes)"
+    task append_urls_dry_run: :environment do
+      BlizzardUrlAppender.run(commit: false)
+    end
+
+    desc "Append the canonical post URL (as a trailing link) to each blizzard body_json"
+    task append_urls: :environment do
+      BlizzardUrlAppender.run(commit: true)
+    end
+
     # Run these LOCALLY (residential IP) — server-side note POSTs are Cloudflare-blocked.
     #   DAYS=30 LIMIT=5 rails substack:blizzard:repost_dry_run
     #   DAYS=30 LIMIT=5 rails substack:blizzard:repost
@@ -137,6 +147,42 @@ module BlizzardBackfillRunner
     puts "\n#{commit ? 'Committed' : 'Dry run'}. #{cats.count} Substack categorizations." \
          " Flagged: #{flagged.join(', ').presence || 'none'}." \
          " Failed (re-run to retry): #{failed.join(', ').presence || 'none'}."
+  end
+end
+
+module BlizzardUrlAppender
+  module_function
+
+  def run(commit:)
+    cats = Comfy::Cms::Categorization.joins(:category)
+      .where(comfy_cms_categories: { label: "Substack" }).order(:id)
+    appended = 0
+    missing_url = []
+
+    cats.find_each do |cat|
+      if cat.url.blank?
+        missing_url << cat.id if Array(cat.data["blizzard"]).any?
+        next
+      end
+
+      changed = false
+      Array(cat.data["blizzard"]).each do |entry|
+        next if entry["body_json"].blank?
+
+        new_bj = Substack::NoteParser.append_post_url(entry["body_json"], cat.url)
+        next if new_bj == entry["body_json"]
+
+        entry["body_json"] = new_bj
+        entry["text"]      = Substack::NoteParser.plaintext(new_bj)
+        appended += 1
+        changed  = true
+      end
+
+      cat.update!(data: cat.data) if changed && commit
+    end
+
+    puts "#{commit ? 'Appended URL to' : 'Would append URL to'} #{appended} blizzard entr#{appended == 1 ? 'y' : 'ies'}."
+    puts "Categorizations with blizzard but no canonical #url (skipped): #{missing_url.join(', ').presence || 'none'}."
   end
 end
 

@@ -24,9 +24,6 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'stale group text' }
-    it 'appends the Substack post URL to the copy block' do
-      expect(response.body).to include 'https://mikeyclarke.substack.com/p/canonical'
-    end
 
     context 'a post with multiple stale groups lists its title only once' do
       let!(:blog_post) { create :post, site: site, layout: layout, title: 'Just Once Post' }
@@ -49,13 +46,13 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       context 'page 1' do
         before { get comfy_admin_substack_blizzard_path(days: 14, page: 1), headers: http_auth_headers }
-        it { expect(response.body).to include 'blizz group 0 ' }
-        it { expect(response.body).to_not include 'blizz group 20 ' }
+        it { expect(response.body).to include 'blizz group 0<' }
+        it { expect(response.body).to_not include 'blizz group 20<' }
       end
 
       context 'page 2' do
         before { get comfy_admin_substack_blizzard_path(days: 14, page: 2), headers: http_auth_headers }
-        it { expect(response.body).to include 'blizz group 20 ' }
+        it { expect(response.body).to include 'blizz group 20<' }
       end
     end
 
