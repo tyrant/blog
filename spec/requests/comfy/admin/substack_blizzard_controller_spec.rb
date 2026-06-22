@@ -78,6 +78,17 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
     end
 
+    context 'retains the page number on redirect' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { categorization_id: categorization.id, index: 0,
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-19T00:00:00Z', days: 14, page: 3 },
+             headers: http_auth_headers
+      end
+
+      it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14, page: 3) }
+    end
+
     context 'human-friendly timestamp is converted to ISO' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,

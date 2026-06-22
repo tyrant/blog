@@ -30,6 +30,7 @@
                 = hidden_field_tag :categorization_id, due.categorization.id
                 = hidden_field_tag :index, due.index
                 = hidden_field_tag :days, @days
+                = hidden_field_tag :page, params[:page]
                 = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
                 = text_field_tag :timestamp, nil, placeholder: "timestamp e.g. 21 Jun at 19:00", class: "form-control form-control-sm mr-1"
                 = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
