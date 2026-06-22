@@ -90,9 +90,11 @@ module BlizzardRemoteRepost
     result.posted.each do |p|
       puts "#{commit ? 'POSTED' : 'would post'}: #{p['text'].to_s[0, 70]}#{" -> #{p['url']}" if p['url']}"
     end
-    result.failed.each { |f| puts "FAILED: #{f['text'].to_s[0, 60]} — #{f['error']}" }
+    result.skipped.each { |s| puts "SKIPPED (#{s['reason']}): #{s['text'].to_s[0, 60]}" }
+    result.failed.each  { |f| puts "FAILED: #{f['text'].to_s[0, 60]} — #{f['error']}" }
 
-    puts "\n#{commit ? 'Posted' : 'Dry run'}: #{result.posted.size}. Failed: #{result.failed.size}."
+    puts "\n#{commit ? 'Posted' : 'Dry run'}: #{result.posted.size}." \
+         " Skipped: #{result.skipped.size}. Failed: #{result.failed.size}."
   end
 end
 

@@ -50,10 +50,21 @@ RSpec.describe Substack::Blizzard::RemoteReposter do
   end
 
   context 'limit' do
-    let(:groups) { Array.new(3) { |n| { 'categorization_id' => n, 'index' => 0, 'text' => "g#{n}", 'body_json' => {}, 'template_url' => nil } } }
+    let(:groups) { Array.new(3) { |n| { 'categorization_id' => n, 'index' => 0, 'text' => "g#{n}", 'body_json' => { 'type' => 'doc' }, 'template_url' => nil } } }
     subject(:result) { described_class.execute(base_url: base_url, username: 'u', password: 'p', days: 30, limit: 1, commit: false) }
 
     it { expect(result.posted.size).to eq 1 }
+  end
+
+  context 'group without body_json is skipped, not posted' do
+    let(:groups) { [{ 'categorization_id' => 7, 'index' => 0, 'text' => 'empty', 'body_json' => nil, 'template_url' => nil }] }
+
+    it { expect(result.skipped.map { |s| s['reason'] }).to eq ['no body_json'] }
+    it { expect(result.posted).to be_empty }
+    it 'creates no note' do
+      result
+      expect(a_request(:post, 'https://substack.com/api/v1/comment/feed')).to_not have_been_made
+    end
   end
 
   context 'dry run' do

@@ -18,14 +18,21 @@ module Substack
 
       PACING = 5 # seconds between posts, to stay gentle on Substack
 
-      Result = Struct.new(:posted, :failed, keyword_init: true)
+      Result = Struct.new(:posted, :failed, :skipped, keyword_init: true)
 
       def execute
         @substack ||= Substack::Client.new
-        posted = []
-        failed = []
+        posted  = []
+        failed  = []
+        skipped = []
 
         due_groups.each do |group|
+          # Can't repost a group with no rich content — would publish an empty Note.
+          if group["body_json"].blank?
+            skipped << { "text" => group["text"], "reason" => "no body_json" }
+            next
+          end
+
           unless @commit
             posted << { "text" => group["text"], "dry_run" => true }
             next
@@ -39,7 +46,7 @@ module Substack
           sleep PACING
         end
 
-        Result.new(posted: posted, failed: failed)
+        Result.new(posted: posted, failed: failed, skipped: skipped)
       end
 
       private
