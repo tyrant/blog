@@ -27,6 +27,7 @@
     CMS.timepicker.init();
     CMS.pageFragments();
     CMS.categories();
+    CMS.clipboard();
     CMS.files.init();
     CMS.fileLinks();
     CMS.fileUpload.init();

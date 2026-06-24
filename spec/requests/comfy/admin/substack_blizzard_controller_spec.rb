@@ -24,6 +24,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'stale group text' }
+    it { expect(response.body).to include 'copy-blizzard-text' }
 
     context 'a post with multiple stale groups lists its title only once' do
       let!(:blog_post) { create :post, site: site, layout: layout, title: 'Just Once Post' }
