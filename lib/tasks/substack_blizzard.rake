@@ -178,7 +178,10 @@ module BlizzardUrlAppender
         changed  = true
       end
 
-      cat.update!(data: cat.data) if changed && commit
+      if changed && commit
+        cat.data_will_change! # in-place jsonb mutation can dodge dirty-tracking
+        cat.save!
+      end
     end
 
     puts "#{commit ? 'Appended URL to' : 'Would append URL to'} #{appended} blizzard entr#{appended == 1 ? 'y' : 'ies'}."
