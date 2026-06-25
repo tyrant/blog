@@ -23,7 +23,9 @@ RSpec.describe Substack::Blizzard::DueFinder do
 
   subject(:due) { described_class.execute(max_age_days: 14) }
 
-  it { expect(due.map { |d| d.entry['text'] }).to contain_exactly('stale', 'never') }
+  it 'orders most-stale-first (never-posted, then oldest)' do
+    expect(due.map { |d| d.entry['text'] }).to eq %w[never stale]
+  end
   it { expect(due.find { |d| d.entry['text'] == 'stale' }.index).to eq 1 }
   it { expect(due.first.categorization).to eq categorization }
 

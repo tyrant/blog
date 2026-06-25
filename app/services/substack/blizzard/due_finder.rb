@@ -15,7 +15,7 @@ module Substack
       def execute
         cutoff = @max_age_days.to_i.days.ago
 
-        categorizations.flat_map do |categorization|
+        due = categorizations.flat_map do |categorization|
           Array(categorization.data["blizzard"]).each_with_index.filter_map do |entry, index|
             latest = latest_timestamp(entry)
             next unless latest.nil? || latest < cutoff
@@ -23,6 +23,9 @@ module Substack
             Due.new(categorization: categorization, index: index, entry: entry, latest: latest)
           end
         end
+
+        # Most stale first: never-posted (nil) before the oldest most-recent note.
+        due.sort_by { |d| d.latest || Time.zone.at(0) }
       end
 
       private

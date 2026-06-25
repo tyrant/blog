@@ -42,7 +42,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     context 'pagination at 20 per page' do
       let(:data) do
-        { 'blizzard' => (0..20).map { |n| { 'text' => "blizz group #{n}", 'body_json' => {}, 'notes' => [{ 'url' => "u#{n}", 'timestamp' => 90.days.ago.iso8601 }] } } }
+        { 'blizzard' => (0..20).map { |n| { 'text' => "blizz group #{n}", 'body_json' => {}, 'notes' => [{ 'url' => "u#{n}", 'timestamp' => (100 - n).days.ago.iso8601 }] } } }
       end
 
       context 'page 1' do
