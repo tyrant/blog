@@ -59,7 +59,13 @@ module Substack
       end
 
       def repost(group)
-        created = NoteParser.comment(@substack.create_note(group["body_json"]))
+        post_url = group["post_url"]
+        # The post becomes a preview-card attachment, so drop the inline URL from
+        # the body to avoid a duplicate truncated text link.
+        body           = NoteParser.strip_post_url(group["body_json"], post_url)
+        attachment_ids = post_url.present? ? [@substack.create_attachment(post_url)].compact : []
+
+        created = NoteParser.comment(@substack.create_note(body, attachment_ids: attachment_ids))
         record  = {
           "url"       => NoteParser.build_note_url(group["template_url"], created["id"]),
           "timestamp" => NoteParser.timestamp(created) || Time.current.utc.iso8601

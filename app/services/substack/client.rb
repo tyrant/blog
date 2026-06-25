@@ -26,14 +26,23 @@ module Substack
       request(Net::HTTP::Get.new(uri("/api/v1/reader/comment/#{comment_id}")))
     end
 
-    def create_note(body_json)
+    def create_note(body_json, attachment_ids: [])
       req = Net::HTTP::Post.new(uri("/api/v1/comment/feed"))
       req.body = JSON.generate(
         bodyJson:          body_json,
         tabId:             "for-you",
-        replyMinimumRole:  "everyone"
+        replyMinimumRole:  "everyone",
+        attachmentIds:     attachment_ids
       )
       request(req)
+    end
+
+    # Creates a link attachment (the post preview card) to reference via
+    # attachment_ids when creating a note. Returns the attachment's id.
+    def create_attachment(url)
+      req = Net::HTTP::Post.new(uri("/api/v1/comment/attachment"))
+      req.body = JSON.generate(url: url, type: "link")
+      request(req)["id"]
     end
 
     def delete_note(comment_id)

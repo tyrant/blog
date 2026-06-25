@@ -22,6 +22,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
         index:             d.index,
         text:              d.entry["text"],
         body_json:         d.entry["body_json"],
+        post_url:          d.categorization.url,
         template_url:      Array(d.entry["notes"]).map { |n| n["url"] }.compact.first
       }
     end

@@ -47,6 +47,21 @@ RSpec.describe Substack::NoteParser do
     it { expect(described_class.append_post_url(body, '')).to eq body }
   end
 
+  describe '.strip_post_url' do
+    let(:url) { 'https://mikeyclarke.substack.com/p/foo' }
+    let(:base) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hi' }] }] } }
+
+    it 'removes the trailing post-url paragraph (inverse of append)' do
+      expect(described_class.strip_post_url(described_class.append_post_url(base, url), url)).to eq base
+    end
+
+    it 'is a no-op when there is no trailing post url' do
+      expect(described_class.strip_post_url(base, url)).to eq base
+    end
+
+    it { expect(described_class.strip_post_url(nil, url)).to be_nil }
+  end
+
   describe '.parse_human_timestamp' do
     # June = NZST (UTC+12), so 19:00 NZ -> 07:00 UTC
     it { expect(described_class.parse_human_timestamp('21 Jun 2025 at 19:00')).to eq '2025-06-21T07:00:00Z' }

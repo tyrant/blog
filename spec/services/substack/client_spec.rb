@@ -39,6 +39,29 @@ RSpec.describe Substack::Client do
     end
   end
 
+  describe '#create_note with attachments' do
+    let!(:stub) do
+      stub_request(:post, 'https://substack.com/api/v1/comment/feed')
+        .with(body: hash_including('attachmentIds' => ['att-1']))
+        .to_return(status: 200, body: '{}')
+    end
+
+    it 'includes attachmentIds in the payload' do
+      client.create_note({ 'type' => 'doc' }, attachment_ids: ['att-1'])
+      expect(stub).to have_been_requested
+    end
+  end
+
+  describe '#create_attachment' do
+    before do
+      stub_request(:post, 'https://substack.com/api/v1/comment/attachment')
+        .with(body: hash_including('url' => 'https://x.com/p/y', 'type' => 'link'))
+        .to_return(status: 200, body: { 'id' => 'att-9' }.to_json)
+    end
+
+    it { expect(client.create_attachment('https://x.com/p/y')).to eq 'att-9' }
+  end
+
   describe '#delete_note' do
     before { stub_request(:delete, 'https://substack.com/api/v1/comment/123').to_return(status: 200, body: '') }
 

@@ -101,5 +101,19 @@ module Substack
       }]
       doc
     end
+
+    # Inverse of append_post_url: drop a trailing paragraph that is just the post
+    # URL, used when posting via API (the post becomes a card attachment instead).
+    def strip_post_url(body_json, post_url)
+      return body_json if body_json.blank? || post_url.blank?
+
+      content = Array(body_json["content"])
+      last = content.last
+      return body_json unless last && last["type"] == "paragraph" && node_text(last).strip == post_url.strip
+
+      doc = body_json.deep_dup
+      doc["content"] = content[0...-1]
+      doc
+    end
   end
 end

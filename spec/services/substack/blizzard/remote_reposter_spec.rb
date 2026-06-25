@@ -7,9 +7,13 @@ RSpec.describe Substack::Blizzard::RemoteReposter do
   let(:base_url) { 'https://prod.example.com' }
   let(:commit) { true }
 
+  let(:post_url) { 'https://mikeyclarke.substack.com/p/foo' }
   let(:groups) do
-    [{ 'categorization_id' => 7, 'index' => 0, 'text' => 'hello',
-       'body_json' => { 'type' => 'doc' },
+    [{ 'categorization_id' => 7, 'index' => 0, 'text' => 'hello', 'post_url' => post_url,
+       'body_json' => { 'type' => 'doc', 'content' => [
+         { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hello' }] },
+         { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => post_url, 'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => post_url } }] }] }
+       ] },
        'template_url' => 'https://substack.com/profile/4619740-mikey-clarke/note/c-111' }]
   end
 
@@ -23,6 +27,8 @@ RSpec.describe Substack::Blizzard::RemoteReposter do
 
     stub_request(:get, "#{base_url}/admin/substack-blizzard/due.json?days=30")
       .to_return(status: 200, body: groups.to_json)
+    stub_request(:post, 'https://substack.com/api/v1/comment/attachment')
+      .to_return(status: 200, body: { 'id' => 'att-1' }.to_json)
     stub_request(:post, 'https://substack.com/api/v1/comment/feed')
       .to_return(status: 200, body: { 'id' => 999, 'date' => '2026-06-22T00:00:00Z' }.to_json)
   end
@@ -37,10 +43,18 @@ RSpec.describe Substack::Blizzard::RemoteReposter do
     it { expect(result.posted.first['url']).to eq 'https://substack.com/profile/4619740-mikey-clarke/note/c-999' }
     it { expect(result.posted.first['timestamp']).to eq '2026-06-22T00:00:00Z' }
 
-    it 'creates the note from the group body_json' do
+    it 'creates a link attachment for the post URL' do
       result
-      expect(a_request(:post, 'https://substack.com/api/v1/comment/feed')
-        .with(body: hash_including('bodyJson' => { 'type' => 'doc' }))).to have_been_made
+      expect(a_request(:post, 'https://substack.com/api/v1/comment/attachment')
+        .with(body: hash_including('url' => post_url, 'type' => 'link'))).to have_been_made
+    end
+
+    it 'posts the body with the inline URL stripped and the attachment referenced' do
+      result
+      expect(a_request(:post, 'https://substack.com/api/v1/comment/feed').with { |req|
+        payload = JSON.parse(req.body)
+        payload['attachmentIds'] == ['att-1'] && payload['bodyJson']['content'].size == 1
+      }).to have_been_made
     end
 
     it 'records the new note back on prod' do

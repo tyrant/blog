@@ -69,6 +69,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response).to have_http_status :success }
     it { expect(JSON.parse(response.body).first['body_json']).to eq({ 'type' => 'doc' }) }
     it { expect(JSON.parse(response.body).first['template_url']).to include 'c-111' }
+    it { expect(JSON.parse(response.body).first['post_url']).to eq categorization.url }
     it { expect(JSON.parse(response.body).first['categorization_id']).to eq categorization.id }
   end
 
