@@ -102,6 +102,20 @@ module Substack
       doc
     end
 
+    # Build a minimal ProseMirror doc from plaintext: plain paragraphs split on
+    # newlines, no formatting (lossy — bold/italic/links can't be recovered).
+    def text_to_body_json(text)
+      {
+        "type"    => "doc",
+        "attrs"   => { "schemaVersion" => "v1" },
+        "content" => text.to_s.split("\n").map do |line|
+          para = { "type" => "paragraph" }
+          para["content"] = [{ "type" => "text", "text" => line }] unless line.empty?
+          para
+        end
+      }
+    end
+
     # Inverse of append_post_url: drop a trailing paragraph that is just the post
     # URL, used when posting via API (the post becomes a card attachment instead).
     def strip_post_url(body_json, post_url)

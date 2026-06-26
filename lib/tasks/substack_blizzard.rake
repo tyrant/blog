@@ -67,6 +67,16 @@ namespace :substack do
       BlizzardUrlAppender.run(commit: true)
     end
 
+    desc "Report generating plain body_json from text for entries that lack it (no writes)"
+    task fill_missing_body_json_dry_run: :environment do
+      BlizzardBodyJsonFiller.run(commit: false)
+    end
+
+    desc "Generate plain body_json from text for blizzard entries that have none"
+    task fill_missing_body_json: :environment do
+      BlizzardBodyJsonFiller.run(commit: true)
+    end
+
     # Run these LOCALLY (residential IP) — server-side note POSTs are Cloudflare-blocked.
     #   DAYS=30 LIMIT=5 rails substack:blizzard:repost_dry_run
     #   DAYS=30 LIMIT=5 rails substack:blizzard:repost
@@ -186,6 +196,38 @@ module BlizzardUrlAppender
 
     puts "#{commit ? 'Appended URL to' : 'Would append URL to'} #{appended} blizzard entr#{appended == 1 ? 'y' : 'ies'}."
     puts "Categorizations with blizzard but no canonical #url (skipped): #{missing_url.join(', ').presence || 'none'}."
+  end
+end
+
+module BlizzardBodyJsonFiller
+  module_function
+
+  def run(commit:)
+    cats = Comfy::Cms::Categorization.joins(:category)
+      .where(comfy_cms_categories: { label: "Substack" })
+    filled = 0
+
+    cats.find_each do |cat|
+      changed = false
+      Array(cat.data["blizzard"]).each do |entry|
+        next if entry["body_json"].present? || entry["text"].blank?
+
+        bj = Substack::NoteParser.text_to_body_json(entry["text"])
+        bj = Substack::NoteParser.append_post_url(bj, cat.url) if cat.url.present?
+        entry["body_json"] = bj
+        entry["text"]      = Substack::NoteParser.plaintext(bj)
+        filled  += 1
+        changed  = true
+        puts "POST #{cat.categorized_id} (cat #{cat.id}): #{entry['text'].to_s[0, 60]}"
+      end
+
+      if changed && commit
+        cat.data_will_change! # in-place jsonb mutation can dodge dirty-tracking
+        cat.save!
+      end
+    end
+
+    puts "\n#{commit ? 'Filled' : 'Would fill'} body_json for #{filled} entr#{filled == 1 ? 'y' : 'ies'} (plain text, no formatting)."
   end
 end
 

@@ -47,6 +47,18 @@ RSpec.describe Substack::NoteParser do
     it { expect(described_class.append_post_url(body, '')).to eq body }
   end
 
+  describe '.text_to_body_json' do
+    it { expect(described_class.text_to_body_json('hello')).to eq({ 'type' => 'doc', 'attrs' => { 'schemaVersion' => 'v1' }, 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hello' }] }] }) }
+
+    it 'round-trips through plaintext' do
+      expect(described_class.plaintext(described_class.text_to_body_json("a\nb"))).to eq "a\nb"
+    end
+
+    it 'uses an empty paragraph for blank lines' do
+      expect(described_class.text_to_body_json("a\n\nb")['content'][1]).to eq({ 'type' => 'paragraph' })
+    end
+  end
+
   describe '.strip_post_url' do
     let(:url) { 'https://mikeyclarke.substack.com/p/foo' }
     let(:base) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hi' }] }] } }
