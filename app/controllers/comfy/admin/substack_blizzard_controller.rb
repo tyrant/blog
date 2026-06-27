@@ -63,6 +63,22 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     end
   end
 
+  # Re-seed an entry's body_json from a real (rich) Note — a server-side read,
+  # which is allowed from the prod IP.
+  def reseed
+    categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
+    entry = Substack::Blizzard::Reseeder.execute(
+      categorization: categorization,
+      entry_index:    params[:index].to_i,
+      note_url:       params[:note_url]
+    )
+    flash[:success] = "Re-seeded rich text from that note (#{entry['text'].to_s.length} chars)."
+  rescue => e
+    flash[:danger] = "Could not re-seed: #{e.message}"
+  ensure
+    redirect_to back_path
+  end
+
   private
 
   def back_path

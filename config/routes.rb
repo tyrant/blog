@@ -69,6 +69,7 @@ Rails.application.routes.draw do
       get  "admin/substack-blizzard/due",         to: "substack_blizzard#due",         as: :admin_substack_blizzard_due
       post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
+      post "admin/substack-blizzard/reseed",      to: "substack_blizzard#reseed",      as: :admin_substack_blizzard_reseed
     end
   end
 

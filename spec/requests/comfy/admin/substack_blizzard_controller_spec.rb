@@ -96,6 +96,28 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
   end
 
+  describe 'POST reseed' do
+    let(:rich_body) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'reseeded' }] }] } }
+
+    before do
+      SubstackSyncConfig.instance.update!(session_cookie: 'sess')
+      stub_request(:get, 'https://substack.com/api/v1/reader/comment/999')
+        .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body } }.to_json)
+      post comfy_admin_substack_blizzard_reseed_path,
+           params: { categorization_id: categorization.id, index: 0,
+                     note_url: 'https://substack.com/@mikeyclarke/note/c-999', days: 14, page: 2 },
+           headers: http_auth_headers
+    end
+
+    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14, page: 2) }
+    it { expect(categorization.reload.data['blizzard'][0]['text']).to start_with 'reseeded' }
+
+    context 'fetch fails' do
+      let(:rich_body) { {} }
+      it { expect(flash[:danger]).to be_present }
+    end
+  end
+
   describe 'POST add_note (manual paste-back)' do
     context 'with url and timestamp' do
       before do

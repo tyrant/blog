@@ -36,4 +36,12 @@
                 = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
                 = text_field_tag :timestamp, nil, placeholder: "timestamp e.g. 21 Jun at 19:00", class: "form-control form-control-sm mr-1"
                 = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
+              %p.text-muted.small.mb-1.mt-2 Or replace this group's stored text with the rich content of a real note:
+              = form_with url: comfy_admin_substack_blizzard_reseed_path, method: :post, class: "form-inline" do
+                = hidden_field_tag :categorization_id, due.categorization.id
+                = hidden_field_tag :index, due.index
+                = hidden_field_tag :days, @days
+                = hidden_field_tag :page, params[:page]
+                = text_field_tag :note_url, nil, placeholder: "rich note URL to re-seed body_json", class: "form-control form-control-sm mr-1", style: "width: 24rem;"
+                = submit_tag "Re-seed rich text", class: "btn btn-outline-info btn-sm"
   = comfy_paginate @due
