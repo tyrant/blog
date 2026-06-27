@@ -76,6 +76,21 @@ RSpec.describe Substack::Blizzard::RemoteReposter do
     it { expect(result.skipped.size).to eq 1 }
   end
 
+  context 'one post per run (distinct posts, most-stale per post)' do
+    # cat 1 has two due entries (most-stale first), cat 2 one, cat 3 one.
+    let(:groups) do
+      [{ 'categorization_id' => 1, 'index' => 0, 'text' => 'c1-old',   'body_json' => { 'type' => 'doc' }, 'template_url' => nil },
+       { 'categorization_id' => 1, 'index' => 1, 'text' => 'c1-newer', 'body_json' => { 'type' => 'doc' }, 'template_url' => nil },
+       { 'categorization_id' => 2, 'index' => 0, 'text' => 'c2',       'body_json' => { 'type' => 'doc' }, 'template_url' => nil },
+       { 'categorization_id' => 3, 'index' => 0, 'text' => 'c3',       'body_json' => { 'type' => 'doc' }, 'template_url' => nil }]
+    end
+    subject(:result) { described_class.execute(base_url: base_url, username: 'u', password: 'p', days: 30, limit: 5, commit: false) }
+
+    it 'posts one entry per distinct post' do
+      expect(result.posted.map { |p| p['text'] }).to eq %w[c1-old c2 c3]
+    end
+  end
+
   context 'group without body_json is skipped, not posted' do
     let(:groups) { [{ 'categorization_id' => 7, 'index' => 0, 'text' => 'empty', 'body_json' => nil, 'template_url' => nil }] }
 

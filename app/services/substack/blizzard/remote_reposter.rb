@@ -31,6 +31,9 @@ module Substack
           skipped << { "text" => group["text"], "reason" => "no body_json" }
           true
         end
+        # One post per run: keep each post's most-stale entry (groups arrive
+        # most-stale-first) so a single run spreads across distinct posts.
+        postable = postable.uniq { |group| group["categorization_id"] }
         postable = postable.first(@limit.to_i) if @limit
 
         posted = []
