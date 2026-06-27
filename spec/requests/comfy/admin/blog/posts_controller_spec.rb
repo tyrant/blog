@@ -128,6 +128,30 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     it { expect(blog_post.categorizations.first.data).to eq({ 'id' => 'abc' }) }
   end
 
+  describe 'autosave (JSON) does not overwrite categorization data' do
+    let!(:category) { create :category, site: site, label: 'Medium' }
+    let!(:categorization) do
+      create :categorization, category: category, categorized: blog_post,
+             url: 'https://medium.com/fresh', data: { 'blizzard' => [{ 'text' => 'fresh' }] }
+    end
+    let(:json_headers) { http_auth_headers.merge('Accept' => 'application/json') }
+    # Mimics a stale tab re-submitting the at-load category panel during autosave.
+    let(:stale_params) do
+      { post: { title: 'Autosaved', category_ids: ['', category.id.to_s],
+                categorizations_data: { category.id.to_s => { url: 'https://medium.com/STALE', data: '{}' } } } }
+    end
+
+    before {
+      patch "#{comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id)}.json",
+            params: stale_params, headers: json_headers
+    }
+
+    it { expect(response).to have_http_status :success }
+    it { expect(blog_post.reload.title).to eq 'Autosaved' }
+    it { expect(categorization.reload.url).to eq 'https://medium.com/fresh' }
+    it { expect(categorization.reload.data).to eq({ 'blizzard' => [{ 'text' => 'fresh' }] }) }
+  end
+
   describe 'GET edit renders categorization fields' do
     let!(:category) { create :category, site: site, label: 'Medium' }
     let!(:categorization) { create :categorization, category: category, categorized: blog_post, url: 'https://medium.com/y' }

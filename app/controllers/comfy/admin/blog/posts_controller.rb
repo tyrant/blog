@@ -99,7 +99,14 @@ protected
   end
 
   def post_params
-    params.fetch(:post, {}).permit!
+    permitted = params.fetch(:post, {}).permit!
+    return permitted unless request.format.json?
+
+    # Autosave (JSON) re-submits the whole form, including the category side-panel as
+    # it was at page load — and that panel can't even capture live #data edits. Drop it
+    # so a periodic autosave can't clobber category / blizzard data written from another
+    # tab (e.g. Substack Blizzard) since this page loaded. Explicit (HTML) Save still writes it.
+    permitted.except(:category_ids, :categorizations_data).permit!
   end
 
 end
