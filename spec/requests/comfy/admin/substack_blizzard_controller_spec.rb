@@ -25,6 +25,27 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'stale group text' }
     it { expect(response.body).to include 'copy-blizzard-text' }
+    it { expect(response.body).to include 'search post titles' }
+
+    context 'days=0 is accepted' do
+      before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
+      it { expect(response).to have_http_status :success }
+      it { expect(response.body).to include 'stale group text' }
+    end
+
+    context 'q filters by post title' do
+      let!(:blog_post) { create :post, site: site, layout: layout, title: 'Findable Post' }
+
+      context 'matching title' do
+        before { get comfy_admin_substack_blizzard_path(days: 14, q: 'findable'), headers: http_auth_headers }
+        it { expect(response.body).to include 'stale group text' }
+      end
+
+      context 'non-matching title' do
+        before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: http_auth_headers }
+        it { expect(response.body).to_not include 'stale group text' }
+      end
+    end
 
     context 'a post with multiple stale groups lists its title only once' do
       let!(:blog_post) { create :post, site: site, layout: layout, title: 'Just Once Post' }

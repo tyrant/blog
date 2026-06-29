@@ -8,7 +8,7 @@ module Substack
     class DueFinder
       include ServiceInterface
 
-      arguments max_age_days: 14
+      arguments max_age_days: 14, title_query: nil
 
       Due = Struct.new(:categorization, :index, :entry, :latest, keyword_init: true)
 
@@ -31,10 +31,15 @@ module Substack
       private
 
       def categorizations
-        Comfy::Cms::Categorization
+        scope = Comfy::Cms::Categorization
           .joins(:category)
           .where(comfy_cms_categories: { label: "Substack" })
+          .includes(:categorized)
           .order(:id)
+        return scope if @title_query.blank?
+
+        q = @title_query.downcase
+        scope.select { |c| c.categorized.try(:title).to_s.downcase.include?(q) }
       end
 
       def latest_timestamp(entry)

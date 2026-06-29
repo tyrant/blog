@@ -34,6 +34,25 @@ RSpec.describe Substack::Blizzard::DueFinder do
     it { expect(due.size).to eq 3 }
   end
 
+  context 'max_age_days: 0 includes every posted/never group' do
+    subject(:due) { described_class.execute(max_age_days: 0) }
+    it { expect(due.map { |d| d.entry['text'] }).to contain_exactly('never', 'stale', 'fresh') }
+  end
+
+  context 'title_query filters by post title (case-insensitive)' do
+    let!(:post) { create :post, site: site, title: 'Chicken PMS' }
+    let!(:other_post) { create :post, site: site, title: 'Soy Milk', slug: 'soy' }
+    let!(:other) { create :categorization, category: category, categorized: other_post, data: { 'blizzard' => [entry('o', 90.days.ago.iso8601)] } }
+
+    it 'keeps only matching-title categorizations' do
+      due = described_class.execute(max_age_days: 14, title_query: 'chick')
+      expect(due.map(&:categorization).uniq).to eq [categorization]
+    end
+
+    it { expect(described_class.execute(max_age_days: 14, title_query: 'zzz')).to be_empty }
+    it { expect(described_class.execute(max_age_days: 14, title_query: '').size).to eq 3 }
+  end
+
   context 'non-Substack categorizations are ignored' do
     let!(:other_cat) { create :category, site: site, label: 'Medium' }
     let!(:other) { create :categorization, category: other_cat, categorized: post, data: { 'blizzard' => [entry('x', 90.days.ago.iso8601)] } }

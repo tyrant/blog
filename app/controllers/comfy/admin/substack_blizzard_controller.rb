@@ -10,7 +10,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   def index
     @days = clamp_days(params[:days])
-    due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days)
+    due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days, title_query: params[:q])
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
   end
 
@@ -82,11 +82,11 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   private
 
   def back_path
-    comfy_admin_substack_blizzard_path(days: clamp_days(params[:days]), page: params[:page].presence)
+    comfy_admin_substack_blizzard_path(days: clamp_days(params[:days]), page: params[:page].presence, q: params[:q].presence)
   end
 
   def clamp_days(value)
-    (value.presence || DEFAULT_DAYS).to_i.clamp(1, 60)
+    (value.presence || DEFAULT_DAYS).to_i.clamp(0, 60)
   end
 
 end
