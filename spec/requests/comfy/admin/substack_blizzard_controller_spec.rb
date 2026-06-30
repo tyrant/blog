@@ -26,6 +26,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response.body).to include 'stale group text' }
     it { expect(response.body).to include 'copy-blizzard-text' }
     it { expect(response.body).to include 'search post titles' }
+    it { expect(response.body).to include 'href="https://substack.com/profile/4619740-mikey-clarke/note/c-111"' }
 
     context 'days=0 is accepted' do
       before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }

@@ -22,9 +22,13 @@
         - dues.each do |due|
           %li.card.mb-2
             .card-body
+              - notes = Array(due.entry['notes'])
               %p.text-muted.small
                 Last posted #{due.latest ? l(due.latest, format: :long) : 'never'}
-                · #{due.entry['notes'].size} note(s) in this group
+                · #{notes.size} note(s) in this group
+                - if notes.any?
+                  ·
+                  = blizzard_note_links(notes)
               .blizzard-copy.d-flex.align-items-start
                 .border.p-2.flex-grow-1.blizzard-text{ style: "white-space: pre-wrap;" }= due.entry["text"]
                 %button.btn.btn-sm.btn-outline-secondary.ml-2.copy-blizzard-text{ type: "button" } Copy
