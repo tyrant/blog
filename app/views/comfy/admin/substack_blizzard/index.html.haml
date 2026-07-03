@@ -5,7 +5,7 @@
   %h5 Repost forecast
   .form-inline.mb-2
     %label.mr-2{ for: "forecast-days" } Repost every (days):
-    %input#forecast-days.form-control.mr-2{ type: "number", min: 1, max: 365, value: 14, style: "width: 6rem;", data: { "blizzard-forecast-target": "days", action: "input->blizzard-forecast#recompute" } }
+    %input#forecast-days.form-control.mr-2{ type: "number", min: 1, max: 365, value: 7, style: "width: 6rem;", data: { "blizzard-forecast-target": "days", action: "input->blizzard-forecast#recompute" } }
     %span.text-muted.small Forecasts each group’s next reposts over the coming 90 days.
   :css
     #blizzard-forecast-calendar .fc-daygrid-day-events { max-height: 100px; overflow-y: auto; }
