@@ -28,6 +28,23 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response.body).to include 'search post titles' }
     it { expect(response.body).to include 'href="https://substack.com/profile/4619740-mikey-clarke/note/c-111"' }
 
+    it 'mounts the forecast calendar' do
+      expect(response.body).to include "data-controller='blizzard-forecast'"
+    end
+
+    it 'seeds the calendar with the group forecast payload' do
+      expect(response.body).to include 'blizzard-forecast-groups-value'
+    end
+
+    context 'the forecast ignores the due-list filters' do
+      let!(:blog_post) { create :post, site: site, layout: layout, title: 'Findable Post' }
+      before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: http_auth_headers }
+
+      it 'still carries every group into the calendar payload even when filtered out of the due list' do
+        expect(response.body).to include 'stale group text'
+      end
+    end
+
     context 'days=0 is accepted' do
       before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
       it { expect(response).to have_http_status :success }
@@ -44,7 +61,9 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       context 'non-matching title' do
         before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: http_auth_headers }
-        it { expect(response.body).to_not include 'stale group text' }
+        # The group is filtered out of the due list; it still appears in the
+        # (filter-independent) forecast payload, so assert on the due list itself.
+        it { expect(response.body).to include 'No text groups have' }
       end
     end
 
@@ -57,7 +76,9 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         ] }
       end
 
-      it { expect(response.body.scan('Just Once Post').size).to eq 1 }
+      # Rendered link text appears once in the due list; the title also appears
+      # in the forecast payload (one per group), so scope the count to the link.
+      it { expect(response.body.scan('>Just Once Post<').size).to eq 1 }
       it { expect(response.body).to include 'group one' }
       it { expect(response.body).to include 'group two' }
     end

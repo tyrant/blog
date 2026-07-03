@@ -12,6 +12,9 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     @days = clamp_days(params[:days])
     due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days, title_query: params[:q])
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
+    # Every group, unfiltered — the forecast calendar spans all posts regardless
+    # of the due-list filters, and recomputes occurrences entirely client-side.
+    @forecast = Substack::Blizzard::ForecastData.execute
   end
 
   # Due groups (with body_json) for the local repost task to post from.

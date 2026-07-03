@@ -9,6 +9,9 @@ window.Stimulus = application;
 import DarkModeController from './dark_mode_controller';
 application.register('dark-mode', DarkModeController);
 
+import BlizzardForecastController from './blizzard_forecast_controller';
+application.register('blizzard-forecast', BlizzardForecastController);
+
 import ConsentIsSexyYoController from '../../components/consent_is_sexy_yo_controller';
 application.register('consent-is-sexy-yo', ConsentIsSexyYoController);
 
