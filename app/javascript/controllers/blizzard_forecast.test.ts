@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forecastOccurrences, evenlySpreadOccurrences, countByDay, dayKey, intervalIndexForDate, intervalColor, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
+import { forecastOccurrences, evenlySpreadOccurrences, shuffleWithinDays, countByDay, dayKey, intervalIndexForDate, intervalColor, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
 
 const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
@@ -129,6 +129,36 @@ describe("intervalColor", () => {
 
   it("gives adjacent intervals different hues", () => {
     expect(intervalColor(0)).not.toBe(intervalColor(1));
+  });
+});
+
+describe("shuffleWithinDays", () => {
+  function ev(title: string, start: Date): ForecastEvent {
+    return { title, start: start.toISOString(), extendedProps: { content: title } };
+  }
+  const d1 = new Date(2026, 3, 1, 9, 0, 0);
+  const d1b = new Date(2026, 3, 1, 15, 0, 0);
+  const d2 = new Date(2026, 3, 2, 9, 0, 0);
+
+  it("preserves the total number of reposts", () => {
+    const out = shuffleWithinDays([ev("A", d1), ev("B", d1b), ev("C", d2)]);
+    expect(out.length).toBe(3);
+  });
+
+  it("keeps each day's set of time-slots unchanged", () => {
+    const out = shuffleWithinDays([ev("A", d1), ev("B", d1b)]);
+    const starts = out.map((e) => e.start).sort();
+    expect(starts).toEqual([d1.toISOString(), d1b.toISOString()].sort());
+  });
+
+  it("reassigns slots within a day (random reversal moves A off its slot)", () => {
+    const out = shuffleWithinDays([ev("A", d1), ev("B", d1b)], () => 0);
+    expect(out.find((e) => e.title === "A")!.start).toBe(d1b.toISOString());
+  });
+
+  it("leaves a single repost on its day untouched", () => {
+    const out = shuffleWithinDays([ev("A", d1), ev("C", d2)]);
+    expect(out.find((e) => e.title === "C")!.start).toBe(d2.toISOString());
   });
 });
 

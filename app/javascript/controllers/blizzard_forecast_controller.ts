@@ -4,6 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import {
   forecastOccurrences,
   evenlySpreadOccurrences,
+  shuffleWithinDays,
   countByDay,
   intervalIndexForDate,
   intervalColor,
@@ -12,11 +13,12 @@ import {
 } from "./blizzard_forecast";
 
 export default class BlizzardForecastController extends Controller {
-  static targets = ["days", "even", "calendar"];
+  static targets = ["days", "even", "shuffle", "calendar"];
   static values = { groups: Array };
 
   declare readonly daysTarget: HTMLInputElement;
   declare readonly evenTarget: HTMLInputElement;
+  declare readonly shuffleTarget: HTMLInputElement;
   declare readonly calendarTarget: HTMLElement;
   declare groupsValue: ForecastGroup[];
 
@@ -147,7 +149,9 @@ export default class BlizzardForecastController extends Controller {
   private computeEvents(): ForecastEvent[] {
     const interval = parseInt(this.daysTarget.value, 10);
     const compute = this.evenTarget.checked ? evenlySpreadOccurrences : forecastOccurrences;
-    this.currentEvents = compute(this.groupsValue, interval, new Date(), BlizzardForecastController.HORIZON_DAYS);
+    let events = compute(this.groupsValue, interval, new Date(), BlizzardForecastController.HORIZON_DAYS);
+    if (this.shuffleTarget.checked) events = shuffleWithinDays(events);
+    this.currentEvents = events;
     return this.currentEvents;
   }
 

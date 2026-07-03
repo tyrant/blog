@@ -37,6 +37,30 @@ export function intervalColor(index: number): string {
   return `hsl(${(index * 47) % 360}, 70%, 90%)`;
 }
 
+// Randomly reassigns each day's time-slots among that day's reposts, keeping the
+// same per-day set of times but scattering same-Post groups that landed together.
+export function shuffleWithinDays(events: ForecastEvent[], random: () => number = Math.random): ForecastEvent[] {
+  const byDay = new Map<string, ForecastEvent[]>();
+  for (const event of events) {
+    const key = dayKey(new Date(event.start));
+    const bucket = byDay.get(key);
+    if (bucket) bucket.push(event);
+    else byDay.set(key, [event]);
+  }
+
+  const result: ForecastEvent[] = [];
+  for (const dayEvents of byDay.values()) {
+    const slots = dayEvents.map((event) => event.start);
+    const order = [...dayEvents];
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    order.forEach((event, i) => result.push({ ...event, start: slots[i] }));
+  }
+  return result;
+}
+
 // Number of forecast occurrences falling on each local day.
 export function countByDay(events: ForecastEvent[]): Map<string, number> {
   const counts = new Map<string, number>();

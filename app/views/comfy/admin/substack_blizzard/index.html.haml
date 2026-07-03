@@ -9,6 +9,9 @@
     .form-check.form-check-inline.mr-3
       %input#forecast-even.form-check-input{ type: "checkbox", checked: true, data: { "blizzard-forecast-target": "even", action: "change->blizzard-forecast#recompute" } }
       %label.form-check-label{ for: "forecast-even" } Evenly spread reposts across the interval
+    .form-check.form-check-inline.mr-3
+      %input#forecast-shuffle.form-check-input{ type: "checkbox", data: { "blizzard-forecast-target": "shuffle", action: "change->blizzard-forecast#recompute" } }
+      %label.form-check-label{ for: "forecast-shuffle" } Shuffle each day’s reposts
     %span.text-muted.small Forecasts each group’s next reposts over the coming 90 days.
   :css
     #blizzard-forecast-calendar .fc-daygrid-day-events { max-height: 100px; overflow-y: auto; }
