@@ -8,6 +8,8 @@ import {
   countByDay,
   intervalIndexForDate,
   intervalColor,
+  serializePrefs,
+  parsePrefs,
   ForecastEvent,
   ForecastGroup,
 } from "./blizzard_forecast";
@@ -23,12 +25,15 @@ export default class BlizzardForecastController extends Controller {
   declare groupsValue: ForecastGroup[];
 
   private static readonly HORIZON_DAYS = 90;
+  private static readonly PREFS_COOKIE = "blizzard_forecast";
+  private static readonly PREFS_MAX_AGE = 60 * 60 * 24 * 28; // four weeks
   private calendar!: Calendar;
   private debounceTimer?: number;
   private tooltip?: HTMLElement;
   private currentEvents: ForecastEvent[] = [];
 
   connect(): void {
+    this.restorePrefs();
     this.calendar = new Calendar(this.calendarTarget, {
       plugins: [dayGridPlugin],
       initialView: "dayGridMonth",
@@ -51,6 +56,7 @@ export default class BlizzardForecastController extends Controller {
   }
 
   recompute(): void {
+    this.persistPrefs();
     if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
     this.debounceTimer = window.setTimeout(() => {
       this.hideTooltip();
@@ -144,6 +150,27 @@ export default class BlizzardForecastController extends Controller {
   private hideTooltip(): void {
     this.tooltip?.remove();
     this.tooltip = undefined;
+  }
+
+  private restorePrefs(): void {
+    const prefs = parsePrefs(this.readCookie(BlizzardForecastController.PREFS_COOKIE));
+    if (prefs.days !== undefined) this.daysTarget.value = String(prefs.days);
+    if (prefs.even !== undefined) this.evenTarget.checked = prefs.even;
+    if (prefs.shuffle !== undefined) this.shuffleTarget.checked = prefs.shuffle;
+  }
+
+  private persistPrefs(): void {
+    const raw = serializePrefs({
+      days: parseInt(this.daysTarget.value, 10),
+      even: this.evenTarget.checked,
+      shuffle: this.shuffleTarget.checked,
+    });
+    document.cookie = `${BlizzardForecastController.PREFS_COOKIE}=${encodeURIComponent(raw)}; max-age=${BlizzardForecastController.PREFS_MAX_AGE}; path=/`;
+  }
+
+  private readCookie(name: string): string | null {
+    const match = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
   }
 
   private computeEvents(): ForecastEvent[] {

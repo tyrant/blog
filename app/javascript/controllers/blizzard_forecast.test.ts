@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forecastOccurrences, evenlySpreadOccurrences, shuffleWithinDays, countByDay, dayKey, intervalIndexForDate, intervalColor, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
+import { forecastOccurrences, evenlySpreadOccurrences, shuffleWithinDays, countByDay, dayKey, intervalIndexForDate, intervalColor, serializePrefs, parsePrefs, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
 
 const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
@@ -159,6 +159,25 @@ describe("shuffleWithinDays", () => {
   it("leaves a single repost on its day untouched", () => {
     const out = shuffleWithinDays([ev("A", d1), ev("C", d2)]);
     expect(out.find((e) => e.title === "C")!.start).toBe(d2.toISOString());
+  });
+});
+
+describe("prefs serialization", () => {
+  it("round-trips a full prefs object", () => {
+    const prefs = { days: 14, even: false, shuffle: true };
+    expect(parsePrefs(serializePrefs(prefs))).toEqual(prefs);
+  });
+
+  it("returns nothing for a missing cookie", () => {
+    expect(parsePrefs(null)).toEqual({});
+  });
+
+  it("returns nothing for a malformed cookie", () => {
+    expect(parsePrefs("{not json")).toEqual({});
+  });
+
+  it("keeps only well-typed fields", () => {
+    expect(parsePrefs(JSON.stringify({ days: "7", even: true, shuffle: 1 }))).toEqual({ even: true });
   });
 });
 

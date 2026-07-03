@@ -15,6 +15,32 @@ export interface ForecastEvent {
   extendedProps: { content: string };
 }
 
+export interface ForecastPrefs {
+  days: number;
+  even: boolean;
+  shuffle: boolean;
+}
+
+export function serializePrefs(prefs: ForecastPrefs): string {
+  return JSON.stringify(prefs);
+}
+
+// Tolerant parse of a persisted-prefs cookie: returns only the fields that are
+// present and well-typed, so a missing/malformed cookie leaves defaults intact.
+export function parsePrefs(raw: string | null): Partial<ForecastPrefs> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const prefs: Partial<ForecastPrefs> = {};
+    if (typeof parsed.days === "number" && Number.isFinite(parsed.days)) prefs.days = parsed.days;
+    if (typeof parsed.even === "boolean") prefs.even = parsed.even;
+    if (typeof parsed.shuffle === "boolean") prefs.shuffle = parsed.shuffle;
+    return prefs;
+  } catch {
+    return {};
+  }
+}
+
 // Local YYYY-MM-DD, matching FullCalendar's per-day `data-date` attribute.
 export function dayKey(date: Date): string {
   const y = date.getFullYear();
