@@ -1,13 +1,14 @@
 import { Controller } from "@hotwired/stimulus";
 import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import { forecastOccurrences, countByDay, ForecastEvent, ForecastGroup } from "./blizzard_forecast";
+import { forecastOccurrences, evenlySpreadOccurrences, countByDay, ForecastEvent, ForecastGroup } from "./blizzard_forecast";
 
 export default class BlizzardForecastController extends Controller {
-  static targets = ["days", "calendar"];
+  static targets = ["days", "even", "calendar"];
   static values = { groups: Array };
 
   declare readonly daysTarget: HTMLInputElement;
+  declare readonly evenTarget: HTMLInputElement;
   declare readonly calendarTarget: HTMLElement;
   declare groupsValue: ForecastGroup[];
 
@@ -129,12 +130,9 @@ export default class BlizzardForecastController extends Controller {
   }
 
   private computeEvents(): ForecastEvent[] {
-    this.currentEvents = forecastOccurrences(
-      this.groupsValue,
-      parseInt(this.daysTarget.value, 10),
-      new Date(),
-      BlizzardForecastController.HORIZON_DAYS,
-    );
+    const interval = parseInt(this.daysTarget.value, 10);
+    const compute = this.evenTarget.checked ? evenlySpreadOccurrences : forecastOccurrences;
+    this.currentEvents = compute(this.groupsValue, interval, new Date(), BlizzardForecastController.HORIZON_DAYS);
     return this.currentEvents;
   }
 

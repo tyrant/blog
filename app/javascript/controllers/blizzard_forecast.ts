@@ -89,3 +89,35 @@ export function forecastOccurrences(
 
   return events;
 }
+
+// One-off recalculation: ignore each group's anchor and instead spread every
+// group's first repost evenly across [now, now + intervalDays], then recur every
+// intervalDays. This evens out the first interval and, since all groups share the
+// same period, every subsequent interval too.
+export function evenlySpreadOccurrences(
+  groups: ForecastGroup[],
+  intervalDays: number,
+  now: Date = new Date(),
+  horizonDays = 90,
+): ForecastEvent[] {
+  const step = Math.floor(intervalDays);
+  if (!Number.isFinite(step) || step < 1 || groups.length === 0) return [];
+
+  const stepMs = step * 24 * 60 * 60 * 1000;
+  const horizonEnd = addDays(midnight(now), horizonDays).getTime();
+  const events: ForecastEvent[] = [];
+
+  groups.forEach((group, i) => {
+    const first = now.getTime() + Math.round((i / groups.length) * stepMs);
+    for (let t = first; t <= horizonEnd; t += stepMs) {
+      events.push({
+        title: group.title,
+        start: new Date(t).toISOString(),
+        url: group.url ?? undefined,
+        extendedProps: { content: group.content },
+      });
+    }
+  });
+
+  return events;
+}

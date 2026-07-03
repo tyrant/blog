@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forecastOccurrences, countByDay, dayKey, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
+import { forecastOccurrences, evenlySpreadOccurrences, countByDay, dayKey, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
 
 const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
@@ -60,6 +60,41 @@ describe("forecastOccurrences", () => {
   it("emits nothing for a group whose next occurrence is beyond the horizon", () => {
     const anchor = new Date(now.getTime() - 1 * DAY).toISOString();
     expect(forecastOccurrences([group(anchor)], 200, now)).toEqual([]);
+  });
+});
+
+describe("evenlySpreadOccurrences", () => {
+  const seven: ForecastGroup[] = Array.from({ length: 7 }, (_, i) => ({
+    anchor: null,
+    title: `T${i}`,
+    content: "C",
+    url: null,
+  }));
+
+  function firstStartFor(events: ForecastEvent[], title: string): number {
+    return Math.min(...events.filter((e) => e.title === title).map((e) => new Date(e.start).getTime()));
+  }
+
+  it("returns nothing when the interval is below 1", () => {
+    expect(evenlySpreadOccurrences(seven, 0, now)).toEqual([]);
+  });
+
+  it("returns nothing when there are no groups", () => {
+    expect(evenlySpreadOccurrences([], 7, now)).toEqual([]);
+  });
+
+  it("spreads each group's first repost evenly across the interval", () => {
+    const events = evenlySpreadOccurrences(seven, 7, now);
+    // 7 groups over a 7-day interval → one day apart, first at now.
+    seven.forEach((_, i) => {
+      expect(firstStartFor(events, `T${i}`)).toBe(now.getTime() + i * DAY);
+    });
+  });
+
+  it("recurs each group every interval", () => {
+    const events = evenlySpreadOccurrences(seven, 7, now).filter((e) => e.title === "T0");
+    const times = events.map((e) => new Date(e.start).getTime());
+    expect(times[1] - times[0]).toBe(7 * DAY);
   });
 });
 
