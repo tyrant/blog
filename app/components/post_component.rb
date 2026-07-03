@@ -75,7 +75,7 @@ class PostComponent < ViewComponent::Base
   end
 
   def css_classes_for_body
-    classes = %w(link transition) << "duration-#{DURATION}"
+    classes = %w(link block relative transition) << "duration-#{DURATION}"
     
     if @post.nsfw? && !(@nsfw_options['mouseover'] && @nsfw_options['always'])
       classes += %w(blur-xs)
