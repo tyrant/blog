@@ -15,6 +15,24 @@ export interface ForecastEvent {
   extendedProps: { content: string };
 }
 
+// Local YYYY-MM-DD, matching FullCalendar's per-day `data-date` attribute.
+export function dayKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// Number of forecast occurrences falling on each local day.
+export function countByDay(events: ForecastEvent[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const event of events) {
+    const key = dayKey(new Date(event.start));
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
 function addDays(date: Date, days: number): Date {
   const d = new Date(date.getTime());
   d.setDate(d.getDate() + days);

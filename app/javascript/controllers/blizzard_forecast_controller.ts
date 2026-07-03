@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import { forecastOccurrences, ForecastGroup } from "./blizzard_forecast";
+import { forecastOccurrences, countByDay, ForecastEvent, ForecastGroup } from "./blizzard_forecast";
 
 export default class BlizzardForecastController extends Controller {
   static targets = ["days", "calendar"];
@@ -15,19 +15,22 @@ export default class BlizzardForecastController extends Controller {
   private calendar!: Calendar;
   private debounceTimer?: number;
   private tooltip?: HTMLElement;
+  private currentEvents: ForecastEvent[] = [];
 
   connect(): void {
     this.calendar = new Calendar(this.calendarTarget, {
       plugins: [dayGridPlugin],
       initialView: "dayGridMonth",
       height: "auto",
-      dayMaxEvents: true,
+      dayMaxEvents: false, // show every entry; each day's list is capped + scrolled via CSS
       headerToolbar: { left: "prev,next today", center: "title", right: "" },
       validRange: this.validRange(),
       events: this.computeEvents(),
       eventDidMount: (info) => this.attachTooltip(info.el, info.event.extendedProps.content as string),
+      datesSet: () => this.updateDayCounts(),
     });
     this.calendar.render();
+    this.updateDayCounts();
   }
 
   disconnect(): void {
@@ -42,7 +45,40 @@ export default class BlizzardForecastController extends Controller {
       this.hideTooltip();
       this.calendar.removeAllEvents();
       this.calendar.addEventSource(this.computeEvents());
+      this.updateDayCounts();
     }, 200);
+  }
+
+  // FullCalendar doesn't expose per-day event counts to its day-cell hooks, so
+  // derive them from our own event list and inject a label beside each day number.
+  private updateDayCounts(): void {
+    const counts = countByDay(this.currentEvents);
+    this.calendarTarget.querySelectorAll<HTMLElement>(".fc-daygrid-day").forEach((cell) => {
+      const date = cell.getAttribute("data-date");
+      const top = cell.querySelector<HTMLElement>(".fc-daygrid-day-top");
+      if (!date || !top) return;
+
+      const count = counts.get(date) ?? 0;
+      let label = top.querySelector<HTMLElement>(".blizzard-entry-count");
+      if (count === 0) {
+        label?.remove();
+        return;
+      }
+      if (!label) {
+        label = document.createElement("span");
+        label.className = "blizzard-entry-count";
+        Object.assign(label.style, {
+          marginRight: "auto", // day-top is row-reverse: pushes the label left, day number stays right
+          alignSelf: "center",
+          paddingLeft: "0.25rem",
+          fontSize: "0.7rem",
+          fontWeight: "600",
+          opacity: "0.75",
+        } as Partial<CSSStyleDeclaration>);
+        top.appendChild(label);
+      }
+      label.textContent = count === 1 ? "1 entry" : `${count} entries`;
+    });
   }
 
   private attachTooltip(el: HTMLElement, content: string): void {
@@ -92,13 +128,14 @@ export default class BlizzardForecastController extends Controller {
     this.tooltip = undefined;
   }
 
-  private computeEvents() {
-    return forecastOccurrences(
+  private computeEvents(): ForecastEvent[] {
+    this.currentEvents = forecastOccurrences(
       this.groupsValue,
       parseInt(this.daysTarget.value, 10),
       new Date(),
       BlizzardForecastController.HORIZON_DAYS,
     );
+    return this.currentEvents;
   }
 
   private validRange(): { start: Date; end: Date } {

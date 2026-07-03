@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forecastOccurrences, ForecastGroup } from "./blizzard_forecast";
+import { forecastOccurrences, countByDay, dayKey, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
 
 const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
@@ -60,5 +60,29 @@ describe("forecastOccurrences", () => {
   it("emits nothing for a group whose next occurrence is beyond the horizon", () => {
     const anchor = new Date(now.getTime() - 1 * DAY).toISOString();
     expect(forecastOccurrences([group(anchor)], 200, now)).toEqual([]);
+  });
+});
+
+describe("countByDay", () => {
+  function event(start: Date): ForecastEvent {
+    return { title: "T", start: start.toISOString(), extendedProps: { content: "C" } };
+  }
+
+  it("tallies occurrences that share a local day", () => {
+    const day = new Date(2026, 2, 3, 9, 0, 0);
+    const sameDayLater = new Date(2026, 2, 3, 18, 30, 0);
+    const counts = countByDay([event(day), event(sameDayLater)]);
+    expect(counts.get(dayKey(day))).toBe(2);
+  });
+
+  it("keeps distinct days separate", () => {
+    const a = new Date(2026, 2, 3, 9, 0, 0);
+    const b = new Date(2026, 2, 4, 9, 0, 0);
+    const counts = countByDay([event(a), event(b)]);
+    expect(counts.get(dayKey(a))).toBe(1);
+  });
+
+  it("returns an empty map for no events", () => {
+    expect(countByDay([]).size).toBe(0);
   });
 });
