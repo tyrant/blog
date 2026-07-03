@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { forecastOccurrences, evenlySpreadOccurrences, countByDay, dayKey, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
+import { forecastOccurrences, evenlySpreadOccurrences, countByDay, dayKey, intervalIndexForDate, intervalColor, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
 
 const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
@@ -95,6 +95,40 @@ describe("evenlySpreadOccurrences", () => {
     const events = evenlySpreadOccurrences(seven, 7, now).filter((e) => e.title === "T0");
     const times = events.map((e) => new Date(e.start).getTime());
     expect(times[1] - times[0]).toBe(7 * DAY);
+  });
+});
+
+describe("intervalIndexForDate", () => {
+  const addD = (n: number) => new Date(now.getTime() + n * DAY);
+
+  it("puts today in interval 0", () => {
+    expect(intervalIndexForDate(now, now, 7)).toBe(0);
+  });
+
+  it("keeps the last day of the first block in interval 0", () => {
+    expect(intervalIndexForDate(addD(6), now, 7)).toBe(0);
+  });
+
+  it("rolls to interval 1 at the start of the next block", () => {
+    expect(intervalIndexForDate(addD(7), now, 7)).toBe(1);
+  });
+
+  it("puts a date two blocks out in interval 2", () => {
+    expect(intervalIndexForDate(addD(14), now, 7)).toBe(2);
+  });
+
+  it("returns a negative index for dates before today", () => {
+    expect(intervalIndexForDate(addD(-1), now, 7)).toBeLessThan(0);
+  });
+});
+
+describe("intervalColor", () => {
+  it("returns a light pastel hsl string", () => {
+    expect(intervalColor(0)).toMatch(/^hsl\(\d+, 70%, 90%\)$/);
+  });
+
+  it("gives adjacent intervals different hues", () => {
+    expect(intervalColor(0)).not.toBe(intervalColor(1));
   });
 });
 

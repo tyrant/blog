@@ -23,6 +23,20 @@ export function dayKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+// Which days-length forecast block a date falls in, counting from today
+// (interval 0 = [today, today+intervalDays)). Negative for dates before today.
+export function intervalIndexForDate(date: Date, now: Date, intervalDays: number): number {
+  const step = Math.floor(intervalDays);
+  if (!Number.isFinite(step) || step < 1) return -1;
+  const dayNumber = Math.round((midnight(date).getTime() - midnight(now).getTime()) / (24 * 60 * 60 * 1000));
+  return Math.floor(dayNumber / step);
+}
+
+// A light pastel per interval, cycling hues so adjacent blocks stay distinct.
+export function intervalColor(index: number): string {
+  return `hsl(${(index * 47) % 360}, 70%, 90%)`;
+}
+
 // Number of forecast occurrences falling on each local day.
 export function countByDay(events: ForecastEvent[]): Map<string, number> {
   const counts = new Map<string, number>();

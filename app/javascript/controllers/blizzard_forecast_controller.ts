@@ -1,7 +1,15 @@
 import { Controller } from "@hotwired/stimulus";
 import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import { forecastOccurrences, evenlySpreadOccurrences, countByDay, ForecastEvent, ForecastGroup } from "./blizzard_forecast";
+import {
+  forecastOccurrences,
+  evenlySpreadOccurrences,
+  countByDay,
+  intervalIndexForDate,
+  intervalColor,
+  ForecastEvent,
+  ForecastGroup,
+} from "./blizzard_forecast";
 
 export default class BlizzardForecastController extends Controller {
   static targets = ["days", "even", "calendar"];
@@ -28,10 +36,10 @@ export default class BlizzardForecastController extends Controller {
       validRange: this.validRange(),
       events: this.computeEvents(),
       eventDidMount: (info) => this.attachTooltip(info.el, info.event.extendedProps.content as string),
-      datesSet: () => this.updateDayCounts(),
+      datesSet: () => this.decorateDayCells(),
     });
     this.calendar.render();
-    this.updateDayCounts();
+    this.decorateDayCells();
   }
 
   disconnect(): void {
@@ -46,18 +54,25 @@ export default class BlizzardForecastController extends Controller {
       this.hideTooltip();
       this.calendar.removeAllEvents();
       this.calendar.addEventSource(this.computeEvents());
-      this.updateDayCounts();
+      this.decorateDayCells();
     }, 200);
   }
 
-  // FullCalendar doesn't expose per-day event counts to its day-cell hooks, so
-  // derive them from our own event list and inject a label beside each day number.
-  private updateDayCounts(): void {
+  // FullCalendar doesn't expose per-day data to its day-cell hooks, so in one pass
+  // we tint each cell by its forecast interval and inject the per-day entry count.
+  private decorateDayCells(): void {
     const counts = countByDay(this.currentEvents);
+    const now = new Date();
+    const interval = parseInt(this.daysTarget.value, 10);
+
     this.calendarTarget.querySelectorAll<HTMLElement>(".fc-daygrid-day").forEach((cell) => {
       const date = cell.getAttribute("data-date");
       const top = cell.querySelector<HTMLElement>(".fc-daygrid-day-top");
       if (!date || !top) return;
+
+      const [y, m, d] = date.split("-").map(Number);
+      const index = intervalIndexForDate(new Date(y, m - 1, d), now, interval);
+      cell.style.backgroundColor = index >= 0 ? intervalColor(index) : "";
 
       const count = counts.get(date) ?? 0;
       let label = top.querySelector<HTMLElement>(".blizzard-entry-count");
