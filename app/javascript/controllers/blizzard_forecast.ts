@@ -27,13 +27,25 @@ export function truncateTitle(title: string, max = 50): string {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Human-readable local timestamp, e.g. "4 Jul 2026, 7:05pm".
-export function formatTimestamp(iso: string): string {
+// Local time-of-day, e.g. "7:05pm".
+export function formatTime(iso: string): string {
   const d = new Date(iso);
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const meridiem = d.getHours() < 12 ? "am" : "pm";
   const hour12 = d.getHours() % 12 || 12;
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${hour12}:${minutes}${meridiem}`;
+  return `${hour12}:${minutes}${meridiem}`;
+}
+
+// Human-readable local timestamp, e.g. "4 Jul 2026, 7:05pm".
+export function formatTimestamp(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${formatTime(iso)}`;
+}
+
+// A YYYY-MM-DD day key rendered as "4 Jul 2026" (for the day popover header).
+export function formatDay(dateKey: string): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return `${day} ${MONTHS[month - 1]} ${year}`;
 }
 
 // Compact saved-schedule reference: categorization id, entry index, timestamp.

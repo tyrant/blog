@@ -10,6 +10,8 @@ import {
   groupsDigest,
   truncateTitle,
   formatTimestamp,
+  formatTime,
+  formatDay,
   toScheduleRefs,
   scheduleSignature,
   hydrateSchedule,
@@ -242,6 +244,18 @@ describe("formatTimestamp", () => {
   it("renders midnight as 12:00am", () => {
     const iso = new Date(2026, 0, 1, 0, 0).toISOString();
     expect(formatTimestamp(iso)).toBe("1 Jan 2026, 12:00am");
+  });
+});
+
+describe("formatTime", () => {
+  it("renders just the time-of-day", () => {
+    expect(formatTime(new Date(2026, 6, 4, 19, 5).toISOString())).toBe("7:05pm");
+  });
+});
+
+describe("formatDay", () => {
+  it("renders a YYYY-MM-DD key as a human date", () => {
+    expect(formatDay("2026-07-04")).toBe("4 Jul 2026");
   });
 });
 

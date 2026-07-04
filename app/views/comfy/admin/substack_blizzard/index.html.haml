@@ -21,6 +21,8 @@
     %span.text-muted.small.ml-3 Forecasts each group’s next reposts over the coming 90 days.
   :css
     #blizzard-forecast-calendar .fc-daygrid-day-events { max-height: 100px; overflow-y: auto; }
+    #blizzard-forecast-calendar .fc-daygrid-day-number { cursor: pointer; }
+    #blizzard-forecast-calendar .fc-daygrid-day-number:hover { text-decoration: underline; }
   #blizzard-forecast-calendar{ data: { "blizzard-forecast-target": "calendar" } }
 
 = form_with url: comfy_admin_substack_blizzard_path, method: :get do
