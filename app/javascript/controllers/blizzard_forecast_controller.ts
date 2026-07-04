@@ -39,6 +39,10 @@ export default class BlizzardForecastController extends Controller {
       initialView: "dayGridMonth",
       height: "auto",
       dayMaxEvents: false, // show every entry; each day's list is capped + scrolled via CSS
+      // Reposts are instantaneous: no implied 1h duration, so none spill past
+      // midnight and render as day-straddling blocks. Force the compact dot style.
+      defaultTimedEventDuration: "00:00:00",
+      eventDisplay: "list-item",
       headerToolbar: { left: "prev,next today", center: "title", right: "" },
       validRange: this.validRange(),
       events: this.computeEvents(),
