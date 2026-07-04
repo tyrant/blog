@@ -13,6 +13,10 @@ Rails.application.routes.draw do
 
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
+  # Job queue dashboard — before Comfy's /admin catch-all so it isn't intercepted.
+  # Auth is enforced by MissionControlBaseController (Comfy admin credentials).
+  mount MissionControl::Jobs::Engine, at: "/admin/jobs"
+
   # Copypasta'd from the Mailkick gem. Mailkick already inserts these routes at
   # the end of this file's routes ... but turns out if they're *after* Comfy's
   # routes, Comfy intercepts Mailkick's routes and b0rks.
