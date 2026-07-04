@@ -32,8 +32,9 @@ RSpec.describe Substack::Blizzard::ForecastData do
       it { expect(Time.zone.parse(group[:anchor])).to be_within(1.second).of posted_at }
       it { expect(group[:title]).to eq 'A Post' }
       it { expect(group[:url]).to eq 'https://sub.example/p/a' }
-      it { expect(group[:categorization_id]).to eq categorization.id }
-      it { expect(group[:entry_index]).to eq 0 }
+      # camelCase keys: this payload is consumed directly by the TS controller.
+      it { expect(group[:categorizationId]).to eq categorization.id }
+      it { expect(group[:entryIndex]).to eq 0 }
     end
 
     describe 'a never-posted group' do

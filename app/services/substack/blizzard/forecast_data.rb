@@ -16,8 +16,8 @@ module Substack
           post = categorization.categorized
           Array(categorization.data["blizzard"]).each_with_index.map do |entry, index|
             {
-              categorization_id: categorization.id,
-              entry_index:       index,
+              categorizationId: categorization.id,
+              entryIndex:       index,
               anchor:  latest_timestamp(entry)&.iso8601,
               title:   post&.title.presence || "(untitled post)",
               content: entry["text"].to_s,

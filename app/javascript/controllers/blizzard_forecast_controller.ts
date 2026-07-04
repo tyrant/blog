@@ -109,13 +109,16 @@ export default class BlizzardForecastController extends Controller {
 
   private loadInitialEvents(): void {
     const refs = Array.isArray(this.savedValue.events) ? this.savedValue.events : [];
-    if (refs.length > 0) {
+    const hydrated = refs.length > 0 ? hydrateSchedule(refs, this.groupsValue) : [];
+    if (hydrated.length > 0) {
       if (typeof this.savedValue.days === "number") this.daysTarget.value = String(this.savedValue.days);
       this.evenTarget.checked = !!this.savedValue.even;
       this.shuffleTarget.checked = !!this.savedValue.shuffle;
-      this.currentEvents = hydrateSchedule(refs, this.groupsValue);
-      this.savedSignature = scheduleSignature(toScheduleRefs(this.currentEvents));
+      this.currentEvents = hydrated;
+      this.savedSignature = scheduleSignature(toScheduleRefs(hydrated));
     } else {
+      // No saved schedule, or it no longer maps to any current group — show a
+      // live computation and mark it unsaved rather than rendering nothing.
       this.currentEvents = this.computeEvents();
       this.savedSignature = null;
     }
