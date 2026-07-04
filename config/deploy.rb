@@ -72,3 +72,14 @@ before "deploy:assets:precompile", :copy_comfy_vendor_js do
     end
   end
 end
+
+# Restart the SolidQueue worker so it runs the just-deployed code. Tolerant: the
+# deploy won't fail if the (user) systemd service isn't installed yet.
+namespace :solid_queue do
+  task :restart do
+    on roles(:app) do
+      execute "XDG_RUNTIME_DIR=/run/user/$(id -u) systemctl --user restart blizzard-jobs.service || true"
+    end
+  end
+end
+after "deploy:published", "solid_queue:restart"
