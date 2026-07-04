@@ -1,7 +1,7 @@
 .page-header
   %h2 Substack Blizzard — text groups due for a repost
 
-%section.mb-4{ data: { controller: "blizzard-forecast", "blizzard-forecast-groups-value": @forecast.to_json } }
+%section.mb-4{ data: { controller: "blizzard-forecast", "blizzard-forecast-groups-value": @forecast.to_json, "blizzard-forecast-saved-value": @saved_schedule.to_json, "blizzard-forecast-save-url-value": comfy_admin_substack_blizzard_schedule_path } }
   %h5 Repost forecast
   .form-inline.mb-2
     %label.mr-2{ for: "forecast-days" } Repost every (days):
@@ -12,7 +12,10 @@
     .form-check.form-check-inline.mr-3
       %input#forecast-shuffle.form-check-input{ type: "checkbox", data: { "blizzard-forecast-target": "shuffle", action: "change->blizzard-forecast#recompute" } }
       %label.form-check-label{ for: "forecast-shuffle" } Shuffle each day’s reposts
-    %span.text-muted.small Forecasts each group’s next reposts over the coming 90 days.
+  .form-inline.mb-2
+    %button.btn.btn-primary.btn-sm.mr-2{ type: "button", data: { action: "click->blizzard-forecast#save" } } Save Forecasts
+    %span.small{ data: { "blizzard-forecast-target": "status" } }
+    %span.text-muted.small.ml-3 Forecasts each group’s next reposts over the coming 90 days.
   :css
     #blizzard-forecast-calendar .fc-daygrid-day-events { max-height: 100px; overflow-y: auto; }
   #blizzard-forecast-calendar{ data: { "blizzard-forecast-target": "calendar" } }

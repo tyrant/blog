@@ -15,6 +15,20 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     # Every group, unfiltered — the forecast calendar spans all posts regardless
     # of the due-list filters, and recomputes occurrences entirely client-side.
     @forecast = Substack::Blizzard::ForecastData.execute
+    @saved_schedule = BlizzardScheduleConfig.instance.schedule
+  end
+
+  # Persists the current forecast arrangement so it renders identically on every
+  # reload and device. The payload is the compact { days, even, shuffle, events:
+  # [{c, i, t}] } object the calendar builds client-side.
+  def save_schedule
+    payload = JSON.parse(request.raw_post)
+    raise JSON::ParserError, "expected a JSON object" unless payload.is_a?(Hash)
+
+    BlizzardScheduleConfig.instance.update!(schedule: payload.slice("days", "even", "shuffle", "events"))
+    render json: { ok: true }
+  rescue JSON::ParserError, ActiveRecord::RecordInvalid => e
+    render json: { ok: false, error: e.message }, status: :unprocessable_content
   end
 
   # Due groups (with body_json) for the local repost task to post from.

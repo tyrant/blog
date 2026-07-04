@@ -1,11 +1,25 @@
 import { describe, it, expect } from "vitest";
-import { forecastOccurrences, evenlySpreadOccurrences, shuffleWithinDays, countByDay, dayKey, intervalIndexForDate, intervalColor, serializePrefs, parsePrefs, ForecastGroup, ForecastEvent } from "./blizzard_forecast";
+import {
+  forecastOccurrences,
+  evenlySpreadOccurrences,
+  shuffleWithinDays,
+  countByDay,
+  dayKey,
+  intervalIndexForDate,
+  intervalColor,
+  toScheduleRefs,
+  scheduleSignature,
+  hydrateSchedule,
+  ForecastGroup,
+  ForecastEvent,
+  ScheduleRef,
+} from "./blizzard_forecast";
 
 const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
 
 function group(anchor: string | null): ForecastGroup {
-  return { anchor, title: "T", content: "C", url: "u" };
+  return { categorizationId: 1, entryIndex: 0, anchor, title: "T", content: "C", url: "u" };
 }
 
 function starts(events: ReturnType<typeof forecastOccurrences>): Date[] {
@@ -65,6 +79,8 @@ describe("forecastOccurrences", () => {
 
 describe("evenlySpreadOccurrences", () => {
   const seven: ForecastGroup[] = Array.from({ length: 7 }, (_, i) => ({
+    categorizationId: i,
+    entryIndex: 0,
     anchor: null,
     title: `T${i}`,
     content: "C",
@@ -134,7 +150,7 @@ describe("intervalColor", () => {
 
 describe("shuffleWithinDays", () => {
   function ev(title: string, start: Date): ForecastEvent {
-    return { title, start: start.toISOString(), extendedProps: { content: title } };
+    return { categorizationId: 0, entryIndex: 0, title, start: start.toISOString(), extendedProps: { content: title } };
   }
   const d1 = new Date(2026, 3, 1, 9, 0, 0);
   const d1b = new Date(2026, 3, 1, 15, 0, 0);
@@ -147,8 +163,8 @@ describe("shuffleWithinDays", () => {
 
   it("keeps each day's set of time-slots unchanged", () => {
     const out = shuffleWithinDays([ev("A", d1), ev("B", d1b)]);
-    const starts = out.map((e) => e.start).sort();
-    expect(starts).toEqual([d1.toISOString(), d1b.toISOString()].sort());
+    const slots = out.map((e) => e.start).sort();
+    expect(slots).toEqual([d1.toISOString(), d1b.toISOString()].sort());
   });
 
   it("reassigns slots within a day (random reversal moves A off its slot)", () => {
@@ -162,28 +178,47 @@ describe("shuffleWithinDays", () => {
   });
 });
 
-describe("prefs serialization", () => {
-  it("round-trips a full prefs object", () => {
-    const prefs = { days: 14, even: false, shuffle: true };
-    expect(parsePrefs(serializePrefs(prefs))).toEqual(prefs);
+describe("schedule refs / signature / hydrate", () => {
+  const groups: ForecastGroup[] = [
+    { categorizationId: 10, entryIndex: 0, anchor: null, title: "P1a", content: "c1", url: "u1" },
+    { categorizationId: 10, entryIndex: 1, anchor: null, title: "P1b", content: "c2", url: null },
+  ];
+  const refs: ScheduleRef[] = [
+    { c: 10, i: 0, t: "2026-07-05T09:00:00.000Z" },
+    { c: 10, i: 1, t: "2026-07-06T09:00:00.000Z" },
+  ];
+
+  it("maps events to compact {c,i,t} refs", () => {
+    const hydrated = hydrateSchedule(refs, groups);
+    expect(toScheduleRefs(hydrated)).toEqual(refs);
   });
 
-  it("returns nothing for a missing cookie", () => {
-    expect(parsePrefs(null)).toEqual({});
+  it("signature is order-independent", () => {
+    expect(scheduleSignature(refs)).toBe(scheduleSignature([...refs].reverse()));
   });
 
-  it("returns nothing for a malformed cookie", () => {
-    expect(parsePrefs("{not json")).toEqual({});
+  it("signature differs when a timestamp changes", () => {
+    const changed: ScheduleRef[] = [{ ...refs[0], t: "2026-07-09T09:00:00.000Z" }, refs[1]];
+    expect(scheduleSignature(refs)).not.toBe(scheduleSignature(changed));
   });
 
-  it("keeps only well-typed fields", () => {
-    expect(parsePrefs(JSON.stringify({ days: "7", even: true, shuffle: 1 }))).toEqual({ even: true });
+  it("hydrates refs into events using the groups lookup", () => {
+    const hydrated = hydrateSchedule(refs, groups);
+    expect(hydrated).toEqual([
+      { categorizationId: 10, entryIndex: 0, title: "P1a", start: "2026-07-05T09:00:00.000Z", url: "u1", extendedProps: { content: "c1" } },
+      { categorizationId: 10, entryIndex: 1, title: "P1b", start: "2026-07-06T09:00:00.000Z", url: undefined, extendedProps: { content: "c2" } },
+    ]);
+  });
+
+  it("drops refs whose group no longer exists", () => {
+    const orphan: ScheduleRef[] = [{ c: 999, i: 0, t: "2026-07-05T09:00:00.000Z" }];
+    expect(hydrateSchedule(orphan, groups)).toEqual([]);
   });
 });
 
 describe("countByDay", () => {
   function event(start: Date): ForecastEvent {
-    return { title: "T", start: start.toISOString(), extendedProps: { content: "C" } };
+    return { categorizationId: 0, entryIndex: 0, title: "T", start: start.toISOString(), extendedProps: { content: "C" } };
   }
 
   it("tallies occurrences that share a local day", () => {

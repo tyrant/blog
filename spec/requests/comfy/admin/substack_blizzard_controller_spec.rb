@@ -36,6 +36,14 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'blizzard-forecast-groups-value'
     end
 
+    it 'seeds the saved-schedule value for client-side render on load' do
+      expect(response.body).to include 'blizzard-forecast-saved-value'
+    end
+
+    it 'provides the save-forecasts endpoint url' do
+      expect(response.body).to include 'blizzard-forecast-save-url-value'
+    end
+
     context 'the forecast ignores the due-list filters' do
       let!(:blog_post) { create :post, site: site, layout: layout, title: 'Findable Post' }
       before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: http_auth_headers }
@@ -239,6 +247,39 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
              headers: http_auth_headers
       end
       it { expect(flash[:danger]).to be_present }
+    end
+  end
+
+  describe 'POST save_schedule' do
+    let(:payload) do
+      { days: 7, even: true, shuffle: false,
+        events: [{ c: categorization.id, i: 0, t: '2026-07-05T09:00:00.000Z' }] }
+    end
+
+    before do
+      post comfy_admin_substack_blizzard_schedule_path,
+           params: payload.to_json,
+           headers: http_auth_headers.merge('CONTENT_TYPE' => 'application/json', 'ACCEPT' => 'application/json')
+    end
+
+    it { expect(response).to have_http_status :success }
+    it { expect(response.parsed_body['ok']).to be true }
+
+    it 'persists the events' do
+      expect(BlizzardScheduleConfig.instance.schedule['events'].size).to eq 1
+    end
+
+    it 'persists the interval' do
+      expect(BlizzardScheduleConfig.instance.schedule['days']).to eq 7
+    end
+
+    it 'persists the even-spread flag' do
+      expect(BlizzardScheduleConfig.instance.schedule['even']).to be true
+    end
+
+    context 'a non-object json body' do
+      let(:payload) { 'just a string' }
+      it { expect(response).to have_http_status :unprocessable_content }
     end
   end
 end

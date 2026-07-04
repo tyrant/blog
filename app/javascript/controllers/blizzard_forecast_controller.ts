@@ -8,32 +8,43 @@ import {
   countByDay,
   intervalIndexForDate,
   intervalColor,
-  serializePrefs,
-  parsePrefs,
+  toScheduleRefs,
+  scheduleSignature,
+  hydrateSchedule,
   ForecastEvent,
   ForecastGroup,
+  ScheduleRef,
 } from "./blizzard_forecast";
 
+interface SavedSchedule {
+  days?: number;
+  even?: boolean;
+  shuffle?: boolean;
+  events?: ScheduleRef[];
+}
+
 export default class BlizzardForecastController extends Controller {
-  static targets = ["days", "even", "shuffle", "calendar"];
-  static values = { groups: Array };
+  static targets = ["days", "even", "shuffle", "status", "calendar"];
+  static values = { groups: Array, saved: Object, saveUrl: String };
 
   declare readonly daysTarget: HTMLInputElement;
   declare readonly evenTarget: HTMLInputElement;
   declare readonly shuffleTarget: HTMLInputElement;
+  declare readonly statusTarget: HTMLElement;
   declare readonly calendarTarget: HTMLElement;
   declare groupsValue: ForecastGroup[];
+  declare savedValue: SavedSchedule;
+  declare saveUrlValue: string;
 
   private static readonly HORIZON_DAYS = 90;
-  private static readonly PREFS_COOKIE = "blizzard_forecast";
-  private static readonly PREFS_MAX_AGE = 60 * 60 * 24 * 28; // four weeks
   private calendar!: Calendar;
   private debounceTimer?: number;
   private tooltip?: HTMLElement;
   private currentEvents: ForecastEvent[] = [];
+  private savedSignature: string | null = null;
 
   connect(): void {
-    this.restorePrefs();
+    this.loadInitialEvents();
     this.calendar = new Calendar(this.calendarTarget, {
       plugins: [dayGridPlugin],
       initialView: "dayGridMonth",
@@ -45,12 +56,13 @@ export default class BlizzardForecastController extends Controller {
       eventDisplay: "list-item",
       headerToolbar: { left: "prev,next today", center: "title", right: "" },
       validRange: this.validRange(),
-      events: this.computeEvents(),
+      events: this.currentEvents,
       eventDidMount: (info) => this.attachTooltip(info.el, info.event.extendedProps.content as string),
       datesSet: () => this.decorateDayCells(),
     });
     this.calendar.render();
     this.decorateDayCells();
+    this.updateStatus();
   }
 
   disconnect(): void {
@@ -59,15 +71,62 @@ export default class BlizzardForecastController extends Controller {
     if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
   }
 
+  // Client-side recompute on any control change (days/even/shuffle). No network.
   recompute(): void {
-    this.persistPrefs();
     if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
     this.debounceTimer = window.setTimeout(() => {
       this.hideTooltip();
       this.calendar.removeAllEvents();
       this.calendar.addEventSource(this.computeEvents());
       this.decorateDayCells();
+      this.updateStatus();
     }, 200);
+  }
+
+  // Persists the current arrangement so every reload/device renders it identically.
+  save(): void {
+    const refs = toScheduleRefs(this.currentEvents);
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
+    fetch(this.saveUrlValue, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-Token": token },
+      body: JSON.stringify({
+        days: parseInt(this.daysTarget.value, 10),
+        even: this.evenTarget.checked,
+        shuffle: this.shuffleTarget.checked,
+        events: refs,
+      }),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.ok) {
+          this.savedSignature = scheduleSignature(refs);
+          this.updateStatus();
+        }
+      })
+      .catch(() => undefined);
+  }
+
+  private loadInitialEvents(): void {
+    const refs = Array.isArray(this.savedValue.events) ? this.savedValue.events : [];
+    if (refs.length > 0) {
+      if (typeof this.savedValue.days === "number") this.daysTarget.value = String(this.savedValue.days);
+      this.evenTarget.checked = !!this.savedValue.even;
+      this.shuffleTarget.checked = !!this.savedValue.shuffle;
+      this.currentEvents = hydrateSchedule(refs, this.groupsValue);
+      this.savedSignature = scheduleSignature(toScheduleRefs(this.currentEvents));
+    } else {
+      this.currentEvents = this.computeEvents();
+      this.savedSignature = null;
+    }
+  }
+
+  private updateStatus(): void {
+    const currentSignature = scheduleSignature(toScheduleRefs(this.currentEvents));
+    const saved = this.savedSignature !== null && currentSignature === this.savedSignature;
+    this.statusTarget.textContent = saved ? "Forecasts saved" : "Unsaved forecasts";
+    this.statusTarget.style.color = saved ? "#6c757d" : "#b02a37";
+    this.statusTarget.style.fontWeight = saved ? "normal" : "600";
   }
 
   // FullCalendar doesn't expose per-day data to its day-cell hooks, so in one pass
@@ -154,27 +213,6 @@ export default class BlizzardForecastController extends Controller {
   private hideTooltip(): void {
     this.tooltip?.remove();
     this.tooltip = undefined;
-  }
-
-  private restorePrefs(): void {
-    const prefs = parsePrefs(this.readCookie(BlizzardForecastController.PREFS_COOKIE));
-    if (prefs.days !== undefined) this.daysTarget.value = String(prefs.days);
-    if (prefs.even !== undefined) this.evenTarget.checked = prefs.even;
-    if (prefs.shuffle !== undefined) this.shuffleTarget.checked = prefs.shuffle;
-  }
-
-  private persistPrefs(): void {
-    const raw = serializePrefs({
-      days: parseInt(this.daysTarget.value, 10),
-      even: this.evenTarget.checked,
-      shuffle: this.shuffleTarget.checked,
-    });
-    document.cookie = `${BlizzardForecastController.PREFS_COOKIE}=${encodeURIComponent(raw)}; max-age=${BlizzardForecastController.PREFS_MAX_AGE}; path=/`;
-  }
-
-  private readCookie(name: string): string | null {
-    const match = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`));
-    return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
   }
 
   private computeEvents(): ForecastEvent[] {

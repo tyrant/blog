@@ -70,6 +70,7 @@ Rails.application.routes.draw do
       post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
       post "admin/substack-blizzard/reseed",      to: "substack_blizzard#reseed",      as: :admin_substack_blizzard_reseed
+      post "admin/substack-blizzard/schedule",    to: "substack_blizzard#save_schedule", as: :admin_substack_blizzard_schedule
     end
   end
 

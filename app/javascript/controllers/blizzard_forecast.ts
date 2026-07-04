@@ -2,6 +2,8 @@
 // FullCalendar/DOM imports so it can be unit-tested under vitest in node.
 
 export interface ForecastGroup {
+  categorizationId: number;
+  entryIndex: number;
   anchor: string | null; // ISO8601 of the most recent note, or null if never posted
   title: string;
   content: string; // the intended Note text, shown in the hover tooltip
@@ -9,36 +11,49 @@ export interface ForecastGroup {
 }
 
 export interface ForecastEvent {
+  categorizationId: number;
+  entryIndex: number;
   title: string;
   start: string; // ISO8601
   url?: string;
   extendedProps: { content: string };
 }
 
-export interface ForecastPrefs {
-  days: number;
-  even: boolean;
-  shuffle: boolean;
+// Compact saved-schedule reference: categorization id, entry index, timestamp.
+export interface ScheduleRef {
+  c: number;
+  i: number;
+  t: string;
 }
 
-export function serializePrefs(prefs: ForecastPrefs): string {
-  return JSON.stringify(prefs);
+const groupKey = (c: number, i: number): string => `${c}:${i}`;
+
+export function toScheduleRefs(events: ForecastEvent[]): ScheduleRef[] {
+  return events.map((e) => ({ c: e.categorizationId, i: e.entryIndex, t: e.start }));
 }
 
-// Tolerant parse of a persisted-prefs cookie: returns only the fields that are
-// present and well-typed, so a missing/malformed cookie leaves defaults intact.
-export function parsePrefs(raw: string | null): Partial<ForecastPrefs> {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const prefs: Partial<ForecastPrefs> = {};
-    if (typeof parsed.days === "number" && Number.isFinite(parsed.days)) prefs.days = parsed.days;
-    if (typeof parsed.even === "boolean") prefs.even = parsed.even;
-    if (typeof parsed.shuffle === "boolean") prefs.shuffle = parsed.shuffle;
-    return prefs;
-  } catch {
-    return {};
-  }
+// Order-independent fingerprint of a schedule: two arrangements are the same iff
+// they hold the same set of (group, timestamp) pairs.
+export function scheduleSignature(refs: ScheduleRef[]): string {
+  return refs.map((r) => `${r.c}:${r.i}:${r.t}`).sort().join("|");
+}
+
+// Rebuilds events from saved refs, pulling title/content/url from the current
+// groups. Refs whose group no longer exists are dropped.
+export function hydrateSchedule(refs: ScheduleRef[], groups: ForecastGroup[]): ForecastEvent[] {
+  const lookup = new Map(groups.map((g) => [groupKey(g.categorizationId, g.entryIndex), g]));
+  return refs.flatMap((ref) => {
+    const group = lookup.get(groupKey(ref.c, ref.i));
+    if (!group) return [];
+    return [{
+      categorizationId: ref.c,
+      entryIndex: ref.i,
+      title: group.title,
+      start: ref.t,
+      url: group.url ?? undefined,
+      extendedProps: { content: group.content },
+    }];
+  });
 }
 
 // Local YYYY-MM-DD, matching FullCalendar's per-day `data-date` attribute.
@@ -143,6 +158,8 @@ export function forecastOccurrences(
 
     for (let t = first; t.getTime() <= horizonEnd.getTime(); t = addDays(t, step)) {
       events.push({
+        categorizationId: group.categorizationId,
+        entryIndex: group.entryIndex,
         title: group.title,
         start: t.toISOString(),
         url: group.url ?? undefined,
@@ -175,6 +192,8 @@ export function evenlySpreadOccurrences(
     const first = now.getTime() + Math.round((i / groups.length) * stepMs);
     for (let t = first; t <= horizonEnd; t += stepMs) {
       events.push({
+        categorizationId: group.categorizationId,
+        entryIndex: group.entryIndex,
         title: group.title,
         start: new Date(t).toISOString(),
         url: group.url ?? undefined,
