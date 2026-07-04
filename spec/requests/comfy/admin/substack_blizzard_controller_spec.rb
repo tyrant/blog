@@ -114,14 +114,56 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
   end
 
-  describe 'GET due.json (local repost task API)' do
-    before { get comfy_admin_substack_blizzard_due_path(format: :json, days: 14), headers: http_auth_headers }
+  describe 'scheduled posting API (local task)' do
+    let(:due_t) { 1.hour.ago.utc.iso8601 }
+    let(:new_url) { 'https://substack.com/profile/4619740-mikey-clarke/note/c-333' }
 
-    it { expect(response).to have_http_status :success }
-    it { expect(JSON.parse(response.body).first['body_json']).to eq({ 'type' => 'doc' }) }
-    it { expect(JSON.parse(response.body).first['template_url']).to include 'c-111' }
-    it { expect(JSON.parse(response.body).first['post_url']).to eq categorization.url }
-    it { expect(JSON.parse(response.body).first['categorization_id']).to eq categorization.id }
+    before do
+      BlizzardScheduleConfig.instance.update!(schedule: {
+        'days' => 7, 'even' => true, 'shuffle' => true,
+        'events' => [
+          { 'c' => categorization.id, 'i' => 0, 't' => due_t },
+          { 'c' => categorization.id, 'i' => 0, 't' => 10.days.from_now.utc.iso8601 }
+        ]
+      })
+    end
+
+    describe 'POST scheduled/claim.json' do
+      before { post comfy_admin_substack_blizzard_claim_scheduled_path(format: :json), params: { limit: 5 }, headers: http_auth_headers }
+
+      it { expect(response).to have_http_status :success }
+      it { expect(response.parsed_body.size).to eq 1 }
+      it { expect(response.parsed_body.first['body_json']).to eq({ 'type' => 'doc' }) }
+      it { expect(response.parsed_body.first['post_url']).to eq categorization.url }
+      it { expect(BlizzardScheduleConfig.instance.schedule['events'].first['claimed_at']).to be_present }
+      it { expect(BlizzardScheduleConfig.instance.schedule['events'].last['claimed_at']).to be_nil }
+    end
+
+    describe 'GET scheduled-due.json (dry run, no claiming)' do
+      before { get comfy_admin_substack_blizzard_scheduled_due_path(format: :json), headers: http_auth_headers }
+
+      it { expect(response.parsed_body.size).to eq 1 }
+      it { expect(BlizzardScheduleConfig.instance.schedule['events'].first['claimed_at']).to be_nil }
+    end
+
+    describe 'POST scheduled/confirm.json' do
+      before do
+        post comfy_admin_substack_blizzard_confirm_scheduled_path(format: :json),
+             params: { categorization_id: categorization.id, index: 0, t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
+             headers: http_auth_headers
+      end
+
+      it { expect(response.parsed_body['ok']).to be true }
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].map { |n| n['url'] }).to include new_url }
+      it { expect(BlizzardScheduleConfig.instance.schedule['events'].first['posted_at']).to be_present }
+
+      it 'is idempotent — a repeat confirm does not double-append' do
+        post comfy_admin_substack_blizzard_confirm_scheduled_path(format: :json),
+             params: { categorization_id: categorization.id, index: 0, t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
+             headers: http_auth_headers
+        expect(categorization.reload.data['blizzard'][0]['notes'].count { |n| n['url'] == new_url }).to eq 1
+      end
+    end
   end
 
   describe 'POST add_note.json (local repost task API)' do

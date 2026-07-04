@@ -78,32 +78,33 @@ namespace :substack do
     end
 
     # Run these LOCALLY (residential IP) — server-side note POSTs are Cloudflare-blocked.
-    #   DAYS=30 LIMIT=5 rails substack:blizzard:repost_dry_run
-    #   DAYS=30 LIMIT=5 rails substack:blizzard:repost
+    # Posts the saved forecast schedule: claims due reposts from prod, posts them,
+    # confirms back. Intended to run on a local cron (every ~15 min, flock-guarded).
+    #   LIMIT=5 rails substack:blizzard:post_scheduled_dry_run
+    #   LIMIT=5 rails substack:blizzard:post_scheduled
     # Env: BLIZZARD_PROD_URL (default https://mikeyclarke.co.nz),
     #      BLIZZARD_ADMIN_USER / BLIZZARD_ADMIN_PASS (default: app admin creds).
-    desc "Report which due groups would be reposted to Substack (no Notes created)"
-    task repost_dry_run: :environment do
-      BlizzardRemoteRepost.run(commit: false)
+    desc "Report which scheduled reposts are due (no Notes created)"
+    task post_scheduled_dry_run: :environment do
+      BlizzardScheduledPost.run(commit: false)
     end
 
-    desc "Create new Substack Notes for due groups (run on your Mac) and record them on prod"
-    task repost: :environment do
-      BlizzardRemoteRepost.run(commit: true)
+    desc "Post due scheduled reposts to Substack (run on your Mac) and record them on prod"
+    task post_scheduled: :environment do
+      BlizzardScheduledPost.run(commit: true)
     end
   end
 end
 
-module BlizzardRemoteRepost
+module BlizzardScheduledPost
   module_function
 
   def run(commit:)
-    result = Substack::Blizzard::RemoteReposter.execute(
+    result = Substack::Blizzard::ScheduledReposter.execute(
       base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
       username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
       password: ENV["BLIZZARD_ADMIN_PASS"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.password,
-      days:     ENV.fetch("DAYS", 30),
-      limit:    ENV["LIMIT"],
+      limit:    ENV.fetch("LIMIT", 5),
       commit:   commit
     )
 

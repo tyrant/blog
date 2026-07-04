@@ -3,18 +3,17 @@
 require "net/http"
 require "json"
 
-# Runs LOCALLY (residential IP, to clear Cloudflare) but operates on a remote
-# (prod) instance: fetches due text-groups from prod's JSON API, creates a fresh
-# Substack Note for each via Substack::Client, and posts the resulting
-# {url, timestamp} back to prod. Server-side note creation is blocked by
-# Cloudflare from the datacenter IP, hence this Mac-driven path.
+# Runs LOCALLY (residential IP, to clear Cloudflare) driving a remote (prod)
+# instance: claims due scheduled reposts from prod, creates a fresh Substack Note
+# for each via Substack::Client, and confirms each back to prod. Two-phase — claim
+# then confirm — so a crashed run's claims are reclaimed later rather than lost.
+# Server-side note creation is Cloudflare-blocked, hence this Mac-driven path.
 module Substack
   module Blizzard
-    class RemoteReposter
+    class ScheduledReposter
       include ServiceInterface
 
-      arguments :base_url, :username, :password,
-                days: 30, limit: nil, commit: true, substack: nil
+      arguments :base_url, :username, :password, limit: 5, commit: true, substack: nil
 
       PACING = 5 # seconds between posts, to stay gentle on Substack
 
@@ -22,23 +21,16 @@ module Substack
 
       def execute
         @substack ||= Substack::Client.new
+        posted  = []
+        failed  = []
         skipped = []
 
-        # Drop groups with no rich content (would publish an empty Note) before
-        # applying the limit, so LIMIT caps actual posts, not skipped rows.
-        postable = due_groups.reject do |group|
-          next false if group["body_json"].present?
-          skipped << { "text" => group["text"], "reason" => "no body_json" }
-          true
-        end
-        # One post per run: keep each post's most-stale entry (groups arrive
-        # most-stale-first) so a single run spreads across distinct posts.
-        postable = postable.uniq { |group| group["categorization_id"] }
-        postable = postable.first(@limit.to_i) if @limit
+        claimed_groups.each do |group|
+          if group["body_json"].blank?
+            skipped << { "text" => group["text"], "reason" => "no body_json" }
+            next
+          end
 
-        posted = []
-        failed = []
-        postable.each do |group|
           unless @commit
             posted << { "text" => group["text"], "dry_run" => true }
             next
@@ -57,8 +49,12 @@ module Substack
 
       private
 
-      def due_groups
-        JSON.parse(get("/admin/substack-blizzard/due.json?days=#{@days.to_i}"))
+      def claimed_groups
+        if @commit
+          JSON.parse(post("/admin/substack-blizzard/scheduled/claim.json", limit: @limit.to_i))
+        else
+          JSON.parse(get("/admin/substack-blizzard/scheduled-due.json?limit=#{@limit.to_i}"))
+        end
       end
 
       def repost(group)
@@ -73,14 +69,15 @@ module Substack
           "url"       => NoteParser.build_note_url(group["template_url"], created["id"]),
           "timestamp" => NoteParser.timestamp(created) || Time.current.utc.iso8601
         }
-        post_back(group, record)
+        confirm(group, record)
         record.merge("text" => group["text"])
       end
 
-      def post_back(group, record)
-        post("/admin/substack-blizzard/add-note.json",
+      def confirm(group, record)
+        post("/admin/substack-blizzard/scheduled/confirm.json",
              categorization_id: group["categorization_id"],
              index:             group["index"],
+             t:                 group["t"],
              url:               record["url"],
              timestamp:         record["timestamp"])
       end

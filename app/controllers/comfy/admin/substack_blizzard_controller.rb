@@ -5,7 +5,8 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   DEFAULT_DAYS = 14
 
   # JSON API consumed by the local repost task (basic-auth is the auth).
-  skip_before_action :verify_authenticity_token, only: :add_note, raise: false,
+  skip_before_action :verify_authenticity_token,
+                     only: %i[add_note claim_scheduled confirm_scheduled], raise: false,
                      if: -> { request.format.json? }
 
   def index
@@ -31,19 +32,29 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     render json: { ok: false, error: e.message }, status: :unprocessable_content
   end
 
-  # Due groups (with body_json) for the local repost task to post from.
-  def due
-    groups = Substack::Blizzard::DueFinder.execute(max_age_days: clamp_days(params[:days])).map do |d|
-      {
-        categorization_id: d.categorization.id,
-        index:             d.index,
-        text:              d.entry["text"],
-        body_json:         d.entry["body_json"],
-        post_url:          d.categorization.url,
-        template_url:      Array(d.entry["notes"]).map { |n| n["url"] }.compact.first
-      }
-    end
-    render json: groups
+  # Phase one: claim the scheduled reposts due now (marks them claimed, hydrated
+  # for the local poster). Consumed by the local `post_scheduled` task.
+  def claim_scheduled
+    render json: Substack::Blizzard::ScheduleClaimer.execute(limit: claim_limit)
+  end
+
+  # Read-only preview of what's due — for the local dry-run (no claiming).
+  def scheduled_due
+    render json: Substack::Blizzard::ScheduleClaimer.execute(limit: claim_limit, dry_run: true)
+  end
+
+  # Phase two: record a completed scheduled post (append note + mark posted).
+  def confirm_scheduled
+    Substack::Blizzard::ScheduleConfirmer.execute(
+      categorization_id: params[:categorization_id],
+      entry_index:       params[:index],
+      t:                 params[:t],
+      url:               params[:url],
+      timestamp:         params[:timestamp]
+    )
+    render json: { ok: true }
+  rescue => e
+    render json: { ok: false, error: e.message }, status: :unprocessable_content
   end
 
   def create_note
@@ -104,6 +115,10 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   def clamp_days(value)
     (value.presence || DEFAULT_DAYS).to_i.clamp(0, 60)
+  end
+
+  def claim_limit
+    (params[:limit].presence || 5).to_i.clamp(1, 100)
   end
 
 end
