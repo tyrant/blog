@@ -19,6 +19,10 @@ import {
   ScheduleRef,
 } from "./blizzard_forecast";
 
+const EDIT_ICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="15" height="15" style="display:block">' +
+  '<path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/></svg>';
+
 interface SavedSchedule {
   days?: number;
   even?: boolean;
@@ -210,9 +214,14 @@ export default class BlizzardForecastController extends Controller {
     this.clearHide();
     const tip = this.tooltipElement();
 
+    const editUrl = (event.extendedProps.editUrl as string) || "";
     const link = tip.querySelector<HTMLAnchorElement>(".bz-tip-title")!;
     link.textContent = truncateTitle(event.title);
-    link.href = (event.extendedProps.editUrl as string) || "#";
+    link.href = editUrl || "#";
+
+    const edit = tip.querySelector<HTMLAnchorElement>(".bz-tip-edit")!;
+    edit.href = editUrl || "#";
+    edit.style.display = editUrl ? "inline-flex" : "none";
 
     tip.querySelector<HTMLElement>(".bz-tip-note")!.textContent = (event.extendedProps.content as string) || "";
     tip.querySelector<HTMLElement>(".bz-tip-time")!.textContent = event.start ? formatTimestamp(event.start.toISOString()) : "";
@@ -239,17 +248,37 @@ export default class BlizzardForecastController extends Controller {
       display: "none",
     } as Partial<CSSStyleDeclaration>);
 
+    const head = document.createElement("div");
+    Object.assign(head.style, { display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem" } as Partial<CSSStyleDeclaration>);
+
     const link = document.createElement("a");
     link.className = "bz-tip-title";
     link.target = "_blank";
     link.rel = "noopener";
     Object.assign(link.style, {
-      display: "block",
-      marginBottom: "0.35rem",
+      flex: "1 1 auto",
       color: "#8ec5ff",
       fontWeight: "600",
       textDecoration: "underline",
     } as Partial<CSSStyleDeclaration>);
+
+    const edit = document.createElement("a");
+    edit.className = "bz-tip-edit";
+    edit.target = "_blank";
+    edit.rel = "noopener";
+    edit.title = "Edit post";
+    edit.setAttribute("aria-label", "Edit post");
+    edit.innerHTML = EDIT_ICON_SVG;
+    Object.assign(edit.style, {
+      flex: "0 0 auto",
+      color: "#8ec5ff",
+      lineHeight: "0",
+      padding: "2px",
+      border: "1px solid #8ec5ff",
+      borderRadius: "4px",
+    } as Partial<CSSStyleDeclaration>);
+
+    head.append(link, edit);
 
     const note = document.createElement("div");
     note.className = "bz-tip-note";
@@ -259,7 +288,7 @@ export default class BlizzardForecastController extends Controller {
     time.className = "bz-tip-time";
     Object.assign(time.style, { marginTop: "0.4rem", fontSize: "0.72rem", opacity: "0.7" } as Partial<CSSStyleDeclaration>);
 
-    tip.append(link, note, time);
+    tip.append(head, note, time);
     tip.addEventListener("mouseenter", () => this.clearHide());
     tip.addEventListener("mouseleave", () => this.scheduleHide());
     document.body.appendChild(tip);
