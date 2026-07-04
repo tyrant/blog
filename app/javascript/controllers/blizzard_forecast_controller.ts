@@ -459,14 +459,15 @@ export default class BlizzardForecastController extends Controller {
   private positionTooltip(anchor: HTMLElement, tip: HTMLElement): void {
     const rect = anchor.getBoundingClientRect();
     const tipRect = tip.getBoundingClientRect();
-    // Overlap the event by 1px so there is no dead-zone — not even a sub-pixel
-    // rounding gap — for the pointer to cross when moving into the tooltip.
-    let top = rect.bottom - 1;
-    if (top + tipRect.height > window.innerHeight) top = rect.top - tipRect.height + 1;
-    let left = rect.left;
-    if (left + tipRect.width > window.innerWidth) left = window.innerWidth - tipRect.width - 8;
-    tip.style.top = `${Math.max(4, top)}px`;
+    // Prefer to the right of the item, flipping to the left if it would overflow.
+    // Overlap the item by 1px so there is no dead-zone (not even a sub-pixel gap)
+    // for the pointer to cross when moving into the tooltip.
+    let left = rect.right - 1;
+    if (left + tipRect.width > window.innerWidth) left = rect.left - tipRect.width + 1;
+    let top = rect.top;
+    if (top + tipRect.height > window.innerHeight) top = window.innerHeight - tipRect.height - 4;
     tip.style.left = `${Math.max(4, left)}px`;
+    tip.style.top = `${Math.max(4, top)}px`;
   }
 
   private scheduleHide(): void {
