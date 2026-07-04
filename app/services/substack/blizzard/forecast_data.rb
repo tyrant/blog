@@ -8,6 +8,7 @@ module Substack
   module Blizzard
     class ForecastData
       include ServiceInterface
+      include Rails.application.routes.url_helpers
 
       arguments
 
@@ -21,7 +22,8 @@ module Substack
               anchor:  latest_timestamp(entry)&.iso8601,
               title:   post&.title.presence || "(untitled post)",
               content: entry["text"].to_s,
-              url:     categorization.url
+              url:     categorization.url,
+              editUrl: post && edit_comfy_admin_blog_post_path(site_id: post.site_id, id: post.id)
             }
           end
         end

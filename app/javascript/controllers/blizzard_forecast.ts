@@ -8,6 +8,7 @@ export interface ForecastGroup {
   title: string;
   content: string; // the intended Note text, shown in the hover tooltip
   url: string | null;
+  editUrl: string | null; // ComfyAdmin Post#edit, linked from the tooltip title
 }
 
 export interface ForecastEvent {
@@ -16,7 +17,23 @@ export interface ForecastEvent {
   title: string;
   start: string; // ISO8601
   url?: string;
-  extendedProps: { content: string };
+  extendedProps: { content: string; editUrl: string | null };
+}
+
+// Post title for the tooltip link — capped at `max` chars.
+export function truncateTitle(title: string, max = 50): string {
+  return title.length > max ? `${title.slice(0, max - 1).trimEnd()}…` : title;
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Human-readable local timestamp, e.g. "4 Jul 2026, 7:05pm".
+export function formatTimestamp(iso: string): string {
+  const d = new Date(iso);
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const meridiem = d.getHours() < 12 ? "am" : "pm";
+  const hour12 = d.getHours() % 12 || 12;
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${hour12}:${minutes}${meridiem}`;
 }
 
 // Compact saved-schedule reference: categorization id, entry index, timestamp.
@@ -51,7 +68,7 @@ export function hydrateSchedule(refs: ScheduleRef[], groups: ForecastGroup[]): F
       title: group.title,
       start: ref.t,
       url: group.url ?? undefined,
-      extendedProps: { content: group.content },
+      extendedProps: { content: group.content, editUrl: group.editUrl },
     }];
   });
 }
@@ -178,7 +195,7 @@ export function forecastOccurrences(
         title: group.title,
         start: t.toISOString(),
         url: group.url ?? undefined,
-        extendedProps: { content: group.content },
+        extendedProps: { content: group.content, editUrl: group.editUrl },
       });
     }
   }
@@ -212,7 +229,7 @@ export function evenlySpreadOccurrences(
         title: group.title,
         start: new Date(t).toISOString(),
         url: group.url ?? undefined,
-        extendedProps: { content: group.content },
+        extendedProps: { content: group.content, editUrl: group.editUrl },
       });
     }
   });

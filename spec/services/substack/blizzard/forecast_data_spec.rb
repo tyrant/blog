@@ -35,6 +35,7 @@ RSpec.describe Substack::Blizzard::ForecastData do
       # camelCase keys: this payload is consumed directly by the TS controller.
       it { expect(group[:categorizationId]).to eq categorization.id }
       it { expect(group[:entryIndex]).to eq 0 }
+      it { expect(group[:editUrl]).to eq "/admin/sites/#{site.id}/blog-posts/#{post.id}/edit" }
     end
 
     describe 'a never-posted group' do

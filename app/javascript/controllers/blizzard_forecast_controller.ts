@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
-import { Calendar } from "@fullcalendar/core";
+import { Calendar, EventApi } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import {
   forecastOccurrences,
@@ -9,6 +9,8 @@ import {
   intervalIndexForDate,
   intervalColor,
   groupsDigest,
+  truncateTitle,
+  formatTimestamp,
   toScheduleRefs,
   scheduleSignature,
   hydrateSchedule,
@@ -42,6 +44,7 @@ export default class BlizzardForecastController extends Controller {
   private calendar!: Calendar;
   private debounceTimer?: number;
   private tooltip?: HTMLElement;
+  private hideTimer?: number;
   private currentEvents: ForecastEvent[] = [];
   private savedSignature: string | null = null;
   private currentDigest = "";
@@ -61,7 +64,7 @@ export default class BlizzardForecastController extends Controller {
       headerToolbar: { left: "prev,next today", center: "title", right: "" },
       validRange: this.validRange(),
       events: this.currentEvents,
-      eventDidMount: (info) => this.attachTooltip(info.el, info.event.extendedProps.content as string),
+      eventDidMount: (info) => this.attachTooltip(info.el, info.event),
       datesSet: () => this.decorateDayCells(),
     });
     this.calendar.render();
@@ -71,7 +74,9 @@ export default class BlizzardForecastController extends Controller {
 
   disconnect(): void {
     this.calendar?.destroy();
-    this.hideTooltip();
+    this.clearHide();
+    this.tooltip?.remove();
+    this.tooltip = undefined;
     if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
   }
 
@@ -194,51 +199,100 @@ export default class BlizzardForecastController extends Controller {
     });
   }
 
-  private attachTooltip(el: HTMLElement, content: string): void {
-    if (!content) return;
-    el.addEventListener("mouseenter", (e) => this.showTooltip(content, e));
-    el.addEventListener("mousemove", (e) => this.moveTooltip(e));
-    el.addEventListener("mouseleave", () => this.hideTooltip());
+  // A persistent, hoverable tooltip locked to the repost element: post-title link
+  // (opens Post#edit in a new tab), the Note text, and the human-readable time.
+  private attachTooltip(el: HTMLElement, event: EventApi): void {
+    el.addEventListener("mouseenter", () => this.showTooltip(el, event));
+    el.addEventListener("mouseleave", () => this.scheduleHide());
   }
 
-  private showTooltip(content: string, event: MouseEvent): void {
-    this.hideTooltip();
+  private showTooltip(anchor: HTMLElement, event: EventApi): void {
+    this.clearHide();
+    const tip = this.tooltipElement();
+
+    const link = tip.querySelector<HTMLAnchorElement>(".bz-tip-title")!;
+    link.textContent = truncateTitle(event.title);
+    link.href = (event.extendedProps.editUrl as string) || "#";
+
+    tip.querySelector<HTMLElement>(".bz-tip-note")!.textContent = (event.extendedProps.content as string) || "";
+    tip.querySelector<HTMLElement>(".bz-tip-time")!.textContent = event.start ? formatTimestamp(event.start.toISOString()) : "";
+
+    tip.style.display = "block";
+    this.positionTooltip(anchor, tip);
+  }
+
+  private tooltipElement(): HTMLElement {
+    if (this.tooltip) return this.tooltip;
+
     const tip = document.createElement("div");
-    tip.textContent = content;
     Object.assign(tip.style, {
       position: "fixed",
       zIndex: "1080",
-      maxWidth: "22rem",
-      padding: "0.4rem 0.6rem",
-      background: "rgba(17, 24, 39, 0.97)",
+      maxWidth: "24rem",
+      padding: "0.5rem 0.6rem",
+      background: "rgba(17, 24, 39, 0.98)",
       color: "#fff",
       fontSize: "0.8rem",
       lineHeight: "1.35",
-      borderRadius: "0.25rem",
-      whiteSpace: "pre-wrap",
-      boxShadow: "0 2px 10px rgba(0, 0, 0, 0.35)",
-      pointerEvents: "none",
+      borderRadius: "0.3rem",
+      boxShadow: "0 2px 12px rgba(0, 0, 0, 0.4)",
+      display: "none",
     } as Partial<CSSStyleDeclaration>);
+
+    const link = document.createElement("a");
+    link.className = "bz-tip-title";
+    link.target = "_blank";
+    link.rel = "noopener";
+    Object.assign(link.style, {
+      display: "block",
+      marginBottom: "0.35rem",
+      color: "#8ec5ff",
+      fontWeight: "600",
+      textDecoration: "underline",
+    } as Partial<CSSStyleDeclaration>);
+
+    const note = document.createElement("div");
+    note.className = "bz-tip-note";
+    note.style.whiteSpace = "pre-wrap";
+
+    const time = document.createElement("div");
+    time.className = "bz-tip-time";
+    Object.assign(time.style, { marginTop: "0.4rem", fontSize: "0.72rem", opacity: "0.7" } as Partial<CSSStyleDeclaration>);
+
+    tip.append(link, note, time);
+    tip.addEventListener("mouseenter", () => this.clearHide());
+    tip.addEventListener("mouseleave", () => this.scheduleHide());
     document.body.appendChild(tip);
     this.tooltip = tip;
-    this.moveTooltip(event);
+    return tip;
   }
 
-  private moveTooltip(event: MouseEvent): void {
-    if (!this.tooltip) return;
-    const offset = 14;
-    const rect = this.tooltip.getBoundingClientRect();
-    let left = event.clientX + offset;
-    let top = event.clientY + offset;
-    if (left + rect.width > window.innerWidth) left = event.clientX - rect.width - offset;
-    if (top + rect.height > window.innerHeight) top = event.clientY - rect.height - offset;
-    this.tooltip.style.left = `${Math.max(0, left)}px`;
-    this.tooltip.style.top = `${Math.max(0, top)}px`;
+  private positionTooltip(anchor: HTMLElement, tip: HTMLElement): void {
+    const rect = anchor.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    // Minimal gap so the pointer can bridge from the event into the tooltip
+    // without crossing a dead-zone that would trigger the hide timer.
+    let top = rect.bottom + 2;
+    if (top + tipRect.height > window.innerHeight) top = rect.top - tipRect.height - 2;
+    let left = rect.left;
+    if (left + tipRect.width > window.innerWidth) left = window.innerWidth - tipRect.width - 8;
+    tip.style.top = `${Math.max(4, top)}px`;
+    tip.style.left = `${Math.max(4, left)}px`;
+  }
+
+  private scheduleHide(): void {
+    this.clearHide();
+    this.hideTimer = window.setTimeout(() => this.hideTooltip(), 300);
+  }
+
+  private clearHide(): void {
+    if (this.hideTimer) window.clearTimeout(this.hideTimer);
+    this.hideTimer = undefined;
   }
 
   private hideTooltip(): void {
-    this.tooltip?.remove();
-    this.tooltip = undefined;
+    this.clearHide();
+    if (this.tooltip) this.tooltip.style.display = "none";
   }
 
   private computeEvents(): ForecastEvent[] {
