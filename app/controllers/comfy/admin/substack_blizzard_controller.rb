@@ -26,10 +26,32 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     payload = JSON.parse(request.raw_post)
     raise JSON::ParserError, "expected a JSON object" unless payload.is_a?(Hash)
 
-    BlizzardScheduleConfig.instance.update!(schedule: payload.slice("days", "even", "shuffle", "events"))
+    BlizzardScheduleConfig.instance.update!(schedule: payload.slice("days", "even", "shuffle", "events", "groupsDigest"))
     render json: { ok: true }
   rescue JSON::ParserError, ActiveRecord::RecordInvalid => e
     render json: { ok: false, error: e.message }, status: :unprocessable_content
+  end
+
+  # Enqueues a backfill of every Substack post's notes (runs on the prod worker).
+  def backfill_all
+    BackfillAllJob.perform_later
+    flash[:success] = "Backfill started for all posts — reposts will update shortly. Re-save the forecast afterwards to include any new reposts."
+    redirect_to back_path
+  end
+
+  # Enqueues a backfill of one post's notes (from the CMS post editor).
+  def backfill_post
+    post = Comfy::Blog::Post.find_by(id: params[:post_id])
+    categorization = post && Comfy::Cms::Categorization
+      .joins(:category)
+      .find_by(categorized: post, comfy_cms_categories: { label: "Substack" })
+    if categorization
+      BackfillPostJob.perform_later(categorization.id)
+      flash[:success] = "Backfill started for this post’s notes."
+    else
+      flash[:danger] = "No Substack notes found for this post."
+    end
+    redirect_back fallback_location: comfy_admin_substack_blizzard_path
   end
 
   # Phase one: claim the scheduled reposts due now (marks them claimed, hydrated

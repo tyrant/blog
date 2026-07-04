@@ -8,6 +8,7 @@ import {
   countByDay,
   intervalIndexForDate,
   intervalColor,
+  groupsDigest,
   toScheduleRefs,
   scheduleSignature,
   hydrateSchedule,
@@ -21,6 +22,7 @@ interface SavedSchedule {
   even?: boolean;
   shuffle?: boolean;
   events?: ScheduleRef[];
+  groupsDigest?: string;
 }
 
 export default class BlizzardForecastController extends Controller {
@@ -42,6 +44,8 @@ export default class BlizzardForecastController extends Controller {
   private tooltip?: HTMLElement;
   private currentEvents: ForecastEvent[] = [];
   private savedSignature: string | null = null;
+  private currentDigest = "";
+  private savedDigest: string | null = null;
 
   connect(): void {
     this.loadInitialEvents();
@@ -95,12 +99,14 @@ export default class BlizzardForecastController extends Controller {
         even: this.evenTarget.checked,
         shuffle: this.shuffleTarget.checked,
         events: refs,
+        groupsDigest: this.currentDigest,
       }),
     })
       .then((response) => response.json())
       .then((result) => {
         if (result.ok) {
           this.savedSignature = scheduleSignature(refs);
+          this.savedDigest = this.currentDigest;
           this.updateStatus();
         }
       })
@@ -108,6 +114,7 @@ export default class BlizzardForecastController extends Controller {
   }
 
   private loadInitialEvents(): void {
+    this.currentDigest = groupsDigest(this.groupsValue);
     const refs = Array.isArray(this.savedValue.events) ? this.savedValue.events : [];
     const hydrated = refs.length > 0 ? hydrateSchedule(refs, this.groupsValue) : [];
     if (hydrated.length > 0) {
@@ -116,20 +123,36 @@ export default class BlizzardForecastController extends Controller {
       this.shuffleTarget.checked = !!this.savedValue.shuffle;
       this.currentEvents = hydrated;
       this.savedSignature = scheduleSignature(toScheduleRefs(hydrated));
+      this.savedDigest = typeof this.savedValue.groupsDigest === "string" ? this.savedValue.groupsDigest : null;
     } else {
       // No saved schedule, or it no longer maps to any current group — show a
       // live computation and mark it unsaved rather than rendering nothing.
       this.currentEvents = this.computeEvents();
       this.savedSignature = null;
+      this.savedDigest = null;
     }
   }
 
   private updateStatus(): void {
     const currentSignature = scheduleSignature(toScheduleRefs(this.currentEvents));
     const saved = this.savedSignature !== null && currentSignature === this.savedSignature;
-    this.statusTarget.textContent = saved ? "Forecasts saved" : "Unsaved forecasts";
-    this.statusTarget.style.color = saved ? "#6c757d" : "#b02a37";
-    this.statusTarget.style.fontWeight = saved ? "normal" : "600";
+    const stale = this.savedDigest !== null && this.savedDigest !== this.currentDigest;
+
+    let text: string;
+    let color: string;
+    if (saved && stale) {
+      text = "Forecast out of date — posts/notes changed. Re-save.";
+      color = "#b8860b";
+    } else if (saved) {
+      text = "Forecasts saved";
+      color = "#6c757d";
+    } else {
+      text = "Unsaved forecasts";
+      color = "#b02a37";
+    }
+    this.statusTarget.textContent = text;
+    this.statusTarget.style.color = color;
+    this.statusTarget.style.fontWeight = saved && !stale ? "normal" : "600";
   }
 
   // FullCalendar doesn't expose per-day data to its day-cell hooks, so in one pass

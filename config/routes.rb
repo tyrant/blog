@@ -69,6 +69,8 @@ Rails.application.routes.draw do
       post "admin/substack-blizzard/scheduled/claim",   to: "substack_blizzard#claim_scheduled",   as: :admin_substack_blizzard_claim_scheduled
       get  "admin/substack-blizzard/scheduled-due",     to: "substack_blizzard#scheduled_due",     as: :admin_substack_blizzard_scheduled_due
       post "admin/substack-blizzard/scheduled/confirm", to: "substack_blizzard#confirm_scheduled", as: :admin_substack_blizzard_confirm_scheduled
+      post "admin/substack-blizzard/backfill-all",  to: "substack_blizzard#backfill_all",  as: :admin_substack_blizzard_backfill_all
+      post "admin/substack-blizzard/backfill-post", to: "substack_blizzard#backfill_post", as: :admin_substack_blizzard_backfill_post
       post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
       post "admin/substack-blizzard/reseed",      to: "substack_blizzard#reseed",      as: :admin_substack_blizzard_reseed

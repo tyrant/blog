@@ -7,6 +7,7 @@ import {
   dayKey,
   intervalIndexForDate,
   intervalColor,
+  groupsDigest,
   toScheduleRefs,
   scheduleSignature,
   hydrateSchedule,
@@ -213,6 +214,26 @@ describe("schedule refs / signature / hydrate", () => {
   it("drops refs whose group no longer exists", () => {
     const orphan: ScheduleRef[] = [{ c: 999, i: 0, t: "2026-07-05T09:00:00.000Z" }];
     expect(hydrateSchedule(orphan, groups)).toEqual([]);
+  });
+});
+
+describe("groupsDigest", () => {
+  const g = (categorizationId: number, entryIndex: number, anchor: string | null): ForecastGroup => ({
+    categorizationId, entryIndex, anchor, title: "T", content: "C", url: null,
+  });
+
+  it("is stable regardless of group order", () => {
+    const a = [g(1, 0, "2026-01-01T00:00:00Z"), g(2, 0, null)];
+    expect(groupsDigest(a)).toBe(groupsDigest([...a].reverse()));
+  });
+
+  it("changes when a new group is added", () => {
+    const base = [g(1, 0, null)];
+    expect(groupsDigest(base)).not.toBe(groupsDigest([...base, g(1, 1, null)]));
+  });
+
+  it("changes when an anchor moves (a note was added)", () => {
+    expect(groupsDigest([g(1, 0, "2026-01-01T00:00:00Z")])).not.toBe(groupsDigest([g(1, 0, "2026-02-01T00:00:00Z")]));
   });
 });
 

@@ -294,7 +294,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
   describe 'POST save_schedule' do
     let(:payload) do
-      { days: 7, even: true, shuffle: false,
+      { days: 7, even: true, shuffle: false, groupsDigest: 'abc123',
         events: [{ c: categorization.id, i: 0, t: '2026-07-05T09:00:00.000Z' }] }
     end
 
@@ -319,9 +319,47 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(BlizzardScheduleConfig.instance.schedule['even']).to be true
     end
 
+    it 'persists the groups digest for the re-save banner' do
+      expect(BlizzardScheduleConfig.instance.schedule['groupsDigest']).to eq 'abc123'
+    end
+
     context 'a non-object json body' do
       let(:payload) { 'just a string' }
       it { expect(response).to have_http_status :unprocessable_content }
+    end
+  end
+
+  describe 'POST backfill_all' do
+    before do
+      allow(BackfillAllJob).to receive(:perform_later)
+      post comfy_admin_substack_blizzard_backfill_all_path, headers: http_auth_headers
+    end
+
+    it { expect(BackfillAllJob).to have_received(:perform_later) }
+    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+    it { expect(flash[:success]).to be_present }
+  end
+
+  describe 'POST backfill_post' do
+    context 'for a post with a Substack categorization' do
+      before do
+        allow(BackfillPostJob).to receive(:perform_later)
+        post comfy_admin_substack_blizzard_backfill_post_path, params: { post_id: blog_post.id }, headers: http_auth_headers
+      end
+
+      it { expect(BackfillPostJob).to have_received(:perform_later).with(categorization.id) }
+      it { expect(flash[:success]).to be_present }
+    end
+
+    context 'for a post with no Substack categorization' do
+      let!(:bare_post) { create :post, site: site, layout: layout, title: 'No notes here' }
+      before do
+        allow(BackfillPostJob).to receive(:perform_later)
+        post comfy_admin_substack_blizzard_backfill_post_path, params: { post_id: bare_post.id }, headers: http_auth_headers
+      end
+
+      it { expect(BackfillPostJob).to_not have_received(:perform_later) }
+      it { expect(flash[:danger]).to be_present }
     end
   end
 end

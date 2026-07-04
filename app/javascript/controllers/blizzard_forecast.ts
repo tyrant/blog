@@ -78,6 +78,21 @@ export function intervalColor(index: number): string {
   return `hsl(${(index * 47) % 360}, 70%, 90%)`;
 }
 
+// A compact fingerprint of the group set + anchors. Saved alongside a schedule so
+// the admin can detect (on load) that a backfill has changed the underlying
+// groups since the schedule was saved, and prompt a re-save.
+export function groupsDigest(groups: ForecastGroup[]): string {
+  const canonical = groups
+    .map((g) => `${g.categorizationId}:${g.entryIndex}:${g.anchor ?? ""}`)
+    .sort()
+    .join("|");
+  let hash = 5381;
+  for (let i = 0; i < canonical.length; i += 1) {
+    hash = ((hash << 5) + hash + canonical.charCodeAt(i)) | 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+
 // Randomly reassigns each day's time-slots among that day's reposts, keeping the
 // same per-day set of times but scattering same-Post groups that landed together.
 export function shuffleWithinDays(events: ForecastEvent[], random: () => number = Math.random): ForecastEvent[] {
