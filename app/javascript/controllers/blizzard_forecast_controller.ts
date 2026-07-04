@@ -299,10 +299,10 @@ export default class BlizzardForecastController extends Controller {
   private positionTooltip(anchor: HTMLElement, tip: HTMLElement): void {
     const rect = anchor.getBoundingClientRect();
     const tipRect = tip.getBoundingClientRect();
-    // Minimal gap so the pointer can bridge from the event into the tooltip
-    // without crossing a dead-zone that would trigger the hide timer.
-    let top = rect.bottom + 2;
-    if (top + tipRect.height > window.innerHeight) top = rect.top - tipRect.height - 2;
+    // Overlap the event by 1px so there is no dead-zone — not even a sub-pixel
+    // rounding gap — for the pointer to cross when moving into the tooltip.
+    let top = rect.bottom - 1;
+    if (top + tipRect.height > window.innerHeight) top = rect.top - tipRect.height + 1;
     let left = rect.left;
     if (left + tipRect.width > window.innerWidth) left = window.innerWidth - tipRect.width - 8;
     tip.style.top = `${Math.max(4, top)}px`;
