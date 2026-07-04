@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   forecastOccurrences,
   evenlySpreadOccurrences,
-  shuffleWithinDays,
+  spreadWithinDays,
   countByDay,
   dayKey,
   intervalIndexForDate,
@@ -154,33 +154,42 @@ describe("intervalColor", () => {
   });
 });
 
-describe("shuffleWithinDays", () => {
-  function ev(title: string, start: Date): ForecastEvent {
-    return { categorizationId: 0, entryIndex: 0, title, start: start.toISOString(), extendedProps: { content: title, editUrl: null } };
+describe("spreadWithinDays", () => {
+  // A repost of Post `post` at `min` minutes past 09:00 on 1 Apr 2026.
+  function ev(post: number, min: number): ForecastEvent {
+    const start = new Date(2026, 3, 1, 9, min, 0).toISOString();
+    return { categorizationId: post, entryIndex: min, title: `P${post}`, start, extendedProps: { content: "c", editUrl: null } };
   }
-  const d1 = new Date(2026, 3, 1, 9, 0, 0);
-  const d1b = new Date(2026, 3, 1, 15, 0, 0);
-  const d2 = new Date(2026, 3, 2, 9, 0, 0);
+  // Deterministic random: cycles the given values.
+  function seq(values: number[]): () => number {
+    let i = 0;
+    return () => values[i++ % values.length];
+  }
 
   it("preserves the total number of reposts", () => {
-    const out = shuffleWithinDays([ev("A", d1), ev("B", d1b), ev("C", d2)]);
-    expect(out.length).toBe(3);
+    const out = spreadWithinDays([ev(1, 0), ev(1, 10), ev(2, 20), ev(2, 30)]);
+    expect(out.length).toBe(4);
   });
 
   it("keeps each day's set of time-slots unchanged", () => {
-    const out = shuffleWithinDays([ev("A", d1), ev("B", d1b)]);
-    const slots = out.map((e) => e.start).sort();
-    expect(slots).toEqual([d1.toISOString(), d1b.toISOString()].sort());
+    const input = [ev(1, 0), ev(1, 10), ev(2, 20), ev(2, 30)];
+    const out = spreadWithinDays(input);
+    expect(out.map((e) => e.start).sort()).toEqual(input.map((e) => e.start).sort());
   });
 
-  it("reassigns slots within a day (random reversal moves A off its slot)", () => {
-    const out = shuffleWithinDays([ev("A", d1), ev("B", d1b)], () => 0);
-    expect(out.find((e) => e.title === "A")!.start).toBe(d1b.toISOString());
+  it("never places two reposts of the same Post adjacent (when feasible)", () => {
+    // Three of Post 1, three of Post 2 → the only maximal spread is alternating.
+    const input = [ev(1, 0), ev(1, 10), ev(1, 20), ev(2, 30), ev(2, 40), ev(2, 50)];
+    const out = spreadWithinDays(input, seq([0.1, 0.5, 0.5, 0.6, 0.5, 0.5]));
+    const ordered = [...out].sort((a, b) => a.start.localeCompare(b.start));
+    for (let i = 1; i < ordered.length; i += 1) {
+      expect(ordered[i].categorizationId).not.toBe(ordered[i - 1].categorizationId);
+    }
   });
 
   it("leaves a single repost on its day untouched", () => {
-    const out = shuffleWithinDays([ev("A", d1), ev("C", d2)]);
-    expect(out.find((e) => e.title === "C")!.start).toBe(d2.toISOString());
+    const out = spreadWithinDays([ev(1, 0), ev(2, 0)]).sort((a, b) => a.start.localeCompare(b.start));
+    expect(out.length).toBe(2);
   });
 });
 

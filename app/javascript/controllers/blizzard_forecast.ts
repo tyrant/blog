@@ -122,9 +122,40 @@ export function groupsDigest(groups: ForecastGroup[]): string {
   return (hash >>> 0).toString(36);
 }
 
-// Randomly reassigns each day's time-slots among that day's reposts, keeping the
-// same per-day set of times but scattering same-Post groups that landed together.
-export function shuffleWithinDays(events: ForecastEvent[], random: () => number = Math.random): ForecastEvent[] {
+function fisherYates<T>(arr: T[], random: () => number): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Orders one day's reposts so each Post's reposts sit at evenly-spaced fractional
+// positions (its k reposts at ~1/k apart), each Post randomly rotated — so Posts
+// interleave and same-Post reposts are maximally separated.
+function spreadOrder(dayEvents: ForecastEvent[], random: () => number): ForecastEvent[] {
+  const byPost = new Map<number, ForecastEvent[]>();
+  for (const event of dayEvents) {
+    const bucket = byPost.get(event.categorizationId);
+    if (bucket) bucket.push(event);
+    else byPost.set(event.categorizationId, [event]);
+  }
+
+  const keyed: { key: number; event: ForecastEvent }[] = [];
+  for (const items of byPost.values()) {
+    const phase = random();
+    fisherYates(items, random).forEach((event, j) => keyed.push({ key: (j + phase) / items.length, event }));
+  }
+  keyed.sort((a, b) => a.key - b.key);
+  return keyed.map((entry) => entry.event);
+}
+
+// Reassigns each day's time-slots so each Post's reposts are spread as widely as
+// possible across the day (no adjacent same-Post neighbours when a Post is at most
+// half the day's reposts), rather than a plain random shuffle — so reposts of the
+// same Post aren't posted back-to-back.
+export function spreadWithinDays(events: ForecastEvent[], random: () => number = Math.random): ForecastEvent[] {
   const byDay = new Map<string, ForecastEvent[]>();
   for (const event of events) {
     const key = dayKey(new Date(event.start));
@@ -135,13 +166,8 @@ export function shuffleWithinDays(events: ForecastEvent[], random: () => number 
 
   const result: ForecastEvent[] = [];
   for (const dayEvents of byDay.values()) {
-    const slots = dayEvents.map((event) => event.start);
-    const order = [...dayEvents];
-    for (let i = order.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    order.forEach((event, i) => result.push({ ...event, start: slots[i] }));
+    const slots = dayEvents.map((event) => event.start).sort();
+    spreadOrder(dayEvents, random).forEach((event, i) => result.push({ ...event, start: slots[i] }));
   }
   return result;
 }

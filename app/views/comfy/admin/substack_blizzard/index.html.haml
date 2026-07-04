@@ -5,7 +5,9 @@
   = button_to "Backfill all posts’ notes", comfy_admin_substack_blizzard_backfill_all_path, method: :post, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo_confirm: "Backfill every Substack post’s notes now? This runs in the background." } }, data: { confirm: "Backfill every Substack post’s notes now? This runs in the background." }
 
 %section.mb-4{ data: { controller: "blizzard-forecast", "blizzard-forecast-groups-value": @forecast.to_json, "blizzard-forecast-saved-value": @saved_schedule.to_json, "blizzard-forecast-save-url-value": comfy_admin_substack_blizzard_schedule_path } }
-  %h5 Repost forecast
+  %h5 
+    Repost forecast
+  %span.text-muted.small Forecasts each group’s next reposts over the coming 90 days.
   .form-inline.mb-2
     %label.mr-2{ for: "forecast-days" } Repost every (days):
     %input#forecast-days.form-control.mr-2{ type: "number", min: 1, max: 365, value: 7, style: "width: 6rem;", data: { "blizzard-forecast-target": "days", action: "input->blizzard-forecast#recompute" } }
@@ -14,11 +16,11 @@
       %label.form-check-label{ for: "forecast-even" } Evenly spread reposts across the interval
     .form-check.form-check-inline.mr-3
       %input#forecast-shuffle.form-check-input{ type: "checkbox", data: { "blizzard-forecast-target": "shuffle", action: "change->blizzard-forecast#recompute" } }
-      %label.form-check-label{ for: "forecast-shuffle" } Shuffle each day’s reposts
+      %label.form-check-label{ for: "forecast-shuffle" } Spread same-post reposts across each day
   .form-inline.mb-2
     %button.btn.btn-primary.btn-sm.mr-2{ type: "button", data: { action: "click->blizzard-forecast#save" } } Save Forecasts
     %span.small{ data: { "blizzard-forecast-target": "status" } }
-    %span.text-muted.small.ml-3 Forecasts each group’s next reposts over the coming 90 days.
+
   :css
     #blizzard-forecast-calendar .fc-daygrid-day-events { max-height: 100px; overflow-y: auto; }
     #blizzard-forecast-calendar .fc-daygrid-day-number { cursor: pointer; }
