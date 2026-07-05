@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 import { Calendar, EventApi } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import listPlugin from "@fullcalendar/list";
 import {
   forecastOccurrences,
   evenlySpreadOccurrences,
@@ -11,9 +12,6 @@ import {
   groupsDigest,
   truncateTitle,
   formatTimestamp,
-  formatTime,
-  formatDay,
-  dayKey,
   toScheduleRefs,
   scheduleSignature,
   hydrateSchedule,
@@ -50,7 +48,6 @@ export default class BlizzardForecastController extends Controller {
   private debounceTimer?: number;
   private tooltip?: HTMLElement;
   private hideTimer?: number;
-  private popover?: HTMLElement;
   private currentEvents: ForecastEvent[] = [];
   private savedSignature: string | null = null;
   private currentDigest = "";
@@ -59,7 +56,7 @@ export default class BlizzardForecastController extends Controller {
   connect(): void {
     this.loadInitialEvents();
     this.calendar = new Calendar(this.calendarTarget, {
-      plugins: [dayGridPlugin],
+      plugins: [dayGridPlugin, listPlugin],
       initialView: "dayGridMonth",
       height: "auto",
       dayMaxEvents: false, // show every entry; each day's list is capped + scrolled via CSS
@@ -67,22 +64,20 @@ export default class BlizzardForecastController extends Controller {
       // midnight and render as day-straddling blocks. Force the compact dot style.
       defaultTimedEventDuration: "00:00:00",
       eventDisplay: "list-item",
-      headerToolbar: { left: "prev,next today", center: "title", right: "" },
+      headerToolbar: { left: "prev,next today", center: "title", right: "dayGridMonth,listDay" },
+      buttonText: { dayGridMonth: "Month", listDay: "Day", today: "Today" },
+      // Clicking a day number drills into that day's list view.
+      navLinks: true,
+      navLinkDayClick: (date) => this.calendar.changeView("listDay", date),
+      noEventsText: "No reposts this day.",
       validRange: this.validRange(),
       events: this.currentEvents,
       eventDidMount: (info) => this.attachTooltip(info.el, info.event),
-      datesSet: () => {
-        this.closePopover();
-        this.decorateDayCells();
-      },
+      datesSet: () => this.decorateDayCells(),
     });
     this.calendar.render();
     this.decorateDayCells();
     this.updateStatus();
-
-    this.calendarTarget.addEventListener("click", this.onDayNumberClick);
-    document.addEventListener("click", this.onOutsideClick);
-    document.addEventListener("keydown", this.onKeydown);
   }
 
   disconnect(): void {
@@ -90,16 +85,11 @@ export default class BlizzardForecastController extends Controller {
     this.clearHide();
     this.tooltip?.remove();
     this.tooltip = undefined;
-    this.popover?.remove();
-    this.popover = undefined;
-    document.removeEventListener("click", this.onOutsideClick);
-    document.removeEventListener("keydown", this.onKeydown);
     if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
   }
 
   // Client-side recompute on any control change (days/even/shuffle). No network.
   recompute(): void {
-    this.closePopover();
     if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
     this.debounceTimer = window.setTimeout(() => {
       this.hideTooltip();
@@ -213,150 +203,6 @@ export default class BlizzardForecastController extends Controller {
       }
       label.textContent = count === 1 ? "1 entry" : `${count} entries`;
     });
-  }
-
-  // Clicking a day number opens a popover listing that day's reposts.
-  private onDayNumberClick = (e: Event): void => {
-    const numberEl = (e.target as HTMLElement).closest<HTMLElement>(".fc-daygrid-day-number");
-    if (!numberEl) return;
-    const date = numberEl.closest<HTMLElement>(".fc-daygrid-day")?.getAttribute("data-date");
-    if (!date) return;
-    e.preventDefault();
-    this.openPopover(numberEl, date);
-  };
-
-  private onOutsideClick = (e: MouseEvent): void => {
-    if (!this.popover || this.popover.style.display === "none") return;
-    const target = e.target as HTMLElement;
-    if (this.popover.contains(target) || target.closest(".fc-daygrid-day-number")) return;
-    this.closePopover();
-  };
-
-  private onKeydown = (e: KeyboardEvent): void => {
-    if (e.key === "Escape") this.closePopover();
-  };
-
-  private openPopover(anchor: HTMLElement, date: string): void {
-    const events = this.currentEvents
-      .filter((event) => dayKey(new Date(event.start)) === date)
-      .sort((a, b) => a.start.localeCompare(b.start));
-
-    const pop = this.popoverElement();
-    pop.querySelector<HTMLElement>(".bz-pop-title")!.textContent = formatDay(date);
-
-    const body = pop.querySelector<HTMLElement>(".bz-pop-body")!;
-    if (events.length === 0) {
-      const empty = document.createElement("div");
-      empty.textContent = "No reposts this day.";
-      Object.assign(empty.style, { padding: "0.4rem 0.6rem", opacity: "0.6" } as Partial<CSSStyleDeclaration>);
-      body.replaceChildren(empty);
-    } else {
-      body.replaceChildren(...events.map((event) => this.popoverRow(event)));
-    }
-
-    pop.style.display = "block";
-    this.positionPopover(anchor, pop);
-  }
-
-  private popoverRow(event: ForecastEvent): HTMLElement {
-    const row = document.createElement("div");
-    Object.assign(row.style, { display: "flex", gap: "0.5rem", alignItems: "flex-start", padding: "0.2rem 0.6rem" } as Partial<CSSStyleDeclaration>);
-
-    const time = document.createElement("span");
-    time.textContent = formatTime(event.start);
-    Object.assign(time.style, { flex: "0 0 auto", opacity: "0.6", fontSize: "0.72rem", fontVariantNumeric: "tabular-nums" } as Partial<CSSStyleDeclaration>);
-
-    // Title → public post URL (as in the calendar day list), plus an edit glyph → Post#edit.
-    const link = document.createElement("a");
-    link.textContent = truncateTitle(event.title);
-    link.href = event.url || "#";
-    link.target = "_blank";
-    link.rel = "noopener";
-    Object.assign(link.style, { flex: "1 1 auto", color: "#0d6efd" } as Partial<CSSStyleDeclaration>);
-
-    const edit = document.createElement("a");
-    edit.innerHTML = EDIT_ICON_SVG;
-    edit.href = (event.extendedProps.editUrl as string) || "#";
-    edit.target = "_blank";
-    edit.rel = "noopener";
-    edit.title = "Edit post";
-    edit.setAttribute("aria-label", "Edit post");
-    Object.assign(edit.style, {
-      flex: "0 0 auto",
-      color: "#0d6efd",
-      lineHeight: "0",
-      padding: "2px",
-      border: "1px solid #0d6efd",
-      borderRadius: "4px",
-    } as Partial<CSSStyleDeclaration>);
-    edit.style.display = event.extendedProps.editUrl ? "inline-flex" : "none";
-
-    row.append(time, link, edit);
-    return row;
-  }
-
-  private popoverElement(): HTMLElement {
-    if (this.popover) return this.popover;
-
-    const pop = document.createElement("div");
-    Object.assign(pop.style, {
-      position: "fixed",
-      zIndex: "1090",
-      width: "18rem",
-      maxWidth: "90vw",
-      background: "#fff",
-      color: "#212529",
-      border: "1px solid rgba(0, 0, 0, 0.15)",
-      borderRadius: "0.3rem",
-      boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
-      fontSize: "0.8rem",
-      display: "none",
-    } as Partial<CSSStyleDeclaration>);
-
-    const head = document.createElement("div");
-    Object.assign(head.style, {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "0.4rem 0.6rem",
-      borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
-      fontWeight: "600",
-    } as Partial<CSSStyleDeclaration>);
-
-    const title = document.createElement("span");
-    title.className = "bz-pop-title";
-
-    const close = document.createElement("button");
-    close.type = "button";
-    close.textContent = "×";
-    Object.assign(close.style, { border: "0", background: "transparent", fontSize: "1.1rem", lineHeight: "1", cursor: "pointer", color: "#6c757d" } as Partial<CSSStyleDeclaration>);
-    close.addEventListener("click", () => this.closePopover());
-
-    head.append(title, close);
-
-    const bodyEl = document.createElement("div");
-    bodyEl.className = "bz-pop-body";
-    Object.assign(bodyEl.style, { maxHeight: "16rem", overflowY: "auto", padding: "0.25rem 0" } as Partial<CSSStyleDeclaration>);
-
-    pop.append(head, bodyEl);
-    document.body.appendChild(pop);
-    this.popover = pop;
-    return pop;
-  }
-
-  private positionPopover(anchor: HTMLElement, pop: HTMLElement): void {
-    const rect = anchor.getBoundingClientRect();
-    const pr = pop.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    if (top + pr.height > window.innerHeight) top = window.innerHeight - pr.height - 4;
-    let left = rect.left;
-    if (left + pr.width > window.innerWidth) left = window.innerWidth - pr.width - 8;
-    pop.style.top = `${Math.max(4, top)}px`;
-    pop.style.left = `${Math.max(4, left)}px`;
-  }
-
-  private closePopover(): void {
-    if (this.popover) this.popover.style.display = "none";
   }
 
   // A persistent, hoverable tooltip locked to the repost element: post-title link

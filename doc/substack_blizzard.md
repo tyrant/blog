@@ -125,8 +125,9 @@ horizon**. Everything recomputes in-browser — the groups are a one-off JSON pa
   the status shows **Forecasts saved / Unsaved forecasts**, or an amber **"out of date —
   re-save"** when a `groupsDigest` mismatch means a backfill/repost changed the groups.
 - Per day: a **pastel tint** by interval block, an **"X entries"** count by the day
-  number, a scrollable event list, a **hover tooltip** (post-title link → Post#edit,
-  Note text, timestamp), and a **day-number popover** listing that day's reposts.
+  number, a scrollable event list, and a **hover tooltip** (post-title link → Post#edit,
+  Note text, timestamp). **Clicking a day number** drills into that day's **list Day
+  view** (a Month/Day switcher sits in the header toolbar).
 
 ### Due list, re-seed, manual paste-back
 

@@ -11,7 +11,6 @@ import {
   truncateTitle,
   formatTimestamp,
   formatTime,
-  formatDay,
   toScheduleRefs,
   scheduleSignature,
   hydrateSchedule,
@@ -264,12 +263,6 @@ describe("formatTimestamp", () => {
 describe("formatTime", () => {
   it("renders just the time-of-day", () => {
     expect(formatTime(new Date(2026, 6, 4, 19, 5).toISOString())).toBe("7:05pm");
-  });
-});
-
-describe("formatDay", () => {
-  it("renders a YYYY-MM-DD key as a human date", () => {
-    expect(formatDay("2026-07-04")).toBe("4 Jul 2026");
   });
 });
 

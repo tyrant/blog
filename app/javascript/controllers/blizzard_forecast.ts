@@ -42,12 +42,6 @@ export function formatTimestamp(iso: string): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${formatTime(iso)}`;
 }
 
-// A YYYY-MM-DD day key rendered as "4 Jul 2026" (for the day popover header).
-export function formatDay(dateKey: string): string {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return `${day} ${MONTHS[month - 1]} ${year}`;
-}
-
 // Compact saved-schedule reference: categorization id, entry index, timestamp.
 export interface ScheduleRef {
   c: number;
