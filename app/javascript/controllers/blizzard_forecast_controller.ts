@@ -70,6 +70,9 @@ export default class BlizzardForecastController extends Controller {
       navLinks: true,
       navLinkDayClick: (date) => this.calendar.changeView("listDay", date),
       noEventsText: "No reposts this day.",
+      // Tag reposts whose time has already passed (relative to *now*, not the day
+      // boundary FullCalendar's own fc-event-past uses) so the list view can grey them.
+      eventClassNames: (arg) => (arg.event.start && arg.event.start.getTime() < Date.now() ? ["bz-past"] : []),
       validRange: this.validRange(),
       events: this.currentEvents,
       eventDidMount: (info) => this.attachTooltip(info.el, info.event),
