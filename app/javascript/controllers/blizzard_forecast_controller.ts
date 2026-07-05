@@ -4,7 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import {
   forecastOccurrences,
   evenlySpreadOccurrences,
-  spreadWithinDays,
+  spreadWithinIntervals,
   countByDay,
   intervalIndexForDate,
   intervalColor,
@@ -29,18 +29,16 @@ const EDIT_ICON_SVG =
 interface SavedSchedule {
   days?: number;
   even?: boolean;
-  shuffle?: boolean;
   events?: ScheduleRef[];
   groupsDigest?: string;
 }
 
 export default class BlizzardForecastController extends Controller {
-  static targets = ["days", "even", "shuffle", "status", "calendar"];
+  static targets = ["days", "even", "status", "calendar"];
   static values = { groups: Array, saved: Object, saveUrl: String };
 
   declare readonly daysTarget: HTMLInputElement;
   declare readonly evenTarget: HTMLInputElement;
-  declare readonly shuffleTarget: HTMLInputElement;
   declare readonly statusTarget: HTMLElement;
   declare readonly calendarTarget: HTMLElement;
   declare groupsValue: ForecastGroup[];
@@ -122,7 +120,6 @@ export default class BlizzardForecastController extends Controller {
       body: JSON.stringify({
         days: parseInt(this.daysTarget.value, 10),
         even: this.evenTarget.checked,
-        shuffle: this.shuffleTarget.checked,
         events: refs,
         groupsDigest: this.currentDigest,
       }),
@@ -145,7 +142,6 @@ export default class BlizzardForecastController extends Controller {
     if (hydrated.length > 0) {
       if (typeof this.savedValue.days === "number") this.daysTarget.value = String(this.savedValue.days);
       this.evenTarget.checked = !!this.savedValue.even;
-      this.shuffleTarget.checked = !!this.savedValue.shuffle;
       this.currentEvents = hydrated;
       this.savedSignature = scheduleSignature(toScheduleRefs(hydrated));
       this.savedDigest = typeof this.savedValue.groupsDigest === "string" ? this.savedValue.groupsDigest : null;
@@ -487,9 +483,12 @@ export default class BlizzardForecastController extends Controller {
 
   private computeEvents(): ForecastEvent[] {
     const interval = parseInt(this.daysTarget.value, 10);
-    const compute = this.evenTarget.checked ? evenlySpreadOccurrences : forecastOccurrences;
-    let events = compute(this.groupsValue, interval, new Date(), BlizzardForecastController.HORIZON_DAYS);
-    if (this.shuffleTarget.checked) events = spreadWithinDays(events);
+    const now = new Date();
+    // One toggle: evenly spread across each interval AND separate same-post reposts.
+    const spread = this.evenTarget.checked;
+    const compute = spread ? evenlySpreadOccurrences : forecastOccurrences;
+    let events = compute(this.groupsValue, interval, now, BlizzardForecastController.HORIZON_DAYS);
+    if (spread) events = spreadWithinIntervals(events, interval, now);
     this.currentEvents = events;
     return this.currentEvents;
   }

@@ -151,23 +151,28 @@ function spreadOrder(dayEvents: ForecastEvent[], random: () => number): Forecast
   return keyed.map((entry) => entry.event);
 }
 
-// Reassigns each day's time-slots so each Post's reposts are spread as widely as
-// possible across the day (no adjacent same-Post neighbours when a Post is at most
-// half the day's reposts), rather than a plain random shuffle — so reposts of the
-// same Post aren't posted back-to-back.
-export function spreadWithinDays(events: ForecastEvent[], random: () => number = Math.random): ForecastEvent[] {
-  const byDay = new Map<string, ForecastEvent[]>();
+// Reassigns each interval's time-slots so each Post's reposts are spread as widely
+// as possible across the whole interval (no adjacent same-Post neighbours when a
+// Post is at most half the interval's reposts), rather than a plain random shuffle
+// — so reposts of the same Post aren't posted close together.
+export function spreadWithinIntervals(
+  events: ForecastEvent[],
+  intervalDays: number,
+  now: Date = new Date(),
+  random: () => number = Math.random,
+): ForecastEvent[] {
+  const byInterval = new Map<number, ForecastEvent[]>();
   for (const event of events) {
-    const key = dayKey(new Date(event.start));
-    const bucket = byDay.get(key);
+    const key = intervalIndexForDate(new Date(event.start), now, intervalDays);
+    const bucket = byInterval.get(key);
     if (bucket) bucket.push(event);
-    else byDay.set(key, [event]);
+    else byInterval.set(key, [event]);
   }
 
   const result: ForecastEvent[] = [];
-  for (const dayEvents of byDay.values()) {
-    const slots = dayEvents.map((event) => event.start).sort();
-    spreadOrder(dayEvents, random).forEach((event, i) => result.push({ ...event, start: slots[i] }));
+  for (const intervalEvents of byInterval.values()) {
+    const slots = intervalEvents.map((event) => event.start).sort();
+    spreadOrder(intervalEvents, random).forEach((event, i) => result.push({ ...event, start: slots[i] }));
   }
   return result;
 }

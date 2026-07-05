@@ -36,7 +36,7 @@ A singleton row (`schedule` jsonb) holds the committed repost plan:
 
 ```jsonc
 {
-  "days": 7, "even": true, "shuffle": false,      // the controls that generated it
+  "days": 7, "even": true,                          // the controls that generated it
   "groupsDigest": "<hash of every (c,i,anchor)>",  // to detect the plan going stale
   "events": [
     { "c": 123, "i": 0, "t": "2026-07-10T09:00:00.000Z",
@@ -114,13 +114,12 @@ horizon**. Everything recomputes in-browser — the groups are a one-off JSON pa
 
 - **Repost every (days)** (default 7): the repost interval. Each group recurs every N
   days from its anchor; overdue/never-posted groups collapse onto today.
-- **Evenly spread reposts across the interval** (default on): ignore anchors and
-  distribute every group evenly across `[now, now+N days]`, then recur every N — flattens
-  the anchor-driven bunching.
-- **Spread same-post reposts across each day** (default off): reorder each day's reposts
-  so each Post's reposts sit at even fractional positions (its `k` reposts ~`1/k` apart,
-  randomly rotated) — same-Post reposts are non-adjacent whenever a Post is ≤ half that
-  day's reposts. (Internally still the `shuffle` field.)
+- **Evenly spread reposts across each interval, separating same-post** (default on):
+  ignore anchors and distribute every group evenly across each `N`-day interval, then
+  reorder within each interval so each Post's reposts sit at even fractional positions
+  (its `k` reposts ~`1/k` apart, randomly rotated) — same-Post reposts are non-adjacent
+  whenever a Post is ≤ half that interval's reposts. Unchecked → the raw anchor-based
+  forecast. (One toggle; internally the `even` field.)
 - **Save Forecasts**: POSTs the concrete arrangement to `BlizzardScheduleConfig`. Load
   renders the *saved* schedule verbatim (so ordering persists across reloads/devices);
   the status shows **Forecasts saved / Unsaved forecasts**, or an amber **"out of date —

@@ -13,10 +13,7 @@
     %input#forecast-days.form-control.mr-2{ type: "number", min: 1, max: 365, value: 7, style: "width: 6rem;", data: { "blizzard-forecast-target": "days", action: "input->blizzard-forecast#recompute" } }
     .form-check.form-check-inline.mr-3
       %input#forecast-even.form-check-input{ type: "checkbox", checked: true, data: { "blizzard-forecast-target": "even", action: "change->blizzard-forecast#recompute" } }
-      %label.form-check-label{ for: "forecast-even" } Evenly spread reposts across the interval
-    .form-check.form-check-inline.mr-3
-      %input#forecast-shuffle.form-check-input{ type: "checkbox", data: { "blizzard-forecast-target": "shuffle", action: "change->blizzard-forecast#recompute" } }
-      %label.form-check-label{ for: "forecast-shuffle" } Spread same-post reposts across each day
+      %label.form-check-label{ for: "forecast-even" } Evenly spread reposts across each interval, separating same-post
   .form-inline.mb-2
     %button.btn.btn-primary.btn-sm.mr-2{ type: "button", data: { action: "click->blizzard-forecast#save" } } Save Forecasts
     %span.small{ data: { "blizzard-forecast-target": "status" } }
