@@ -17,6 +17,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     # of the due-list filters, and recomputes occurrences entirely client-side.
     @forecast = Substack::Blizzard::ForecastData.execute
     @saved_schedule = BlizzardScheduleConfig.instance.schedule
+    @blizzard_stats = blizzard_stats
   end
 
   # Persists the current forecast arrangement so it renders identically on every
@@ -141,6 +142,19 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   def claim_limit
     (params[:limit].presence || 5).to_i.clamp(1, 100)
+  end
+
+  # Summary counts for the right-column panel: total posts, and blizzard entries
+  # and their notes summed across every Substack categorization.
+  def blizzard_stats
+    data = Comfy::Cms::Categorization
+      .joins(:category)
+      .where(comfy_cms_categories: { label: "Substack" })
+      .pluck(:data)
+    entries = data.sum { |d| Array(d&.dig("blizzard")).size }
+    notes   = data.sum { |d| Array(d&.dig("blizzard")).sum { |entry| Array(entry["notes"]).size } }
+
+    { posts: Comfy::Blog::Post.count, entries: entries, notes: notes }
   end
 
 end

@@ -1,3 +1,16 @@
+- content_for :right_column do
+  %h6.text-muted Totals
+  %ul.list-unstyled.small
+    %li
+      %strong= number_with_delimiter @blizzard_stats[:posts]
+      posts
+    %li
+      %strong= number_with_delimiter @blizzard_stats[:entries]
+      blizzard entries
+    %li
+      %strong= number_with_delimiter @blizzard_stats[:notes]
+      notes
+
 .page-header
   %h2 Substack Blizzard — text groups due for a repost
 

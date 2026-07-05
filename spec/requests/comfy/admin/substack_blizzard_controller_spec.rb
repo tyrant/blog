@@ -32,6 +32,11 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include "data-controller='blizzard-forecast'"
     end
 
+    it 'shows the totals panel' do
+      expect(response.body).to include 'Totals'
+      expect(response.body).to include 'blizzard entries'
+    end
+
     it 'seeds the calendar with the group forecast payload' do
       expect(response.body).to include 'blizzard-forecast-groups-value'
     end
