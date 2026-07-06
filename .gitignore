@@ -42,3 +42,6 @@ yarn-debug.log*
 !/app/assets/builds/comfy_vendor.js
 
 /coverage/
+
+# Claude Code per-machine permission overrides
+.claude/settings.local.json

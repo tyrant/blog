@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git switch:*)",
+      "Bash(git restore:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git push:*)",
+      "Bash(bundle install:*)",
+      "Bash(bundle exec:*)",
+      "Bash(cap production deploy:*)",
+      "Bash(bundle exec cap production deploy:*)",
+      "Bash(bin/rails:*)",
+      "Bash(yarn build:*)",
+      "Bash(yarn test:js)",
+      "Bash(yarn add:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ssh:*)",
+      "Bash(curl:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(sed:*)"
+    ],
+    "ask": [
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(bin/rails db:drop:*)",
+      "Bash(bundle exec rails db:drop:*)"
+    ]
+  }
+}
