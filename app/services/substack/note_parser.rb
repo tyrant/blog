@@ -41,6 +41,14 @@ module Substack
       comment["date"] || comment["createdAt"] || comment["created_at"]
     end
 
+    # The note's Likes count (Substack's ❤ reaction). reaction_count is the total;
+    # fall back to summing the per-emoji reactions breakdown.
+    def likes(comment)
+      return comment["reaction_count"].to_i if comment&.key?("reaction_count")
+
+      Array(comment&.dig("reactions")&.values).sum(&:to_i)
+    end
+
     # Flatten a ProseMirror doc to readable plaintext (paragraphs joined by \n).
     def plaintext(body_json)
       return "" if body_json.blank?

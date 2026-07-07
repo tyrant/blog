@@ -26,6 +26,14 @@ RSpec.describe Substack::NoteParser do
     it { expect(described_class.timestamp({ 'createdAt' => '2025-08-02' })).to eq '2025-08-02' }
   end
 
+  describe '.likes' do
+    it { expect(described_class.likes({ 'reaction_count' => 9 })).to eq 9 }
+    it { expect(described_class.likes({ 'reaction_count' => 0, 'reactions' => { '❤' => 3 } })).to eq 0 }
+    it { expect(described_class.likes({ 'reactions' => { '❤' => 3, '🔥' => 2 } })).to eq 5 }
+    it { expect(described_class.likes({})).to eq 0 }
+    it { expect(described_class.likes(nil)).to eq 0 }
+  end
+
   describe '.append_post_url' do
     let(:body) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hello' }] }] } }
     let(:url) { 'https://mikeyclarke.substack.com/p/foo' }

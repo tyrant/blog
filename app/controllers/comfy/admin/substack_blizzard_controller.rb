@@ -40,6 +40,13 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_to back_path
   end
 
+  # Enqueues a likes refresh for every Substack note (runs on the prod worker).
+  def refresh_likes
+    RefreshNoteLikesJob.perform_later
+    flash[:success] = "Likes refresh started — note like-counts will update shortly."
+    redirect_to back_path
+  end
+
   # Enqueues a backfill of one post's notes (from the CMS post editor).
   def backfill_post
     post = Comfy::Blog::Post.find_by(id: params[:post_id])

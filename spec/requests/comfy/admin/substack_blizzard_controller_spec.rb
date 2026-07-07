@@ -345,6 +345,17 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(flash[:success]).to be_present }
   end
 
+  describe 'POST refresh_likes' do
+    before do
+      allow(RefreshNoteLikesJob).to receive(:perform_later)
+      post comfy_admin_substack_blizzard_refresh_likes_path, headers: http_auth_headers
+    end
+
+    it { expect(RefreshNoteLikesJob).to have_received(:perform_later) }
+    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+    it { expect(flash[:success]).to be_present }
+  end
+
   describe 'POST backfill_post' do
     context 'for a post with a Substack categorization' do
       before do

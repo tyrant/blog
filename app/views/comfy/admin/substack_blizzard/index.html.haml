@@ -16,6 +16,7 @@
 
 .mb-3
   = button_to "Backfill all posts’ notes", comfy_admin_substack_blizzard_backfill_all_path, method: :post, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo_confirm: "Backfill every Substack post’s notes now? This runs in the background." } }, data: { confirm: "Backfill every Substack post’s notes now? This runs in the background." }
+  = button_to "Refresh note likes", comfy_admin_substack_blizzard_refresh_likes_path, method: :post, class: "btn btn-outline-secondary btn-sm ml-2", form: { data: { turbo_confirm: "Re-fetch every note’s like count now? This runs in the background." } }, data: { confirm: "Re-fetch every note’s like count now? This runs in the background." }
 
 %section.mb-4{ data: { controller: "blizzard-forecast", "blizzard-forecast-groups-value": @forecast.to_json, "blizzard-forecast-saved-value": @saved_schedule.to_json, "blizzard-forecast-save-url-value": comfy_admin_substack_blizzard_schedule_path } }
   %h5 
