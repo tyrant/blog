@@ -13,12 +13,12 @@ RSpec.describe Substack::Blizzard::RepostOdds do
     { 'uid' => uid, 'text' => "text-#{uid}", 'body_json' => body_json, 'notes' => notes }
   end
 
+  # Post A: off cooldown (its most recent note is 90 days old).
   let(:data) do
     { 'blizzard' => [
-      entry('e0',       { 'type' => 'doc' }, [{ 'url' => 'u',  'timestamp' => 90.days.ago.iso8601, 'likes' => 4 }]),
-      entry('e9',       { 'type' => 'doc' }, [{ 'url' => 'u2', 'timestamp' => 90.days.ago.iso8601, 'likes' => 95 }]),
-      entry('nobody',   {},                  []),
-      entry('cooldown', { 'type' => 'doc' }, [{ 'url' => 'u3', 'timestamp' => 1.hour.ago.iso8601 }])
+      entry('e0',     { 'type' => 'doc' }, [{ 'url' => 'u',  'timestamp' => 90.days.ago.iso8601, 'likes' => 4 }]),
+      entry('e9',     { 'type' => 'doc' }, [{ 'url' => 'u2', 'timestamp' => 90.days.ago.iso8601, 'likes' => 95 }]),
+      entry('nobody', {},                  [])
     ] }
   end
 
@@ -30,7 +30,7 @@ RSpec.describe Substack::Blizzard::RepostOdds do
     odds.find { |c| c.entry['uid'] == uid }
   end
 
-  it 'includes only postable, off-cooldown entries' do
+  it 'includes only postable entries on off-cooldown posts' do
     expect(odds.map { |c| c.entry['uid'] }).to contain_exactly('e0', 'e9')
   end
 
@@ -56,5 +56,23 @@ RSpec.describe Substack::Blizzard::RepostOdds do
     it { expect(candidate('e0').title).to eq 'A Post' }
     it { expect(candidate('e0').likes).to eq 4 }
     it { expect(candidate('e0').text).to eq 'text-e0' }
+  end
+
+  describe 'per-post cooldown' do
+    let!(:post_b) { create :post, site: site, title: 'B Post', slug: 'b' }
+    let!(:cat_b) do
+      create :categorization, category: category, categorized: post_b, url: 'https://sub/p/b', data: { 'blizzard' => [
+        entry('fresh', { 'type' => 'doc' }, [{ 'url' => 'r', 'timestamp' => 1.hour.ago.iso8601 }]),
+        entry('stale', { 'type' => 'doc' }, [{ 'url' => 's', 'timestamp' => 90.days.ago.iso8601 }])
+      ] }
+    end
+
+    it 'benches every entry of a post reposted within cooldown, even its stale ones' do
+      expect(odds.map { |c| c.entry['uid'] } & %w[fresh stale]).to be_empty
+    end
+
+    it 'still includes entries of off-cooldown posts' do
+      expect(odds.map { |c| c.entry['uid'] }).to include('e0', 'e9')
+    end
   end
 end

@@ -59,7 +59,7 @@
   = form_with url: comfy_admin_substack_blizzard_settings_path, method: :post, class: "form-inline mt-2" do
     %label.mr-2{ for: "interval_minutes" } Repost every (minutes):
     = number_field_tag :interval_minutes, @config.interval_minutes, min: 1, max: 1440, class: "form-control mr-3", style: "width: 6rem;"
-    %label.mr-2{ for: "cooldown_hours" } Per-entry cooldown (hours):
+    %label.mr-2{ for: "cooldown_hours" } Per-post cooldown (hours):
     = number_field_tag :cooldown_hours, @config.cooldown_hours, min: 0, max: 8760, class: "form-control mr-2", style: "width: 6rem;"
     = submit_tag "Save settings", class: "btn btn-primary btn-sm"
   %p.text-muted.small.mt-2

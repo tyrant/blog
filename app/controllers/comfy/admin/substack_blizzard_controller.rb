@@ -79,7 +79,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     render json: { ok: false, error: e.message }, status: :unprocessable_content
   end
 
-  # Admin: update the repost cadence (minutes between reposts) and per-entry cooldown.
+  # Admin: update the repost cadence (minutes between reposts) and per-post cooldown.
   def update_settings
     BlizzardScheduleConfig.instance.update!(
       interval_minutes: params[:interval_minutes],

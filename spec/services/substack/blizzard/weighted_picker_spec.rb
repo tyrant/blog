@@ -53,7 +53,7 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
     end
   end
 
-  describe 'an entry reposted within cooldown is excluded' do
+  describe 'a post reposted within cooldown is excluded' do
     let(:data) { { 'blizzard' => [entry('e0', { 'type' => 'doc' }, [{ 'url' => 'u', 'timestamp' => 1.hour.ago.iso8601 }])] } }
     it { expect(pick).to be_nil }
   end

@@ -35,7 +35,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     it 'shows the automated-reposting settings form' do
       expect(response.body).to include 'Repost every (minutes):'
-      expect(response.body).to include 'Per-entry cooldown (hours):'
+      expect(response.body).to include 'Per-post cooldown (hours):'
     end
 
     it 'shows the most-likely-to-repost leaderboard' do

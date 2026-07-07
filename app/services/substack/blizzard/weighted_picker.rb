@@ -4,7 +4,7 @@
 # has the data); the local ticker calls it every couple of minutes and it gates
 # itself to one pick per interval_minutes.
 #
-# The candidate set + weights come from RepostOdds (postable, off-cooldown entries,
+# The candidate set + weights come from RepostOdds (postable entries on off-cooldown posts,
 # weight = 1 + sum of note likes) — the same source the admin leaderboard shows, so
 # the displayed odds match what actually fires. On a real pick it stamps
 # last_reposted_at under the config row lock (the claim), so overlapping ticks can't

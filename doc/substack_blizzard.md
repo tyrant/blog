@@ -38,8 +38,8 @@ lives on the post (`comfy_blog_posts.substack_likes`), refreshed by the same job
 A singleton row holds the reposting settings:
 
 - `interval_minutes` (default 30) — minutes between reposts.
-- `cooldown_hours` (default 12) — an entry rests this long after any repost before it's
-  eligible again.
+- `cooldown_hours` (default 12) — a post rests this long after any of its entries is
+  reposted; while resting, none of that post's entries are eligible.
 - `last_reposted_at` — the claim clock; stamped each time a repost is handed out.
 
 (The legacy `schedule` jsonb column — the removed forecast calendar's saved arrangement
@@ -74,7 +74,8 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` from a real note.
 - `Substack::Blizzard::WeightedPicker` — the prod side of reposting: under the config row
   lock, if `interval_minutes` has elapsed, weighted-samples one eligible entry
-  (weight = 1 + Σ note likes; excludes entries in cooldown or lacking `body_json`),
+  (weight = 1 + Σ note likes + post likes; excludes entries whose post is in cooldown or
+  lacking `body_json`),
   stamps `last_reposted_at`, and returns it hydrated. `dry_run` previews without claiming.
 - `Substack::Blizzard::RepostRecorder` — records a completed repost (append
   `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url).
@@ -108,7 +109,7 @@ FAILED line); re-run with a fresh value in the right environment.
 
 ### Automated reposting (settings)
 
-A small form sets **Repost every (minutes)** and **Per-entry cooldown (hours)** (POSTs to
+A small form sets **Repost every (minutes)** and **Per-post cooldown (hours)** (POSTs to
 `#update_settings`), and shows when the last repost fired. That's the whole control
 surface — selection is automatic and weighted; there's no schedule to arrange.
 
@@ -149,7 +150,7 @@ flash immediately. All are additive/idempotent, so re-clicking is safe.
 The `+1` base gives never-posted / zero-like entries a small chance; the sums make
 heavily-liked entries (and popular posts — a post's likes lift every one of its entries —
 and, deliberately, entries reposted often) win more. Entries reposted within
-`cooldown_hours`, or with no `body_json`, are excluded.
+`cooldown_hours` (as a whole post — all its entries), or with no `body_json`, are excluded.
 
 The local cron (residential IP):
 
@@ -205,10 +206,11 @@ Rich formatting only survives if captured from a real Note (backfill / re-seed).
 - **Cron never runs (empty `/tmp/blizzard_post.log`)** — give `/usr/sbin/cron` Full Disk
   Access; note cron doesn't fire while the Mac is asleep.
 - **Nothing ever reposts** — check `last_reposted_at` is advancing and `interval_minutes`;
-  every tick returns `{}` if it's not yet time or every entry is in cooldown / lacks
-  `body_json`.
+  every tick returns `{}` if it's not yet time or every post is in cooldown / every entry
+  lacks `body_json`.
 - **Likes all zero / stale** — the daily `RefreshNotePostLikesJob` hasn't run (SolidQueue
   worker down; see [solid_queue.md](solid_queue.md)); hit "Refresh all Note/Post likes" to
   force it.
-- **Entry never picked** — it may be permanently in cooldown (a very recent note) or lack
-  `body_json` (re-seed it, or `fill_missing_body_json`).
+- **Entry never picked** — its post may be permanently in cooldown (any of the post's
+  entries has a very recent note), or the entry lacks `body_json` (re-seed it, or
+  `fill_missing_body_json`).

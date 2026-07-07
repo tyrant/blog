@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# The current repost lottery: every eligible entry (postable body_json, past its
-# cooldown) with its selection weight (1 + the sum of its notes' likes) and the
+# The current repost lottery: every eligible entry (postable body_json, on a post
+# past its cooldown) with its selection weight (1 + the sum of its notes' likes) and the
 # resulting probability of being the next repost. Shared by WeightedPicker (which
 # samples from it) and the admin "most likely to repost" leaderboard, so the
 # displayed odds always match real behaviour.
@@ -44,16 +44,23 @@ module Substack
 
       def eligible(cutoff)
         categorizations.flat_map do |categorization|
-          post_likes = categorization.categorized.try(:substack_likes).to_i
-          Array(categorization.data["blizzard"]).filter_map do |entry|
-            next if entry["body_json"].blank?
+          entries = Array(categorization.data["blizzard"])
+          next [] if post_on_cooldown?(entries, cutoff)
 
-            latest = latest_timestamp(entry)
-            next if latest && latest > cutoff
+          post_likes = categorization.categorized.try(:substack_likes).to_i
+          entries.filter_map do |entry|
+            next if entry["body_json"].blank?
 
             Candidate.new(categorization: categorization, entry: entry, weight: weight(entry, post_likes))
           end
         end
+      end
+
+      # A post rests as a whole: if any of its entries was reposted within the
+      # cooldown, every one of the post's entries is benched.
+      def post_on_cooldown?(entries, cutoff)
+        latest = entries.filter_map { |entry| latest_timestamp(entry) }.max
+        latest.present? && latest > cutoff
       end
 
       # 1 (base) + the entry's own note likes + the post's likes (shared by all its
