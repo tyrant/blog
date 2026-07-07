@@ -34,6 +34,24 @@
     - else
       No reposts yet.
 
+  - if @odds.any?
+    %h6.text-muted.mt-3 Most likely to repost next
+    %table.table.table-sm.small.mb-0
+      %thead
+        %tr
+          %th Post
+          %th.text-right Likes
+          %th.text-right Chance
+      %tbody
+        - @odds.each do |candidate|
+          %tr
+            %td
+              = candidate.title
+              - if candidate.text.present?
+                %span.text-muted= " — #{truncate(candidate.text, length: 70)}"
+            %td.text-right= number_with_delimiter(candidate.likes)
+            %td.text-right= number_to_percentage(candidate.probability * 100, precision: 2)
+
 = form_with url: comfy_admin_substack_blizzard_path, method: :get do
   .form-inline.mb-3
     %label.mr-2{ for: "days" } Most recent note older than (days):

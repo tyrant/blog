@@ -38,6 +38,10 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Per-entry cooldown (hours):'
     end
 
+    it 'shows the most-likely-to-repost leaderboard' do
+      expect(response.body).to include 'Most likely to repost next'
+    end
+
     context 'days=0 is accepted' do
       before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
       it { expect(response).to have_http_status :success }

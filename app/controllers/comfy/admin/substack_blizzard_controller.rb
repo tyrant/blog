@@ -14,6 +14,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days, title_query: params[:q])
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
     @config = BlizzardScheduleConfig.instance
+    @odds = Substack::Blizzard::RepostOdds.execute.max_by(10, &:weight)
     @blizzard_stats = blizzard_stats
   end
 
