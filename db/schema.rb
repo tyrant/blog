@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_08_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_08_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -64,6 +64,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_08_000001) do
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.text "scratchpad"
+    t.integer "substack_likes"
     t.index ["created_at"], name: "index_comfy_blog_posts_on_created_at"
     t.index ["site_id", "is_published"], name: "index_comfy_blog_posts_on_site_id_and_is_published"
     t.index ["year", "month", "slug"], name: "index_comfy_blog_posts_on_year_and_month_and_slug"

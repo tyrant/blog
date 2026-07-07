@@ -39,6 +39,14 @@ RSpec.describe Substack::Blizzard::RepostOdds do
     it { expect(candidate('e9').weight).to eq 96 }
   end
 
+  describe 'the post likes are folded into every one of its entries' do
+    before { post.update_column(:substack_likes, 10) }
+
+    it { expect(candidate('e0').weight).to eq 15 } # 1 + 4 note + 10 post
+    it { expect(candidate('e9').weight).to eq 106 } # 1 + 95 note + 10 post
+    it { expect(candidate('e0').likes).to eq 14 }   # displayed total: note + post
+  end
+
   describe 'probability is weight / total' do
     it { expect(candidate('e9').probability).to be_within(0.0001).of(96.0 / 101) }
     it { expect(odds.sum(&:probability)).to be_within(0.0001).of(1.0) }

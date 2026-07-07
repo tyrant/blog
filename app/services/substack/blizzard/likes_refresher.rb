@@ -42,7 +42,23 @@ module Substack
           @categorization.save!
         end
 
+        refresh_post_likes
+
         Result.new(updated: updated, failed: failed)
+      end
+
+      private
+
+      # The categorization's Substack post has its own like count, folded into every
+      # one of its entries' repost weights. Stored on the post itself.
+      def refresh_post_likes
+        post = @categorization.categorized
+        return unless @categorization.url.present? && post.is_a?(Comfy::Blog::Post)
+
+        likes = NoteParser.likes(@client.get_post(@categorization.url))
+        post.update_column(:substack_likes, likes) if @commit
+      rescue Substack::Client::Error => e
+        Rails.logger.warn("[LikesRefresher] cat #{@categorization.id} post likes: #{e.message}")
       end
     end
   end

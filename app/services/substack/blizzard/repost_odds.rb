@@ -44,19 +44,26 @@ module Substack
 
       def eligible(cutoff)
         categorizations.flat_map do |categorization|
+          post_likes = categorization.categorized.try(:substack_likes).to_i
           Array(categorization.data["blizzard"]).filter_map do |entry|
             next if entry["body_json"].blank?
 
             latest = latest_timestamp(entry)
             next if latest && latest > cutoff
 
-            Candidate.new(categorization: categorization, entry: entry, weight: weight(entry))
+            Candidate.new(categorization: categorization, entry: entry, weight: weight(entry, post_likes))
           end
         end
       end
 
-      def weight(entry)
-        BASE_WEIGHT + Array(entry["notes"]).sum { |note| note["likes"].to_i }
+      # 1 (base) + the entry's own note likes + the post's likes (shared by all its
+      # entries), so a popular post lifts every one of its entries.
+      def weight(entry, post_likes)
+        BASE_WEIGHT + note_likes(entry) + post_likes
+      end
+
+      def note_likes(entry)
+        Array(entry["notes"]).sum { |note| note["likes"].to_i }
       end
 
       def categorizations

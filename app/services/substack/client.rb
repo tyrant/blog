@@ -26,6 +26,16 @@ module Substack
       request(Net::HTTP::Get.new(uri("/api/v1/reader/comment/#{comment_id}")))
     end
 
+    # A post lives on its publication subdomain, not substack.com — build the API
+    # URL from the post URL's host + /p/<slug>.
+    def get_post(post_url)
+      parsed = URI(post_url.to_s)
+      slug = parsed.path[%r{/p/([^/?#]+)}, 1]
+      raise Error, "Not a Substack post URL: #{post_url}" if slug.blank? || parsed.host.blank?
+
+      request(Net::HTTP::Get.new(URI("https://#{parsed.host}/api/v1/posts/#{slug}")))
+    end
+
     def create_note(body_json, attachment_ids: [])
       req = Net::HTTP::Post.new(uri("/api/v1/comment/feed"))
       req.body = JSON.generate(

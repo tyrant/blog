@@ -55,4 +55,29 @@ RSpec.describe Substack::Blizzard::LikesRefresher do
       expect(categorization.reload.data['blizzard'][0]['notes'][0]['likes']).to be_nil
     end
   end
+
+  describe 'post likes' do
+    let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://mikeyclarke.substack.com/p/foo', data: data }
+
+    before { allow(client).to receive(:get_post).with(categorization.url).and_return('reaction_count' => 30) }
+
+    it 'stores the post reaction_count on the post' do
+      run
+      expect(post.reload.substack_likes).to eq 30
+    end
+
+    context 'commit: false' do
+      subject(:run) { described_class.execute(categorization: categorization, client: client, commit: false) }
+      it { run; expect(post.reload.substack_likes).to be_nil }
+    end
+
+    context 'the post fetch fails' do
+      before { allow(client).to receive(:get_post).and_raise(Substack::Client::Error, 'gone') }
+      it { expect { run }.to_not raise_error }
+      it 'still records the note likes' do
+        run
+        expect(categorization.reload.data['blizzard'][0]['notes'][0]['likes']).to eq 7
+      end
+    end
+  end
 end
