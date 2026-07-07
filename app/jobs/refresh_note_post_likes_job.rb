@@ -7,6 +7,8 @@
 # the prod worker (reads are allowed from the prod IP). Idempotent per
 # LikesRefresher. See doc/refresh_note_post_likes_job.md.
 class RefreshNotePostLikesJob < ApplicationJob
+  include JobProgressReporting
+
   queue_as :default
 
   PACING = 1 # second between categorizations
@@ -14,12 +16,15 @@ class RefreshNotePostLikesJob < ApplicationJob
   def perform
     client = Substack::Client.new
 
-    categorizations.find_each do |categorization|
-      Substack::Blizzard::LikesRefresher.execute(categorization: categorization, client: client, commit: true)
-    rescue => e
-      Rails.logger.error("[RefreshNotePostLikesJob] categorization #{categorization.id}: #{e.message}")
-    ensure
-      sleep PACING
+    with_progress("refresh_note_post_likes", label: "Refresh note/post likes", total: categorizations.count) do |progress|
+      categorizations.find_each do |categorization|
+        Substack::Blizzard::LikesRefresher.execute(categorization: categorization, client: client, commit: true)
+      rescue => e
+        Rails.logger.error("[RefreshNotePostLikesJob] categorization #{categorization.id}: #{e.message}")
+      ensure
+        progress.advance!
+        sleep PACING
+      end
     end
   end
 

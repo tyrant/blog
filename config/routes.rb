@@ -76,6 +76,7 @@ Rails.application.routes.draw do
       post "admin/substack-blizzard/settings",       to: "substack_blizzard#update_settings", as: :admin_substack_blizzard_settings
       post "admin/substack-blizzard/backfill-all",  to: "substack_blizzard#backfill_all",  as: :admin_substack_blizzard_backfill_all
       post "admin/substack-blizzard/refresh-likes",  to: "substack_blizzard#refresh_likes",  as: :admin_substack_blizzard_refresh_likes
+      get  "admin/substack-blizzard/job-progress",   to: "substack_blizzard#job_progress",   as: :admin_substack_blizzard_job_progress
       post "admin/substack-blizzard/backfill-post", to: "substack_blizzard#backfill_post", as: :admin_substack_blizzard_backfill_post
       post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note

@@ -42,6 +42,11 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Most likely to repost next'
     end
 
+    it 'mounts the background-jobs progress panel' do
+      expect(response.body).to include "id='job-progress'"
+      expect(response.body).to include 'Background jobs'
+    end
+
     context 'days=0 is accepted' do
       before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
       it { expect(response).to have_http_status :success }
@@ -296,6 +301,19 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
       it { expect(flash[:danger]).to be_present }
     end
+  end
+
+  describe 'GET job_progress.json' do
+    before do
+      JobProgress.begin!('backfill_all', label: 'Backfill all posts’ notes', total: 10).update!(completed: 4)
+      get comfy_admin_substack_blizzard_job_progress_path(format: :json), headers: http_auth_headers
+    end
+
+    it { expect(response).to have_http_status :success }
+    it { expect(response.parsed_body.first['key']).to eq 'backfill_all' }
+    it { expect(response.parsed_body.first['completed']).to eq 4 }
+    it { expect(response.parsed_body.first['percent']).to eq 40 }
+    it { expect(response.parsed_body.first['status']).to eq 'running' }
   end
 
   describe 'POST backfill_all' do

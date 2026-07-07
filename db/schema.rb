@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_08_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_08_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -190,6 +190,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_08_000002) do
     t.index ["is_published"], name: "index_comfy_cms_translations_on_is_published"
     t.index ["locale"], name: "index_comfy_cms_translations_on_locale"
     t.index ["page_id"], name: "index_comfy_cms_translations_on_page_id"
+  end
+
+  create_table "job_progresses", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "label", null: false
+    t.integer "total", default: 0, null: false
+    t.integer "completed", default: 0, null: false
+    t.string "status", default: "running", null: false
+    t.string "detail"
+    t.datetime "started_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_job_progresses_on_key", unique: true
   end
 
   create_table "mailkick_subscriptions", force: :cascade do |t|

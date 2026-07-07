@@ -23,4 +23,10 @@ RSpec.describe BackfillAllJob do
     described_class.perform_now
     expect(Substack::Blizzard::Backfiller).to_not have_received(:execute).with(hash_including(categorization: other_cat))
   end
+
+  it 'finishes the progress row' do
+    allow(Substack::Blizzard::Backfiller).to receive(:execute)
+    described_class.perform_now
+    expect(JobProgress.find_by(key: 'backfill_all').status).to eq 'finished'
+  end
 end

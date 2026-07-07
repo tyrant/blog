@@ -4,6 +4,8 @@
 # sequentially with gentle pacing to stay under Substack's rate limit. Runs on
 # the prod worker (reads are allowed from the prod IP). Idempotent per Backfiller.
 class BackfillAllJob < ApplicationJob
+  include JobProgressReporting
+
   queue_as :default
 
   PACING = 1 # second between categorizations
@@ -11,12 +13,15 @@ class BackfillAllJob < ApplicationJob
   def perform
     client = Substack::Client.new
 
-    categorizations.find_each do |categorization|
-      Substack::Blizzard::Backfiller.execute(categorization: categorization, client: client, commit: true)
-    rescue => e
-      Rails.logger.error("[BackfillAllJob] categorization #{categorization.id}: #{e.message}")
-    ensure
-      sleep PACING
+    with_progress("backfill_all", label: "Backfill all posts’ notes", total: categorizations.count) do |progress|
+      categorizations.find_each do |categorization|
+        Substack::Blizzard::Backfiller.execute(categorization: categorization, client: client, commit: true)
+      rescue => e
+        Rails.logger.error("[BackfillAllJob] categorization #{categorization.id}: #{e.message}")
+      ensure
+        progress.advance!
+        sleep PACING
+      end
     end
   end
 

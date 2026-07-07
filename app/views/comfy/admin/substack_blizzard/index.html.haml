@@ -18,6 +18,40 @@
   = button_to "Backfill all Posts' Notes", comfy_admin_substack_blizzard_backfill_all_path, method: :post, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo_confirm: "Backfill every Substack post’s notes now? This runs in the background." } }, data: { confirm: "Backfill every Substack post’s notes now? This runs in the background." }
   = button_to "Refresh all Note/Post likes", comfy_admin_substack_blizzard_refresh_likes_path, method: :post, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo_confirm: "Re-fetch every note’s and post’s like count now? This runs in the background." } }, data: { confirm: "Re-fetch every note’s and post’s like count now? This runs in the background." }
 
+#job-progress.mb-3{ data: { url: comfy_admin_substack_blizzard_job_progress_path }, style: "display: none" }
+  %h6.text-muted.mb-1 Background jobs
+  #job-progress-rows
+
+:javascript
+  (function () {
+    var panel = document.getElementById("job-progress");
+    if (!panel) return;
+    var rowsEl = document.getElementById("job-progress-rows");
+    var url = panel.dataset.url;
+    var badge = { running: "badge-info", finished: "badge-success", failed: "badge-danger" };
+    function ago(iso) {
+      var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+      return s < 60 ? s + "s ago" : Math.round(s / 60) + "m ago";
+    }
+    function render(rows) {
+      panel.style.display = rows.length ? "block" : "none";
+      rowsEl.innerHTML = rows.map(function (r) {
+        return '<div class="mb-1 small">' +
+          '<span>' + r.label + '</span> ' +
+          '<span class="badge ' + (badge[r.status] || "badge-secondary") + '">' + r.status + '</span> ' +
+          '<span class="text-muted">' + r.completed + ' / ' + r.total + ' (' + r.percent + '%) · updated ' + ago(r.updated_at) + '</span>' +
+          '<div class="progress" style="height: 4px;"><div class="progress-bar" style="width: ' + r.percent + '%"></div></div>' +
+          '</div>';
+      }).join("");
+    }
+    function poll() {
+      fetch(url, { headers: { Accept: "application/json" } })
+        .then(function (x) { return x.json(); }).then(render).catch(function () {});
+    }
+    setInterval(poll, 3000);
+    poll();
+  })();
+
 %section.mb-4
   %h5 Automated reposting
   %span.text-muted.small

@@ -28,4 +28,18 @@ RSpec.describe RefreshNotePostLikesJob do
     allow(Substack::Blizzard::LikesRefresher).to receive(:execute).and_raise('boom')
     expect { described_class.perform_now }.to_not raise_error
   end
+
+  describe 'progress reporting' do
+    before { allow(Substack::Blizzard::LikesRefresher).to receive(:execute) }
+
+    it 'finishes the progress row' do
+      described_class.perform_now
+      expect(JobProgress.find_by(key: 'refresh_note_post_likes').status).to eq 'finished'
+    end
+
+    it 'advances once per Substack categorization' do
+      described_class.perform_now
+      expect(JobProgress.find_by(key: 'refresh_note_post_likes').completed).to eq 1
+    end
+  end
 end

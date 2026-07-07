@@ -25,6 +25,14 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_to back_path
   end
 
+  # Live progress of the background jobs, polled by the admin's Background jobs panel.
+  def job_progress
+    render json: JobProgress.order(:label).map { |p|
+      { key: p.key, label: p.label, total: p.total, completed: p.completed,
+        percent: p.percent, status: p.status, updated_at: p.updated_at.iso8601 }
+    }
+  end
+
   # Enqueues a likes refresh for every Substack note (runs on the prod worker).
   def refresh_likes
     RefreshNotePostLikesJob.perform_later
