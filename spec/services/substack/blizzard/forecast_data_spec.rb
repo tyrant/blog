@@ -10,7 +10,7 @@ RSpec.describe Substack::Blizzard::ForecastData do
   let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://sub.example/p/a', data: data }
 
   def entry(text, *timestamps)
-    { 'text' => text, 'body_json' => {}, 'notes' => timestamps.map { |t| { 'url' => 'u', 'timestamp' => t } } }
+    { 'uid' => text, 'text' => text, 'body_json' => {}, 'notes' => timestamps.map { |t| { 'url' => 'u', 'timestamp' => t } } }
   end
 
   let(:posted_at) { 30.days.ago }
@@ -34,7 +34,7 @@ RSpec.describe Substack::Blizzard::ForecastData do
       it { expect(group[:url]).to eq 'https://sub.example/p/a' }
       # camelCase keys: this payload is consumed directly by the TS controller.
       it { expect(group[:categorizationId]).to eq categorization.id }
-      it { expect(group[:entryIndex]).to eq 0 }
+      it { expect(group[:uid]).to eq 'posted group' }
       it { expect(group[:editUrl]).to eq "/admin/sites/#{site.id}/blog-posts/#{post.id}/edit" }
     end
 

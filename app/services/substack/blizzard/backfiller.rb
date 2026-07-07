@@ -35,7 +35,7 @@ module Substack
           if (entry = match(blizzard, text))
             entry["notes"] << record
           else
-            blizzard << { "text" => text, "body_json" => body_json, "notes" => [record] }
+            blizzard << { "uid" => SecureRandom.uuid, "text" => text, "body_json" => body_json, "notes" => [record] }
           end
         end
 

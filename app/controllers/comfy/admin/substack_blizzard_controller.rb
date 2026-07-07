@@ -70,7 +70,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   def confirm_scheduled
     Substack::Blizzard::ScheduleConfirmer.execute(
       categorization_id: params[:categorization_id],
-      entry_index:       params[:index],
+      uid:               params[:uid],
       t:                 params[:t],
       url:               params[:url],
       timestamp:         params[:timestamp]
@@ -84,7 +84,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
     record = Substack::Blizzard::Reposter.execute(
       categorization: categorization,
-      entry_index:    params[:index].to_i
+      uid:            params[:uid]
     )
     flash[:success] = "Posted note: #{record['url']}"
   rescue => e
@@ -95,7 +95,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   def add_note
     categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
-    entry = categorization.data.dig("blizzard", params[:index].to_i)
+    entry = Array(categorization.data["blizzard"]).find { |e| e["uid"] == params[:uid] }
     timestamp = Substack::NoteParser.parse_human_timestamp(params[:timestamp])
     ok = entry && params[:url].present? && timestamp.present?
 
@@ -120,7 +120,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
     entry = Substack::Blizzard::Reseeder.execute(
       categorization: categorization,
-      entry_index:    params[:index].to_i,
+      uid:            params[:uid],
       note_url:       params[:note_url]
     )
     flash[:success] = "Re-seeded rich text from that note (#{entry['text'].to_s.length} chars)."

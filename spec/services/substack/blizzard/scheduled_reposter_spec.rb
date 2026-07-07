@@ -9,7 +9,7 @@ RSpec.describe Substack::Blizzard::ScheduledReposter do
   let(:post_url) { 'https://mikeyclarke.substack.com/p/foo' }
 
   let(:groups) do
-    [{ 'categorization_id' => 7, 'index' => 0, 't' => '2026-07-04T00:00:00Z', 'text' => 'hello', 'post_url' => post_url,
+    [{ 'categorization_id' => 7, 'uid' => 'e0', 't' => '2026-07-04T00:00:00Z', 'text' => 'hello', 'post_url' => post_url,
        'body_json' => { 'type' => 'doc', 'content' => [
          { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hello' }] },
          { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => post_url, 'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => post_url } }] }] }
@@ -46,7 +46,7 @@ RSpec.describe Substack::Blizzard::ScheduledReposter do
 
     it 'confirms back on prod with the event identity' do
       result
-      expect(confirm.with(body: hash_including('categorization_id' => '7', 'index' => '0', 't' => '2026-07-04T00:00:00Z'))).to have_been_requested
+      expect(confirm.with(body: hash_including('categorization_id' => '7', 'uid' => 'e0', 't' => '2026-07-04T00:00:00Z'))).to have_been_requested
     end
   end
 
@@ -67,7 +67,7 @@ RSpec.describe Substack::Blizzard::ScheduledReposter do
   end
 
   context 'a group with no body_json' do
-    let(:groups) { [{ 'categorization_id' => 1, 'index' => 0, 't' => '2026-07-04T00:00:00Z', 'text' => 'empty', 'body_json' => nil, 'template_url' => nil }] }
+    let(:groups) { [{ 'categorization_id' => 1, 'uid' => 'e0', 't' => '2026-07-04T00:00:00Z', 'text' => 'empty', 'body_json' => nil, 'template_url' => nil }] }
     before { stub_request(:post, "#{base_url}/admin/substack-blizzard/scheduled/confirm.json").to_return(status: 200, body: { ok: true }.to_json) }
 
     it { expect(result.skipped.size).to eq 1 }

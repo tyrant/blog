@@ -23,7 +23,7 @@ const now = new Date(2026, 0, 15, 12, 0, 0); // 15 Jan 2026, 12:00 local
 const DAY = 24 * 60 * 60 * 1000;
 
 function group(anchor: string | null): ForecastGroup {
-  return { categorizationId: 1, entryIndex: 0, anchor, title: "T", content: "C", url: "u", editUrl: "/e" };
+  return { categorizationId: 1, uid: "g1", anchor, title: "T", content: "C", url: "u", editUrl: "/e" };
 }
 
 function starts(events: ReturnType<typeof forecastOccurrences>): Date[] {
@@ -84,7 +84,7 @@ describe("forecastOccurrences", () => {
 describe("evenlySpreadOccurrences", () => {
   const seven: ForecastGroup[] = Array.from({ length: 7 }, (_, i) => ({
     categorizationId: i,
-    entryIndex: 0,
+    uid: `u${i}`,
     anchor: null,
     title: `T${i}`,
     content: "C",
@@ -159,7 +159,7 @@ describe("spreadWithinIntervals", () => {
   // A repost of Post `post`, `dayOffset` days into the forecast.
   function ev(post: number, dayOffset: number): ForecastEvent {
     const start = new Date(2026, 3, 1 + dayOffset, 9, 0, 0).toISOString();
-    return { categorizationId: post, entryIndex: dayOffset, title: `P${post}`, start, extendedProps: { content: "c", editUrl: null } };
+    return { categorizationId: post, uid: `${post}-${dayOffset}`, title: `P${post}`, start, extendedProps: { content: "c", editUrl: null } };
   }
   // Deterministic random: cycles the given values.
   function seq(values: number[]): () => number {
@@ -199,15 +199,15 @@ describe("spreadWithinIntervals", () => {
 
 describe("schedule refs / signature / hydrate", () => {
   const groups: ForecastGroup[] = [
-    { categorizationId: 10, entryIndex: 0, anchor: null, title: "P1a", content: "c1", url: "u1", editUrl: "/e10-0" },
-    { categorizationId: 10, entryIndex: 1, anchor: null, title: "P1b", content: "c2", url: null, editUrl: null },
+    { categorizationId: 10, uid: "a", anchor: null, title: "P1a", content: "c1", url: "u1", editUrl: "/e10-0" },
+    { categorizationId: 10, uid: "b", anchor: null, title: "P1b", content: "c2", url: null, editUrl: null },
   ];
   const refs: ScheduleRef[] = [
-    { c: 10, i: 0, t: "2026-07-05T09:00:00.000Z" },
-    { c: 10, i: 1, t: "2026-07-06T09:00:00.000Z" },
+    { c: 10, u: "a", t: "2026-07-05T09:00:00.000Z" },
+    { c: 10, u: "b", t: "2026-07-06T09:00:00.000Z" },
   ];
 
-  it("maps events to compact {c,i,t} refs", () => {
+  it("maps events to compact {c,u,t} refs", () => {
     const hydrated = hydrateSchedule(refs, groups);
     expect(toScheduleRefs(hydrated)).toEqual(refs);
   });
@@ -224,13 +224,13 @@ describe("schedule refs / signature / hydrate", () => {
   it("hydrates refs into events using the groups lookup", () => {
     const hydrated = hydrateSchedule(refs, groups);
     expect(hydrated).toEqual([
-      { categorizationId: 10, entryIndex: 0, title: "P1a", start: "2026-07-05T09:00:00.000Z", url: "u1", extendedProps: { content: "c1", editUrl: "/e10-0" } },
-      { categorizationId: 10, entryIndex: 1, title: "P1b", start: "2026-07-06T09:00:00.000Z", url: undefined, extendedProps: { content: "c2", editUrl: null } },
+      { categorizationId: 10, uid: "a", title: "P1a", start: "2026-07-05T09:00:00.000Z", url: "u1", extendedProps: { content: "c1", editUrl: "/e10-0" } },
+      { categorizationId: 10, uid: "b", title: "P1b", start: "2026-07-06T09:00:00.000Z", url: undefined, extendedProps: { content: "c2", editUrl: null } },
     ]);
   });
 
   it("drops refs whose group no longer exists", () => {
-    const orphan: ScheduleRef[] = [{ c: 999, i: 0, t: "2026-07-05T09:00:00.000Z" }];
+    const orphan: ScheduleRef[] = [{ c: 999, u: "zzz", t: "2026-07-05T09:00:00.000Z" }];
     expect(hydrateSchedule(orphan, groups)).toEqual([]);
   });
 });
@@ -267,28 +267,28 @@ describe("formatTime", () => {
 });
 
 describe("groupsDigest", () => {
-  const g = (categorizationId: number, entryIndex: number, anchor: string | null): ForecastGroup => ({
-    categorizationId, entryIndex, anchor, title: "T", content: "C", url: null, editUrl: null,
+  const g = (categorizationId: number, uid: string, anchor: string | null): ForecastGroup => ({
+    categorizationId, uid, anchor, title: "T", content: "C", url: null, editUrl: null,
   });
 
   it("is stable regardless of group order", () => {
-    const a = [g(1, 0, "2026-01-01T00:00:00Z"), g(2, 0, null)];
+    const a = [g(1, "a", "2026-01-01T00:00:00Z"), g(2, "a", null)];
     expect(groupsDigest(a)).toBe(groupsDigest([...a].reverse()));
   });
 
   it("changes when a new group is added", () => {
-    const base = [g(1, 0, null)];
-    expect(groupsDigest(base)).not.toBe(groupsDigest([...base, g(1, 1, null)]));
+    const base = [g(1, "a", null)];
+    expect(groupsDigest(base)).not.toBe(groupsDigest([...base, g(1, "b", null)]));
   });
 
   it("changes when an anchor moves (a note was added)", () => {
-    expect(groupsDigest([g(1, 0, "2026-01-01T00:00:00Z")])).not.toBe(groupsDigest([g(1, 0, "2026-02-01T00:00:00Z")]));
+    expect(groupsDigest([g(1, "a", "2026-01-01T00:00:00Z")])).not.toBe(groupsDigest([g(1, "a", "2026-02-01T00:00:00Z")]));
   });
 });
 
 describe("countByDay", () => {
   function event(start: Date): ForecastEvent {
-    return { categorizationId: 0, entryIndex: 0, title: "T", start: start.toISOString(), extendedProps: { content: "C", editUrl: null } };
+    return { categorizationId: 0, uid: "e", title: "T", start: start.toISOString(), extendedProps: { content: "C", editUrl: null } };
   }
 
   it("tallies occurrences that share a local day", () => {

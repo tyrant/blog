@@ -10,7 +10,7 @@ module Substack
     class ScheduleConfirmer
       include ServiceInterface
 
-      arguments :categorization_id, :entry_index, :t, :url, :timestamp
+      arguments :categorization_id, :uid, :t, :url, :timestamp
 
       def execute
         config = BlizzardScheduleConfig.instance
@@ -26,7 +26,7 @@ module Substack
         cat = Comfy::Cms::Categorization.find_by(id: @categorization_id)
         return if cat.nil?
 
-        entry = Array(cat.data["blizzard"])[@entry_index.to_i]
+        entry = Array(cat.data["blizzard"]).find { |e| e["uid"] == @uid }
         return if entry.nil? || @url.blank? || @timestamp.blank?
         return if Array(entry["notes"]).any? { |note| note["url"] == @url }
 
@@ -38,7 +38,7 @@ module Substack
       def mark_posted(config)
         schedule = config.schedule.deep_dup
         event = Array(schedule["events"]).find do |e|
-          e["c"] == @categorization_id.to_i && e["i"] == @entry_index.to_i && e["t"] == @t
+          e["c"] == @categorization_id.to_i && e["u"] == @uid && e["t"] == @t
         end
         return if event.nil? || event["posted_at"].present?
 

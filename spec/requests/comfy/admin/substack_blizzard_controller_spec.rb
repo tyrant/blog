@@ -12,7 +12,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
   let(:data) do
     { 'blizzard' => [
-      { 'text' => 'stale group text', 'body_json' => { 'type' => 'doc' },
+      { 'uid' => 'u0', 'text' => 'stale group text', 'body_json' => { 'type' => 'doc' },
         'notes' => [{ 'url' => 'https://substack.com/profile/4619740-mikey-clarke/note/c-111', 'timestamp' => 90.days.ago.iso8601 }] }
     ] }
   end
@@ -127,8 +127,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       BlizzardScheduleConfig.instance.update!(schedule: {
         'days' => 7, 'even' => true, 'shuffle' => true,
         'events' => [
-          { 'c' => categorization.id, 'i' => 0, 't' => due_t },
-          { 'c' => categorization.id, 'i' => 0, 't' => 10.days.from_now.utc.iso8601 }
+          { 'c' => categorization.id, 'u' => 'u0', 't' => due_t },
+          { 'c' => categorization.id, 'u' => 'u0', 't' => 10.days.from_now.utc.iso8601 }
         ]
       })
     end
@@ -154,7 +154,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     describe 'POST scheduled/confirm.json' do
       before do
         post comfy_admin_substack_blizzard_confirm_scheduled_path(format: :json),
-             params: { categorization_id: categorization.id, index: 0, t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
+             params: { categorization_id: categorization.id, uid: 'u0', t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
              headers: http_auth_headers
       end
 
@@ -164,7 +164,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       it 'is idempotent — a repeat confirm does not double-append' do
         post comfy_admin_substack_blizzard_confirm_scheduled_path(format: :json),
-             params: { categorization_id: categorization.id, index: 0, t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
+             params: { categorization_id: categorization.id, uid: 'u0', t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
              headers: http_auth_headers
         expect(categorization.reload.data['blizzard'][0]['notes'].count { |n| n['url'] == new_url }).to eq 1
       end
@@ -174,7 +174,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST add_note.json (local repost task API)' do
     before do
       post comfy_admin_substack_blizzard_add_note_path(format: :json),
-           params: { categorization_id: categorization.id, index: 0,
+           params: { categorization_id: categorization.id, uid: 'u0',
                      url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-22T00:00:00Z' },
            headers: http_auth_headers
     end
@@ -186,7 +186,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'invalid (missing url) returns 422' do
       before do
         post comfy_admin_substack_blizzard_add_note_path(format: :json),
-             params: { categorization_id: categorization.id, index: 0, url: '', timestamp: '2026-06-22T00:00:00Z' },
+             params: { categorization_id: categorization.id, uid: 'u0', url: '', timestamp: '2026-06-22T00:00:00Z' },
              headers: http_auth_headers
       end
       it { expect(response).to have_http_status :unprocessable_entity }
@@ -202,7 +202,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       stub_request(:get, 'https://substack.com/api/v1/reader/comment/999')
         .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body } }.to_json)
       post comfy_admin_substack_blizzard_reseed_path,
-           params: { categorization_id: categorization.id, index: 0,
+           params: { categorization_id: categorization.id, uid: 'u0',
                      note_url: 'https://substack.com/@mikeyclarke/note/c-999', days: 14, page: 2 },
            headers: http_auth_headers
     end
@@ -220,7 +220,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'with url and timestamp' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, index: 0,
+             params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-19T00:00:00Z', days: 14 },
              headers: http_auth_headers
       end
@@ -232,7 +232,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'retains the page number on redirect' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, index: 0,
+             params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-19T00:00:00Z', days: 14, page: 3 },
              headers: http_auth_headers
       end
@@ -243,7 +243,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'human-friendly timestamp is converted to ISO' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, index: 0,
+             params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '21 Jun 2025 at 19:00', days: 14 },
              headers: http_auth_headers
       end
@@ -254,7 +254,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'unparseable timestamp is rejected' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, index: 0, url: 'u', timestamp: 'gibberish', days: 14 },
+             params: { categorization_id: categorization.id, uid: 'u0', url: 'u', timestamp: 'gibberish', days: 14 },
              headers: http_auth_headers
       end
 
@@ -265,7 +265,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'missing fields' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, index: 0, url: '', timestamp: '', days: 14 },
+             params: { categorization_id: categorization.id, uid: 'u0', url: '', timestamp: '', days: 14 },
              headers: http_auth_headers
       end
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
@@ -278,7 +278,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       stub_request(:post, 'https://substack.com/api/v1/comment/feed')
         .to_return(status: 200, body: { 'id' => 999, 'date' => '2026-06-19T00:00:00Z' }.to_json)
       post comfy_admin_substack_blizzard_create_note_path,
-           params: { categorization_id: categorization.id, index: 0, days: 14 },
+           params: { categorization_id: categorization.id, uid: 'u0', days: 14 },
            headers: http_auth_headers
     end
 
@@ -290,7 +290,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         stub_request(:post, 'https://substack.com/api/v1/comment/feed').to_return(status: 500, body: 'boom')
         post comfy_admin_substack_blizzard_create_note_path,
-             params: { categorization_id: categorization.id, index: 0, days: 14 },
+             params: { categorization_id: categorization.id, uid: 'u0', days: 14 },
              headers: http_auth_headers
       end
       it { expect(flash[:danger]).to be_present }
@@ -300,7 +300,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST save_schedule' do
     let(:payload) do
       { days: 7, even: true, shuffle: false, groupsDigest: 'abc123',
-        events: [{ c: categorization.id, i: 0, t: '2026-07-05T09:00:00.000Z' }] }
+        events: [{ c: categorization.id, u: 'u0', t: '2026-07-05T09:00:00.000Z' }] }
     end
 
     before do

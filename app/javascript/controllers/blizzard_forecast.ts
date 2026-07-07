@@ -3,7 +3,7 @@
 
 export interface ForecastGroup {
   categorizationId: number;
-  entryIndex: number;
+  uid: string; // stable per-entry id (survives reordering/deletion, unlike an array index)
   anchor: string | null; // ISO8601 of the most recent note, or null if never posted
   title: string;
   content: string; // the intended Note text, shown in the hover tooltip
@@ -13,7 +13,7 @@ export interface ForecastGroup {
 
 export interface ForecastEvent {
   categorizationId: number;
-  entryIndex: number;
+  uid: string;
   title: string;
   start: string; // ISO8601
   url?: string;
@@ -45,32 +45,30 @@ export function formatTimestamp(iso: string): string {
 // Compact saved-schedule reference: categorization id, entry index, timestamp.
 export interface ScheduleRef {
   c: number;
-  i: number;
+  u: string;
   t: string;
 }
 
-const groupKey = (c: number, i: number): string => `${c}:${i}`;
-
 export function toScheduleRefs(events: ForecastEvent[]): ScheduleRef[] {
-  return events.map((e) => ({ c: e.categorizationId, i: e.entryIndex, t: e.start }));
+  return events.map((e) => ({ c: e.categorizationId, u: e.uid, t: e.start }));
 }
 
 // Order-independent fingerprint of a schedule: two arrangements are the same iff
 // they hold the same set of (group, timestamp) pairs.
 export function scheduleSignature(refs: ScheduleRef[]): string {
-  return refs.map((r) => `${r.c}:${r.i}:${r.t}`).sort().join("|");
+  return refs.map((r) => `${r.c}:${r.u}:${r.t}`).sort().join("|");
 }
 
 // Rebuilds events from saved refs, pulling title/content/url from the current
 // groups. Refs whose group no longer exists are dropped.
 export function hydrateSchedule(refs: ScheduleRef[], groups: ForecastGroup[]): ForecastEvent[] {
-  const lookup = new Map(groups.map((g) => [groupKey(g.categorizationId, g.entryIndex), g]));
+  const lookup = new Map(groups.map((g) => [g.uid, g]));
   return refs.flatMap((ref) => {
-    const group = lookup.get(groupKey(ref.c, ref.i));
+    const group = lookup.get(ref.u);
     if (!group) return [];
     return [{
       categorizationId: ref.c,
-      entryIndex: ref.i,
+      uid: ref.u,
       title: group.title,
       start: ref.t,
       url: group.url ?? undefined,
@@ -106,7 +104,7 @@ export function intervalColor(index: number): string {
 // groups since the schedule was saved, and prompt a re-save.
 export function groupsDigest(groups: ForecastGroup[]): string {
   const canonical = groups
-    .map((g) => `${g.categorizationId}:${g.entryIndex}:${g.anchor ?? ""}`)
+    .map((g) => `${g.categorizationId}:${g.uid}:${g.anchor ?? ""}`)
     .sort()
     .join("|");
   let hash = 5381;
@@ -228,7 +226,7 @@ export function forecastOccurrences(
     for (let t = first; t.getTime() <= horizonEnd.getTime(); t = addDays(t, step)) {
       events.push({
         categorizationId: group.categorizationId,
-        entryIndex: group.entryIndex,
+        uid: group.uid,
         title: group.title,
         start: t.toISOString(),
         url: group.url ?? undefined,
@@ -262,7 +260,7 @@ export function evenlySpreadOccurrences(
     for (let t = first; t <= horizonEnd; t += stepMs) {
       events.push({
         categorizationId: group.categorizationId,
-        entryIndex: group.entryIndex,
+        uid: group.uid,
         title: group.title,
         start: new Date(t).toISOString(),
         url: group.url ?? undefined,

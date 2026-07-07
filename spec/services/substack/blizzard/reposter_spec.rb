@@ -11,7 +11,7 @@ RSpec.describe Substack::Blizzard::Reposter do
 
   let(:data) do
     { 'blizzard' => [
-      { 'text' => 'hello', 'body_json' => { 'type' => 'doc' },
+      { 'uid' => 'e0', 'text' => 'hello', 'body_json' => { 'type' => 'doc' },
         'notes' => [{ 'url' => 'https://substack.com/profile/4619740-mikey-clarke/note/c-111', 'timestamp' => '2025-01-01T00:00:00Z' }] }
     ] }
   end
@@ -22,7 +22,7 @@ RSpec.describe Substack::Blizzard::Reposter do
     allow(client).to receive(:create_note).and_return('id' => 999, 'date' => '2026-06-19T00:00:00Z')
   end
 
-  subject(:record) { described_class.execute(categorization: categorization, entry_index: 0, client: client) }
+  subject(:record) { described_class.execute(categorization: categorization, uid: 'e0', client: client) }
 
   it 'posts the stored body_json' do
     record
@@ -39,8 +39,8 @@ RSpec.describe Substack::Blizzard::Reposter do
     expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2
   end
 
-  context 'unknown entry index' do
-    subject(:record) { described_class.execute(categorization: categorization, entry_index: 5, client: client) }
+  context 'unknown uid' do
+    subject(:record) { described_class.execute(categorization: categorization, uid: 'nope', client: client) }
     it { expect { record }.to raise_error(ArgumentError) }
   end
 end

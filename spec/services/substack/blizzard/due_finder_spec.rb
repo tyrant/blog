@@ -10,7 +10,7 @@ RSpec.describe Substack::Blizzard::DueFinder do
   let!(:categorization) { create :categorization, category: category, categorized: post, data: data }
 
   def entry(text, *timestamps)
-    { 'text' => text, 'body_json' => {}, 'notes' => timestamps.map { |t| { 'url' => 'u', 'timestamp' => t } } }
+    { 'uid' => text, 'text' => text, 'body_json' => {}, 'notes' => timestamps.map { |t| { 'url' => 'u', 'timestamp' => t } } }
   end
 
   let(:data) do
@@ -26,7 +26,7 @@ RSpec.describe Substack::Blizzard::DueFinder do
   it 'orders most-stale-first (never-posted, then oldest)' do
     expect(due.map { |d| d.entry['text'] }).to eq %w[never stale]
   end
-  it { expect(due.find { |d| d.entry['text'] == 'stale' }.index).to eq 1 }
+  it { expect(due.find { |d| d.entry['text'] == 'stale' }.uid).to eq 'stale' }
   it { expect(due.first.categorization).to eq categorization }
 
   context 'a generous window includes everything' do

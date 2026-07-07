@@ -10,14 +10,14 @@ RSpec.describe Substack::Blizzard::ScheduleClaimer do
   let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://sub/p/a', data: data }
 
   def entry(text, body_json)
-    { 'text' => text, 'body_json' => body_json, 'notes' => [{ 'url' => 'u', 'timestamp' => 90.days.ago.iso8601 }] }
+    { 'uid' => text, 'text' => text, 'body_json' => body_json, 'notes' => [{ 'url' => 'u', 'timestamp' => 90.days.ago.iso8601 }] }
   end
 
-  # index 0 postable; index 1 has blank body_json.
+  # g0 postable; g1 has blank body_json.
   let(:data) { { 'blizzard' => [entry('g0', { 'type' => 'doc' }), entry('g1', {})] } }
 
-  def ev(index, t, extra = {})
-    { 'c' => categorization.id, 'i' => index, 't' => t }.merge(extra)
+  def ev(uid, t, extra = {})
+    { 'c' => categorization.id, 'u' => uid, 't' => t }.merge(extra)
   end
 
   def set_schedule(events)
@@ -29,7 +29,7 @@ RSpec.describe Substack::Blizzard::ScheduleClaimer do
   end
 
   describe 'due selection' do
-    before { set_schedule([ev(0, 1.hour.ago.utc.iso8601), ev(0, 5.days.from_now.utc.iso8601)]) }
+    before { set_schedule([ev('g0', 1.hour.ago.utc.iso8601), ev('g0', 5.days.from_now.utc.iso8601)]) }
     subject(:claimed) { described_class.execute }
 
     it { expect(claimed.size).to eq 1 }
@@ -43,33 +43,33 @@ RSpec.describe Substack::Blizzard::ScheduleClaimer do
   end
 
   describe 'skips already-posted events' do
-    before { set_schedule([ev(0, 1.hour.ago.utc.iso8601, 'posted_at' => 1.minute.ago.utc.iso8601)]) }
+    before { set_schedule([ev('g0', 1.hour.ago.utc.iso8601, 'posted_at' => 1.minute.ago.utc.iso8601)]) }
     it { expect(described_class.execute).to be_empty }
   end
 
   describe 'a freshly-claimed event' do
-    before { set_schedule([ev(0, 1.hour.ago.utc.iso8601, 'claimed_at' => 1.minute.ago.utc.iso8601)]) }
+    before { set_schedule([ev('g0', 1.hour.ago.utc.iso8601, 'claimed_at' => 1.minute.ago.utc.iso8601)]) }
     it { expect(described_class.execute).to be_empty }
   end
 
   describe 'a stale claim (older than the timeout) is reclaimed' do
-    before { set_schedule([ev(0, 1.hour.ago.utc.iso8601, 'claimed_at' => 2.hours.ago.utc.iso8601)]) }
+    before { set_schedule([ev('g0', 1.hour.ago.utc.iso8601, 'claimed_at' => 2.hours.ago.utc.iso8601)]) }
     it { expect(described_class.execute.size).to eq 1 }
   end
 
   describe 'skips groups with no body_json' do
-    before { set_schedule([ev(1, 1.hour.ago.utc.iso8601)]) }
+    before { set_schedule([ev('g1', 1.hour.ago.utc.iso8601)]) }
     it { expect(described_class.execute).to be_empty }
   end
 
-  describe 'skips orphaned group indices' do
-    before { set_schedule([ev(9, 1.hour.ago.utc.iso8601)]) }
+  describe 'skips orphaned group uids' do
+    before { set_schedule([ev('missing', 1.hour.ago.utc.iso8601)]) }
     it { expect(described_class.execute).to be_empty }
   end
 
   describe 'respects the limit, oldest-first' do
     before do
-      set_schedule([ev(0, 3.hours.ago.utc.iso8601), ev(0, 1.hour.ago.utc.iso8601), ev(0, 2.hours.ago.utc.iso8601)])
+      set_schedule([ev('g0', 3.hours.ago.utc.iso8601), ev('g0', 1.hour.ago.utc.iso8601), ev('g0', 2.hours.ago.utc.iso8601)])
     end
     it { expect(described_class.execute(limit: 2).size).to eq 2 }
 
@@ -80,7 +80,7 @@ RSpec.describe Substack::Blizzard::ScheduleClaimer do
   end
 
   describe 'dry_run returns due events without claiming' do
-    before { set_schedule([ev(0, 1.hour.ago.utc.iso8601)]) }
+    before { set_schedule([ev('g0', 1.hour.ago.utc.iso8601)]) }
     it { expect(described_class.execute(dry_run: true).size).to eq 1 }
 
     describe 'no claim written' do

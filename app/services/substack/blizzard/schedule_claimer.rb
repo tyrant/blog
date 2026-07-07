@@ -58,12 +58,12 @@ module Substack
         cat = cats[event["c"]]
         return nil if cat.nil?
 
-        entry = Array(cat.data["blizzard"])[event["i"]]
+        entry = Array(cat.data["blizzard"]).find { |e| e["uid"] == event["u"] }
         return nil if entry.nil? || entry["body_json"].blank?
 
         {
           "categorization_id" => event["c"],
-          "index"             => event["i"],
+          "uid"               => event["u"],
           "t"                 => event["t"],
           "text"              => entry["text"],
           "body_json"         => entry["body_json"],

@@ -8,12 +8,12 @@ module Substack
     class Reposter
       include ServiceInterface
 
-      arguments :categorization, :entry_index, client: nil, commit: true
+      arguments :categorization, :uid, client: nil, commit: true
 
       def execute
         @client ||= Substack::Client.new
-        entry     = @categorization.data.dig("blizzard", @entry_index)
-        raise ArgumentError, "No blizzard entry #{@entry_index}" if entry.nil?
+        entry     = Array(@categorization.data["blizzard"]).find { |e| e["uid"] == @uid }
+        raise ArgumentError, "No blizzard entry #{@uid}" if entry.nil?
 
         created = NoteParser.comment(@client.create_note(entry["body_json"]))
         record  = {

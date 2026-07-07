@@ -76,7 +76,7 @@ module Substack
       def confirm(group, record)
         post("/admin/substack-blizzard/scheduled/confirm.json",
              categorization_id: group["categorization_id"],
-             index:             group["index"],
+             uid:               group["uid"],
              t:                 group["t"],
              url:               record["url"],
              timestamp:         record["timestamp"])

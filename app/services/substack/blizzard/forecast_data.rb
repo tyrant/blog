@@ -15,10 +15,10 @@ module Substack
       def execute
         categorizations.flat_map do |categorization|
           post = categorization.categorized
-          Array(categorization.data["blizzard"]).each_with_index.map do |entry, index|
+          Array(categorization.data["blizzard"]).map do |entry|
             {
               categorizationId: categorization.id,
-              entryIndex:       index,
+              uid:              entry["uid"],
               anchor:  latest_timestamp(entry)&.iso8601,
               title:   post&.title.presence || "(untitled post)",
               content: entry["text"].to_s,

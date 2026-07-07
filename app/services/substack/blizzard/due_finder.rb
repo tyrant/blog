@@ -10,17 +10,17 @@ module Substack
 
       arguments max_age_days: 14, title_query: nil
 
-      Due = Struct.new(:categorization, :index, :entry, :latest, keyword_init: true)
+      Due = Struct.new(:categorization, :uid, :entry, :latest, keyword_init: true)
 
       def execute
         cutoff = @max_age_days.to_i.days.ago
 
         due = categorizations.flat_map do |categorization|
-          Array(categorization.data["blizzard"]).each_with_index.filter_map do |entry, index|
+          Array(categorization.data["blizzard"]).filter_map do |entry|
             latest = latest_timestamp(entry)
             next unless latest.nil? || latest < cutoff
 
-            Due.new(categorization: categorization, index: index, entry: entry, latest: latest)
+            Due.new(categorization: categorization, uid: entry["uid"], entry: entry, latest: latest)
           end
         end
 

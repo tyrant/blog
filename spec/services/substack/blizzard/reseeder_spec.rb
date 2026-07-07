@@ -14,7 +14,7 @@ RSpec.describe Substack::Blizzard::Reseeder do
 
   let(:data) do
     { 'blizzard' => [
-      { 'text' => 'plain', 'body_json' => { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'plain' }] }] },
+      { 'uid' => 'e0', 'text' => 'plain', 'body_json' => { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'plain' }] }] },
         'notes' => [{ 'url' => 'https://substack.com/profile/x/note/c-111', 'timestamp' => '2025-01-01T00:00:00Z' }] }
     ] }
   end
@@ -32,7 +32,7 @@ RSpec.describe Substack::Blizzard::Reseeder do
   before { allow(client).to receive(:get_note).and_return('comment' => { 'body_json' => rich_body }) }
 
   subject(:run) do
-    described_class.execute(categorization: categorization, entry_index: 0,
+    described_class.execute(categorization: categorization, uid: 'e0',
                             note_url: 'https://substack.com/@mikeyclarke/note/c-999', client: client)
   end
 
@@ -73,14 +73,14 @@ RSpec.describe Substack::Blizzard::Reseeder do
 
   context 'not a note URL' do
     subject(:run) do
-      described_class.execute(categorization: categorization, entry_index: 0, note_url: 'https://example.com/x', client: client)
+      described_class.execute(categorization: categorization, uid: 'e0', note_url: 'https://example.com/x', client: client)
     end
     it { expect { run }.to raise_error(/Not a Substack note URL/) }
   end
 
-  context 'unknown entry index' do
+  context 'unknown uid' do
     subject(:run) do
-      described_class.execute(categorization: categorization, entry_index: 9, note_url: 'https://substack.com/@m/note/c-1', client: client)
+      described_class.execute(categorization: categorization, uid: 'nope', note_url: 'https://substack.com/@m/note/c-1', client: client)
     end
     it { expect { run }.to raise_error(ArgumentError, /No blizzard entry/) }
   end

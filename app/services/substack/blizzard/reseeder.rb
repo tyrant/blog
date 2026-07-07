@@ -11,12 +11,12 @@ module Substack
     class Reseeder
       include ServiceInterface
 
-      arguments :categorization, :entry_index, :note_url, client: nil
+      arguments :categorization, :uid, :note_url, client: nil
 
       def execute
         @client ||= Substack::Client.new
-        entry = @categorization.data.dig("blizzard", @entry_index)
-        raise ArgumentError, "No blizzard entry #{@entry_index}" if entry.nil?
+        entry = Array(@categorization.data["blizzard"]).find { |e| e["uid"] == @uid }
+        raise ArgumentError, "No blizzard entry #{@uid}" if entry.nil?
 
         comment_id = NoteParser.comment_id_from_url(@note_url)
         raise ArgumentError, "Not a Substack note URL" if comment_id.nil?
