@@ -45,7 +45,7 @@
       %tbody
         - @odds.each do |candidate|
           %tr
-            %td
+            %td{ style: "max-width: 26rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis" }
               = candidate.title
               - if candidate.text.present?
                 %span.text-muted= " — #{truncate(candidate.text, length: 70)}"
