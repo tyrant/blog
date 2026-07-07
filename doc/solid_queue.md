@@ -9,10 +9,14 @@ Substack Blizzard backfill buttons; it also carries transactional mail.
 - `BackfillAllJob` / `BackfillPostJob` — Substack Blizzard backfill (see
   [substack_blizzard.md](substack_blizzard.md)). Runs on **prod** (Substack
   *reads* are allowed from the datacenter IP).
+- `RefreshNotePostLikesJob` — daily refresh of Substack note + post likes for the
+  weighted reposter (see [refresh_note_post_likes_job.md](refresh_note_post_likes_job.md)).
+  Also prod-only.
 - `deliver_later` — the landing-page thank-you mail (`LandingMailer`). **Because
   of this, the prod worker must stay running or those emails just queue.**
-- A recurring maintenance task, `clear_solid_queue_finished_jobs`, hourly
-  (`config/recurring.yml`) — prunes finished job rows.
+- Recurring tasks (`config/recurring.yml`): `clear_solid_queue_finished_jobs`
+  (hourly, prunes finished job rows) and `refresh_note_post_likes`
+  (`RefreshNotePostLikesJob`, daily at 4am).
 
 ## Layout
 

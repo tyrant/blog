@@ -27,7 +27,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   # Enqueues a likes refresh for every Substack note (runs on the prod worker).
   def refresh_likes
-    RefreshNoteLikesJob.perform_later
+    RefreshNotePostLikesJob.perform_later
     flash[:success] = "Likes refresh started — note like-counts will update shortly."
     redirect_to back_path
   end

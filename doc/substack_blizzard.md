@@ -28,7 +28,8 @@ A **blizzard entry** ("group") is one piece of text-content plus every Note that
 posted it. `body_json` is the master copy used for reposting — it preserves bold /
 italic / links as ProseMirror marks. `text` is its plaintext rendering. An entry is
 identified by its **`uid`** (stable across reordering/deletion). Each note records its
-Substack **`likes`** (the ❤ `reaction_count`), refreshed daily.
+Substack **`likes`** (the ❤ `reaction_count`), refreshed daily; the post's own like count
+lives on the post (`comfy_blog_posts.substack_likes`), refreshed by the same job.
 
 `#data["notes"]` is the old flat list, kept for now; prune later (like `#scratchpad`).
 
@@ -79,9 +80,11 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
   `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url).
 - `Substack::Blizzard::RepostTicker` — **runs on your Mac**: asks prod for the next
   weighted repost, creates the Note (residential IP), confirms it back.
-- `RefreshNoteLikesJob` — daily SolidQueue job; walks every Substack categorization on the
-  prod worker and refreshes note likes. `BackfillAllJob` / `BackfillPostJob` — backfill
-  jobs. See [solid_queue.md](solid_queue.md).
+- `RefreshNotePostLikesJob` — daily SolidQueue job; walks every Substack categorization on
+  the prod worker and refreshes both note likes and each post's likes. `BackfillAllJob` /
+  `BackfillPostJob` — backfill jobs. See
+  [refresh_note_post_likes_job.md](refresh_note_post_likes_job.md) and
+  [solid_queue.md](solid_queue.md).
 
 ## Authentication / the cookie
 
@@ -124,7 +127,7 @@ automated reposter.
 ### Backfill / likes buttons
 
 - **"Backfill all posts' notes"** → `BackfillAllJob`.
-- **"Refresh note likes"** → `RefreshNoteLikesJob` (an immediate run of the daily job).
+- **"Refresh all Note/Post likes"** → `RefreshNotePostLikesJob` (an immediate run of the daily job).
 - **"Backfill this post's notes"** (CMS Post editor sidebar) → `BackfillPostJob`.
 
 All enqueue SolidQueue jobs (run on the prod worker; Substack reads are allowed there) and
@@ -132,8 +135,9 @@ flash immediately. All are additive/idempotent, so re-clicking is safe.
 
 ## How reposting works
 
-1. **Likes** (prod, daily 4am): `RefreshNoteLikesJob` re-reads every note's `reaction_count`
-   into `likes`. This is the popularity signal.
+1. **Likes** (prod, daily 4am): `RefreshNotePostLikesJob` re-reads every note's
+   `reaction_count` into its `likes`, and each post's `reaction_count` into the post's
+   `substack_likes`. This is the popularity signal.
 2. **Tick** (your Mac, every ~2 min via cron): asks prod for the next repost. Prod
    (`WeightedPicker`) gates itself to one pick per `interval_minutes`, so most ticks are
    no-ops. When it's time, it weighted-samples one eligible entry and hands it back; the
@@ -141,9 +145,10 @@ flash immediately. All are additive/idempotent, so re-clicking is safe.
    then confirm by appending the note) under a DB row lock, so overlapping ticks can't
    double-fire.
 
-**Weighting:** an entry's pick probability ∝ `1 + Σ(its notes' likes)`. The `+1` base
-gives never-posted / zero-like entries a small chance; the sum makes heavily-liked entries
-(and, deliberately, entries reposted often) win more. Entries reposted within
+**Weighting:** an entry's pick probability ∝ `1 + Σ(its notes' likes) + its post's likes`.
+The `+1` base gives never-posted / zero-like entries a small chance; the sums make
+heavily-liked entries (and popular posts — a post's likes lift every one of its entries —
+and, deliberately, entries reposted often) win more. Entries reposted within
 `cooldown_hours`, or with no `body_json`, are excluded.
 
 The local cron (residential IP):
@@ -202,7 +207,8 @@ Rich formatting only survives if captured from a real Note (backfill / re-seed).
 - **Nothing ever reposts** — check `last_reposted_at` is advancing and `interval_minutes`;
   every tick returns `{}` if it's not yet time or every entry is in cooldown / lacks
   `body_json`.
-- **Likes all zero / stale** — the daily `RefreshNoteLikesJob` hasn't run (SolidQueue worker
-  down; see [solid_queue.md](solid_queue.md)); hit "Refresh note likes" to force it.
+- **Likes all zero / stale** — the daily `RefreshNotePostLikesJob` hasn't run (SolidQueue
+  worker down; see [solid_queue.md](solid_queue.md)); hit "Refresh all Note/Post likes" to
+  force it.
 - **Entry never picked** — it may be permanently in cooldown (a very recent note) or lack
   `body_json` (re-seed it, or `fill_missing_body_json`).

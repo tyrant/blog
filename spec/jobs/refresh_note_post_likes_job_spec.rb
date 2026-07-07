@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe RefreshNoteLikesJob do
+RSpec.describe RefreshNotePostLikesJob do
 
   let!(:site) { create :site }
   let!(:post) { create :post, site: site }
