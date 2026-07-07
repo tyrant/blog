@@ -109,21 +109,27 @@ module BlizzardRepostTick
     )
 
     result.posted.each do |p|
-      puts "── #{commit ? 'POSTED' : 'would post'} ──"
+      log "── #{commit ? 'POSTED' : 'would post'} ──"
       puts p["text"]
       puts "→ #{p['url']}" if p["url"]
     end
     result.skipped.each do |s|
-      puts "── SKIPPED (#{s['reason']}) ──"
+      log "── SKIPPED (#{s['reason']}) ──"
       puts s["text"]
     end
     result.failed.each do |f|
-      puts "── FAILED: #{f['error']} ──"
+      log "── FAILED: #{f['error']} ──"
       puts f["text"]
     end
 
-    puts "\n#{commit ? 'Posted' : 'Dry run'}: #{result.posted.size}." \
-         " Skipped: #{result.skipped.size}. Failed: #{result.failed.size}."
+    log "#{commit ? 'Posted' : 'Dry run'}: #{result.posted.size}." \
+        " Skipped: #{result.skipped.size}. Failed: #{result.failed.size}."
+  end
+
+  # Each cron tick appends to /tmp/blizzard_post.log, so stamp the log lines with
+  # the local time to make the history legible.
+  def log(message)
+    puts "[#{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}] #{message}"
   end
 end
 
