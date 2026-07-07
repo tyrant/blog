@@ -1,8 +1,9 @@
 # Substack Blizzard
 
-Track the rich-text content of Substack Notes as reusable assets, forecast when to
-re-post them, and re-post that content as fresh Notes over time — keeping a history
-of every repost. Admin at **`/admin/substack-blizzard`**.
+Track the rich-text content of Substack Notes as reusable assets and re-post that
+content as fresh Notes over time — **popularity-weighted**, so well-liked content
+reposts more often — keeping a history (and like-count) of every repost. Admin at
+**`/admin/substack-blizzard`**.
 
 ## Concept
 
@@ -14,9 +15,10 @@ Each blog post has a Substack `Comfy::Cms::Categorization`. Its `#data` (jsonb) 
   "notes": [ "https://substack.com/…/note/c-…", … ],       // legacy flat URL list (retained)
   "blizzard": [
     {
+      "uid":       "b1f0…",                                 // stable per-entry id
       "text":      "<plaintext — used for matching + display>",
       "body_json": { "type": "doc", "attrs": {…}, "content": [ … ] }, // ProseMirror, lossless
-      "notes":     [ { "url": "https://substack.com/…/note/c-…", "timestamp": "2025-08-…Z" }, … ]
+      "notes":     [ { "url": "…/note/c-…", "timestamp": "2025-08-…Z", "likes": 9 }, … ]
     }
   ]
 }
@@ -24,30 +26,23 @@ Each blog post has a Substack `Comfy::Cms::Categorization`. Its `#data` (jsonb) 
 
 A **blizzard entry** ("group") is one piece of text-content plus every Note that has
 posted it. `body_json` is the master copy used for reposting — it preserves bold /
-italic / links as ProseMirror marks. `text` is its plaintext rendering. A group is
-identified by **`(categorization_id, entry_index)`** — its position in the `blizzard`
-array. A group's **anchor** is its most-recent note timestamp.
+italic / links as ProseMirror marks. `text` is its plaintext rendering. An entry is
+identified by its **`uid`** (stable across reordering/deletion). Each note records its
+Substack **`likes`** (the ❤ `reaction_count`), refreshed daily.
 
 `#data["notes"]` is the old flat list, kept for now; prune later (like `#scratchpad`).
 
-### The saved forecast — `BlizzardScheduleConfig`
+### Settings — `BlizzardScheduleConfig`
 
-A singleton row (`schedule` jsonb) holds the committed repost plan:
+A singleton row holds the reposting settings:
 
-```jsonc
-{
-  "days": 7, "even": true,                          // the controls that generated it
-  "groupsDigest": "<hash of every (c,i,anchor)>",  // to detect the plan going stale
-  "events": [
-    { "c": 123, "i": 0, "t": "2026-07-10T09:00:00.000Z",
-      "claimed_at": "…", "posted_at": "…" },       // lifecycle stamps (see Posting)
-    …
-  ]
-}
-```
+- `interval_minutes` (default 30) — minutes between reposts.
+- `cooldown_hours` (default 12) — an entry rests this long after any repost before it's
+  eligible again.
+- `last_reposted_at` — the claim clock; stamped each time a repost is handed out.
 
-Each event = "post group `(c,i)` at time `t`". `claimed_at`/`posted_at` track the
-two-phase posting lifecycle.
+(The legacy `schedule` jsonb column — the removed forecast calendar's saved arrangement
+— is retired but not yet dropped.)
 
 ## The Cloudflare constraint (read this first)
 
@@ -57,8 +52,8 @@ Substack's internal API is reached with a stored `substack.sid` session cookie.
 - **Note-creation POSTs are blocked by Cloudflare from the datacenter IP** — they 403.
   The identical request succeeds from a **residential IP**.
 
-So: backfilling, re-seeding, and the admin UI run server-side on prod, but **creating
-new Notes (posting the schedule) runs from your Mac** via a local cron.
+So: backfilling, likes-refresh, weighted selection, and the admin UI run server-side on
+prod, but **creating new Notes runs from your Mac** via a local cron.
 
 ## Components
 
@@ -68,22 +63,25 @@ new Notes (posting the schedule) runs from your Mac** via a local cron.
   of wherever it runs** (local DB for posting, prod DB for reads).
 - `SubstackSyncConfig` — singleton holding the `substack.sid` cookie.
 - `Substack::NoteParser` — URL↔comment-id, ProseMirror↔plaintext, append/strip the
-  post URL, build a doc from text, parse human timestamps.
-- `Substack::Blizzard::ForecastData` — every group across all Substack categorizations
-  with its `{categorizationId, entryIndex, anchor, title, content, url, editUrl}`.
-  Seeded into the calendar as a one-off JSON payload (camelCase — consumed directly by
-  the TS controller).
+  post URL, build a doc from text, parse human timestamps, **`likes`** (`reaction_count`).
 - `Substack::Blizzard::DueFinder` — entries whose most-recent note is older than N days
-  (backs the admin due-list view only).
-- `Substack::Blizzard::Backfiller` — builds `blizzard` from `notes` URLs. **Additive and
-  index-stable** (appends new groups, never reorders/removes).
+  (backs the admin due-list view / manual tools only).
+- `Substack::Blizzard::Backfiller` — builds `blizzard` from `notes` URLs. Additive and
+  idempotent; mints a `uid` for each new entry.
+- `Substack::Blizzard::LikesRefresher` — re-fetches every note of one categorization and
+  writes its `likes`; a failed fetch keeps the last-known value.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` from a real note.
-- `Substack::Blizzard::ScheduleClaimer` / `ScheduleConfirmer` — the prod side of
-  schedule-driven posting (claim due events / record a posted one), under a row lock.
-- `Substack::Blizzard::ScheduledReposter` — **runs on your Mac**: claims due events from
-  prod, creates Notes (residential IP), confirms them back.
-- `BackfillAllJob` / `BackfillPostJob` — SolidQueue jobs (see
-  [solid_queue.md](solid_queue.md)).
+- `Substack::Blizzard::WeightedPicker` — the prod side of reposting: under the config row
+  lock, if `interval_minutes` has elapsed, weighted-samples one eligible entry
+  (weight = 1 + Σ note likes; excludes entries in cooldown or lacking `body_json`),
+  stamps `last_reposted_at`, and returns it hydrated. `dry_run` previews without claiming.
+- `Substack::Blizzard::RepostRecorder` — records a completed repost (append
+  `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url).
+- `Substack::Blizzard::RepostTicker` — **runs on your Mac**: asks prod for the next
+  weighted repost, creates the Note (residential IP), confirms it back.
+- `RefreshNoteLikesJob` — daily SolidQueue job; walks every Substack categorization on the
+  prod worker and refreshes note likes. `BackfillAllJob` / `BackfillPostJob` — backfill
+  jobs. See [solid_queue.md](solid_queue.md).
 
 ## Authentication / the cookie
 
@@ -94,7 +92,7 @@ Get `substack.sid` from a logged-in browser: DevTools → Application → Cookie
 # locally (posting runs from your Mac, so the LOCAL DB's cookie is what posts)
 SID='s%3A…' bin/rails runner 'SubstackSyncConfig.instance.update!(session_cookie: ENV["SID"])'
 
-# on prod (backfill / re-seed reads)
+# on prod (backfill / likes / re-seed reads)
 ssh noob@<prod> 'cd ~/blog/current && SID="s%3A…" RAILS_ENV=production \
   ~/.rbenv/bin/rbenv exec bundle exec rails runner \
   "SubstackSyncConfig.instance.update!(session_cookie: ENV[\"SID\"])"'
@@ -105,114 +103,85 @@ FAILED line); re-run with a fresh value in the right environment.
 
 ## The admin page
 
-### Repost forecast calendar
+### Automated reposting (settings)
 
-A FullCalendar month view (client-side, `blizzard_forecast_controller.ts` +
-pure `blizzard_forecast.ts`) that plots each group's upcoming reposts over a **90-day
-horizon**. Everything recomputes in-browser — the groups are a one-off JSON payload,
-**no AJAX** on any control change.
-
-- **Repost every (days)** (default 7): the repost interval. Each group recurs every N
-  days from its anchor; overdue/never-posted groups collapse onto today.
-- **Evenly spread reposts across each interval, separating same-post** (default on):
-  ignore anchors and distribute every group evenly across each `N`-day interval, then
-  reorder within each interval so each Post's reposts sit at even fractional positions
-  (its `k` reposts ~`1/k` apart, randomly rotated) — same-Post reposts are non-adjacent
-  whenever a Post is ≤ half that interval's reposts. Unchecked → the raw anchor-based
-  forecast. (One toggle; internally the `even` field.)
-- **Save Forecasts**: POSTs the concrete arrangement to `BlizzardScheduleConfig`. Load
-  renders the *saved* schedule verbatim (so ordering persists across reloads/devices);
-  the status shows **Forecasts saved / Unsaved forecasts**, or an amber **"out of date —
-  re-save"** when a `groupsDigest` mismatch means a backfill/repost changed the groups.
-- Per day: a **pastel tint** by interval block, an **"X entries"** count by the day
-  number, a scrollable event list, and a **hover tooltip** (post-title link → Post#edit,
-  Note text, timestamp). **Clicking a day number** drills into that day's **list Day
-  view** (a Month/Day switcher sits in the header toolbar).
+A small form sets **Repost every (minutes)** and **Per-entry cooldown (hours)** (POSTs to
+`#update_settings`), and shows when the last repost fired. That's the whole control
+surface — selection is automatic and weighted; there's no schedule to arrange.
 
 ### Due list, re-seed, manual paste-back
 
-Below the calendar, `DueFinder` lists groups whose most-recent note is older than the
-**Days** filter (1–60), most-stale-first, 20/page. Per entry: a **Copy** button, an
-**Add manually** form (record a Note you posted by hand — timestamp accepts Substack's
-`21 Jun at 19:00` footer format, stored UTC), and **Re-seed rich text** (paste a real
-Note URL to replace that entry's `body_json`/`text`; history untouched).
+`DueFinder` lists entries whose most-recent note is older than the **Days** filter (1–60),
+most-stale-first, 20/page. Per entry: a **Copy** button, an **Add manually** form (record
+a Note you posted by hand — timestamp accepts Substack's `21 Jun at 19:00` footer format,
+stored UTC), and **Re-seed rich text** (paste a real Note URL to replace that entry's
+`body_json`/`text`; history untouched). These are manual tools, independent of the
+automated reposter.
 
-> The old server-side **"Create note now"** button uses `Reposter` on prod and is
-> **Cloudflare-blocked** — it can't actually post. Posting goes through the schedule.
+> The server-side **"Create note now"** button uses `Reposter` on prod and is
+> **Cloudflare-blocked** — it can't actually post. Automated posting runs from your Mac.
 
-### Backfill buttons
+### Backfill / likes buttons
 
-- **"Backfill all posts' notes"** (top of the page) → `BackfillAllJob`.
+- **"Backfill all posts' notes"** → `BackfillAllJob`.
+- **"Refresh note likes"** → `RefreshNoteLikesJob` (an immediate run of the daily job).
 - **"Backfill this post's notes"** (CMS Post editor sidebar) → `BackfillPostJob`.
 
-Both enqueue SolidQueue jobs (run on the prod worker; Substack reads are allowed there)
-and flash immediately. Backfill is additive/idempotent, so re-clicking is safe.
+All enqueue SolidQueue jobs (run on the prod worker; Substack reads are allowed there) and
+flash immediately. All are additive/idempotent, so re-clicking is safe.
 
-## Forecast → schedule → posting
+## How reposting works
 
-1. **Forecast** (browser): from the groups payload + controls, compute concrete events
-   `{c,i,t}` over 90 days. Save commits them to `BlizzardScheduleConfig` (with a
-   `groupsDigest` snapshot of the groups' anchors).
-2. **Posting** (your Mac, every 15 min via cron): claims due events from prod, posts
-   each as a Note, confirms back. **Two-phase** so a crashed run's claims self-heal.
+1. **Likes** (prod, daily 4am): `RefreshNoteLikesJob` re-reads every note's `reaction_count`
+   into `likes`. This is the popularity signal.
+2. **Tick** (your Mac, every ~2 min via cron): asks prod for the next repost. Prod
+   (`WeightedPicker`) gates itself to one pick per `interval_minutes`, so most ticks are
+   no-ops. When it's time, it weighted-samples one eligible entry and hands it back; the
+   Mac posts it and confirms back. **Two-phase** (claim by stamping `last_reposted_at`,
+   then confirm by appending the note) under a DB row lock, so overlapping ticks can't
+   double-fire.
+
+**Weighting:** an entry's pick probability ∝ `1 + Σ(its notes' likes)`. The `+1` base
+gives never-posted / zero-like entries a small chance; the sum makes heavily-liked entries
+(and, deliberately, entries reposted often) win more. Entries reposted within
+`cooldown_hours`, or with no `body_json`, are excluded.
 
 The local cron (residential IP):
 
 ```cron
-*/15 * * * * cd /Users/you/Work/blog && PATH="$HOME/.rbenv/shims:/opt/homebrew/bin:/usr/bin:/bin" bin/rails substack:blizzard:post_scheduled >> /tmp/blizzard_post.log 2>&1
+*/2 * * * * cd /Users/you/Work/blog && PATH="$HOME/.rbenv/shims:/opt/homebrew/bin:/usr/bin:/bin" bin/rails substack:blizzard:tick >> /tmp/blizzard_post.log 2>&1
 ```
 
-- `substack:blizzard:post_scheduled` → `ScheduledReposter` → `POST /scheduled/claim.json`
-  (prod selects `posted_at`-nil, `t ≤ now`, unclaimed-or-stale events **oldest-first,
-  capped at `LIMIT`** (default 5), stamps `claimed_at`, returns them hydrated with
-  `body_json`) → create the Note (attachment card + inline URL stripped) → `POST
-  /scheduled/confirm.json` (append the note to the group + set `posted_at`, idempotent).
-- Stale claims (`claimed_at` older than **`CLAIM_TIMEOUT`**, default 30 min) are
-  reclaimed — so a crash between claim and confirm reposts, rather than losing the event.
-  Selection is serialised under a DB row lock on the singleton.
+- `substack:blizzard:tick` → `RepostTicker` → `POST /repost/tick.json` (prod claims one
+  weighted entry, or returns `{}` when not yet due / nothing eligible) → create the Note
+  (attachment card + inline URL stripped) → `POST /repost/confirm.json` (append the note,
+  idempotent by url).
+- `substack:blizzard:tick_dry_run` previews via `GET /repost/preview.json` (read-only, no
+  claim). Both talk to **prod** by default — the local Mac only provides its IP + Substack
+  cookie + admin creds.
 - Env: `BLIZZARD_PROD_URL` (default `https://mikeyclarke.co.nz`), `BLIZZARD_ADMIN_USER` /
-  `BLIZZARD_ADMIN_PASS` (default: app admin creds), `LIMIT`.
-- `substack:blizzard:post_scheduled_dry_run` previews via `GET /scheduled-due.json`
-  (read-only, no claim). Both talk to **prod** by default — the local Mac only provides
-  its IP + Substack cookie + admin creds.
-- On macOS, `flock` isn't installed and isn't needed (the prod claim lock prevents
-  double-posting); give `cron` **Full Disk Access** or it silently won't run.
-
-### Staleness / re-saving
-
-The saved schedule is a **fixed 90-day snapshot**. Two ways it ages:
-
-- **`groupsDigest` (the banner):** a hash of every `(c,i,anchor)`. It changes when an
-  anchor moves — and **every posted repost appends a note, moving that group's anchor**
-  (backfills/manual notes too). So as the cron posts, the digest diverges → the amber
-  "out of date — re-save" banner appears. It's not time alone; it's the posting activity.
-- **The horizon:** the future tail is fixed at save-time + 90 days and doesn't extend
-  itself. Once all events are posted/past, reposting quietly stops until a re-save.
-
-**Re-saving** both refreshes anchors (a just-posted group's next repost recomputes from
-its new time — no over-posting) and slides the horizon forward. Re-save periodically
-(the banner is your cue). There's no automatic re-forecasting.
+  `BLIZZARD_ADMIN_PASS` (default: app admin creds).
+- On macOS, give `cron` **Full Disk Access** or it silently won't run; cron doesn't fire
+  while the Mac is asleep (no reposts happen then — harmless).
 
 ## Adding a new original Note
 
 1. Compose the rich Note in Substack's editor (include the post's preview card), post it.
 2. Add its URL to that post's `data["notes"]` (Post edit `#data` editor).
-3. **Backfill this post** (button) — original text → a new blizzard entry with lossless
-   `body_json`.
-4. Re-save the forecast (the banner will be showing) to fold the new group in.
+3. **Backfill this post** (button) — original text → a new blizzard entry (with a `uid`)
+   with lossless `body_json`. It enters the weighted pool automatically.
 
 ## Rake tasks
 
 | Task | Where | What |
 |------|-------|------|
-| `substack:blizzard:post_scheduled[_dry_run]` | **Mac** | Post due scheduled reposts; confirm back on prod. |
+| `substack:blizzard:tick[_dry_run]` | **Mac** | Post the next weighted repost; confirm back on prod. |
 | `substack:blizzard:backfill[_dry_run]` | prod | Build `blizzard` from `notes` URLs (also via the buttons). |
 | `substack:blizzard:append_urls[_dry_run]` | prod | Append the post URL to each entry's `body_json`. |
 | `substack:blizzard:fill_missing_body_json[_dry_run]` | prod | Plain `body_json` from text for entries lacking it (lossy). |
 | `substack:blizzard:proof` | either | Round-trip test: post a throwaway Note, read back, delete. |
 
-`_dry_run` variants write nothing. All writing tasks are idempotent. (The old
-`repost`/`RemoteReposter`/`due.json` path is retired in favour of schedule-driven posting.)
+`_dry_run` variants write nothing. All writing tasks are idempotent.
 
 ## body_json and the post URL
 
@@ -226,12 +195,14 @@ Rich formatting only survives if captured from a real Note (backfill / re-seed).
 
 ## Troubleshooting
 
-- **`AuthError` / FAILED on `post_scheduled`** — the **local** Substack cookie is stale
-  (posting uses the local DB's cookie); refresh it locally. Prod claim/confirm still work.
+- **`AuthError` / FAILED on `tick`** — the **local** Substack cookie is stale (posting uses
+  the local DB's cookie); refresh it locally. Prod tick/confirm still work.
 - **Cron never runs (empty `/tmp/blizzard_post.log`)** — give `/usr/sbin/cron` Full Disk
-  Access; note cron doesn't fire while the Mac is asleep (the backlog drains later).
-- **Calendar shows "out of date" / all same title on load** — the first is expected (see
-  Staleness); re-save. (The second was a fixed camelCase-key bug.)
-- **Backfill/emails not happening** — the SolidQueue worker is down; see
-  [solid_queue.md](solid_queue.md).
-- **Entry skipped "no body_json"** — re-seed it from a real note, or `fill_missing_body_json`.
+  Access; note cron doesn't fire while the Mac is asleep.
+- **Nothing ever reposts** — check `last_reposted_at` is advancing and `interval_minutes`;
+  every tick returns `{}` if it's not yet time or every entry is in cooldown / lacks
+  `body_json`.
+- **Likes all zero / stale** — the daily `RefreshNoteLikesJob` hasn't run (SolidQueue worker
+  down; see [solid_queue.md](solid_queue.md)); hit "Refresh note likes" to force it.
+- **Entry never picked** — it may be permanently in cooldown (a very recent note) or lack
+  `body_json` (re-seed it, or `fill_missing_body_json`).

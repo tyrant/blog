@@ -28,34 +28,14 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response.body).to include 'search post titles' }
     it { expect(response.body).to include 'href="https://substack.com/profile/4619740-mikey-clarke/note/c-111"' }
 
-    it 'mounts the forecast calendar' do
-      expect(response.body).to include "data-controller='blizzard-forecast'"
-    end
-
     it 'shows the totals panel' do
       expect(response.body).to include 'Totals'
       expect(response.body).to include 'blizzard entries'
     end
 
-    it 'seeds the calendar with the group forecast payload' do
-      expect(response.body).to include 'blizzard-forecast-groups-value'
-    end
-
-    it 'seeds the saved-schedule value for client-side render on load' do
-      expect(response.body).to include 'blizzard-forecast-saved-value'
-    end
-
-    it 'provides the save-forecasts endpoint url' do
-      expect(response.body).to include 'blizzard-forecast-save-url-value'
-    end
-
-    context 'the forecast ignores the due-list filters' do
-      let!(:blog_post) { create :post, site: site, layout: layout, title: 'Findable Post' }
-      before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: http_auth_headers }
-
-      it 'still carries every group into the calendar payload even when filtered out of the due list' do
-        expect(response.body).to include 'stale group text'
-      end
+    it 'shows the automated-reposting settings form' do
+      expect(response.body).to include 'Repost every (minutes):'
+      expect(response.body).to include 'Per-entry cooldown (hours):'
     end
 
     context 'days=0 is accepted' do
@@ -119,55 +99,72 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
   end
 
-  describe 'scheduled posting API (local task)' do
-    let(:due_t) { 1.hour.ago.utc.iso8601 }
+  describe 'weighted repost API (local task)' do
     let(:new_url) { 'https://substack.com/profile/4619740-mikey-clarke/note/c-333' }
 
-    before do
-      BlizzardScheduleConfig.instance.update!(schedule: {
-        'days' => 7, 'even' => true, 'shuffle' => true,
-        'events' => [
-          { 'c' => categorization.id, 'u' => 'u0', 't' => due_t },
-          { 'c' => categorization.id, 'u' => 'u0', 't' => 10.days.from_now.utc.iso8601 }
-        ]
-      })
-    end
-
-    describe 'POST scheduled/claim.json' do
-      before { post comfy_admin_substack_blizzard_claim_scheduled_path(format: :json), params: { limit: 5 }, headers: http_auth_headers }
+    describe 'POST repost/tick.json' do
+      before { post comfy_admin_substack_blizzard_repost_tick_path(format: :json), headers: http_auth_headers }
 
       it { expect(response).to have_http_status :success }
-      it { expect(response.parsed_body.size).to eq 1 }
-      it { expect(response.parsed_body.first['body_json']).to eq({ 'type' => 'doc' }) }
-      it { expect(response.parsed_body.first['post_url']).to eq categorization.url }
-      it { expect(BlizzardScheduleConfig.instance.schedule['events'].first['claimed_at']).to be_present }
-      it { expect(BlizzardScheduleConfig.instance.schedule['events'].last['claimed_at']).to be_nil }
+      it { expect(response.parsed_body['uid']).to eq 'u0' }
+      it { expect(response.parsed_body['body_json']).to eq({ 'type' => 'doc' }) }
+      it { expect(response.parsed_body['post_url']).to eq categorization.url }
+      it 'claims by stamping last_reposted_at' do
+        expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_present
+      end
     end
 
-    describe 'GET scheduled-due.json (dry run, no claiming)' do
-      before { get comfy_admin_substack_blizzard_scheduled_due_path(format: :json), headers: http_auth_headers }
-
-      it { expect(response.parsed_body.size).to eq 1 }
-      it { expect(BlizzardScheduleConfig.instance.schedule['events'].first['claimed_at']).to be_nil }
-    end
-
-    describe 'POST scheduled/confirm.json' do
+    describe 'POST repost/tick.json when not yet due' do
       before do
-        post comfy_admin_substack_blizzard_confirm_scheduled_path(format: :json),
-             params: { categorization_id: categorization.id, uid: 'u0', t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
+        BlizzardScheduleConfig.instance.update!(last_reposted_at: Time.current)
+        post comfy_admin_substack_blizzard_repost_tick_path(format: :json), headers: http_auth_headers
+      end
+
+      it { expect(response.parsed_body).to eq({}) }
+    end
+
+    describe 'GET repost/preview.json (dry run, no claiming)' do
+      before { get comfy_admin_substack_blizzard_repost_preview_path(format: :json), headers: http_auth_headers }
+
+      it { expect(response.parsed_body['uid']).to eq 'u0' }
+      it { expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_nil }
+    end
+
+    describe 'POST repost/confirm.json' do
+      before do
+        post comfy_admin_substack_blizzard_repost_confirm_path(format: :json),
+             params: { categorization_id: categorization.id, uid: 'u0', url: new_url, timestamp: '2026-07-04T00:00:00Z' },
              headers: http_auth_headers
       end
 
       it { expect(response.parsed_body['ok']).to be true }
       it { expect(categorization.reload.data['blizzard'][0]['notes'].map { |n| n['url'] }).to include new_url }
-      it { expect(BlizzardScheduleConfig.instance.schedule['events'].first['posted_at']).to be_present }
 
       it 'is idempotent — a repeat confirm does not double-append' do
-        post comfy_admin_substack_blizzard_confirm_scheduled_path(format: :json),
-             params: { categorization_id: categorization.id, uid: 'u0', t: due_t, url: new_url, timestamp: '2026-07-04T00:00:00Z' },
+        post comfy_admin_substack_blizzard_repost_confirm_path(format: :json),
+             params: { categorization_id: categorization.id, uid: 'u0', url: new_url, timestamp: '2026-07-04T00:00:00Z' },
              headers: http_auth_headers
         expect(categorization.reload.data['blizzard'][0]['notes'].count { |n| n['url'] == new_url }).to eq 1
       end
+    end
+  end
+
+  describe 'POST settings' do
+    before do
+      post comfy_admin_substack_blizzard_settings_path,
+           params: { interval_minutes: 45, cooldown_hours: 8 }, headers: http_auth_headers
+    end
+
+    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+    it { expect(BlizzardScheduleConfig.instance.interval_minutes).to eq 45 }
+    it { expect(BlizzardScheduleConfig.instance.cooldown_hours).to eq 8 }
+
+    context 'invalid interval is rejected' do
+      before do
+        post comfy_admin_substack_blizzard_settings_path,
+             params: { interval_minutes: 0, cooldown_hours: 8 }, headers: http_auth_headers
+      end
+      it { expect(flash[:danger]).to be_present }
     end
   end
 
@@ -294,43 +291,6 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
              headers: http_auth_headers
       end
       it { expect(flash[:danger]).to be_present }
-    end
-  end
-
-  describe 'POST save_schedule' do
-    let(:payload) do
-      { days: 7, even: true, shuffle: false, groupsDigest: 'abc123',
-        events: [{ c: categorization.id, u: 'u0', t: '2026-07-05T09:00:00.000Z' }] }
-    end
-
-    before do
-      post comfy_admin_substack_blizzard_schedule_path,
-           params: payload.to_json,
-           headers: http_auth_headers.merge('CONTENT_TYPE' => 'application/json', 'ACCEPT' => 'application/json')
-    end
-
-    it { expect(response).to have_http_status :success }
-    it { expect(response.parsed_body['ok']).to be true }
-
-    it 'persists the events' do
-      expect(BlizzardScheduleConfig.instance.schedule['events'].size).to eq 1
-    end
-
-    it 'persists the interval' do
-      expect(BlizzardScheduleConfig.instance.schedule['days']).to eq 7
-    end
-
-    it 'persists the even-spread flag' do
-      expect(BlizzardScheduleConfig.instance.schedule['even']).to be true
-    end
-
-    it 'persists the groups digest for the re-save banner' do
-      expect(BlizzardScheduleConfig.instance.schedule['groupsDigest']).to eq 'abc123'
-    end
-
-    context 'a non-object json body' do
-      let(:payload) { 'just a string' }
-      it { expect(response).to have_http_status :unprocessable_content }
     end
   end
 

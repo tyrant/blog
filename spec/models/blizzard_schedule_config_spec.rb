@@ -13,9 +13,14 @@ RSpec.describe BlizzardScheduleConfig do
     end
   end
 
-  describe '#schedule' do
-    it 'defaults to an empty hash' do
-      expect(described_class.instance.schedule).to eq({})
-    end
+  describe 'defaults' do
+    it { expect(described_class.instance.interval_minutes).to eq 30 }
+    it { expect(described_class.instance.cooldown_hours).to eq 12 }
+    it { expect(described_class.instance.last_reposted_at).to be_nil }
+  end
+
+  describe 'validations' do
+    it { is_expected.to validate_numericality_of(:interval_minutes).only_integer.is_greater_than(0) }
+    it { is_expected.to validate_numericality_of(:cooldown_hours).only_integer.is_greater_than_or_equal_to(0) }
   end
 end

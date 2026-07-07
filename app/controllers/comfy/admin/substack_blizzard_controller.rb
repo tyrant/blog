@@ -6,37 +6,21 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   # JSON API consumed by the local repost task (basic-auth is the auth).
   skip_before_action :verify_authenticity_token,
-                     only: %i[add_note claim_scheduled confirm_scheduled], raise: false,
+                     only: %i[add_note repost_tick repost_confirm], raise: false,
                      if: -> { request.format.json? }
 
   def index
     @days = clamp_days(params[:days])
     due   = Substack::Blizzard::DueFinder.execute(max_age_days: @days, title_query: params[:q])
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
-    # Every group, unfiltered — the forecast calendar spans all posts regardless
-    # of the due-list filters, and recomputes occurrences entirely client-side.
-    @forecast = Substack::Blizzard::ForecastData.execute
-    @saved_schedule = BlizzardScheduleConfig.instance.schedule
+    @config = BlizzardScheduleConfig.instance
     @blizzard_stats = blizzard_stats
-  end
-
-  # Persists the current forecast arrangement so it renders identically on every
-  # reload and device. The payload is the compact { days, even, shuffle, events:
-  # [{c, i, t}] } object the calendar builds client-side.
-  def save_schedule
-    payload = JSON.parse(request.raw_post)
-    raise JSON::ParserError, "expected a JSON object" unless payload.is_a?(Hash)
-
-    BlizzardScheduleConfig.instance.update!(schedule: payload.slice("days", "even", "shuffle", "events", "groupsDigest"))
-    render json: { ok: true }
-  rescue JSON::ParserError, ActiveRecord::RecordInvalid => e
-    render json: { ok: false, error: e.message }, status: :unprocessable_content
   end
 
   # Enqueues a backfill of every Substack post's notes (runs on the prod worker).
   def backfill_all
     BackfillAllJob.perform_later
-    flash[:success] = "Backfill started for all posts — reposts will update shortly. Re-save the forecast afterwards to include any new reposts."
+    flash[:success] = "Backfill started for all posts — reposts will update shortly."
     redirect_to back_path
   end
 
@@ -62,29 +46,41 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_back fallback_location: comfy_admin_substack_blizzard_path
   end
 
-  # Phase one: claim the scheduled reposts due now (marks them claimed, hydrated
-  # for the local poster). Consumed by the local `post_scheduled` task.
-  def claim_scheduled
-    render json: Substack::Blizzard::ScheduleClaimer.execute(limit: claim_limit)
+  # Phase one: the local ticker asks for the next weighted repost. Returns one
+  # hydrated entry (claiming it), or {} when it's not yet time / nothing eligible.
+  def repost_tick
+    render json: Substack::Blizzard::WeightedPicker.execute || {}
   end
 
-  # Read-only preview of what's due — for the local dry-run (no claiming).
-  def scheduled_due
-    render json: Substack::Blizzard::ScheduleClaimer.execute(limit: claim_limit, dry_run: true)
+  # Read-only preview of what would be picked next — for the local dry-run.
+  def repost_preview
+    render json: Substack::Blizzard::WeightedPicker.execute(dry_run: true) || {}
   end
 
-  # Phase two: record a completed scheduled post (append note + mark posted).
-  def confirm_scheduled
-    Substack::Blizzard::ScheduleConfirmer.execute(
+  # Phase two: record a completed repost (append note to the entry, by uid).
+  def repost_confirm
+    Substack::Blizzard::RepostRecorder.execute(
       categorization_id: params[:categorization_id],
       uid:               params[:uid],
-      t:                 params[:t],
       url:               params[:url],
       timestamp:         params[:timestamp]
     )
     render json: { ok: true }
   rescue => e
     render json: { ok: false, error: e.message }, status: :unprocessable_content
+  end
+
+  # Admin: update the repost cadence (minutes between reposts) and per-entry cooldown.
+  def update_settings
+    BlizzardScheduleConfig.instance.update!(
+      interval_minutes: params[:interval_minutes],
+      cooldown_hours:   params[:cooldown_hours]
+    )
+    flash[:success] = "Repost settings updated."
+  rescue ActiveRecord::RecordInvalid => e
+    flash[:danger] = "Could not update settings: #{e.message}"
+  ensure
+    redirect_to back_path
   end
 
   def create_note
@@ -145,10 +141,6 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   def clamp_days(value)
     (value.presence || DEFAULT_DAYS).to_i.clamp(0, 60)
-  end
-
-  def claim_limit
-    (params[:limit].presence || 5).to_i.clamp(1, 100)
   end
 
   # Summary counts for the right-column panel: total posts, and blizzard entries

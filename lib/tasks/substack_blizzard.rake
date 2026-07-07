@@ -78,33 +78,33 @@ namespace :substack do
     end
 
     # Run these LOCALLY (residential IP) — server-side note POSTs are Cloudflare-blocked.
-    # Posts the saved forecast schedule: claims due reposts from prod, posts them,
-    # confirms back. Intended to run on a local cron (every ~15 min, flock-guarded).
-    #   LIMIT=5 rails substack:blizzard:post_scheduled_dry_run
-    #   LIMIT=5 rails substack:blizzard:post_scheduled
+    # One tick asks prod for the next weighted repost (prod gates itself to one per
+    # interval_minutes), posts it, and confirms back. Most ticks are no-ops.
+    # Intended to run on a local cron every ~2 min.
+    #   rails substack:blizzard:tick_dry_run
+    #   rails substack:blizzard:tick
     # Env: BLIZZARD_PROD_URL (default https://mikeyclarke.co.nz),
     #      BLIZZARD_ADMIN_USER / BLIZZARD_ADMIN_PASS (default: app admin creds).
-    desc "Report which scheduled reposts are due (no Notes created)"
-    task post_scheduled_dry_run: :environment do
-      BlizzardScheduledPost.run(commit: false)
+    desc "Preview the next weighted repost (no Note created)"
+    task tick_dry_run: :environment do
+      BlizzardRepostTick.run(commit: false)
     end
 
-    desc "Post due scheduled reposts to Substack (run on your Mac) and record them on prod"
-    task post_scheduled: :environment do
-      BlizzardScheduledPost.run(commit: true)
+    desc "Post the next weighted repost to Substack (run on your Mac) and record it on prod"
+    task tick: :environment do
+      BlizzardRepostTick.run(commit: true)
     end
   end
 end
 
-module BlizzardScheduledPost
+module BlizzardRepostTick
   module_function
 
   def run(commit:)
-    result = Substack::Blizzard::ScheduledReposter.execute(
+    result = Substack::Blizzard::RepostTicker.execute(
       base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
       username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
       password: ENV["BLIZZARD_ADMIN_PASS"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.password,
-      limit:    ENV.fetch("LIMIT", 5),
       commit:   commit
     )
 

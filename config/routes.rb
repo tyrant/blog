@@ -70,16 +70,16 @@ Rails.application.routes.draw do
                only: %i[edit update]
 
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
-      post "admin/substack-blizzard/scheduled/claim",   to: "substack_blizzard#claim_scheduled",   as: :admin_substack_blizzard_claim_scheduled
-      get  "admin/substack-blizzard/scheduled-due",     to: "substack_blizzard#scheduled_due",     as: :admin_substack_blizzard_scheduled_due
-      post "admin/substack-blizzard/scheduled/confirm", to: "substack_blizzard#confirm_scheduled", as: :admin_substack_blizzard_confirm_scheduled
+      post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick
+      get  "admin/substack-blizzard/repost/preview", to: "substack_blizzard#repost_preview", as: :admin_substack_blizzard_repost_preview
+      post "admin/substack-blizzard/repost/confirm", to: "substack_blizzard#repost_confirm", as: :admin_substack_blizzard_repost_confirm
+      post "admin/substack-blizzard/settings",       to: "substack_blizzard#update_settings", as: :admin_substack_blizzard_settings
       post "admin/substack-blizzard/backfill-all",  to: "substack_blizzard#backfill_all",  as: :admin_substack_blizzard_backfill_all
       post "admin/substack-blizzard/refresh-likes",  to: "substack_blizzard#refresh_likes",  as: :admin_substack_blizzard_refresh_likes
       post "admin/substack-blizzard/backfill-post", to: "substack_blizzard#backfill_post", as: :admin_substack_blizzard_backfill_post
       post "admin/substack-blizzard/create-note", to: "substack_blizzard#create_note", as: :admin_substack_blizzard_create_note
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
       post "admin/substack-blizzard/reseed",      to: "substack_blizzard#reseed",      as: :admin_substack_blizzard_reseed
-      post "admin/substack-blizzard/schedule",    to: "substack_blizzard#save_schedule", as: :admin_substack_blizzard_schedule
     end
   end
 
