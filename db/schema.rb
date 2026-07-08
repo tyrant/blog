@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_08_000003) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_08_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_08_000003) do
     t.integer "interval_minutes", default: 30, null: false
     t.integer "cooldown_hours", default: 12, null: false
     t.datetime "last_reposted_at"
+  end
+
+  create_table "blizzard_stat_snapshots", force: :cascade do |t|
+    t.datetime "captured_at", null: false
+    t.integer "posts", default: 0, null: false
+    t.integer "entries", default: 0, null: false
+    t.integer "notes", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["captured_at"], name: "index_blizzard_stat_snapshots_on_captured_at"
   end
 
   create_table "comfy_blog_posts", force: :cascade do |t|

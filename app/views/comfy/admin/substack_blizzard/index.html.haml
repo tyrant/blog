@@ -94,6 +94,12 @@
             %td.text-right= number_with_delimiter(candidate.likes)
             %td.text-right= number_to_percentage(candidate.probability * 100, precision: 2)
 
+- if @stat_series[:labels].any?
+  %section.mb-4
+    %h5 Totals over time
+    %div{ style: "position: relative; height: 260px;" }
+      %canvas#blizzard-stats-chart{ data: { series: @stat_series.to_json } }
+
 = form_with url: comfy_admin_substack_blizzard_path, method: :get do
   .form-inline.mb-3
     %label.mr-2{ for: "days" } Most recent note older than (days):

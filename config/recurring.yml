@@ -16,3 +16,6 @@ production:
   refresh_note_post_likes:
     class: RefreshNotePostLikesJob
     schedule: every day at 4am
+  record_blizzard_stats:
+    class: RecordBlizzardStatsJob
+    schedule: every hour

@@ -47,6 +47,16 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Background jobs'
     end
 
+    context 'with recorded stat snapshots' do
+      let!(:snapshot) { BlizzardStatSnapshot.create!(captured_at: 1.hour.ago, posts: 5, entries: 3, notes: 9) }
+      before { get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers }
+
+      it 'renders the Totals-over-time chart' do
+        expect(response.body).to include 'Totals over time'
+        expect(response.body).to include "id='blizzard-stats-chart'"
+      end
+    end
+
     context 'days=0 is accepted' do
       before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
       it { expect(response).to have_http_status :success }

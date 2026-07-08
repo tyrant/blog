@@ -15,7 +15,8 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
     @config = BlizzardScheduleConfig.instance
     @odds = Substack::Blizzard::RepostOdds.execute.max_by(10, &:weight)
-    @blizzard_stats = blizzard_stats
+    @blizzard_stats = BlizzardStatSnapshot.current_totals
+    @stat_series = stat_series
   end
 
   # Enqueues a backfill of every Substack post's notes (runs on the prod worker).
@@ -152,17 +153,15 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     (value.presence || DEFAULT_DAYS).to_i.clamp(0, 60)
   end
 
-  # Summary counts for the right-column panel: total posts, and blizzard entries
-  # and their notes summed across every Substack categorization.
-  def blizzard_stats
-    data = Comfy::Cms::Categorization
-      .joins(:category)
-      .where(comfy_cms_categories: { label: "Substack" })
-      .pluck(:data)
-    entries = data.sum { |d| Array(d&.dig("blizzard")).size }
-    notes   = data.sum { |d| Array(d&.dig("blizzard")).sum { |entry| Array(entry["notes"]).size } }
-
-    { posts: Comfy::Blog::Post.count, entries: entries, notes: notes }
+  # The recorded totals as parallel arrays for the Chart.js "Totals over time" graph.
+  def stat_series
+    snapshots = BlizzardStatSnapshot.chronological
+    {
+      labels:  snapshots.map { |s| s.captured_at.strftime("%-d %b %H:%M") },
+      posts:   snapshots.map(&:posts),
+      entries: snapshots.map(&:entries),
+      notes:   snapshots.map(&:notes)
+    }
   end
 
 end
