@@ -44,11 +44,19 @@
           '</div>';
       }).join("");
     }
+    function anyRunning(rows) {
+      return rows.some(function (r) { return r.status === "running"; });
+    }
     function poll() {
       fetch(url, { headers: { Accept: "application/json" } })
-        .then(function (x) { return x.json(); }).then(render).catch(function () {});
+        .then(function (x) { return x.json(); })
+        .then(function (rows) {
+          render(rows);
+          // Only keep polling while a job is actually running; stop once idle.
+          if (anyRunning(rows)) window.setTimeout(poll, 3000);
+        })
+        .catch(function () {});
     }
-    setInterval(poll, 3000);
     poll();
   })();
 
