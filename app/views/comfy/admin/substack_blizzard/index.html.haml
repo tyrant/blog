@@ -10,6 +10,8 @@
     %li
       %strong= number_with_delimiter @blizzard_stats[:notes]
       notes
+  - if @stat_series[:labels].any?
+    %button.btn.btn-outline-secondary.btn-sm.mt-1{ type: "button", data: { toggle: "modal", target: "#blizzard-graph-modal" } } Graph
 
 .page-header
   %h2 Substack Blizzard — text groups due for a repost
@@ -95,10 +97,16 @@
             %td.text-right= number_to_percentage(candidate.probability * 100, precision: 2)
 
 - if @stat_series[:labels].any?
-  %section.mb-4
-    %h5 Totals over time
-    %div{ style: "position: relative; height: 260px;" }
-      %canvas#blizzard-stats-chart{ data: { series: @stat_series.to_json } }
+  #blizzard-graph-modal.modal.fade{ tabindex: "-1", role: "dialog", "aria-hidden": "true" }
+    .modal-dialog.modal-lg{ role: "document" }
+      .modal-content
+        .modal-header
+          %h5.modal-title Totals over time
+          %button.close{ type: "button", data: { dismiss: "modal" }, "aria-label": "Close" }
+            %span{ "aria-hidden": "true" } &times;
+        .modal-body
+          %div{ style: "position: relative; height: 60vh;" }
+            %canvas#blizzard-stats-chart{ data: { series: @stat_series.to_json } }
 
 = form_with url: comfy_admin_substack_blizzard_path, method: :get do
   .form-inline.mb-3
