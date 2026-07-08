@@ -30,8 +30,7 @@ module Medium
         end
       ensure
         driver&.quit rescue nil
-        # Kill the Chrome process we launched ourselves (not the user's pre-running Chrome).
-        Process.kill("TERM", @launched_chrome_pid) rescue nil if @launched_chrome_pid
+        terminate_launched_chrome # reap the browser we launched (not the user's pre-running Chrome)
       end
     end
 
@@ -167,8 +166,31 @@ module Medium
         chrome_args << "--window-size=1280,900"
         spawn_args = [chrome_binary_path, *chrome_args]
       end
-      @launched_chrome_pid = Process.spawn(*spawn_args, [:out, :err] => File::NULL)
+      # Own process group (pgroup: true) so teardown can signal the whole tree
+      # (xvfb-run → Xvfb → Chrome → renderers), not just the parent.
+      @launched_chrome_pid = Process.spawn(*spawn_args, [:out, :err] => File::NULL, pgroup: true)
       Process.detach(@launched_chrome_pid)
+    end
+
+    # Terminate the Chrome we launched by signalling its whole process group, so no
+    # renderer/GPU children (or the xvfb-run/Xvfb wrapper) are left orphaned to
+    # accumulate and exhaust the box. Escalates TERM → KILL.
+    def terminate_launched_chrome
+      pgid = @launched_chrome_pid
+      return unless pgid
+
+      Process.kill("TERM", -pgid) rescue nil
+      20.times { break unless process_group_alive?(pgid); sleep 0.1 }
+      Process.kill("KILL", -pgid) rescue nil if process_group_alive?(pgid)
+    end
+
+    def process_group_alive?(pgid)
+      Process.kill(0, -pgid)
+      true
+    rescue Errno::ESRCH
+      false
+    rescue Errno::EPERM
+      true
     end
 
     def wait_for_chrome_debug_port(port, timeout: 20)

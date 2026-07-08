@@ -85,11 +85,12 @@ RSpec.describe Medium::PostSyncer do
         expect(driver).to have_received(:quit)
       end
 
-      it 'kills the launched Chrome process in the ensure block' do
+      it 'kills the launched Chrome process group in the ensure block' do
         syncer.instance_variable_set(:@launched_chrome_pid, 12345)
         allow(Process).to receive(:kill)
+        allow(syncer).to receive(:process_group_alive?).and_return(false)
         expect { syncer.send(:execute) }.to raise_error(RuntimeError)
-        expect(Process).to have_received(:kill).with('TERM', 12345)
+        expect(Process).to have_received(:kill).with('TERM', -12345)
       end
 
       it 're-raises the error' do
