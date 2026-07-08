@@ -18,11 +18,16 @@ MAX_SEC=$(( ${1:-10} * 60 ))
 # Only automation browsers — adjust the profile names to match your scripts.
 PATTERN='chrom.*(playwright_profile|medium_playwright_profile|--headless)'
 
-pgrep -f "$PATTERN" | while read -r pid; do
-  etimes=$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ') || continue
+# Capture first (pgrep exits non-zero when nothing matches — normal, not an error).
+pids=$(pgrep -f "$PATTERN" || true)
+[ -n "$pids" ] || exit 0
+
+for pid in $pids; do
+  etimes=$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ' || true)
   [ -n "$etimes" ] || continue
   if (( etimes >= MAX_SEC )); then
-    pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')
+    pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)
+    [ -n "$pgid" ] || continue
     echo "$(date -Is) reaping chrome pid=$pid pgid=$pgid age=${etimes}s"
     kill -TERM "-${pgid}" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
   fi
