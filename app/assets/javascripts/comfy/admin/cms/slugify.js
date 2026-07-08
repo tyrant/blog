@@ -24,8 +24,8 @@
   };
 
   window.CMS.slugify = () => {
-    const $input = document.querySelector('input[data-slugify=true]');
-    const $slugInput = document.querySelector('input[data-slug]');
+    const $input = document.querySelector('[data-slugify=true]');
+    const $slugInput = document.querySelector('[data-slug]');
 
     if ($input === null || $slugInput === null) return;
 

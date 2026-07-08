@@ -1,7 +1,7 @@
 = comfy_admin_partial "comfy/admin/blog/partials/post_form_before", form: form
 
-= form.text_field :title, data: { slugify: true }
-= form.text_field :slug, readonly: true, data: { slug: true }
+= form.text_area :title, data: { slugify: true }, style: 'field-sizing: content;'
+= form.text_area :slug, readonly: true, data: { slug: true }, style: 'field-sizing: content;'
 
 - if (options = ::Comfy::Cms::Layout.options_for_select(@site)).present?
   = form.select :layout_id, options, {}, {data: {url: form_fragments_comfy_admin_blog_post_path(@site, @post.id.to_i)}, id: "fragments-toggle"}
