@@ -1,17 +1,25 @@
 # frozen_string_literal: true
 
 namespace :substack do
-  desc "Capture the standard subtitle + footer blocks from a reference Substack draft into SubstackSyncConfig"
+  # The canonical post whose subtitle + footer boilerplate we mirror onto every
+  # Substack draft. Re-run capture_footer against another draft to change it.
+  REFERENCE_FOOTER_DRAFT_ID = "206216505"
+
+  desc "Capture subtitle + footer boilerplate from a reference draft into SubstackSyncConfig"
   task :capture_footer, [:draft_id] => :environment do |_t, args|
-    abort "usage: rake substack:capture_footer[DRAFT_ID]" if args[:draft_id].blank?
+    footer = Substack::FooterCapturer.execute(draft_id: args[:draft_id].presence || REFERENCE_FOOTER_DRAFT_ID)
+    puts "Captured subtitle + #{footer.size} footer blocks."
+  end
 
-    draft = Substack::Client.new.get_draft(args[:draft_id])
-    doc   = JSON.parse(draft["draft_body"].to_s)
-    index = Array(doc["content"]).index { |block| block["type"] == "subscribeWidget" }
-    abort "No subscribeWidget block found in draft #{args[:draft_id]}" unless index
-
-    footer = doc["content"][index..]
-    SubstackSyncConfig.instance.update!(subtitle: draft["draft_subtitle"], footer_json: footer)
-    puts "Captured subtitle (#{draft["draft_subtitle"].to_s.length} chars) + #{footer.size} footer blocks."
+  desc "Seed the footer only if not already captured — safe to run on every deploy"
+  task seed_footer: :environment do
+    if SubstackSyncConfig.instance.footer_json.present?
+      puts "Substack footer already seeded; skipping."
+    else
+      Rake::Task["substack:capture_footer"].invoke
+    end
+  rescue => e
+    # Never fail a deploy over a transient Substack/API issue; next deploy retries.
+    warn "[substack:seed_footer] skipped: #{e.message}"
   end
 end

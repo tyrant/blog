@@ -83,3 +83,19 @@ namespace :solid_queue do
   end
 end
 after "deploy:published", "solid_queue:restart"
+
+# Seed the Substack subtitle/footer config from the reference post. Idempotent:
+# the rake task no-ops once footer_json is present and swallows API errors, so
+# this is safe on every deploy and only actually hits Substack on the first.
+namespace :substack do
+  task :seed_footer do
+    on roles(:app) do
+      within release_path do
+        with rails_env: fetch(:rails_env) do
+          execute :rake, "substack:seed_footer"
+        end
+      end
+    end
+  end
+end
+after "deploy:migrate", "substack:seed_footer"
