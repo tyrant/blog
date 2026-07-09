@@ -22,7 +22,9 @@ module Blog
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Display all times in NZ. Storage stays UTC (active_record.default_timezone
+    # defaults to :utc), so no data change — only presentation shifts.
+    config.time_zone = "Pacific/Auckland"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Load CMS and Blog locales
