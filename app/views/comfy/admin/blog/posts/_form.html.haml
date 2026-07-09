@@ -17,8 +17,6 @@
 
 = form.check_box :is_published
 
-= comfy_admin_partial "comfy/admin/blog/partials/post_form_after", form: form
-
 = form.form_actions do
   = submit_tag t(@post.new_record?? ".create" : ".update"), class: "btn btn-primary ml-sm-1", data: {disable_with: false}
   = link_to 'View', @post.url, class: "btn btn-secondary"
