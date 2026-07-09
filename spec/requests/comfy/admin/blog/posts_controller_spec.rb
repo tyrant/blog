@@ -262,7 +262,11 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
              headers: http_auth_headers
       end
 
-      it { expect(response).to redirect_to edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id) }
+      it { expect(response).to have_http_status :success }
+
+      it 'returns JSON with success: true' do
+        expect(JSON.parse(response.body)['success']).to be true
+      end
 
       it 'enqueues the sync job for the post' do
         expect(SubstackPostSyncJob).to have_received(:perform_later).with(blog_post.id)

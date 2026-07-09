@@ -72,8 +72,9 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
 
   def sync_to_substack
     SubstackPostSyncJob.perform_later(@post.id)
-    flash[:success] = "Substack draft sync started for “#{@post.title}”."
-    redirect_to edit_comfy_admin_blog_post_path(site_id: @post.site_id, id: @post.id)
+    render json: { success: true }
+  rescue => e
+    render json: { success: false, message: e.message }, status: :unprocessable_content
   end
 
   def form_fragments
