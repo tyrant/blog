@@ -95,14 +95,20 @@ RSpec.describe Substack::PostSyncer do
     let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://mikeyclarke.substack.com/p/live' }
 
     before do
-      allow(client).to receive(:get_post).with('https://mikeyclarke.substack.com/p/live').and_return('id' => 778)
+      allow(client).to receive(:get_post).with('https://mikeyclarke.substack.com/p/live').and_return('id' => 778, 'is_published' => true)
       allow(client).to receive(:update_draft)
+      allow(client).to receive(:publish_draft)
       allow(client).to receive(:create_draft)
     end
 
     it 'writes edits to the resolved published post' do
       sync
-      expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body, draft_title: post.title))
+      expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body, draft_title: post.title, should_send_email: false))
+    end
+
+    it 'publishes the edits immediately' do
+      sync
+      expect(client).to have_received(:publish_draft).with(778)
     end
 
     it 'never creates a parallel draft' do
@@ -119,6 +125,27 @@ RSpec.describe Substack::PostSyncer do
       post.update_column(:substack_draft_id, 111)
       sync
       expect(client).to have_received(:update_draft).with(778, anything)
+    end
+  end
+
+  describe 'a post linked to an unpublished Substack post' do
+    let!(:category) { create :category, site: site, label: 'Substack' }
+    let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://mikeyclarke.substack.com/p/pending' }
+
+    before do
+      allow(client).to receive(:get_post).and_return('id' => 900, 'is_published' => false)
+      allow(client).to receive(:update_draft)
+      allow(client).to receive(:publish_draft)
+    end
+
+    it 'updates the draft' do
+      sync
+      expect(client).to have_received(:update_draft).with(900, anything)
+    end
+
+    it 'does not auto-publish an unpublished post' do
+      sync
+      expect(client).to_not have_received(:publish_draft)
     end
   end
 

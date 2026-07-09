@@ -117,6 +117,19 @@ RSpec.describe Substack::Client do
       it { expect(client.delete_draft(7)).to eq({}) }
     end
 
+    describe '#publish_draft' do
+      let!(:stub) do
+        stub_request(:post, 'https://pub.substack.com/api/v1/drafts/7/publish')
+          .with(body: hash_including('send_email' => false))
+          .to_return(status: 200, body: '{}')
+      end
+
+      it 'posts to the publish endpoint with send_email false' do
+        client.publish_draft(7)
+        expect(stub).to have_been_requested
+      end
+    end
+
     describe '#upload_image' do
       before do
         stub_request(:post, 'https://pub.substack.com/api/v1/image')

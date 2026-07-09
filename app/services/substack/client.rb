@@ -91,6 +91,15 @@ module Substack
       request(Net::HTTP::Delete.new(pub_uri("/api/v1/drafts/#{draft_id}")))
     end
 
+    # Publishes (or re-publishes) a draft. send_email stays false: the syncer only
+    # auto-publishes posts already published once, whose subscriber email was sent
+    # at that first publish — so re-publishing edits never re-sends.
+    def publish_draft(draft_id, send_email: false)
+      req = Net::HTTP::Post.new(pub_uri("/api/v1/drafts/#{draft_id}/publish"))
+      req.body = JSON.generate(send_email: send_email)
+      request(req)
+    end
+
     # Uploads an image (a data: URI) to Substack's CDN; returns the S3 URL to
     # reference from a ProseMirror image node.
     def upload_image(data_uri)

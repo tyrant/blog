@@ -32,10 +32,17 @@ module Substack
       subtitle = @config.subtitle.to_s
       bylines  = [{ id: @config.author_id, is_guest: false }]
 
-      if (target_id = target_post_id(post))
+      link = linked_substack_post(post)
+      target_id = link&.fetch("id") || post.substack_draft_id
+
+      if target_id
         @client.update_draft(target_id,
           draft_title: post.title.to_s, draft_subtitle: subtitle,
-          draft_body: JSON.generate(doc), draft_bylines: bylines)
+          draft_body: JSON.generate(doc), draft_bylines: bylines, should_send_email: false)
+        # Push in-place edits to an already-published post live immediately. Safe:
+        # the subscriber email was sent at first publish, so re-publishing never
+        # re-sends. A first publish (fresh/unpublished post) stays manual.
+        @client.publish_draft(target_id) if link && link["is_published"]
         post.update_column(:substack_draft_id, target_id) unless post.substack_draft_id == target_id
         target_id
       else
@@ -47,15 +54,15 @@ module Substack
 
     private
 
-    # Where edits go. An existing published Substack post (linked via the
-    # post's Substack categorization URL) takes precedence, so we edit it in
-    # place rather than spawn a parallel draft. Otherwise a draft we previously
-    # created (substack_draft_id), else nil — meaning create a fresh draft.
-    def target_post_id(post)
+    # The Substack post this Comfy post is linked to via its Substack
+    # categorization URL (get_post payload, incl. is_published), or nil when
+    # unlinked. Linked posts are edited in place rather than spawning a parallel
+    # draft; the URL wins over any previously-stored draft id.
+    def linked_substack_post(post)
       url = post.socials_url_for(platform: "substack").presence
-      return post.substack_draft_id if url.blank?
+      return nil if url.blank?
 
-      @client.get_post(url).fetch("id")
+      @client.get_post(url)
     end
 
     # A block is a stray Original link if it's a paragraph/heading whose text
