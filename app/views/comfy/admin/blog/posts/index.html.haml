@@ -3,7 +3,6 @@
 
 .page-header
   = link_to t('.new_link'), new_comfy_admin_blog_post_path(@site), class: 'btn btn-secondary float-right'
-  = link_to "Medium Sync Settings", edit_comfy_admin_medium_sync_config_path, class: 'btn btn-outline-secondary float-right mr-2'
   %h2= t('.title')
 
 = comfy_admin_partial "comfy/admin/blog/partials/posts_before"

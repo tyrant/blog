@@ -206,54 +206,6 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     }
   end
 
-  describe 'POST /admin/sites/:site_id/blog-posts/:id/sync-to-medium' do
-    context 'with authentication' do
-      context 'when the sync succeeds' do
-        before do
-          allow(Medium::PostSyncer).to receive(:execute)
-          post sync_to_medium_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-               headers: http_auth_headers
-        end
-
-        it { expect(response).to have_http_status :success }
-
-        it 'returns JSON with success: true' do
-          expect(JSON.parse(response.body)['success']).to be true
-        end
-
-        it 'calls PostSyncer with the post id' do
-          expect(Medium::PostSyncer).to have_received(:execute).with(post_id: blog_post.id)
-        end
-      end
-
-      context 'when the sync raises an error' do
-        before do
-          allow(Medium::PostSyncer).to receive(:execute).and_raise('browser crashed')
-          post sync_to_medium_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-               headers: http_auth_headers
-        end
-
-        it { expect(response).to have_http_status :unprocessable_entity }
-
-        it 'returns JSON with success: false' do
-          expect(JSON.parse(response.body)['success']).to be false
-        end
-
-        it 'returns the error message in JSON' do
-          expect(JSON.parse(response.body)['message']).to eq 'browser crashed'
-        end
-      end
-    end
-
-    context 'without authentication' do
-      before do
-        post sync_to_medium_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id)
-      end
-
-      it { expect(response).to have_http_status :unauthorized }
-    end
-  end
-
   describe 'POST /admin/sites/:site_id/blog-posts/:id/sync-to-substack' do
     context 'with authentication' do
       before do

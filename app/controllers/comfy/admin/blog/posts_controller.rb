@@ -3,7 +3,7 @@
 class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
 
   before_action :build_post, only: %i[new create]
-  before_action :load_post,  only: %i[edit update destroy sync_to_medium sync_to_substack]
+  before_action :load_post,  only: %i[edit update destroy sync_to_substack]
   before_action :authorize
 
   def index
@@ -61,13 +61,6 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
     @post.destroy
     flash[:success] = t(".deleted")
     redirect_to action: :index
-  end
-
-  def sync_to_medium
-    Medium::PostSyncer.execute(post_id: @post.id)
-    render json: { success: true }
-  rescue => e
-    render json: { success: false, message: e.message }, status: :unprocessable_entity
   end
 
   def sync_to_substack

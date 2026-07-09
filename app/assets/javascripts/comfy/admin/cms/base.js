@@ -34,7 +34,6 @@
     CMS.diff();
     CMS.autosave.init();
     CMS.mediumExport.init();
-    CMS.mediumSync.init();
     CMS.substackSync.init();
   };
 
@@ -47,7 +46,6 @@
     CMS.timepicker.dispose();
     CMS.autosave.dispose();
     CMS.mediumExport.dispose();
-    CMS.mediumSync.dispose();
     CMS.substackSync.dispose();
   };
 

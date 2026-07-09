@@ -11,7 +11,6 @@ class ActionDispatch::Routing::Mapper
         namespace :blog, as: :admin, path: path, except: [:show] do
           resources :posts, as: :blog_posts, path: "blog-posts" do
             get  :form_fragments,   on: :member
-            post :sync_to_medium,   on: :member
             post :sync_to_substack, on: :member
             resources :revisions, only: %i[index show], controller: "revisions/post" do
               patch :revert, on: :member

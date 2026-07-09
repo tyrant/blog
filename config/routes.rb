@@ -64,11 +64,6 @@ Rails.application.routes.draw do
 
   scope module: :comfy, as: :comfy do
     scope module: :admin do
-      resource :medium_sync_config,
-               as: :admin_medium_sync_config,
-               path: "admin/medium-sync",
-               only: %i[edit update]
-
       resource :substack_sync_config,
                as: :admin_substack_sync_config,
                path: "admin/substack-sync",
