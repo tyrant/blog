@@ -1,8 +1,14 @@
 - content_for :right_column do
   - link = comfy_admin_blog_post_revisions_path(@site, @post)
   = render "comfy/admin/cms/revisions/sidebar", record: @post, link: link
-  .mt-3
-    = button_to "Backfill this post’s notes", comfy_admin_substack_blizzard_backfill_post_path, method: :post, params: { post_id: @post.id }, class: "btn btn-outline-secondary btn-sm btn-block", data: { confirm: "Backfill this post’s Substack notes now?" }
+  .px-3
+    = button_to "Backfill this post's notes", comfy_admin_substack_blizzard_backfill_post_path, method: :post, params: { post_id: @post.id }, class: "btn btn-outline-secondary btn-sm btn-block", data: { confirm: "Backfill this post’s Substack notes now?" }
+    - unless @post.new_record?
+      %button.btn.btn-outline-secondary.btn-sm.btn-block.mt-2{type: "button", id: "copy-for-medium", data: {post_id: @post.id, banner_url: asset_path('orig-bad-advice-banner.jpg')}}
+        Copy for Medium
+      %button.btn.btn-outline-secondary.btn-sm.btn-block{type: "button", id: "sync-to-substack", data: {sync_url: sync_to_substack_comfy_admin_blog_post_path(@site, @post)}}
+        Sync to Substack
+
 
 = render "comfy/admin/blog/partials/post_navigation"
 
