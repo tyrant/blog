@@ -1,0 +1,25 @@
+.page-header
+  %h2 Substack Sync Settings
+
+= comfy_form_with model: @config, scope: :substack_sync_config, url: comfy_admin_substack_sync_config_path, method: :patch do |form|
+
+  = form.text_area :subtitle,
+                   label: "Subtitle — applied to every mirrored post",
+                   style: "field-sizing: content;"
+
+  = form.text_area :footer_json_text,
+                   label: "Footer blocks (ProseMirror JSON — subscribe CTA through the Subscribe button)",
+                   style: "font-family: monospace; min-height: 22rem;",
+                   data: { 'cms-cm-mode': 'application/json' }
+
+  = form.form_actions do
+    = submit_tag "Save", class: "btn btn-primary ml-sm-1"
+
+%hr
+%h5 Re-capture from a reference post
+%p.text-muted.small
+  Pull the subtitle + footer straight from an existing Substack draft or post
+  (overwrites the fields above). Use its edit-URL id, e.g. 206216505.
+= form_with url: recapture_comfy_admin_substack_sync_config_path, method: :post, class: "form-inline" do
+  = text_field_tag :reference_draft_id, nil, placeholder: "draft id", class: "form-control mr-2"
+  = submit_tag "Re-capture", class: "btn btn-outline-secondary"

@@ -69,6 +69,13 @@ Rails.application.routes.draw do
                path: "admin/medium-sync",
                only: %i[edit update]
 
+      resource :substack_sync_config,
+               as: :admin_substack_sync_config,
+               path: "admin/substack-sync",
+               only: %i[edit update] do
+        post :recapture
+      end
+
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick
       get  "admin/substack-blizzard/repost/preview", to: "substack_blizzard#repost_preview", as: :admin_substack_blizzard_repost_preview

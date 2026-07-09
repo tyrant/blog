@@ -6,5 +6,8 @@
     = active_link_to comfy_admin_substack_blizzard_path, class: "nav-link" do
       Substack Blizzard
   %li.nav-item
+    = active_link_to edit_comfy_admin_substack_sync_config_path, class: "nav-link" do
+      Substack Sync
+  %li.nav-item
     = active_link_to "/admin/jobs", class: "nav-link" do
       SolidQueue
