@@ -26,9 +26,11 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_to back_path
   end
 
-  # Live progress of the background jobs, polled by the admin's Background jobs panel.
+  # Live progress of the background jobs, polled by the admin's Background jobs
+  # panel. Finished jobs are omitted so their bar disappears on completion; failed
+  # ones stay so a failure is noticed.
   def job_progress
-    render json: JobProgress.order(:label).map { |p|
+    render json: JobProgress.where.not(status: "finished").order(:label).map { |p|
       { key: p.key, label: p.label, total: p.total, completed: p.completed,
         percent: p.percent, status: p.status, updated_at: p.updated_at.iso8601 }
     }

@@ -317,14 +317,19 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'GET job_progress.json' do
     before do
       JobProgress.begin!('backfill_all', label: 'Backfill all posts’ notes', total: 10).update!(completed: 4)
+      JobProgress.begin!('refresh_note_post_likes', label: 'Refresh', total: 5).finish!
       get comfy_admin_substack_blizzard_job_progress_path(format: :json), headers: http_auth_headers
     end
 
     it { expect(response).to have_http_status :success }
+    it { expect(response.parsed_body.size).to eq 1 }
     it { expect(response.parsed_body.first['key']).to eq 'backfill_all' }
     it { expect(response.parsed_body.first['completed']).to eq 4 }
     it { expect(response.parsed_body.first['percent']).to eq 40 }
     it { expect(response.parsed_body.first['status']).to eq 'running' }
+    it 'omits finished jobs so their bar disappears' do
+      expect(response.parsed_body.map { |r| r['key'] }).to_not include('refresh_note_post_likes')
+    end
   end
 
   describe 'POST backfill_all' do
