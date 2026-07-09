@@ -5,5 +5,6 @@
       Copy for Medium
     %button.btn.btn-outline-primary.ml-2{type: "button", id: "sync-to-medium", data: {sync_url: sync_to_medium_comfy_admin_blog_post_path(@site, @post)}}
       Sync to Medium
+    = button_to "Sync to Substack", sync_to_substack_comfy_admin_blog_post_path(@site, @post), method: :post, class: "btn btn-outline-primary ml-2", form: { class: "d-inline" }
     %span.medium-copy-status.ml-2{style: "display: none;"}
     %span.medium-sync-status.ml-2{style: "display: none;"}

@@ -253,4 +253,26 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       it { expect(response).to have_http_status :unauthorized }
     end
   end
+
+  describe 'POST /admin/sites/:site_id/blog-posts/:id/sync-to-substack' do
+    context 'with authentication' do
+      before do
+        allow(SubstackPostSyncJob).to receive(:perform_later)
+        post sync_to_substack_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
+             headers: http_auth_headers
+      end
+
+      it { expect(response).to redirect_to edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id) }
+
+      it 'enqueues the sync job for the post' do
+        expect(SubstackPostSyncJob).to have_received(:perform_later).with(blog_post.id)
+      end
+    end
+
+    context 'without authentication' do
+      before { post sync_to_substack_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id) }
+
+      it { expect(response).to have_http_status :unauthorized }
+    end
+  end
 end

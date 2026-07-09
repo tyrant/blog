@@ -3,7 +3,7 @@
 class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
 
   before_action :build_post, only: %i[new create]
-  before_action :load_post,  only: %i[edit update destroy sync_to_medium]
+  before_action :load_post,  only: %i[edit update destroy sync_to_medium sync_to_substack]
   before_action :authorize
 
   def index
@@ -68,6 +68,12 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
     render json: { success: true }
   rescue => e
     render json: { success: false, message: e.message }, status: :unprocessable_entity
+  end
+
+  def sync_to_substack
+    SubstackPostSyncJob.perform_later(@post.id)
+    flash[:success] = "Substack draft sync started for “#{@post.title}”."
+    redirect_to edit_comfy_admin_blog_post_path(site_id: @post.site_id, id: @post.id)
   end
 
   def form_fragments

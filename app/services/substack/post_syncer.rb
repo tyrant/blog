@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+require "net/http"
+require "base64"
+
+# Mirrors a Comfy blog post into a Substack draft (never publishes — publishing
+# is the only email-triggering step and stays a separate, deliberate action).
+# Idempotent: the first sync creates a draft and stores its id on the post;
+# later syncs PUT that same draft. Draft writes are not Cloudflare-blocked from
+# the server IP, so this runs on the prod worker.
+module Substack
+  class PostSyncer
+    include ServiceInterface
+
+    arguments :post_id, client: nil, config: nil
+
+    def execute
+      post = Comfy::Blog::Post.find(@post_id)
+      @config ||= SubstackSyncConfig.instance
+      @client ||= Substack::Client.new(publication_host: @config.publication_host)
+
+      doc     = HtmlToProseMirror.execute(html: post.content_cache.to_s, image_resolver: method(:resolve_image))
+      bylines = [{ id: @config.author_id, is_guest: false }]
+
+      if post.substack_draft_id.present?
+        @client.update_draft(post.substack_draft_id,
+          draft_title: post.title.to_s, draft_body: JSON.generate(doc), draft_bylines: bylines)
+        post.substack_draft_id
+      else
+        created = @client.create_draft(title: post.title.to_s, subtitle: "", body_doc: doc, bylines: bylines)
+        post.update_column(:substack_draft_id, created["id"])
+        created["id"]
+      end
+    end
+
+    private
+
+    def resolve_image(src)
+      data = download_image(src)
+      return nil unless data
+
+      @client.upload_image("data:#{data[:content_type]};base64,#{Base64.strict_encode64(data[:body])}")
+    rescue => e
+      Rails.logger.warn("[SubstackSync] image upload failed for #{src}: #{e.message}")
+      nil
+    end
+
+    # Reads local ActiveStorage blobs straight from storage (avoiding an HTTP
+    # round-trip back into the same process); falls back to a plain GET otherwise.
+    def download_image(url)
+      if (match = url.match(%r{/rails/active_storage/blobs/(?:redirect|inline)/([^/]+)/}))
+        blob = ActiveStorage::Blob.find_signed!(match[1])
+        return { body: blob.download, content_type: blob.content_type || "image/jpeg" }
+      end
+
+      uri = URI(url)
+      res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
+                            open_timeout: 10, read_timeout: 30) { |http| http.get(uri.request_uri) }
+      return nil unless res.is_a?(Net::HTTPSuccess)
+
+      { body: res.body, content_type: res["content-type"]&.split(";")&.first&.strip || "image/jpeg" }
+    rescue => e
+      Rails.logger.warn("[SubstackSync] image download failed for #{url}: #{e.message}")
+      nil
+    end
+  end
+end
