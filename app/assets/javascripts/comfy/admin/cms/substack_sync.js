@@ -3,7 +3,7 @@ window.CMS.substackSync = {
     this.button = document.getElementById('sync-to-substack');
     if (!this.button) return;
 
-    this.statusEl = document.querySelector('.substack-sync-status');
+    this.originalLabel = this.button.textContent;
     this.button.addEventListener('click', this.syncToSubstack.bind(this));
   },
 
@@ -27,24 +27,27 @@ window.CMS.substackSync = {
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      if (data.success) {
-        self.showStatus('Sync started!', 'success');
-      } else {
-        self.showStatus('Error: ' + (data.message || 'Unknown error'), 'error');
-      }
-      self.button.disabled = false;
+      self.showStatus(data.success ? 'Sync started!' : 'Error: ' + (data.message || 'Unknown error'),
+                      data.success ? 'success' : 'error');
     })
     .catch(function() {
       self.showStatus('Request failed', 'error');
-      self.button.disabled = false;
     });
   },
 
+  // Status shows in the button's own label. An 'info' (in-progress) message
+  // persists until the next status replaces it; a final message restores the
+  // original label — and re-enables the button — after 3 seconds.
   showStatus: function(message, type) {
-    if (!this.statusEl) return;
-    var colours = { success: '#28a745', error: '#dc3545', info: '#6c757d' };
-    this.statusEl.textContent = message;
-    this.statusEl.style.display = 'inline';
-    this.statusEl.style.color = colours[type] || colours.info;
+    var self = this;
+    if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
+    this.button.textContent = message;
+    if (type === 'info') return;
+
+    this._restoreTimer = setTimeout(function() {
+      self.button.textContent = self.originalLabel;
+      self.button.disabled = false;
+      self._restoreTimer = null;
+    }, 3000);
   }
 };
