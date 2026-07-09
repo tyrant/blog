@@ -90,6 +90,38 @@ RSpec.describe Substack::PostSyncer do
     end
   end
 
+  describe 'a post linked to an existing published Substack post' do
+    let!(:category) { create :category, site: site, label: 'Substack' }
+    let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://mikeyclarke.substack.com/p/live' }
+
+    before do
+      allow(client).to receive(:get_post).with('https://mikeyclarke.substack.com/p/live').and_return('id' => 778)
+      allow(client).to receive(:update_draft)
+      allow(client).to receive(:create_draft)
+    end
+
+    it 'writes edits to the resolved published post' do
+      sync
+      expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body, draft_title: post.title))
+    end
+
+    it 'never creates a parallel draft' do
+      sync
+      expect(client).to_not have_received(:create_draft)
+    end
+
+    it 'records the published post id on the post' do
+      sync
+      expect(post.reload.substack_draft_id).to eq 778
+    end
+
+    it 'targets the published post even when a stale parallel draft id is stored' do
+      post.update_column(:substack_draft_id, 111)
+      sync
+      expect(client).to have_received(:update_draft).with(778, anything)
+    end
+  end
+
   describe 'a post already mirrored to a draft' do
     before do
       post.update_column(:substack_draft_id, 999)

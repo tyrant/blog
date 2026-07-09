@@ -32,11 +32,12 @@ module Substack
       subtitle = @config.subtitle.to_s
       bylines  = [{ id: @config.author_id, is_guest: false }]
 
-      if post.substack_draft_id.present?
-        @client.update_draft(post.substack_draft_id,
+      if (target_id = target_post_id(post))
+        @client.update_draft(target_id,
           draft_title: post.title.to_s, draft_subtitle: subtitle,
           draft_body: JSON.generate(doc), draft_bylines: bylines)
-        post.substack_draft_id
+        post.update_column(:substack_draft_id, target_id) unless post.substack_draft_id == target_id
+        target_id
       else
         created = @client.create_draft(title: post.title.to_s, subtitle: subtitle, body_doc: doc, bylines: bylines)
         post.update_column(:substack_draft_id, created["id"])
@@ -45,6 +46,17 @@ module Substack
     end
 
     private
+
+    # Where edits go. An existing published Substack post (linked via the
+    # post's Substack categorization URL) takes precedence, so we edit it in
+    # place rather than spawn a parallel draft. Otherwise a draft we previously
+    # created (substack_draft_id), else nil — meaning create a fresh draft.
+    def target_post_id(post)
+      url = post.socials_url_for(platform: "substack").presence
+      return post.substack_draft_id if url.blank?
+
+      @client.get_post(url).fetch("id")
+    end
 
     # A block is a stray Original link if it's a paragraph/heading whose text
     # starts with "Original:" and carries a link mark.
