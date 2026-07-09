@@ -18,8 +18,10 @@ module Substack
     MAX_RETRIES = 5
     RETRYABLE   = [429, 502, 503, 504].freeze
 
-    def initialize(session_cookie: SubstackSyncConfig.instance.session_cookie)
+    def initialize(session_cookie: SubstackSyncConfig.instance.session_cookie,
+                   publication_host: SubstackSyncConfig.instance.publication_host)
       @session_cookie = session_cookie
+      @publication_host = publication_host
     end
 
     def get_note(comment_id)
@@ -59,7 +61,51 @@ module Substack
       request(Net::HTTP::Delete.new(uri("/api/v1/comment/#{comment_id}")))
     end
 
+    # Draft (full post) endpoints live on the publication subdomain, authenticated
+    # with the same session cookie. Unlike note-creation, draft writes are not
+    # Cloudflare-blocked from the server IP, so these can run on the prod worker.
+    def create_draft(title:, subtitle:, body_doc:, bylines:, audience: "everyone")
+      req = Net::HTTP::Post.new(pub_uri("/api/v1/drafts"))
+      req.body = JSON.generate(
+        draft_title:    title,
+        draft_subtitle: subtitle,
+        draft_body:     JSON.generate(body_doc),
+        type:           "newsletter",
+        audience:       audience,
+        draft_bylines:  bylines
+      )
+      request(req)
+    end
+
+    def update_draft(draft_id, attrs)
+      req = Net::HTTP::Put.new(pub_uri("/api/v1/drafts/#{draft_id}"))
+      req.body = JSON.generate(attrs)
+      request(req)
+    end
+
+    def get_draft(draft_id)
+      request(Net::HTTP::Get.new(pub_uri("/api/v1/drafts/#{draft_id}")))
+    end
+
+    def delete_draft(draft_id)
+      request(Net::HTTP::Delete.new(pub_uri("/api/v1/drafts/#{draft_id}")))
+    end
+
+    # Uploads an image (a data: URI) to Substack's CDN; returns the S3 URL to
+    # reference from a ProseMirror image node.
+    def upload_image(data_uri)
+      req = Net::HTTP::Post.new(pub_uri("/api/v1/image"))
+      req.body = JSON.generate(image: data_uri)
+      request(req)["url"]
+    end
+
     private
+
+    def pub_uri(path)
+      raise Error, "No Substack publication host configured" if @publication_host.blank?
+
+      URI("https://#{@publication_host}#{path}")
+    end
 
     def uri(path)
       URI.join(BASE, path)

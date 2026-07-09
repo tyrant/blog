@@ -68,6 +68,71 @@ RSpec.describe Substack::Client do
     it { expect(client.delete_note(123)).to eq({}) }
   end
 
+  describe 'drafts' do
+    subject(:client) { described_class.new(session_cookie: cookie, publication_host: host) }
+
+    let(:host) { 'pub.substack.com' }
+    let(:doc) { { 'type' => 'doc', 'content' => [] } }
+    let(:bylines) { [{ id: 42, is_guest: false }] }
+
+    describe '#create_draft' do
+      let!(:stub) do
+        stub_request(:post, 'https://pub.substack.com/api/v1/drafts')
+          .with(headers: { 'Cookie' => 'substack.sid=sess-abc' },
+                body: hash_including('draft_title' => 'Hi', 'draft_body' => doc.to_json,
+                                     'type' => 'newsletter', 'audience' => 'everyone'))
+          .to_return(status: 200, body: { 'id' => 7 }.to_json)
+      end
+
+      it { expect(client.create_draft(title: 'Hi', subtitle: 'yo', body_doc: doc, bylines: bylines)).to eq({ 'id' => 7 }) }
+
+      it 'serialises the body doc and posts to the publication host' do
+        client.create_draft(title: 'Hi', subtitle: 'yo', body_doc: doc, bylines: bylines)
+        expect(stub).to have_been_requested
+      end
+    end
+
+    describe '#update_draft' do
+      let!(:stub) do
+        stub_request(:put, 'https://pub.substack.com/api/v1/drafts/7')
+          .with(body: hash_including('draft_title' => 'Edited'))
+          .to_return(status: 200, body: { 'id' => 7 }.to_json)
+      end
+
+      it 'PUTs the changed attributes' do
+        client.update_draft(7, draft_title: 'Edited')
+        expect(stub).to have_been_requested
+      end
+    end
+
+    describe '#get_draft' do
+      before { stub_request(:get, 'https://pub.substack.com/api/v1/drafts/7').to_return(status: 200, body: { 'id' => 7 }.to_json) }
+
+      it { expect(client.get_draft(7)).to eq({ 'id' => 7 }) }
+    end
+
+    describe '#delete_draft' do
+      before { stub_request(:delete, 'https://pub.substack.com/api/v1/drafts/7').to_return(status: 200, body: '') }
+
+      it { expect(client.delete_draft(7)).to eq({}) }
+    end
+
+    describe '#upload_image' do
+      before do
+        stub_request(:post, 'https://pub.substack.com/api/v1/image')
+          .with(body: hash_including('image' => 'data:image/png;base64,AAAA'))
+          .to_return(status: 200, body: { 'url' => 'https://cdn/x.png' }.to_json)
+      end
+
+      it { expect(client.upload_image('data:image/png;base64,AAAA')).to eq 'https://cdn/x.png' }
+    end
+
+    context 'without a publication host' do
+      let(:host) { nil }
+      it { expect { client.get_draft(7) }.to raise_error(Substack::Client::Error, /publication host/) }
+    end
+  end
+
   describe 'rate limiting' do
     before { allow(client).to receive(:backoff_sleep) }
 
