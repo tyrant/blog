@@ -58,6 +58,14 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
     end
 
+    context 'chart labels are in Wellington time, not UTC' do
+      let!(:snapshot) { BlizzardStatSnapshot.create!(captured_at: Time.utc(2026, 7, 9, 2, 48), posts: 1, entries: 1, notes: 1) }
+      before { get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers }
+
+      it { expect(response.body).to include '9 Jul 14:48' }  # 02:48 UTC + 12
+      it { expect(response.body).to_not include '9 Jul 02:48' }
+    end
+
     context 'days=0 is accepted' do
       before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
       it { expect(response).to have_http_status :success }

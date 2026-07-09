@@ -159,7 +159,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   def stat_series
     snapshots = BlizzardStatSnapshot.chronological
     {
-      labels:  snapshots.map { |s| s.captured_at.strftime("%-d %b %H:%M") },
+      labels:  snapshots.map { |s| s.captured_at.in_time_zone("Pacific/Auckland").strftime("%-d %b %H:%M") },
       posts:   snapshots.map(&:posts),
       entries: snapshots.map(&:entries),
       notes:   snapshots.map(&:notes)
