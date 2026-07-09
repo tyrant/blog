@@ -8,6 +8,7 @@ RSpec.describe Substack::PostSyncer do
   let!(:site) { create :site }
   let!(:layout) { create :layout, site: site }
   let!(:post) { create :post, site: site, layout: layout }
+  let!(:substack_category) { create :category, site: site, label: 'Substack' }
   let(:client) { instance_double(Substack::Client) }
   let(:footer) { [{ 'type' => 'button', 'attrs' => { 'text' => 'Subscribe now' } }] }
   let(:config) do
@@ -15,19 +16,27 @@ RSpec.describe Substack::PostSyncer do
                                         subtitle: 'The fixed subtitle', footer_json: footer)
   end
 
+  def substack_categorization
+    post.categorizations.joins(:category).find_by(comfy_cms_categories: { label: 'Substack' })
+  end
+
+  def link!(url:, data:)
+    create :categorization, category: substack_category, categorized: post, url: url, data: data
+  end
+
   before { post.update_column(:content_cache, '<p>Body</p>') }
 
-  describe 'a post with no draft yet' do
-    before { allow(client).to receive(:create_draft).and_return('id' => 555) }
+  describe 'a post with no Substack link' do
+    before { allow(client).to receive(:create_draft).and_return('id' => 555, 'is_published' => false, 'slug' => nil) }
 
-    it 'creates a draft' do
+    it 'creates a draft with the configured subtitle' do
       sync
-      expect(client).to have_received(:create_draft).with(hash_including(title: post.title))
+      expect(client).to have_received(:create_draft).with(hash_including(title: post.title, subtitle: 'The fixed subtitle'))
     end
 
-    it 'sends the configured subtitle' do
+    it 'sends the byline built from the configured author id' do
       sync
-      expect(client).to have_received(:create_draft).with(hash_including(subtitle: 'The fixed subtitle'))
+      expect(client).to have_received(:create_draft).with(hash_including(bylines: [{ id: 42, is_guest: false }]))
     end
 
     it 'appends the Original link heading pointing at the canonical post url' do
@@ -40,19 +49,17 @@ RSpec.describe Substack::PostSyncer do
 
     it 'appends the configured footer blocks last' do
       sync
-      expect(client).to have_received(:create_draft) do |args|
-        expect(args[:body_doc]['content'].last).to eq(footer.first)
-      end
+      expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].last).to eq(footer.first) }
     end
 
-    it 'sends the byline built from the configured author id' do
+    it 'creates a Substack categorization storing the draft id' do
       sync
-      expect(client).to have_received(:create_draft).with(hash_including(bylines: [{ id: 42, is_guest: false }]))
+      expect(substack_categorization.data['id']).to eq 555
     end
 
-    it 'stores the returned draft id on the post' do
+    it 'stores the draft editor URL on the categorization' do
       sync
-      expect(post.reload.substack_draft_id).to eq 555
+      expect(substack_categorization.url).to eq 'https://pub.substack.com/publish/post/555'
     end
 
     it 'returns the new draft id' do
@@ -64,7 +71,7 @@ RSpec.describe Substack::PostSyncer do
     before do
       post.update_column(:content_cache,
         '<p><em>Original: </em><a href="http://old/stale">http://old/stale</a></p><p>Body</p>')
-      allow(client).to receive(:create_draft).and_return('id' => 1)
+      allow(client).to receive(:create_draft).and_return('id' => 1, 'is_published' => false, 'slug' => nil)
     end
 
     def original_blocks(doc)
@@ -90,18 +97,17 @@ RSpec.describe Substack::PostSyncer do
     end
   end
 
-  describe 'a post linked to an existing published Substack post' do
-    let!(:category) { create :category, site: site, label: 'Substack' }
-    let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://mikeyclarke.substack.com/p/live' }
+  describe 'a post linked to a published Substack post' do
+    let!(:categorization) { link!(url: 'https://pub.substack.com/p/old-slug', data: { 'id' => 778 }) }
 
     before do
-      allow(client).to receive(:get_post).with('https://mikeyclarke.substack.com/p/live').and_return('id' => 778, 'is_published' => true)
+      allow(client).to receive(:get_draft).with(778).and_return('id' => 778, 'is_published' => true, 'slug' => 'live-slug')
       allow(client).to receive(:update_draft)
       allow(client).to receive(:publish_draft)
       allow(client).to receive(:create_draft)
     end
 
-    it 'writes edits to the resolved published post' do
+    it 'updates the draft by id' do
       sync
       expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body, draft_title: post.title, should_send_email: false))
     end
@@ -111,29 +117,26 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:publish_draft).with(778)
     end
 
+    it 'reconciles the categorization URL to the canonical public URL' do
+      sync
+      expect(categorization.reload.url).to eq 'https://pub.substack.com/p/live-slug'
+    end
+
     it 'never creates a parallel draft' do
       sync
       expect(client).to_not have_received(:create_draft)
     end
 
-    it 'records the published post id on the post' do
-      sync
-      expect(post.reload.substack_draft_id).to eq 778
-    end
-
-    it 'targets the published post even when a stale parallel draft id is stored' do
-      post.update_column(:substack_draft_id, 111)
-      sync
-      expect(client).to have_received(:update_draft).with(778, anything)
+    it 'returns the post id' do
+      expect(sync).to eq 778
     end
   end
 
-  describe 'a post linked to an unpublished Substack post' do
-    let!(:category) { create :category, site: site, label: 'Substack' }
-    let!(:categorization) { create :categorization, category: category, categorized: post, url: 'https://mikeyclarke.substack.com/p/pending' }
+  describe 'a post linked to an unpublished draft' do
+    let!(:categorization) { link!(url: 'https://pub.substack.com/publish/post/900', data: { 'id' => 900 }) }
 
     before do
-      allow(client).to receive(:get_post).and_return('id' => 900, 'is_published' => false)
+      allow(client).to receive(:get_draft).with(900).and_return('id' => 900, 'is_published' => false, 'slug' => nil)
       allow(client).to receive(:update_draft)
       allow(client).to receive(:publish_draft)
     end
@@ -143,25 +146,56 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:update_draft).with(900, anything)
     end
 
-    it 'does not auto-publish an unpublished post' do
+    it 'does not auto-publish' do
       sync
       expect(client).to_not have_received(:publish_draft)
     end
+
+    it 'keeps the draft editor URL' do
+      sync
+      expect(categorization.reload.url).to eq 'https://pub.substack.com/publish/post/900'
+    end
   end
 
-  describe 'a post already mirrored to a draft' do
-    before do
-      post.update_column(:substack_draft_id, 999)
-      allow(client).to receive(:update_draft)
-    end
+  describe 'a Substack categorization that has no id and no published URL' do
+    let!(:categorization) { link!(url: '', data: {}) }
 
-    it 'updates the existing draft' do
+    before { allow(client).to receive(:create_draft).and_return('id' => 42, 'is_published' => false, 'slug' => nil) }
+
+    it 'populates the existing categorization rather than duplicating it' do
       sync
-      expect(client).to have_received(:update_draft).with(999, hash_including(:draft_body, draft_title: post.title, draft_subtitle: 'The fixed subtitle'))
+      expect(post.categorizations.joins(:category).where(comfy_cms_categories: { label: 'Substack' }).count).to eq 1
     end
 
-    it 'does not create a new draft' do
+    it 'records the new draft id on it' do
+      sync
+      expect(categorization.reload.data['id']).to eq 42
+    end
+  end
+
+  describe 'a legacy categorization with a published URL but no stored id' do
+    let!(:categorization) { link!(url: 'https://pub.substack.com/p/legacy', data: {}) }
+
+    before do
+      allow(client).to receive(:get_post).with('https://pub.substack.com/p/legacy')
+        .and_return('id' => 654, 'is_published' => true, 'slug' => 'legacy')
+      allow(client).to receive(:get_draft).with(654).and_return('id' => 654, 'is_published' => true, 'slug' => 'legacy')
+      allow(client).to receive(:update_draft)
+      allow(client).to receive(:publish_draft)
       allow(client).to receive(:create_draft)
+    end
+
+    it 'resolves the id from the URL and edits in place' do
+      sync
+      expect(client).to have_received(:update_draft).with(654, anything)
+    end
+
+    it 'backfills the resolved id onto the categorization' do
+      sync
+      expect(categorization.reload.data['id']).to eq 654
+    end
+
+    it 'does not create a parallel draft' do
       sync
       expect(client).to_not have_received(:create_draft)
     end
@@ -172,7 +206,7 @@ RSpec.describe Substack::PostSyncer do
       post.update_column(:content_cache, '<p><img src="http://ex.com/a.jpg"></p>')
       stub_request(:get, 'http://ex.com/a.jpg').to_return(status: 200, body: 'BYTES', headers: { 'Content-Type' => 'image/jpeg' })
       allow(client).to receive(:upload_image).and_return('https://cdn/x.jpg')
-      allow(client).to receive(:create_draft).and_return('id' => 1)
+      allow(client).to receive(:create_draft).and_return('id' => 1, 'is_published' => false, 'slug' => nil)
     end
 
     it 'uploads the image as a data URI' do

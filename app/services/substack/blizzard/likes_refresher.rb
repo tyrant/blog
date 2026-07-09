@@ -53,7 +53,9 @@ module Substack
       # one of its entries' repost weights. Stored on the post itself.
       def refresh_post_likes
         post = @categorization.categorized
-        return unless @categorization.url.present? && post.is_a?(Comfy::Blog::Post)
+        # Only published posts have a /p/slug URL with a like count; a draft-phase
+        # categorization (editor URL) has none yet, so skip it.
+        return unless post.is_a?(Comfy::Blog::Post) && @categorization.url.to_s.include?("/p/")
 
         likes = NoteParser.likes(@client.get_post(@categorization.url))
         post.update_column(:substack_likes, likes) if @commit

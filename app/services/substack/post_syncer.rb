@@ -32,37 +32,85 @@ module Substack
       subtitle = @config.subtitle.to_s
       bylines  = [{ id: @config.author_id, is_guest: false }]
 
-      link = linked_substack_post(post)
-      target_id = link&.fetch("id") || post.substack_draft_id
+      categorization = substack_categorization(post)
+      substack_id    = resolve_substack_id(categorization)
 
-      if target_id
-        @client.update_draft(target_id,
+      if substack_id
+        # Existing Substack post — edit it in place, keyed off the stable id.
+        remote = @client.get_draft(substack_id)
+        @client.update_draft(substack_id,
           draft_title: post.title.to_s, draft_subtitle: subtitle,
           draft_body: JSON.generate(doc), draft_bylines: bylines, should_send_email: false)
-        # Push in-place edits to an already-published post live immediately. Safe:
-        # the subscriber email was sent at first publish, so re-publishing never
-        # re-sends. A first publish (fresh/unpublished post) stays manual.
-        @client.publish_draft(target_id) if link && link["is_published"]
-        post.update_column(:substack_draft_id, target_id) unless post.substack_draft_id == target_id
-        target_id
+        # Push edits to an already-published post live immediately. Safe: the
+        # subscriber email was sent at first publish, so this never re-sends.
+        @client.publish_draft(substack_id) if remote["is_published"]
+        reconcile_url!(categorization, remote)
+        substack_id
       else
+        # No linked Substack post yet — create a fresh draft and record it as a
+        # Substack categorization (id in #data; URL self-heals to /p/slug once
+        # published). First publish stays a deliberate, manual step.
         created = @client.create_draft(title: post.title.to_s, subtitle: subtitle, body_doc: doc, bylines: bylines)
-        post.update_column(:substack_draft_id, created["id"])
-        created["id"]
+        link_categorization!(post, categorization, created)
+        created.fetch("id")
       end
     end
 
     private
 
-    # The Substack post this Comfy post is linked to via its Substack
-    # categorization URL (get_post payload, incl. is_published), or nil when
-    # unlinked. Linked posts are edited in place rather than spawning a parallel
-    # draft; the URL wins over any previously-stored draft id.
-    def linked_substack_post(post)
-      url = post.socials_url_for(platform: "substack").presence
-      return nil if url.blank?
+    def substack_categorization(post)
+      post.categorizations.joins(:category).find_by(comfy_cms_categories: { label: "Substack" })
+    end
 
-      @client.get_post(url)
+    # The Substack post id for a categorization: the stored data["id"] if present,
+    # else resolved from a legacy /p/ published URL (and backfilled onto the
+    # categorization so later syncs skip the lookup). nil when nothing links yet.
+    def resolve_substack_id(categorization)
+      return nil unless categorization
+
+      id = categorization.data["id"]
+      return id if id.present?
+
+      url = categorization.url.to_s
+      return nil unless url.include?("/p/")
+
+      remote_id = @client.get_post(url).fetch("id")
+      categorization.update!(data: categorization.data.merge("id" => remote_id))
+      remote_id
+    end
+
+    # Point the categorization at the post's current canonical URL: the public
+    # /p/slug once published, otherwise the draft editor URL.
+    def reconcile_url!(categorization, remote)
+      url = canonical_url(remote)
+      categorization.update!(url: url) if categorization.url != url
+    end
+
+    # Record a freshly-created draft as a Substack categorization — populating an
+    # existing one that lacks an id, or creating one — never duplicating.
+    def link_categorization!(post, categorization, created)
+      url = canonical_url(created)
+      if categorization
+        categorization.update!(url: url, data: categorization.data.merge("id" => created.fetch("id")))
+      else
+        Comfy::Cms::Categorization.create!(
+          category:    substack_category(post.site),
+          categorized: post, url: url, data: { "id" => created.fetch("id") }
+        )
+      end
+    end
+
+    def substack_category(site)
+      Comfy::Cms::Category.find_or_create_by!(site: site, label: "Substack", categorized_type: "Comfy::Blog::Post")
+    end
+
+    def canonical_url(remote)
+      host = @config.publication_host
+      if remote["is_published"] && remote["slug"].present?
+        "https://#{host}/p/#{remote["slug"]}"
+      else
+        "https://#{host}/publish/post/#{remote.fetch("id")}"
+      end
     end
 
     # A block is a stray Original link if it's a paragraph/heading whose text
