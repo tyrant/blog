@@ -71,6 +71,9 @@ Rails.application.routes.draw do
         post :recapture
       end
 
+      get  "admin/reply-drafter",          to: "reply_drafter#show",     as: :admin_reply_drafter
+      post "admin/reply-drafter/generate", to: "reply_drafter#generate", as: :admin_reply_drafter_generate
+
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick
       get  "admin/substack-blizzard/repost/preview", to: "substack_blizzard#repost_preview", as: :admin_substack_blizzard_repost_preview

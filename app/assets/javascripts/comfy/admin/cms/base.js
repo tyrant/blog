@@ -35,6 +35,7 @@
     CMS.autosave.init();
     CMS.mediumExport.init();
     CMS.substackSync.init();
+    CMS.replyDrafter.init();
   };
 
   CMS.dispose = () => {
@@ -47,6 +48,7 @@
     CMS.autosave.dispose();
     CMS.mediumExport.dispose();
     CMS.substackSync.dispose();
+    CMS.replyDrafter.dispose();
   };
 
   CMS.getLocale = () => document.querySelector('meta[name="cms-locale"]').content;

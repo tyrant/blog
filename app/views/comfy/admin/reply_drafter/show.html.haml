@@ -1,0 +1,14 @@
+.page-header
+  %h2 Reply Drafter
+
+%p.text-muted.small
+  Paste a Substack post URL to draft sample replies — each either largely agreeing
+  or respectfully disagreeing, in good humour. Edit and post them yourself.
+
+.form-inline.mb-3
+  = text_field_tag :reply_post_url, nil, id: "reply-post-url", placeholder: "https://…/p/…", class: "form-control mr-2", style: "width: 34rem;"
+  %button.btn.btn-primary#reply-generate{ type: "button", data: { url: comfy_admin_reply_drafter_generate_path } }
+    Generate
+
+#reply-status.text-muted.small.mb-2{ style: "display: none;" }
+#reply-results
