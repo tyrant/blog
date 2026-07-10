@@ -10,8 +10,11 @@ window.CMS.replyDrafter = {
     this.length = document.getElementById('reply-length');
     this.status = document.getElementById('reply-status');
     this.results = document.getElementById('reply-results');
+    this.originalLabel = this.button.innerHTML;
     this.button.addEventListener('click', this.generate.bind(this));
   },
+
+  SPINNER: '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>',
 
   dispose: function() {
     if (this.button) {
@@ -26,6 +29,7 @@ window.CMS.replyDrafter = {
 
     var csrf = document.querySelector('meta[name="csrf-token"]').content;
     this.button.disabled = true;
+    this.button.innerHTML = this.SPINNER;
     this.results.innerHTML = '';
     this.setStatus('Reading the post and drafting replies…');
 
@@ -43,6 +47,7 @@ window.CMS.replyDrafter = {
     .then(function(res) { return res.json().then(function(body) { return { ok: res.ok, body: body }; }); })
     .then(function(res) {
       self.button.disabled = false;
+      self.button.innerHTML = self.originalLabel;
       if (!res.ok) { self.setStatus('Error: ' + (res.body.error || 'generation failed')); return; }
       var replies = res.body.replies || [];
       self.render(replies);
@@ -50,6 +55,7 @@ window.CMS.replyDrafter = {
     })
     .catch(function() {
       self.button.disabled = false;
+      self.button.innerHTML = self.originalLabel;
       self.setStatus('Request failed');
     });
   },
