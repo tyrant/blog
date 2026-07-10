@@ -60,6 +60,23 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
     end
   end
 
+  describe 'DELETE destroy' do
+    let!(:reply) do
+      SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/1',
+                            author_handle: 'coryalthoff', replied_at: Time.current)
+    end
+
+    it 'deletes the reply' do
+      expect { delete comfy_admin_reply_tracker_delete_path(reply), headers: http_auth_headers }
+        .to change(SubstackReply, :count).by(-1)
+    end
+
+    it 'redirects back to the tracker' do
+      delete comfy_admin_reply_tracker_delete_path(reply), headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_reply_tracker_path
+    end
+  end
+
   describe 'without authentication' do
     before { get comfy_admin_reply_tracker_path }
 

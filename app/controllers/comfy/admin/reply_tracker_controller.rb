@@ -23,6 +23,15 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_reply_tracker_path
   end
 
+  def destroy
+    SubstackReply.find(params[:id]).destroy
+    flash[:success] = "Reply deleted."
+  rescue ActiveRecord::RecordNotFound
+    flash[:danger] = "Reply not found."
+  ensure
+    redirect_to comfy_admin_reply_tracker_path
+  end
+
   private
 
   def replied_at

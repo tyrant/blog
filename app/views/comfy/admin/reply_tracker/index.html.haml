@@ -31,9 +31,12 @@
             %span.text-muted.small= " · #{handle == "(unknown)" ? handle : "@#{handle}"} · #{pluralize(replies.size, 'reply')}"
           %ul.list-unstyled.small.mb-0
             - replies.each do |reply|
-              %li.mb-1
-                %span.text-muted= l(reply.replied_at, format: :short)
-                = " · "
-                = link_to "target", reply.target_url, target: "_blank"
-                →
-                = link_to "your reply", reply.comment_url, target: "_blank"
+              %li.mb-1.d-flex.justify-content-between.align-items-start
+                %span
+                  %span.text-muted= l(reply.replied_at, format: :short)
+                  = " · "
+                  = link_to "target", reply.target_url, target: "_blank"
+                  →
+                  = link_to "your reply", reply.comment_url, target: "_blank"
+                = link_to comfy_admin_reply_tracker_delete_path(reply), method: :delete, data: { confirm: "Delete this logged reply?" }, class: "text-danger ml-2", title: "Delete" do
+                  %i.fas.fa-times
