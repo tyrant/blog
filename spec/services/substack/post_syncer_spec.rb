@@ -24,7 +24,10 @@ RSpec.describe Substack::PostSyncer do
     create :categorization, category: substack_category, categorized: post, url: url, data: data
   end
 
-  before { post.update_column(:content_cache, '<p>Body</p>') }
+  before do
+    post.update_column(:content_cache, '<p>Body</p>')
+    allow(client).to receive(:update_draft)
+  end
 
   describe 'a post with no Substack link' do
     before { allow(client).to receive(:create_draft).and_return('id' => 555, 'is_published' => false, 'slug' => nil) }
@@ -32,6 +35,24 @@ RSpec.describe Substack::PostSyncer do
     it 'creates a draft with the configured subtitle' do
       sync
       expect(client).to have_received(:create_draft).with(hash_including(title: post.title, subtitle: 'The fixed subtitle'))
+    end
+
+    it 'sets the new draft slug to the Comfy post slug' do
+      post.update_column(:slug, 'my-post-slug')
+      sync
+      expect(client).to have_received(:update_draft).with(555, hash_including(slug: 'my-post-slug'))
+    end
+
+    it 'normalises the slug to Substack’s charset' do
+      post.update_column(:slug, 'My_Post')
+      sync
+      expect(client).to have_received(:update_draft).with(555, hash_including(slug: 'my-post'))
+    end
+
+    it 'skips the slug when it is too short for Substack' do
+      post.update_column(:slug, '3')
+      sync
+      expect(client).to_not have_received(:update_draft)
     end
 
     it 'sends the byline built from the configured author id' do

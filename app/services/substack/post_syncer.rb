@@ -51,6 +51,10 @@ module Substack
         # Substack categorization (id in #data; URL self-heals to /p/slug once
         # published). First publish stays a deliberate, manual step.
         created = @client.create_draft(title: post.title.to_s, subtitle: subtitle, body_doc: doc, bylines: bylines)
+        # Give the new post the Comfy post's slug (new drafts only — never
+        # re-slug an existing published post). Substack ignores slug on create,
+        # so it's a follow-up update.
+        apply_slug(created.fetch("id"), post, bylines)
         link_categorization!(post, categorization, created)
         created.fetch("id")
       end
@@ -98,6 +102,18 @@ module Substack
           categorized: post, url: url, data: { "id" => created.fetch("id") }
         )
       end
+    end
+
+    # Set a new draft's slug to the Comfy post's slug, normalised to Substack's
+    # rules (lowercase, [a-z0-9-], 2–255 chars). Best-effort: a slug that's too
+    # short or rejected (e.g. already taken) is skipped, never failing the sync.
+    def apply_slug(draft_id, post, bylines)
+      slug = post.slug.to_s.downcase.gsub(/[^a-z0-9]+/, "-").gsub(/\A-+|-+\z/, "")
+      return unless slug.length.between?(2, 255)
+
+      @client.update_draft(draft_id, slug: slug, draft_bylines: bylines)
+    rescue Substack::Client::Error => e
+      Rails.logger.warn("[SubstackSync] could not set slug #{slug.inspect} on #{draft_id}: #{e.message}")
     end
 
     def substack_category(site)
