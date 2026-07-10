@@ -138,6 +138,12 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:publish_draft).with(778)
     end
 
+    it 'never re-slugs a published post' do
+      post.update_column(:slug, 'a-new-slug')
+      sync
+      expect(client).to_not have_received(:update_draft).with(anything, hash_including(:slug))
+    end
+
     it 'reconciles the categorization URL to the canonical public URL' do
       sync
       expect(categorization.reload.url).to eq 'https://pub.substack.com/p/live-slug'
@@ -164,12 +170,18 @@ RSpec.describe Substack::PostSyncer do
 
     it 'updates the draft' do
       sync
-      expect(client).to have_received(:update_draft).with(900, anything)
+      expect(client).to have_received(:update_draft).with(900, hash_including(:draft_body))
     end
 
     it 'does not auto-publish' do
       sync
       expect(client).to_not have_received(:publish_draft)
+    end
+
+    it 're-slugs the still-draft post to the Comfy slug' do
+      post.update_column(:slug, 'draft-slug')
+      sync
+      expect(client).to have_received(:update_draft).with(900, hash_including(slug: 'draft-slug'))
     end
 
     it 'keeps the draft editor URL' do

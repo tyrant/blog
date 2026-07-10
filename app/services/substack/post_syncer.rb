@@ -41,9 +41,15 @@ module Substack
         @client.update_draft(substack_id,
           draft_title: post.title.to_s, draft_subtitle: subtitle,
           draft_body: JSON.generate(doc), draft_bylines: bylines, should_send_email: false)
-        # Push edits to an already-published post live immediately. Safe: the
-        # subscriber email was sent at first publish, so this never re-sends.
-        @client.publish_draft(substack_id) if remote["is_published"]
+        if remote["is_published"]
+          # Push edits to an already-published post live immediately (the email
+          # was sent at first publish, so this never re-sends). Never re-slug a
+          # published post — that would change its public URL.
+          @client.publish_draft(substack_id)
+        else
+          # Still a draft — safe to (re-)slug it to match the Comfy post.
+          apply_slug(substack_id, post, bylines)
+        end
         reconcile_url!(categorization, remote)
         substack_id
       else
