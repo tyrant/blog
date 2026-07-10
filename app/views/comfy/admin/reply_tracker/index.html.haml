@@ -1,0 +1,39 @@
+.page-header
+  %h2 Reply Tracker
+
+%section.mb-4
+  %h5 Log a reply
+  %p.text-muted.small The target's owner is looked up automatically from its URL.
+  = form_with url: comfy_admin_reply_tracker_log_path, method: :post do
+    .form-group
+      = label_tag :target_url, "Post / comment you replied to", class: "small font-weight-bold"
+      = text_field_tag :target_url, nil, class: "form-control", placeholder: "https://…/p/… or a comment / note URL"
+    .form-group
+      = label_tag :comment_url, "Your reply's URL", class: "small font-weight-bold"
+      = text_field_tag :comment_url, nil, class: "form-control", placeholder: "https://…/comment/…"
+    .form-row.align-items-end
+      .form-group.col-auto
+        = label_tag :replied_at, "When (blank = now)", class: "small font-weight-bold"
+        = text_field_tag :replied_at, nil, class: "form-control", placeholder: "e.g. 2026-07-09 14:30", style: "width: 16rem;"
+      .form-group.col-auto
+        = submit_tag "Log reply", class: "btn btn-primary"
+
+%section
+  %h5 Who I reply to
+  - if @by_author.empty?
+    %p.text-muted No replies logged yet.
+  - else
+    - @by_author.each do |handle, replies|
+      .card.mb-3
+        .card-body
+          %h6.mb-2
+            = replies.first.author_name.presence || handle
+            %span.text-muted.small= " · #{handle == "(unknown)" ? handle : "@#{handle}"} · #{pluralize(replies.size, 'reply')}"
+          %ul.list-unstyled.small.mb-0
+            - replies.each do |reply|
+              %li.mb-1
+                %span.text-muted= l(reply.replied_at, format: :short)
+                = " · "
+                = link_to "target", reply.target_url, target: "_blank"
+                →
+                = link_to "your reply", reply.comment_url, target: "_blank"

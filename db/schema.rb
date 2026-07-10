@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_10_000006) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_10_000007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -352,6 +352,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_10_000006) do
     t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
     t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+  end
+
+  create_table "substack_replies", force: :cascade do |t|
+    t.string "target_url", null: false
+    t.string "comment_url", null: false
+    t.string "author_name"
+    t.string "author_handle"
+    t.bigint "author_user_id"
+    t.datetime "replied_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_handle"], name: "index_substack_replies_on_author_handle"
+    t.index ["replied_at"], name: "index_substack_replies_on_replied_at"
   end
 
   create_table "substack_sync_configs", force: :cascade do |t|
