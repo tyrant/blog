@@ -25,7 +25,11 @@ window.CMS.replyDrafter = {
   generate: function() {
     var self = this;
     var url = this.urlInput.value.trim();
-    if (!url) return;
+    if (!url) {
+      this.setStatus('Enter a Substack post URL first.');
+      this.urlInput.focus();
+      return;
+    }
 
     var csrf = document.querySelector('meta[name="csrf-token"]').content;
     this.button.disabled = true;
