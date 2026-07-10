@@ -20,7 +20,7 @@ RSpec.describe Anthropic::Client do
     let!(:stub) do
       stub_request(:post, 'https://api.anthropic.com/v1/messages')
         .with(headers: { 'x-api-key' => 'sk-test', 'anthropic-version' => '2023-06-01' },
-              body: hash_including('model' => 'claude-sonnet-4-6', 'system' => 'sys'))
+              body: hash_including('model' => 'claude-sonnet-5', 'system' => 'sys'))
         .to_return(status: 200, body: { content: [{ type: 'text', text: 'hello' }] }.to_json)
     end
 

@@ -11,7 +11,7 @@ module Anthropic
   class Client
     BASE          = "https://api.anthropic.com"
     VERSION       = "2023-06-01"
-    DEFAULT_MODEL = "claude-sonnet-4-6"
+    DEFAULT_MODEL = "claude-sonnet-5"
 
     class Error < StandardError; end
     class NotConfigured < Error; end
