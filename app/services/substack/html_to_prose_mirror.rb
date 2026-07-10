@@ -19,10 +19,27 @@ module Substack
     def execute
       @image_resolver ||= ->(src) { src }
       fragment = Nokogiri::HTML.fragment(@html.to_s)
-      { "type" => "doc", "content" => blocks(fragment.children) }
+      { "type" => "doc", "content" => fold_captions(blocks(fragment.children)) }
     end
 
     private
+
+    # ComfyAdmin has no caption concept; the convention is that the single
+    # paragraph directly after an image is its caption. Fold such a paragraph
+    # into the image as Substack's "caption" node (only the first — a second
+    # paragraph after the image stays body text).
+    def fold_captions(blocks)
+      blocks.each_with_object([]) do |block, out|
+        prev = out.last
+        if block["type"] == "paragraph" && block["content"].present? &&
+            prev && prev["type"] == "captionedImage" &&
+            prev["content"].none? { |child| child["type"] == "caption" }
+          prev["content"] << { "type" => "caption", "content" => block["content"] }
+        else
+          out << block
+        end
+      end
+    end
 
     # Turn a node list into block nodes, gathering loose inline content into
     # paragraphs as it goes.

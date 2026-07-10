@@ -78,6 +78,45 @@ RSpec.describe Substack::HtmlToProseMirror do
     end
   end
 
+  describe 'image captions' do
+    context 'a paragraph directly after an image' do
+      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p>The <em>caption</em>.</p>' }
+
+      it 'folds it into the image, leaving no stray paragraph' do
+        expect(content.map { |b| b['type'] }).to eq(['captionedImage'])
+      end
+
+      it 'the captionedImage carries an image2 then a caption' do
+        expect(content.first['content'].map { |c| c['type'] }).to eq(%w[image2 caption])
+      end
+
+      it 'the caption keeps the paragraph inline content' do
+        caption = content.first['content'].last
+        expect(caption['content'].map { |n| n['text'] }.join).to eq 'The caption.'
+      end
+    end
+
+    context 'two paragraphs after an image' do
+      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p>Caption.</p><p>Body.</p>' }
+
+      it 'captions with only the first, keeping the second as body' do
+        expect(content.map { |b| b['type'] }).to eq(%w[captionedImage paragraph])
+      end
+
+      it 'leaves the second paragraph as body text' do
+        expect(content.last['content'].first['text']).to eq 'Body.'
+      end
+    end
+
+    context 'an image with no following paragraph' do
+      let(:html) { '<p><img src="http://x.com/a.jpg"></p>' }
+
+      it 'has no caption' do
+        expect(content.first['content'].map { |c| c['type'] }).to eq(['image2'])
+      end
+    end
+  end
+
   describe 'unknown elements' do
     context 'inline wrapper is unwrapped' do
       let(:html) { '<p><span>kept</span></p>' }
