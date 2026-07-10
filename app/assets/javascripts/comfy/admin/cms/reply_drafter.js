@@ -4,6 +4,10 @@ window.CMS.replyDrafter = {
     if (!this.button) return;
 
     this.urlInput = document.getElementById('reply-post-url');
+    this.instructions = document.getElementById('reply-instructions');
+    this.count = document.getElementById('reply-count');
+    this.split = document.getElementById('reply-split');
+    this.length = document.getElementById('reply-length');
     this.status = document.getElementById('reply-status');
     this.results = document.getElementById('reply-results');
     this.button.addEventListener('click', this.generate.bind(this));
@@ -28,7 +32,13 @@ window.CMS.replyDrafter = {
     fetch(this.button.dataset.url, {
       method: 'POST',
       headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: url })
+      body: JSON.stringify({
+        url: url,
+        instructions: this.instructions.value,
+        count: this.count.value,
+        split: this.split.value,
+        length: this.length.value
+      })
     })
     .then(function(res) { return res.json().then(function(body) { return { ok: res.ok, body: body }; }); })
     .then(function(res) {

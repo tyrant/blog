@@ -21,14 +21,22 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
     context 'when generation succeeds' do
       before do
         allow(Substack::ReplyGenerator).to receive(:execute).and_return(replies)
-        post comfy_admin_reply_drafter_generate_path, params: { url: 'https://x/p/y' }, headers: http_auth_headers
+        post comfy_admin_reply_drafter_generate_path,
+             params: { url: 'https://x/p/y', instructions: 'Be dry.', count: '3', split: 'disagree', length: '1' },
+             headers: http_auth_headers
       end
 
       it { expect(response).to have_http_status :success }
       it { expect(JSON.parse(response.body)['replies']).to eq replies }
 
-      it 'passes the url to the generator' do
-        expect(Substack::ReplyGenerator).to have_received(:execute).with(url: 'https://x/p/y')
+      it 'passes the url and knobs to the generator' do
+        expect(Substack::ReplyGenerator).to have_received(:execute)
+          .with(url: 'https://x/p/y', instructions: 'Be dry.', count: 3, split: 'disagree', length: '1')
+      end
+
+      it 'persists the settings as the new defaults' do
+        config = ReplyDrafterConfig.instance
+        expect([config.instructions, config.count, config.split, config.length]).to eq ['Be dry.', 3, 'disagree', '1']
       end
     end
 

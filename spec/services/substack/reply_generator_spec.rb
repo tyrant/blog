@@ -35,6 +35,32 @@ RSpec.describe Substack::ReplyGenerator do
       end
     end
 
+    it 'always appends the fixed JSON format rule to the system prompt' do
+      generate
+      expect(anthropic).to have_received(:complete) do |system:, **|
+        expect(system).to include('JSON array')
+      end
+    end
+
+    context 'with custom knobs' do
+      subject(:generate) do
+        described_class.execute(url: url, substack: substack, anthropic: anthropic,
+                                instructions: 'Be extremely dry and witty.', count: 3, split: 'disagree', length: '1')
+      end
+
+      it 'uses the custom instructions as the system brief' do
+        generate
+        expect(anthropic).to have_received(:complete) { |system:, **| expect(system).to include('extremely dry and witty') }
+      end
+
+      it 'reflects count, balance and length in the user prompt' do
+        generate
+        expect(anthropic).to have_received(:complete) do |prompt:, **|
+          expect(prompt).to include('Draft 3').and include('all respectfully').and include('single punchy sentence')
+        end
+      end
+    end
+
     it 'defaults an unknown stance to agree' do
       allow(anthropic).to receive(:complete).and_return('[{"stance":"maybe","text":"Hmm."}]')
       expect(generate.first['stance']).to eq 'agree'

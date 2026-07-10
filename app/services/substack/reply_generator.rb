@@ -2,27 +2,44 @@
 
 require "nokogiri"
 
-# Drafts sample reply comments for a Substack post: fetch the post, feed its
-# text to Claude with a fixed tone brief, and return a labelled mix of agreeing
-# and respectfully-disagreeing replies for the user to edit and post himself.
+# Drafts sample reply comments for a Substack post: fetch the post, feed its text
+# to Claude with an (admin-editable) tone brief and count/balance/length knobs,
+# and return a labelled agree/disagree mix for the user to edit and post himself.
 # Falls back to placeholder replies until an Anthropic API key is configured.
 module Substack
   class ReplyGenerator
     include ServiceInterface
 
-    arguments :url, count: 6, substack: nil, anthropic: nil
+    arguments :url, instructions: nil, count: 6, split: "balanced", length: "1-3",
+                    substack: nil, anthropic: nil
 
-    SYSTEM = <<~TXT
+    # The editable brief seeded into ReplyDrafterConfig. Voice/style/humour live
+    # here; the output-format rule below is fixed so edits can't break parsing.
+    DEFAULT_INSTRUCTIONS = <<~TXT
       You draft short sample reply comments to a Substack post, for a reader who will edit and post them himself.
-      Each reply must:
-      - be 1-3 sentences (about two on average)
-      - EITHER largely agree with the post, OR respectfully and constructively disagree with it
+      Each reply should either largely agree with the post, or respectfully and constructively disagree with it.
+      Every reply must:
       - carry good humour, empathy and goodwill, and sound like a warm, witty human — never a bot
       - engage with the post's actual substance, not generic praise
       - contain no greeting, no sign-off, no hashtags, and no emoji unless one genuinely fits
-      Return a spread of both agreeing and disagreeing replies.
-      Respond with ONLY a JSON array of objects, each {"stance": "agree"|"disagree", "text": "..."} — no prose, no code fences.
     TXT
+
+    FORMAT_RULE = 'Respond with ONLY a JSON array of objects, each {"stance": "agree"|"disagree", "text": "..."} — no prose, no code fences.'
+
+    SPLIT_PHRASES = {
+      "balanced"        => "with a roughly even mix of agreeing and disagreeing replies",
+      "mostly_agree"    => "mostly agreeing, with one or two respectful disagreements",
+      "mostly_disagree" => "mostly respectfully disagreeing, with one or two agreements",
+      "agree"           => "all agreeing with the post",
+      "disagree"        => "all respectfully and constructively disagreeing"
+    }.freeze
+
+    LENGTH_PHRASES = {
+      "1"   => "a single punchy sentence",
+      "1-2" => "one or two sentences",
+      "1-3" => "one to three sentences",
+      "2-3" => "two to three sentences"
+    }.freeze
 
     BODY_LIMIT = 6000
 
@@ -33,7 +50,8 @@ module Substack
       post = @substack.get_post(@url)
       return stub_replies unless @anthropic.configured?
 
-      parse(@anthropic.complete(system: SYSTEM, prompt: user_prompt(post)))
+      system = "#{(@instructions.presence || DEFAULT_INSTRUCTIONS).strip}\n\n#{FORMAT_RULE}"
+      parse(@anthropic.complete(system: system, prompt: user_prompt(post)))
     end
 
     private
@@ -46,8 +64,16 @@ module Substack
         Post body:
         #{html_to_text(post["body_html"].to_s)[0, BODY_LIMIT]}
 
-        Draft #{@count} sample replies (roughly half agreeing, half disagreeing).
+        Draft #{@count} sample replies, #{split_phrase}, each #{length_phrase}.
       TXT
+    end
+
+    def split_phrase
+      SPLIT_PHRASES[@split] || SPLIT_PHRASES["balanced"]
+    end
+
+    def length_phrase
+      LENGTH_PHRASES[@length] || LENGTH_PHRASES["1-3"]
     end
 
     def html_to_text(html)

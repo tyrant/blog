@@ -1,14 +1,35 @@
+- split_options  = [["Balanced (mix)", "balanced"], ["Mostly agree", "mostly_agree"], ["Mostly disagree", "mostly_disagree"], ["Agree only", "agree"], ["Disagree only", "disagree"]]
+- length_options = [["1 sentence", "1"], ["1–2 sentences", "1-2"], ["1–3 sentences", "1-3"], ["2–3 sentences", "2-3"]]
+
 .page-header
   %h2 Reply Drafter
 
 %p.text-muted.small
   Paste a Substack post URL to draft sample replies — each either largely agreeing
-  or respectfully disagreeing, in good humour. Edit and post them yourself.
+  or respectfully disagreeing, in good humour. Edit and post them yourself. Your
+  brief and settings below are saved each time you generate.
 
-.form-inline.mb-3
-  = text_field_tag :reply_post_url, nil, id: "reply-post-url", placeholder: "https://…/p/…", class: "form-control mr-2", style: "width: 34rem;"
-  %button.btn.btn-primary#reply-generate{ type: "button", data: { url: comfy_admin_reply_drafter_generate_path } }
-    Generate
+.form-group
+  = label_tag :reply_post_url, "Substack post URL", class: "small font-weight-bold"
+  = text_field_tag :reply_post_url, nil, id: "reply-post-url", class: "form-control", placeholder: "https://…/p/…"
+
+.form-group
+  = label_tag :reply_instructions, "Instructions — the tone & style brief", class: "small font-weight-bold"
+  = text_area_tag :reply_instructions, @config.instructions, id: "reply-instructions", class: "form-control", rows: 8, style: "font-family: monospace; font-size: 0.75rem;"
+
+.form-row.align-items-end
+  .form-group.col-auto
+    = label_tag :reply_count, "How many", class: "small font-weight-bold"
+    = number_field_tag :reply_count, @config.count, id: "reply-count", min: 1, max: 20, class: "form-control", style: "width: 6rem;"
+  .form-group.col-auto
+    = label_tag :reply_split, "Balance", class: "small font-weight-bold"
+    = select_tag :reply_split, options_for_select(split_options, @config.split), id: "reply-split", class: "form-control"
+  .form-group.col-auto
+    = label_tag :reply_length, "Length", class: "small font-weight-bold"
+    = select_tag :reply_length, options_for_select(length_options, @config.length), id: "reply-length", class: "form-control"
+  .form-group.col-auto
+    %button.btn.btn-primary#reply-generate{ type: "button", data: { url: comfy_admin_reply_drafter_generate_path } }
+      Generate
 
 #reply-status.text-muted.small.mb-2{ style: "display: none;" }
 #reply-results
