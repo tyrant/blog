@@ -7,6 +7,7 @@ class ReplyDrafterConfig < ApplicationRecord
   validates :count, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 20 }
   validates :split, inclusion: { in: SPLITS }
   validates :length, inclusion: { in: LENGTHS }
+  validates :model, presence: true
 
   def self.instance
     first_or_create!(instructions: Substack::ReplyGenerator::DEFAULT_INSTRUCTIONS)

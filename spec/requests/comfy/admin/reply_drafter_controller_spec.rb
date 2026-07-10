@@ -22,7 +22,7 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
       before do
         allow(Substack::ReplyGenerator).to receive(:execute).and_return(replies)
         post comfy_admin_reply_drafter_generate_path,
-             params: { url: 'https://x/p/y', instructions: 'Be dry.', count: '3', split: 'disagree', length: '1' },
+             params: { url: 'https://x/p/y', instructions: 'Be dry.', count: '3', split: 'disagree', length: '1', model: 'claude-opus-4-8' },
              headers: http_auth_headers
       end
 
@@ -31,12 +31,13 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
 
       it 'passes the url and knobs to the generator' do
         expect(Substack::ReplyGenerator).to have_received(:execute)
-          .with(url: 'https://x/p/y', instructions: 'Be dry.', count: 3, split: 'disagree', length: '1')
+          .with(url: 'https://x/p/y', instructions: 'Be dry.', count: 3, split: 'disagree', length: '1', model: 'claude-opus-4-8')
       end
 
       it 'persists the settings as the new defaults' do
         config = ReplyDrafterConfig.instance
-        expect([config.instructions, config.count, config.split, config.length]).to eq ['Be dry.', 3, 'disagree', '1']
+        expect([config.instructions, config.count, config.split, config.length, config.model])
+          .to eq ['Be dry.', 3, 'disagree', '1', 'claude-opus-4-8']
       end
     end
 

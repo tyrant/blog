@@ -11,7 +11,8 @@ class Comfy::Admin::ReplyDrafterController < Comfy::Admin::Cms::BaseController
     # Persist the current settings as the new defaults (best-effort — never blocks
     # generation on a validation quibble).
     ReplyDrafterConfig.instance.update(
-      instructions: params[:instructions], count: count, split: params[:split], length: params[:length]
+      instructions: params[:instructions], count: count, split: params[:split],
+      length: params[:length], model: params[:model].presence
     )
 
     replies = Substack::ReplyGenerator.execute(
@@ -19,7 +20,8 @@ class Comfy::Admin::ReplyDrafterController < Comfy::Admin::Cms::BaseController
       instructions: params[:instructions],
       count:        count,
       split:        params[:split],
-      length:       params[:length]
+      length:       params[:length],
+      model:        params[:model]
     )
     render json: { replies: replies }
   rescue => e

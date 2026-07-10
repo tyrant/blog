@@ -12,7 +12,7 @@ RSpec.describe ReplyDrafterConfig do
 
     it 'defaults the knobs' do
       config = described_class.instance
-      expect([config.count, config.split, config.length]).to eq [6, 'balanced', '1-3']
+      expect([config.count, config.split, config.length, config.model]).to eq [6, 'balanced', '1-3', 'claude-sonnet-5']
     end
   end
 

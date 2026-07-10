@@ -42,10 +42,20 @@ RSpec.describe Substack::ReplyGenerator do
       end
     end
 
+    it 'defaults to the configured DEFAULT_MODEL' do
+      generate
+      expect(anthropic).to have_received(:complete) { |model:, **| expect(model).to eq Anthropic::Client::DEFAULT_MODEL }
+    end
+
     context 'with custom knobs' do
       subject(:generate) do
         described_class.execute(url: url, substack: substack, anthropic: anthropic,
-                                instructions: 'Be extremely dry and witty.', count: 3, split: 'disagree', length: '1')
+                                instructions: 'Be extremely dry and witty.', count: 3, split: 'disagree', length: '1', model: 'claude-opus-4-8')
+      end
+
+      it 'uses the chosen model' do
+        generate
+        expect(anthropic).to have_received(:complete) { |model:, **| expect(model).to eq 'claude-opus-4-8' }
       end
 
       it 'uses the custom instructions as the system brief' do

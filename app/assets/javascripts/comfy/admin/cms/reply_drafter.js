@@ -8,6 +8,7 @@ window.CMS.replyDrafter = {
     this.count = document.getElementById('reply-count');
     this.split = document.getElementById('reply-split');
     this.length = document.getElementById('reply-length');
+    this.model = document.getElementById('reply-model');
     this.status = document.getElementById('reply-status');
     this.results = document.getElementById('reply-results');
     this.originalLabel = this.button.innerHTML;
@@ -45,7 +46,8 @@ window.CMS.replyDrafter = {
         instructions: this.instructions.value,
         count: this.count.value,
         split: this.split.value,
-        length: this.length.value
+        length: this.length.value,
+        model: this.model.value
       })
     })
     .then(function(res) { return res.json().then(function(body) { return { ok: res.ok, body: body }; }); })

@@ -10,7 +10,7 @@ module Substack
   class ReplyGenerator
     include ServiceInterface
 
-    arguments :url, instructions: nil, count: 6, split: "balanced", length: "1-3",
+    arguments :url, instructions: nil, count: 6, split: "balanced", length: "1-3", model: nil,
                     substack: nil, anthropic: nil
 
     # The editable brief seeded into ReplyDrafterConfig. Voice/style/humour live
@@ -51,7 +51,8 @@ module Substack
       return stub_replies unless @anthropic.configured?
 
       system = "#{(@instructions.presence || DEFAULT_INSTRUCTIONS).strip}\n\n#{FORMAT_RULE}"
-      parse(@anthropic.complete(system: system, prompt: user_prompt(post)))
+      model  = @model.presence || Anthropic::Client::DEFAULT_MODEL
+      parse(@anthropic.complete(system: system, prompt: user_prompt(post), model: model))
     end
 
     private

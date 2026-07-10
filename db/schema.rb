@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_10_000007) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_11_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -231,6 +231,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_10_000007) do
     t.string "length", default: "1-3", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "model", default: "claude-sonnet-5", null: false
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
