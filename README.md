@@ -143,52 +143,32 @@ These are live-reloaded by Procfile.dev's line 3: `css: yarn build:css:watch`, w
 The regular ol' asset pipeline makes all JS/CSS builds at app/assets/builds/* yoinkable from the browser, via view-file helpers. Same with images. Propshaft handles this.
 
 
-## Medium Sync
+## Substack Post Sync
 
 This was all Claude. My word.
 
-Okay. `app/services/medium/post_syncer.rb` mirrors blog posts to Medium using browser automation (Selenium + Chrome DevTools Protocol). It manipulates Medium's Draft.js editor via ClipboardEvent pastes, image drag-and-drop, and keyboard shortcuts.
+The old Medium sync used to live here — it drove a headless browser (Selenium + a whole Cloudflare Turnstile dance) and once OOM'd the box, so it was retired. Substack exposes a usable JSON API, so mirroring is now plain HTTP: no browser, no xvfb, no Chrome profile.
+
+`app/services/substack/post_syncer.rb` mirrors a blog post to Substack. Trigger it with the **Sync to Substack** button on the post edit page → `SubstackPostSyncJob` runs `Substack::PostSyncer` on the prod worker (draft writes aren't Cloudflare-blocked from the server IP, unlike note posting).
 
 ### How it works
 
-The sync uses a **two-phase Chrome launch** to work around Cloudflare's Turnstile bot detection:
-
-1. **Phase 1** — Chrome launches WITHOUT `--remote-debugging-port` so `navigator.webdriver` is `false`. It loads `medium.com` to earn/renew a `cf_clearance` cookie (~30 min validity). On headless servers, `xvfb-run` provides a virtual display so Chrome runs in full headed mode — Cloudflare cannot distinguish this from a real display.
-2. **Phase 2** — Chrome relaunches WITH `--remote-debugging-port` (also via `xvfb-run` on servers) and navigates directly to the editor URL, skipping medium.com's homepage entirely so Turnstile never re-runs.
-
-In development, Chrome opens visibly. In production, Chrome runs inside a virtual framebuffer (`xvfb`).
+- **Content** — `Substack::HtmlToProseMirror` converts a post's `content_cache` HTML into the ProseMirror doc Substack's `draft_body` wants. Inline images are uploaded to Substack's CDN (`Client#upload_image`) and referenced from there.
+- **Linkage** — the Substack **categorization** is the source of truth: its `data["id"]` holds the stable Substack post id, and its `url` is the current canonical URL (`/p/slug` once published, else the draft editor URL).
+  - No categorization yet → create a draft **and** a Substack categorization. The first publish stays manual (a first publish emails the list).
+  - Already linked → edit that post in place by id. If it's already published, the edits **re-publish immediately without emailing** — Substack only sends the email on the first publish; otherwise they stage as an unpublished draft.
+  - Each sync self-heals the categorization URL to `/p/slug` once the post is published.
 
 ### Configuration
 
-Sync settings (title template, content template, link template, footer HTML) are managed via the `MediumSyncConfig` model, editable in ComfyAdmin.
+The standard per-post blocks — a fixed **subtitle**, an **"Original:" link** back to the blog post, and the **subscribe-CTA footer** — live in `SubstackSyncConfig`, editable at **/admin/substack-sync** ("Substack Sync" in the nav). They're seeded from a reference post by `rake substack:seed_footer`, which runs idempotently on every deploy (a Capistrano `after deploy:migrate` hook).
 
-The `ROOT_URL` environment variable (set in `.env` / `.env.production`) drives `default_url_options` so that relative image URLs resolve correctly in all environments.
+`SubstackSyncConfig` also holds the `substack.sid` session cookie plus the `publication_host` and `author_id` that identify the publication.
 
-### Production setup
+### Related admin tools
 
-Chrome and xvfb must be installed on the production server:
-
-```bash
-sudo apt install -y google-chrome-stable xvfb
-```
-
-The `selenium-webdriver` gem handles communication via CDP — no separate chromedriver binary is needed. xvfb provides a virtual display so Chrome can run in headed mode on a headless server, bypassing Cloudflare's bot detection of `--headless`.
-
-**One-time login:** Before the first production sync, you must establish a Medium login session in the Chrome profile. Run:
-
-```bash
-# SSH into the server with a tunnel for Chrome DevTools:
-ssh -L 9222:127.0.0.1:9222 noob@mikeyclarke.co.nz
-
-# Run the setup task:
-cd /home/noob/blog/current && RAILS_ENV=production bundle exec rake medium:setup
-```
-
-Then in your local Chrome, go to `chrome://inspect/#devices`, click **Configure...**, add `localhost:9222`, and click the **inspect** link on the remote medium.com page. This gives you a live interactive view of the server's Chrome — log in to Medium there. Press Enter in the SSH session when done (the task verifies the `uid` cookie was saved). Medium's session cookies persist for months in the Chrome profile at `tmp/medium_sync_chrome_profile/`.
-
-### Triggering a sync
-
-From ComfyAdmin's post edit page, click the "Sync to Medium" button. This calls `Medium::PostSyncer.execute(post_id:)` which handles title, subtitle, body content, images, link paragraph, footer, and autosave confirmation.
+- **Reply Drafter** (`/admin/reply-drafter`) — paste a Substack post URL and get sample reply comments via Claude (`Anthropic::Client`, key in credentials `anthropic.api_key`).
+- **Reply Tracker** (`/admin/reply-tracker`) — log replies you've posted and see them as a per-account timeline.
 
 
 ## ActiveStorage and AWS
