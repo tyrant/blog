@@ -22,4 +22,26 @@ namespace :substack do
     # Never fail a deploy over a transient Substack/API issue; next deploy retries.
     warn "[substack:seed_footer] skipped: #{e.message}"
   end
+
+  desc "Re-resolve existing Reply Tracker records from their reply URL (backfills previews, corrects target URLs)"
+  task backfill_replies: :environment do
+    SubstackReply.find_each do |reply|
+      r = Substack::ReplyResolver.execute(reply_url: reply.comment_url)
+      reply.update!(
+        target_url:     r.target_url,
+        author_name:    r.author_name,
+        author_handle:  r.author_handle,
+        author_user_id: r.author_user_id,
+        replied_at:     r.replied_at.presence || reply.replied_at,
+        target_preview: r.target_preview,
+        reply_preview:  r.reply_preview
+      )
+      puts "backfilled ##{reply.id} → @#{r.author_handle}: #{r.target_preview.to_s[0, 40].inspect}"
+    rescue => e
+      warn "skipped ##{reply.id} (#{reply.comment_url}): #{e.message}"
+    ensure
+      sleep 0.5 # gentle pacing over the Substack API
+    end
+    puts "done."
+  end
 end
