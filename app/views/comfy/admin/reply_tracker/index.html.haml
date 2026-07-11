@@ -3,20 +3,10 @@
 
 %section.mb-4
   %h5 Log a reply
-  %p.text-muted.small The target's owner is looked up automatically from its URL.
-  = form_with url: comfy_admin_reply_tracker_log_path, method: :post do
-    .form-group
-      = label_tag :target_url, "Post / comment you replied to", class: "small font-weight-bold"
-      = text_field_tag :target_url, nil, class: "form-control", placeholder: "https://…/p/… or a comment / note URL"
-    .form-group
-      = label_tag :comment_url, "Your reply's URL", class: "small font-weight-bold"
-      = text_field_tag :comment_url, nil, class: "form-control", placeholder: "https://…/comment/…"
-    .form-row.align-items-end
-      .form-group.col-auto
-        = label_tag :replied_at, "When (blank = now)", class: "small font-weight-bold"
-        = text_field_tag :replied_at, nil, class: "form-control", placeholder: "e.g. 2026-07-09 14:30", style: "width: 16rem;"
-      .form-group.col-auto
-        = submit_tag "Log reply", class: "btn btn-primary"
+  %p.text-muted.small Paste your reply's URL — the post/comment you replied to, its owner, and the timestamp are all looked up automatically.
+  = form_with url: comfy_admin_reply_tracker_log_path, method: :post, class: "form-inline" do
+    = text_field_tag :comment_url, nil, class: "form-control mr-2", placeholder: "https://…/comment/… or a note URL", style: "width: 34rem;"
+    = submit_tag "Log reply", class: "btn btn-primary"
 
 %section
   %h5 Who I reply to

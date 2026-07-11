@@ -7,16 +7,16 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
   end
 
   def create
-    author = Substack::TargetResolver.execute(url: params[:target_url])
+    reply = Substack::ReplyResolver.execute(reply_url: params[:comment_url])
     SubstackReply.create!(
-      target_url:     params[:target_url],
+      target_url:     reply.target_url,
       comment_url:    params[:comment_url],
-      author_name:    author["name"],
-      author_handle:  author["handle"],
-      author_user_id: author["user_id"],
-      replied_at:     replied_at
+      author_name:    reply.author_name,
+      author_handle:  reply.author_handle,
+      author_user_id: reply.author_user_id,
+      replied_at:     reply.replied_at || Time.current
     )
-    flash[:success] = "Logged reply to #{author["handle"] ? "@#{author["handle"]}" : "the target"}."
+    flash[:success] = "Logged reply to #{reply.author_handle ? "@#{reply.author_handle}" : "the target"}."
   rescue => e
     flash[:danger] = "Could not log reply: #{e.message}"
   ensure
@@ -30,14 +30,6 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
     flash[:danger] = "Reply not found."
   ensure
     redirect_to comfy_admin_reply_tracker_path
-  end
-
-  private
-
-  def replied_at
-    Time.zone.parse(params[:replied_at].to_s).presence || Time.current
-  rescue ArgumentError
-    Time.current
   end
 
 end
