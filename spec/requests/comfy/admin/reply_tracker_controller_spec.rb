@@ -26,6 +26,17 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
     it { expect(response.body).to include 'coryalthoff' }
   end
 
+  describe 'GET index with a username search' do
+    before do
+      SubstackReply.create!(target_url: 't1', comment_url: 'c1', author_handle: 'coryalthoff', replied_at: Time.current)
+      SubstackReply.create!(target_url: 't2', comment_url: 'c2', author_handle: 'someoneelse', replied_at: Time.current)
+      get comfy_admin_reply_tracker_path(q: 'cory'), headers: http_auth_headers
+    end
+
+    it { expect(response.body).to include 'coryalthoff' }
+    it { expect(response.body).to_not include 'someoneelse' }
+  end
+
   describe 'POST log' do
     context 'when the reply resolves' do
       before { allow(Substack::ReplyResolver).to receive(:execute).and_return(resolved) }

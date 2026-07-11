@@ -10,10 +10,16 @@
 
 %section
   %h5 Who I reply to
-  - if @by_author.empty?
-    %p.text-muted No replies logged yet.
+  = form_with url: comfy_admin_reply_tracker_path, method: :get, class: "form-inline mb-3" do
+    = text_field_tag :q, params[:q], placeholder: "search usernames", class: "form-control mr-2", style: "width: 18rem;"
+    = submit_tag "Search", class: "btn btn-secondary btn-sm"
+    - if params[:q].present?
+      = link_to "clear", comfy_admin_reply_tracker_path, class: "btn btn-link btn-sm"
+  - if @authors.empty?
+    %p.text-muted= params[:q].present? ? "No replies match “#{params[:q]}”." : "No replies logged yet."
   - else
-    - @by_author.each do |handle, replies|
+    = comfy_paginate @authors
+    - @authors.each do |handle, replies|
       .card.mb-3
         .card-body
           %h6.mb-2
@@ -30,3 +36,4 @@
                   = link_to truncate(reply.reply_preview.presence || "your reply", length: 50), reply.comment_url, target: "_blank"
                 = link_to comfy_admin_reply_tracker_delete_path(reply), method: :delete, data: { confirm: "Delete this logged reply?" }, class: "text-danger ml-2", title: "Delete" do
                   %i.fas.fa-times
+    = comfy_paginate @authors

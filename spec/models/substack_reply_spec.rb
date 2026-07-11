@@ -36,5 +36,14 @@ RSpec.describe SubstackReply do
       described_class.create!(target_url: 't4', comment_url: 'c4', author_handle: nil, replied_at: now + 1.day)
       expect(described_class.by_author.keys.first).to eq('(unknown)')
     end
+
+    it 'filters authors by handle when a query is given' do
+      expect(described_class.by_author('ali').keys).to eq(['alice'])
+    end
+
+    it 'filters authors by name when a query is given' do
+      described_class.create!(target_url: 't5', comment_url: 'c5', author_handle: 'carol', author_name: 'Carol Danvers', replied_at: now)
+      expect(described_class.by_author('danvers').keys).to eq(['carol'])
+    end
   end
 end

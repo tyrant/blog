@@ -3,7 +3,8 @@
 class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
 
   def index
-    @by_author = SubstackReply.by_author
+    authors  = SubstackReply.by_author(params[:q]).to_a
+    @authors = comfy_paginate(Kaminari.paginate_array(authors), per_page: 20)
   end
 
   def create
