@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_11_000003) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_12_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -367,6 +367,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_11_000003) do
     t.text "target_preview"
     t.text "reply_preview"
     t.index ["author_handle"], name: "index_substack_replies_on_author_handle"
+    t.index ["comment_url"], name: "index_substack_replies_on_comment_url", unique: true
     t.index ["replied_at"], name: "index_substack_replies_on_replied_at"
   end
 

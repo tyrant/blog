@@ -2,6 +2,7 @@
 
 class SubstackReply < ApplicationRecord
   validates :target_url, :comment_url, :replied_at, presence: true
+  validates :comment_url, uniqueness: true
 
   scope :chronological, -> { order(replied_at: :desc) }
 

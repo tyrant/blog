@@ -9,6 +9,11 @@ RSpec.describe SubstackReply do
     it 'is valid with target, comment and timestamp' do
       expect(described_class.new(target_url: 'a', comment_url: 'b', replied_at: Time.current)).to be_valid
     end
+
+    it 'rejects a duplicate comment_url' do
+      described_class.create!(target_url: 'a', comment_url: 'dup', replied_at: Time.current)
+      expect(described_class.new(target_url: 'b', comment_url: 'dup', replied_at: Time.current)).to_not be_valid
+    end
   end
 
   describe '.by_author' do

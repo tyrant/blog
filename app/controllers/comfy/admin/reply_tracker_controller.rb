@@ -8,18 +8,23 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
   end
 
   def create
-    reply = Substack::ReplyResolver.execute(reply_url: params[:comment_url])
-    SubstackReply.create!(
-      target_url:     reply.target_url,
-      comment_url:    params[:comment_url],
-      author_name:    reply.author_name,
-      author_handle:  reply.author_handle,
-      author_user_id: reply.author_user_id,
-      replied_at:     reply.replied_at || Time.current,
-      target_preview: reply.target_preview,
-      reply_preview:  reply.reply_preview
-    )
-    flash[:success] = "Logged reply to #{reply.author_handle ? "@#{reply.author_handle}" : "the target"}."
+    if SubstackReply.exists?(comment_url: params[:comment_url])
+      # Skip the API lookup for an already-logged reply.
+      flash[:danger] = "That reply is already logged."
+    else
+      reply = Substack::ReplyResolver.execute(reply_url: params[:comment_url])
+      SubstackReply.create!(
+        target_url:     reply.target_url,
+        comment_url:    params[:comment_url],
+        author_name:    reply.author_name,
+        author_handle:  reply.author_handle,
+        author_user_id: reply.author_user_id,
+        replied_at:     reply.replied_at || Time.current,
+        target_preview: reply.target_preview,
+        reply_preview:  reply.reply_preview
+      )
+      flash[:success] = "Logged reply to #{reply.author_handle ? "@#{reply.author_handle}" : "the target"}."
+    end
   rescue => e
     flash[:danger] = "Could not log reply: #{e.message}"
   ensure

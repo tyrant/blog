@@ -63,6 +63,22 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
       end
     end
 
+    context 'when the reply is already logged' do
+      before do
+        SubstackReply.create!(target_url: 't', comment_url: 'https://x/comment/1', replied_at: Time.current)
+        allow(Substack::ReplyResolver).to receive(:execute)
+        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+      end
+
+      it 'does not create a duplicate' do
+        expect(SubstackReply.where(comment_url: 'https://x/comment/1').count).to eq 1
+      end
+
+      it 'does not call the resolver' do
+        expect(Substack::ReplyResolver).to_not have_received(:execute)
+      end
+    end
+
     context 'when resolution fails' do
       before { allow(Substack::ReplyResolver).to receive(:execute).and_raise('bad url') }
 
