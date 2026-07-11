@@ -100,6 +100,12 @@ module Substack
       request(req)
     end
 
+    # Assigns an existing publication tag (by uuid) to a post/draft. The tag id
+    # is a path segment; the body is empty.
+    def add_tag(post_id, tag_id)
+      request(Net::HTTP::Post.new(pub_uri("/api/v1/post/#{post_id}/tag/#{tag_id}")))
+    end
+
     # Uploads an image (a data: URI) to Substack's CDN; returns the S3 URL to
     # reference from a ProseMirror image node.
     def upload_image(data_uri)

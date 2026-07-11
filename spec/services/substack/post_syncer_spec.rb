@@ -11,9 +11,10 @@ RSpec.describe Substack::PostSyncer do
   let!(:substack_category) { create :category, site: site, label: 'Substack' }
   let(:client) { instance_double(Substack::Client) }
   let(:footer) { [{ 'type' => 'button', 'attrs' => { 'text' => 'Subscribe now' } }] }
+  let(:tags) { [{ 'name' => 'writing', 'id' => 't1' }, { 'name' => 'comedy', 'id' => 't2' }] }
   let(:config) do
     instance_double(SubstackSyncConfig, author_id: 42, publication_host: 'pub.substack.com',
-                                        subtitle: 'The fixed subtitle', footer_json: footer)
+                                        subtitle: 'The fixed subtitle', footer_json: footer, default_tags: tags)
   end
 
   def substack_categorization
@@ -27,6 +28,7 @@ RSpec.describe Substack::PostSyncer do
   before do
     post.update_column(:content_cache, '<p>Body</p>')
     allow(client).to receive(:update_draft)
+    allow(client).to receive(:add_tag)
   end
 
   describe 'a post with no Substack link' do
@@ -81,6 +83,12 @@ RSpec.describe Substack::PostSyncer do
     it 'stores the draft editor URL on the categorization' do
       sync
       expect(substack_categorization.url).to eq 'https://pub.substack.com/publish/post/555'
+    end
+
+    it 'assigns each configured default tag to the new post' do
+      sync
+      expect(client).to have_received(:add_tag).with(555, 't1')
+      expect(client).to have_received(:add_tag).with(555, 't2')
     end
 
     it 'returns the new draft id' do

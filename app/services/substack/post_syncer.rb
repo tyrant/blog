@@ -61,6 +61,7 @@ module Substack
         # re-slug an existing published post). Substack ignores slug on create,
         # so it's a follow-up update.
         apply_slug(created.fetch("id"), post, bylines)
+        apply_default_tags(created.fetch("id"))
         link_categorization!(post, categorization, created)
         created.fetch("id")
       end
@@ -120,6 +121,16 @@ module Substack
       @client.update_draft(draft_id, slug: slug, draft_bylines: bylines)
     rescue Substack::Client::Error => e
       Rails.logger.warn("[SubstackSync] could not set slug #{slug.inspect} on #{draft_id}: #{e.message}")
+    end
+
+    # Assign the publication's default tags to a new post. Best-effort per tag so
+    # one failure never breaks the sync. New posts only — applied on create.
+    def apply_default_tags(post_id)
+      Array(@config.default_tags).each do |tag|
+        @client.add_tag(post_id, tag["id"])
+      rescue Substack::Client::Error => e
+        Rails.logger.warn("[SubstackSync] could not add tag #{tag["name"].inspect}: #{e.message}")
+      end
     end
 
     def substack_category(site)

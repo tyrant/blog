@@ -130,6 +130,15 @@ RSpec.describe Substack::Client do
       end
     end
 
+    describe '#add_tag' do
+      let!(:stub) { stub_request(:post, 'https://pub.substack.com/api/v1/post/42/tag/tag-uuid').to_return(status: 200, body: '{}') }
+
+      it 'posts to the tag path (tag id in the path, empty body)' do
+        client.add_tag(42, 'tag-uuid')
+        expect(stub).to have_been_requested
+      end
+    end
+
     describe '#upload_image' do
       before do
         stub_request(:post, 'https://pub.substack.com/api/v1/image')
