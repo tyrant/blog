@@ -8,7 +8,8 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
   let(:resolved) do
     Substack::ReplyResolver::Result.new(target_url: 'https://x/p/y', author_name: 'Cory',
                                         author_handle: 'coryalthoff', author_user_id: 99,
-                                        replied_at: '2026-07-10T00:00:00Z')
+                                        replied_at: '2026-07-10T00:00:00Z',
+                                        target_preview: 'A Post Title', reply_preview: 'My reply text')
   end
 
   before { reset_cms_config }
@@ -34,9 +35,10 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
           .to change(SubstackReply, :count).by(1)
       end
 
-      it 'stores the resolved target and author' do
+      it 'stores the resolved target, author and previews' do
         post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
-        expect(SubstackReply.last).to have_attributes(target_url: 'https://x/p/y', author_handle: 'coryalthoff')
+        expect(SubstackReply.last).to have_attributes(target_url: 'https://x/p/y', author_handle: 'coryalthoff',
+                                                      target_preview: 'A Post Title', reply_preview: 'My reply text')
       end
 
       it 'resolves from the reply url' do

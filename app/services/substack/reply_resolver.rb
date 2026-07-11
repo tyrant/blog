@@ -11,28 +11,36 @@ module Substack
     arguments :reply_url, client: nil
 
     Result = Struct.new(:target_url, :author_name, :author_handle, :author_user_id, :replied_at,
-                        keyword_init: true)
+                        :target_preview, :reply_preview, keyword_init: true)
 
     def execute
       @client ||= Substack::Client.new
       comment_id = Substack::NoteParser.comment_id_from_url(@reply_url) || @reply_url.to_s[%r{/comment/(\d+)}, 1]
       raise ArgumentError, "Not a Substack comment or note URL: #{@reply_url}" if comment_id.blank?
 
-      item       = @client.get_note(comment_id)["item"] || {}
-      reply      = item["comment"] || {}
-      replied_at = reply["date"]
+      item          = @client.get_note(comment_id)["item"] || {}
+      reply         = item["comment"] || {}
+      replied_at    = reply["date"]
+      reply_preview = plaintext(reply)
 
       if reply["ancestor_path"].to_s.present?
         parent = Array(item["parentComments"]).last || {}
-        result(parent_url(parent, item["post"]), parent["name"], parent["handle"], parent["user_id"], replied_at)
+        result(parent_url(parent, item["post"]), parent["name"], parent["handle"], parent["user_id"],
+               replied_at, plaintext(parent), reply_preview)
       else
         post   = item["post"] || {}
         byline = Array(post["publishedBylines"]).first || {}
-        result(post["canonical_url"], byline["name"], byline["handle"], byline["id"], replied_at)
+        result(post["canonical_url"], byline["name"], byline["handle"], byline["id"],
+               replied_at, post["title"], reply_preview)
       end
     end
 
     private
+
+    def plaintext(comment)
+      bj = comment["body_json"]
+      bj.present? ? Substack::NoteParser.plaintext(bj).to_s : ""
+    end
 
     # The parent's URL, in the same form as the reply's own URL: a Note thread
     # (reply URL under /note/) links to the parent's note; a post-comment thread
@@ -46,9 +54,10 @@ module Substack
       end
     end
 
-    def result(target_url, name, handle, user_id, replied_at)
+    def result(target_url, name, handle, user_id, replied_at, target_preview, reply_preview)
       Result.new(target_url: target_url, author_name: name, author_handle: handle,
-                 author_user_id: user_id, replied_at: replied_at)
+                 author_user_id: user_id, replied_at: replied_at,
+                 target_preview: target_preview, reply_preview: reply_preview)
     end
   end
 end

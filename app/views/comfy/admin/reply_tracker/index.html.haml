@@ -25,8 +25,8 @@
                 %span
                   %span.text-muted= l(reply.replied_at, format: :short)
                   = " · "
-                  = link_to "target", reply.target_url, target: "_blank"
+                  = link_to truncate(reply.target_preview.presence || "target", length: 50), reply.target_url, target: "_blank"
                   →
-                  = link_to "your reply", reply.comment_url, target: "_blank"
+                  = link_to truncate(reply.reply_preview.presence || "your reply", length: 50), reply.comment_url, target: "_blank"
                 = link_to comfy_admin_reply_tracker_delete_path(reply), method: :delete, data: { confirm: "Delete this logged reply?" }, class: "text-danger ml-2", title: "Delete" do
                   %i.fas.fa-times

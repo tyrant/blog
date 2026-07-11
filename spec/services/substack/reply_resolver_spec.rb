@@ -7,13 +7,17 @@ RSpec.describe Substack::ReplyResolver do
 
   let(:client) { instance_double(Substack::Client) }
 
+  def doc(text)
+    { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => text }] }] }
+  end
+
   context 'a reply to a post (empty ancestor_path)' do
     let(:url) { 'https://pub.substack.com/p/some-post/comment/292089644' }
 
     before do
       allow(client).to receive(:get_note).with('292089644').and_return('item' => {
-        'comment' => { 'id' => 292089644, 'ancestor_path' => '', 'date' => '2026-07-10T20:12:13.750Z' },
-        'post' => { 'canonical_url' => 'https://pub.substack.com/p/some-post',
+        'comment' => { 'id' => 292089644, 'ancestor_path' => '', 'date' => '2026-07-10T20:12:13.750Z', 'body_json' => doc('My reply') },
+        'post' => { 'canonical_url' => 'https://pub.substack.com/p/some-post', 'title' => 'Seven Months and Counting',
                     'publishedBylines' => [{ 'name' => 'Ryn', 'handle' => 'rynboelter', 'id' => 515131244 }] }
       })
     end
@@ -22,6 +26,8 @@ RSpec.describe Substack::ReplyResolver do
     it { expect(resolve.author_handle).to eq 'rynboelter' }
     it { expect(resolve.author_user_id).to eq 515131244 }
     it { expect(resolve.replied_at).to eq '2026-07-10T20:12:13.750Z' }
+    it { expect(resolve.target_preview).to eq 'Seven Months and Counting' }
+    it { expect(resolve.reply_preview).to eq 'My reply' }
   end
 
   context 'a reply deep in a Note thread rooted at a shared post' do
@@ -29,11 +35,11 @@ RSpec.describe Substack::ReplyResolver do
 
     before do
       allow(client).to receive(:get_note).with('292303478').and_return('item' => {
-        'comment' => { 'ancestor_path' => '292016360.292299371', 'date' => 't' },
+        'comment' => { 'ancestor_path' => '292016360.292299371', 'date' => 't', 'body_json' => doc('Dude! My pleasure') },
         'post' => { 'canonical_url' => 'https://thearchivedstories.substack.com/p/perfectionism' },
         'parentComments' => [
-          { 'id' => 292016360, 'name' => 'Mikey', 'handle' => 'mikeyclarke', 'user_id' => 4619740 },
-          { 'id' => 292299371, 'name' => 'The Archived Stories', 'handle' => 'thearchivedstories', 'user_id' => 485689279 }
+          { 'id' => 292016360, 'name' => 'Mikey', 'handle' => 'mikeyclarke', 'user_id' => 4619740, 'body_json' => doc('grandparent text') },
+          { 'id' => 292299371, 'name' => 'The Archived Stories', 'handle' => 'thearchivedstories', 'user_id' => 485689279, 'body_json' => doc('Thankyou for the read') }
         ]
       })
     end
@@ -44,6 +50,14 @@ RSpec.describe Substack::ReplyResolver do
 
     it 'attributes it to the immediate parent, not the grandparent' do
       expect(resolve.author_handle).to eq 'thearchivedstories'
+    end
+
+    it 'previews the immediate parent text as the target' do
+      expect(resolve.target_preview).to eq 'Thankyou for the read'
+    end
+
+    it 'previews the reply text' do
+      expect(resolve.reply_preview).to eq 'Dude! My pleasure'
     end
   end
 

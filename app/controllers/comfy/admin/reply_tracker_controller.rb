@@ -14,7 +14,9 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
       author_name:    reply.author_name,
       author_handle:  reply.author_handle,
       author_user_id: reply.author_user_id,
-      replied_at:     reply.replied_at || Time.current
+      replied_at:     reply.replied_at || Time.current,
+      target_preview: reply.target_preview,
+      reply_preview:  reply.reply_preview
     )
     flash[:success] = "Logged reply to #{reply.author_handle ? "@#{reply.author_handle}" : "the target"}."
   rescue => e
