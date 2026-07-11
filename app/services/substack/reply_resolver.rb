@@ -34,11 +34,15 @@ module Substack
 
     private
 
+    # The parent's URL, in the same form as the reply's own URL: a Note thread
+    # (reply URL under /note/) links to the parent's note; a post-comment thread
+    # links to the parent comment on its post. (post_id is set for both — a note
+    # thread can be rooted at a note sharing a post — so it can't be the signal.)
     def parent_url(parent, post)
-      if post
-        "#{post["canonical_url"]}/comment/#{parent["id"]}"
-      else
+      if @reply_url.to_s.include?("/note/")
         "https://substack.com/profile/#{parent["user_id"]}-#{parent["handle"]}/note/c-#{parent["id"]}"
+      else
+        "#{(post || {})["canonical_url"]}/comment/#{parent["id"]}"
       end
     end
 

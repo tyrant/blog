@@ -24,19 +24,27 @@ RSpec.describe Substack::ReplyResolver do
     it { expect(resolve.replied_at).to eq '2026-07-10T20:12:13.750Z' }
   end
 
-  context 'a reply to a note (ancestor_path set, no post)' do
-    let(:url) { 'https://substack.com/profile/4619740-mikey-clarke/note/c-292275963' }
+  context 'a reply deep in a Note thread rooted at a shared post' do
+    let(:url) { 'https://substack.com/profile/4619740-mikey-clarke/note/c-292303478' }
 
     before do
-      allow(client).to receive(:get_note).with('292275963').and_return('item' => {
-        'comment' => { 'ancestor_path' => '291253529', 'date' => '2026-07-11T03:28:54.024Z' },
-        'post' => nil,
-        'parentComments' => [{ 'id' => 291253529, 'name' => 'j', 'handle' => 'jordansahibi', 'user_id' => 275912457 }]
+      allow(client).to receive(:get_note).with('292303478').and_return('item' => {
+        'comment' => { 'ancestor_path' => '292016360.292299371', 'date' => 't' },
+        'post' => { 'canonical_url' => 'https://thearchivedstories.substack.com/p/perfectionism' },
+        'parentComments' => [
+          { 'id' => 292016360, 'name' => 'Mikey', 'handle' => 'mikeyclarke', 'user_id' => 4619740 },
+          { 'id' => 292299371, 'name' => 'The Archived Stories', 'handle' => 'thearchivedstories', 'user_id' => 485689279 }
+        ]
       })
     end
 
-    it { expect(resolve.target_url).to eq 'https://substack.com/profile/275912457-jordansahibi/note/c-291253529' }
-    it { expect(resolve.author_handle).to eq 'jordansahibi' }
+    it 'targets the immediate parent note, not the thread root or shared post' do
+      expect(resolve.target_url).to eq 'https://substack.com/profile/485689279-thearchivedstories/note/c-292299371'
+    end
+
+    it 'attributes it to the immediate parent, not the grandparent' do
+      expect(resolve.author_handle).to eq 'thearchivedstories'
+    end
   end
 
   context 'a reply to a comment on a post (ancestor_path set, post present)' do
