@@ -9,7 +9,8 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
     Substack::ReplyResolver::Result.new(target_url: 'https://x/p/y', author_name: 'Cory',
                                         author_handle: 'coryalthoff', author_user_id: 99,
                                         replied_at: '2026-07-10T00:00:00Z',
-                                        target_preview: 'A Post Title', reply_preview: 'My reply text')
+                                        target_preview: 'A Post Title', reply_preview: 'My reply text',
+                                        ancestor_path: '10.20')
   end
 
   before { reset_cms_config }

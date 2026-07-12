@@ -34,7 +34,8 @@ namespace :substack do
         author_user_id: r.author_user_id,
         replied_at:     r.replied_at.presence || reply.replied_at,
         target_preview: r.target_preview,
-        reply_preview:  r.reply_preview
+        reply_preview:  r.reply_preview,
+        ancestor_path:  r.ancestor_path
       )
       puts "backfilled ##{reply.id} → @#{r.author_handle}: #{r.target_preview.to_s[0, 40].inspect}"
     rescue => e

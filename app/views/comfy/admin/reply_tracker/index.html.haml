@@ -26,9 +26,11 @@
             = replies.first.author_name.presence || handle
             %span.text-muted.small= " · #{handle == "(unknown)" ? handle : "@#{handle}"} · #{pluralize(replies.size, 'reply')}"
           %ul.list-unstyled.small.mb-0
-            - replies.each do |reply|
-              %li.mb-1.d-flex.justify-content-between.align-items-start
+            - SubstackReply.threaded(replies).each do |reply, depth|
+              %li.mb-1.d-flex.justify-content-between.align-items-start{ style: ("margin-left: #{depth * 1.5}rem; border-left: 2px solid #eee; padding-left: .5rem" if depth.positive?) }
                 %span
+                  - if depth.positive?
+                    %span.text-muted ↳
                   %span.text-muted= l(reply.replied_at, format: :short)
                   = " · "
                   = link_to truncate(reply.target_preview.presence || "target", length: 50), reply.target_url, target: "_blank"

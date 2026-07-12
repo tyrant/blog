@@ -28,6 +28,7 @@ RSpec.describe Substack::ReplyResolver do
     it { expect(resolve.replied_at).to eq '2026-07-10T20:12:13.750Z' }
     it { expect(resolve.target_preview).to eq 'Seven Months and Counting' }
     it { expect(resolve.reply_preview).to eq 'My reply' }
+    it { expect(resolve.ancestor_path).to eq '' }
   end
 
   context 'a reply deep in a Note thread rooted at a shared post' do
@@ -58,6 +59,10 @@ RSpec.describe Substack::ReplyResolver do
 
     it 'previews the reply text' do
       expect(resolve.reply_preview).to eq 'Dude! My pleasure'
+    end
+
+    it 'captures the ancestor path for threading' do
+      expect(resolve.ancestor_path).to eq '292016360.292299371'
     end
   end
 

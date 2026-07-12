@@ -21,7 +21,8 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
         author_user_id: reply.author_user_id,
         replied_at:     reply.replied_at || Time.current,
         target_preview: reply.target_preview,
-        reply_preview:  reply.reply_preview
+        reply_preview:  reply.reply_preview,
+        ancestor_path:  reply.ancestor_path
       )
       flash[:success] = "Logged reply to #{reply.author_handle ? "@#{reply.author_handle}" : "the target"}."
     end

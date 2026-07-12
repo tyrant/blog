@@ -51,4 +51,31 @@ RSpec.describe SubstackReply do
       expect(described_class.by_author('danvers').keys).to eq(['carol'])
     end
   end
+
+  describe '#reply_comment_id' do
+    it 'reads a post-comment id' do
+      expect(described_class.new(comment_url: 'https://x/p/y/comment/555').reply_comment_id).to eq '555'
+    end
+
+    it 'reads a note comment id' do
+      expect(described_class.new(comment_url: 'https://substack.com/profile/1-x/note/c-777').reply_comment_id).to eq '777'
+    end
+  end
+
+  describe '.threaded' do
+    def reply(cid, ancestor, at)
+      described_class.create!(target_url: 't', comment_url: "https://x/p/y/comment/#{cid}",
+                              ancestor_path: ancestor, replied_at: at)
+    end
+
+    it 'nests a reply under its ancestor reply and keeps unrelated replies at root' do
+      now   = Time.current
+      root  = reply('100', '', now - 2.days)
+      child = reply('300', '100.200', now - 1.day)
+      other = reply('400', '', now)
+
+      threaded = described_class.threaded([root, child, other])
+      expect(threaded.map { |r, depth| [r.reply_comment_id, depth] }).to eq([['400', 0], ['100', 0], ['300', 1]])
+    end
+  end
 end

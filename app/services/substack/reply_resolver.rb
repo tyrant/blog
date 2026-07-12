@@ -11,7 +11,7 @@ module Substack
     arguments :reply_url, client: nil
 
     Result = Struct.new(:target_url, :author_name, :author_handle, :author_user_id, :replied_at,
-                        :target_preview, :reply_preview, keyword_init: true)
+                        :target_preview, :reply_preview, :ancestor_path, keyword_init: true)
 
     def execute
       @client ||= Substack::Client.new
@@ -22,16 +22,17 @@ module Substack
       reply         = item["comment"] || {}
       replied_at    = reply["date"]
       reply_preview = plaintext(reply)
+      ancestor_path = reply["ancestor_path"]
 
-      if reply["ancestor_path"].to_s.present?
+      if ancestor_path.to_s.present?
         parent = Array(item["parentComments"]).last || {}
         result(parent_url(parent, item["post"]), parent["name"], parent["handle"], parent["user_id"],
-               replied_at, plaintext(parent), reply_preview)
+               replied_at, plaintext(parent), reply_preview, ancestor_path)
       else
         post   = item["post"] || {}
         byline = Array(post["publishedBylines"]).first || {}
         result(post["canonical_url"], byline["name"], byline["handle"], byline["id"],
-               replied_at, post["title"], reply_preview)
+               replied_at, post["title"], reply_preview, ancestor_path)
       end
     end
 
@@ -54,10 +55,10 @@ module Substack
       end
     end
 
-    def result(target_url, name, handle, user_id, replied_at, target_preview, reply_preview)
+    def result(target_url, name, handle, user_id, replied_at, target_preview, reply_preview, ancestor_path)
       Result.new(target_url: target_url, author_name: name, author_handle: handle,
                  author_user_id: user_id, replied_at: replied_at,
-                 target_preview: target_preview, reply_preview: reply_preview)
+                 target_preview: target_preview, reply_preview: reply_preview, ancestor_path: ancestor_path)
     end
   end
 end
