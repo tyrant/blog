@@ -23,7 +23,8 @@
       .card.mb-3
         .card-body
           %h6.mb-2
-            = replies.first.author_name.presence || handle
+            - owner_name = replies.find { |r| r.author_handle == handle }&.author_name
+            = owner_name.presence || handle
             %span.text-muted.small= " · #{handle == "(unknown)" ? handle : "@#{handle}"} · #{pluralize(replies.size, 'reply')}"
           %ul.list-unstyled.small.mb-0
             - SubstackReply.threaded(replies).each do |reply, depth|
@@ -33,6 +34,8 @@
                     %span.text-muted ↳
                   %span.text-muted= l(reply.replied_at, format: :short)
                   = " · "
+                  - if reply.author_handle.present? && reply.author_handle != handle
+                    %span.text-muted= "@#{reply.author_handle} · "
                   = link_to truncate(reply.target_preview.presence || "target", length: 50), reply.target_url, target: "_blank"
                   →
                   = link_to truncate(reply.reply_preview.presence || "your reply", length: 50), reply.comment_url, target: "_blank"

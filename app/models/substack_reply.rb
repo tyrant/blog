@@ -9,12 +9,26 @@ class SubstackReply < ApplicationRecord
   # Replies grouped by the account replied to, each group newest-first, and the
   # accounts themselves ordered by most-recent reply.
   def self.by_author(query = nil)
-    scope = chronological
+    threads = chronological.group_by(&:thread_key)
     if query.present?
-      like  = "%#{query.strip.downcase}%"
-      scope = scope.where("LOWER(author_handle) LIKE :q OR LOWER(COALESCE(author_name, '')) LIKE :q", q: like)
+      q = query.strip.downcase
+      threads = threads.select { |_key, reps| reps.any? { |r| "#{r.author_handle} #{r.author_name}".downcase.include?(q) } }
     end
-    scope.group_by { |reply| reply.author_handle.presence || "(unknown)" }
+
+    # Attribute each whole thread to the account of its root reply (the one the
+    # user entered the thread on), so a cross-author thread stays stitched under
+    # one account rather than fragmenting across cards.
+    cards = Hash.new { |hash, key| hash[key] = [] }
+    threads.each_value do |reps|
+      owner = reps.min_by { |r| [r.ancestor_ids.length, r.replied_at.to_i] }.author_handle.presence || "(unknown)"
+      cards[owner].concat(reps)
+    end
+    cards.sort_by { |_owner, reps| -reps.map { |r| r.replied_at.to_i }.max }.to_h
+  end
+
+  # The top-level comment/note id of the thread this reply belongs to.
+  def thread_key
+    ancestor_ids.first || reply_comment_id
   end
 
   # The user's reply comment id (from the reply URL) and the ancestor comment ids

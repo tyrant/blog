@@ -29,8 +29,8 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
 
   describe 'GET index with a username search' do
     before do
-      SubstackReply.create!(target_url: 't1', comment_url: 'c1', author_handle: 'coryalthoff', replied_at: Time.current)
-      SubstackReply.create!(target_url: 't2', comment_url: 'c2', author_handle: 'someoneelse', replied_at: Time.current)
+      SubstackReply.create!(target_url: 't1', comment_url: 'https://x/p/y/comment/1', author_handle: 'coryalthoff', replied_at: Time.current)
+      SubstackReply.create!(target_url: 't2', comment_url: 'https://x/p/y/comment/2', author_handle: 'someoneelse', replied_at: Time.current)
       get comfy_admin_reply_tracker_path(q: 'cory'), headers: http_auth_headers
     end
 
