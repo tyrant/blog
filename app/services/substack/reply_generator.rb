@@ -34,13 +34,6 @@ module Substack
       "disagree"        => "all respectfully and constructively disagreeing"
     }.freeze
 
-    LENGTH_PHRASES = {
-      "1"   => "a single punchy sentence",
-      "1-2" => "one or two sentences",
-      "1-3" => "one to three sentences",
-      "2-3" => "two to three sentences"
-    }.freeze
-
     BODY_LIMIT = 6000
 
     def execute
@@ -74,7 +67,8 @@ module Substack
     end
 
     def length_phrase
-      LENGTH_PHRASES[@length] || LENGTH_PHRASES["1-3"]
+      n = [@length.to_i, 1].max
+      "#{n} sentence#{'s' unless n == 1} long"
     end
 
     def html_to_text(html)

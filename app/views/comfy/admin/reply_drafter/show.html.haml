@@ -1,6 +1,5 @@
-- split_options  = [["Balanced (mix)", "balanced"], ["Mostly agree", "mostly_agree"], ["Mostly disagree", "mostly_disagree"], ["Agree only", "agree"], ["Disagree only", "disagree"]]
-- length_options = [["1 sentence", "1"], ["1–2 sentences", "1-2"], ["1–3 sentences", "1-3"], ["2–3 sentences", "2-3"]]
-- model_options  = [["Claude Sonnet 5", "claude-sonnet-5"], ["Claude Opus 4.8", "claude-opus-4-8"], ["Claude Haiku 4.5", "claude-haiku-4-5-20251001"]]
+- split_options = [["Balanced (mix)", "balanced"], ["Mostly agree", "mostly_agree"], ["Mostly disagree", "mostly_disagree"], ["Agree only", "agree"], ["Disagree only", "disagree"]]
+- model_options = [["Claude Sonnet 5", "claude-sonnet-5"], ["Claude Opus 4.8", "claude-opus-4-8"], ["Claude Haiku 4.5", "claude-haiku-4-5-20251001"]]
 
 .page-header
   %h2 Reply Drafter
@@ -26,8 +25,8 @@
     = label_tag :reply_split, "Balance", class: "small font-weight-bold"
     = select_tag :reply_split, options_for_select(split_options, @config.split), id: "reply-split", class: "form-control"
   .form-group.col-auto
-    = label_tag :reply_length, "Length", class: "small font-weight-bold"
-    = select_tag :reply_length, options_for_select(length_options, @config.length), id: "reply-length", class: "form-control"
+    = label_tag :reply_length, "Sentences", class: "small font-weight-bold"
+    = number_field_tag :reply_length, @config.length, id: "reply-length", min: 1, max: 10, class: "form-control", style: "width: 6rem;"
   .form-group.col-auto
     = label_tag :reply_model, "Model", class: "small font-weight-bold"
     = select_tag :reply_model, options_for_select(model_options, @config.model), id: "reply-model", class: "form-control"

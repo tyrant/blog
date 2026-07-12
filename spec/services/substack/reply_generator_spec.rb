@@ -66,7 +66,7 @@ RSpec.describe Substack::ReplyGenerator do
       it 'reflects count, balance and length in the user prompt' do
         generate
         expect(anthropic).to have_received(:complete) do |prompt:, **|
-          expect(prompt).to include('Draft 3').and include('all respectfully').and include('single punchy sentence')
+          expect(prompt).to include('Draft 3').and include('all respectfully').and include('1 sentence long')
         end
       end
     end

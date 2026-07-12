@@ -12,7 +12,7 @@ RSpec.describe ReplyDrafterConfig do
 
     it 'defaults the knobs' do
       config = described_class.instance
-      expect([config.count, config.split, config.length, config.model]).to eq [6, 'balanced', '1-3', 'claude-sonnet-5']
+      expect([config.count, config.split, config.length, config.model]).to eq [6, 'balanced', '2', 'claude-sonnet-5']
     end
   end
 
@@ -29,8 +29,8 @@ RSpec.describe ReplyDrafterConfig do
       expect(config).to_not be_valid
     end
 
-    it 'rejects an unknown length' do
-      config.length = '9'
+    it 'rejects a non-numeric length' do
+      config.length = '1-3'
       expect(config).to_not be_valid
     end
   end
