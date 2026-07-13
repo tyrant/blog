@@ -4,6 +4,14 @@ class Comfy::Blog::Post < ActiveRecord::Base
 
   self.table_name = "comfy_blog_posts"
 
+  # Substack audience the post mirrors to (the draft's `audience` field). Labels
+  # drive the post-form select; values are Substack's own.
+  SUBSTACK_AUDIENCES = {
+    "everyone"  => "Free (everyone)",
+    "only_paid" => "Paid subscribers",
+    "founding"  => "Founding members"
+  }.freeze
+
   include Comfy::Cms::WithFragments
   include Comfy::Cms::WithCategories
 
@@ -27,6 +35,8 @@ class Comfy::Blog::Post < ActiveRecord::Base
   validates :slug,
     uniqueness: { scope: %i[site_id year month] },
     format:     { with: %r{\A%*\w[a-z0-9_%-]*\z}i }
+  validates :substack_audience,
+    inclusion: { in: SUBSTACK_AUDIENCES.keys }
 
   # -- Scopes ------------------------------------------------------------------
   scope :published, -> { where(is_published: true) }

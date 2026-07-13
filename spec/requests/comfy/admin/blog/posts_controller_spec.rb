@@ -113,6 +113,14 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     it { expect(blog_post.reload.title).to eq 'Updated Post Title' }
   end
 
+  describe 'PATCH /admin/sites/:site_id/blog-posts/:id (substack audience)' do
+    it 'persists the selected audience' do
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
+            params: { post: { substack_audience: 'only_paid' } }, headers: http_auth_headers
+      expect(blog_post.reload.substack_audience).to eq 'only_paid'
+    end
+  end
+
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id (tags)' do
     let!(:writing) { Tag.create!(name: 'writing') }
     let!(:advice)  { Tag.create!(name: 'advice') }

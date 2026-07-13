@@ -62,6 +62,17 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:create_draft).with(hash_including(bylines: [{ id: 42, is_guest: false }]))
     end
 
+    it 'defaults a new draft to the everyone audience' do
+      sync
+      expect(client).to have_received(:create_draft).with(hash_including(audience: 'everyone'))
+    end
+
+    it 'creates a paid draft when the post is marked paid' do
+      post.update_column(:substack_audience, 'only_paid')
+      sync
+      expect(client).to have_received(:create_draft).with(hash_including(audience: 'only_paid'))
+    end
+
     it 'appends the Original link heading pointing at the canonical post url' do
       sync
       expect(client).to have_received(:create_draft) do |args|
@@ -179,6 +190,12 @@ RSpec.describe Substack::PostSyncer do
     it 'updates the draft' do
       sync
       expect(client).to have_received(:update_draft).with(900, hash_including(:draft_body))
+    end
+
+    it 'mirrors the post audience on update' do
+      post.update_column(:substack_audience, 'only_paid')
+      sync
+      expect(client).to have_received(:update_draft).with(900, hash_including(audience: 'only_paid'))
     end
 
     it 'does not auto-publish' do

@@ -30,6 +30,12 @@ RSpec.describe Comfy::Blog::Post, type: :model do
       it { expect(new_post.year).to be_present }
       it { expect(new_post.month).to be_present }
     end
+
+    describe 'substack_audience' do
+      it { expect(post).to allow_value('everyone', 'only_paid', 'founding').for(:substack_audience) }
+      it { expect(post).to_not allow_value('vip').for(:substack_audience) }
+      it { expect(create(:post, site: site, layout: layout).substack_audience).to eq 'everyone' }
+    end
   end
 
   describe 'slug uniqueness validation' do
