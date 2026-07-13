@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_12_000003) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_13_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -59,6 +59,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_000003) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["captured_at"], name: "index_blizzard_stat_snapshots_on_captured_at"
+  end
+
+  create_table "blog_post_tags", force: :cascade do |t|
+    t.bigint "comfy_blog_post_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["comfy_blog_post_id", "tag_id"], name: "index_blog_post_tags_on_comfy_blog_post_id_and_tag_id", unique: true
+    t.index ["comfy_blog_post_id"], name: "index_blog_post_tags_on_comfy_blog_post_id"
+    t.index ["tag_id"], name: "index_blog_post_tags_on_tag_id"
   end
 
   create_table "comfy_blog_posts", force: :cascade do |t|
@@ -383,6 +393,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_000003) do
     t.jsonb "default_tags"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "substack_tag_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_tags_on_lower_name", unique: true
+    t.index ["substack_tag_id"], name: "index_tags_on_substack_tag_id", unique: true, where: "(substack_tag_id IS NOT NULL)"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email"
     t.string "name"
@@ -404,6 +423,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_000003) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "blog_post_tags", "comfy_blog_posts"
+  add_foreign_key "blog_post_tags", "tags"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

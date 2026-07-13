@@ -1,0 +1,8 @@
+= form_with model: @tag, url: (@tag.persisted? ? comfy_admin_tag_path(@tag) : comfy_admin_tags_path), method: (@tag.persisted? ? :patch : :post) do |form|
+  .form-group
+    = form.label :name
+    = form.text_field :name, class: "form-control", autofocus: true
+    - if @tag.substack_tag_id.present?
+      %small.form-text.text-muted Linked to a Substack tag. Renaming here does not rename it on Substack.
+  = form.submit(@tag.persisted? ? "Save" : "Create", class: "btn btn-primary")
+  = link_to "Cancel", comfy_admin_tags_path, class: "btn btn-link"

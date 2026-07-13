@@ -106,6 +106,11 @@ module Substack
       request(Net::HTTP::Post.new(pub_uri("/api/v1/post/#{post_id}/tag/#{tag_id}")))
     end
 
+    # Removes a publication tag (by uuid) from a post/draft.
+    def remove_tag(post_id, tag_id)
+      request(Net::HTTP::Delete.new(pub_uri("/api/v1/post/#{post_id}/tag/#{tag_id}")))
+    end
+
     # Uploads an image (a data: URI) to Substack's CDN; returns the S3 URL to
     # reference from a ProseMirror image node.
     def upload_image(data_uri)

@@ -139,6 +139,15 @@ RSpec.describe Substack::Client do
       end
     end
 
+    describe '#remove_tag' do
+      let!(:stub) { stub_request(:delete, 'https://pub.substack.com/api/v1/post/42/tag/tag-uuid').to_return(status: 200, body: '{}') }
+
+      it 'deletes the tag path (tag id in the path)' do
+        client.remove_tag(42, 'tag-uuid')
+        expect(stub).to have_been_requested
+      end
+    end
+
     describe '#upload_image' do
       before do
         stub_request(:post, 'https://pub.substack.com/api/v1/image')

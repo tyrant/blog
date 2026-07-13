@@ -1,0 +1,31 @@
+.page-header.d-flex.justify-content-between.align-items-center
+  %h2 Tags
+  = link_to "New tag", new_comfy_admin_tag_path, class: "btn btn-primary"
+
+- if @tags.empty?
+  %p.text-muted No tags yet. Import them from Substack, or add one.
+- else
+  = comfy_paginate @tags
+  %table.table.table-sm
+    %thead
+      %tr
+        %th Tag
+        %th Posts
+        %th Substack
+        %th
+    %tbody
+      - @tags.each do |tag|
+        %tr
+          %td= link_to tag.name, edit_comfy_admin_tag_path(tag)
+          %td= tag.posts_count
+          %td
+            - if tag.substack_tag_id.present?
+              %span.badge.badge-success linked
+            - else
+              %span.text-muted.small local
+          %td.text-right
+            = link_to edit_comfy_admin_tag_path(tag), class: "text-secondary mr-2", title: "Edit" do
+              %i.fas.fa-pen
+            = link_to comfy_admin_tag_path(tag), method: :delete, data: { confirm: "Delete “#{tag.name}”? It stays on Substack; only the Comfy tag and its post links are removed." }, class: "text-danger", title: "Delete" do
+              %i.fas.fa-times
+  = comfy_paginate @tags

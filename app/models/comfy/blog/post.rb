@@ -15,6 +15,12 @@ class Comfy::Blog::Post < ActiveRecord::Base
   belongs_to :site,
     class_name: "Comfy::Cms::Site"
 
+  has_many :blog_post_tags,
+    foreign_key: :comfy_blog_post_id,
+    dependent:   :destroy
+  has_many :tags,
+    through: :blog_post_tags
+
   # -- Validations -------------------------------------------------------------
   validates :title, :slug, :year, :month,
     presence: true

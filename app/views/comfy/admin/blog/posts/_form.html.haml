@@ -13,6 +13,14 @@
 
 = render "comfy/admin/cms/categories/form", form: form
 
+- if (all_tags = Tag.alphabetical).present?
+  .form-group.row.tags-widget
+    %label.col-sm-2.col-form-label.pt-0 Tags
+    .col-sm-10
+      = hidden_field_tag "post[tag_ids][]", ""
+      = select_tag "post[tag_ids][]", options_for_select(all_tags.map { |tag| [tag.name, tag.id] }, @post.tag_ids), multiple: true, size: [all_tags.size, 10].min, class: "form-control"
+      %small.form-text.text-muted Tags linked to Substack are assigned/unassigned on the post's Substack copy when you save.
+
 = form.text_field :published_at, value: @post.published_at&.strftime('%Y-%m-%d %H:%M:%S'), data: {'cms-datetime' => true}
 
 = form.check_box :is_published

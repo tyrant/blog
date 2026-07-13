@@ -78,6 +78,8 @@ Rails.application.routes.draw do
       post   "admin/reply-tracker/log", to: "reply_tracker#create",  as: :admin_reply_tracker_log
       delete "admin/reply-tracker/:id", to: "reply_tracker#destroy", as: :admin_reply_tracker_delete
 
+      resources :tags, as: :admin_tags, path: "admin/tags", except: %i[show]
+
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick
       get  "admin/substack-blizzard/repost/preview", to: "substack_blizzard#repost_preview", as: :admin_substack_blizzard_repost_preview

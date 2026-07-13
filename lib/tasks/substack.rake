@@ -23,6 +23,18 @@ namespace :substack do
     warn "[substack:seed_footer] skipped: #{e.message}"
   end
 
+  desc "Scrape every Substack-linked post for its tags and mirror them into Comfy Tags"
+  task import_tags: :environment do
+    result = Substack::TagImporter.execute(progress: ->(msg) { puts msg })
+    puts "done — #{result.posts_scanned} posts scanned, #{result.tags_seen} tags, #{result.links_created} links created."
+  end
+
+  desc "Migrate the Whimsy/NSFW/Shite Advice categories to Tags (additive; categories left intact)"
+  task migrate_category_tags: :environment do
+    result = CategoryTagMigrator.execute
+    puts "done — tags #{result.tags.inspect}, #{result.links_created} links created."
+  end
+
   desc "Re-resolve existing Reply Tracker records from their reply URL (backfills previews, corrects target URLs)"
   task backfill_replies: :environment do
     SubstackReply.find_each do |reply|

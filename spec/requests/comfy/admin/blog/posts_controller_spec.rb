@@ -113,6 +113,40 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     it { expect(blog_post.reload.title).to eq 'Updated Post Title' }
   end
 
+  describe 'PATCH /admin/sites/:site_id/blog-posts/:id (tags)' do
+    let!(:writing) { Tag.create!(name: 'writing') }
+    let!(:advice)  { Tag.create!(name: 'advice') }
+
+    before { allow(Substack::TagMirror).to receive(:assign) }
+
+    it 'assigns the selected tags' do
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
+            params: { post: { tag_ids: ['', writing.id.to_s, advice.id.to_s] } }, headers: http_auth_headers
+      expect(blog_post.reload.tags).to contain_exactly(writing, advice)
+    end
+
+    it 'removes deselected tags' do
+      blog_post.tags = [writing, advice]
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
+            params: { post: { tag_ids: ['', writing.id.to_s] } }, headers: http_auth_headers
+      expect(blog_post.reload.tags).to contain_exactly(writing)
+    end
+
+    it 'mirrors a newly-assigned tag to Substack' do
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
+            params: { post: { tag_ids: ['', writing.id.to_s] } }, headers: http_auth_headers
+      expect(Substack::TagMirror).to have_received(:assign)
+    end
+
+    it 'does not mirror tags on a JSON autosave' do
+      blog_post.tags = [writing]
+      patch "#{comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id)}.json",
+            params: { post: { title: 'Autosaved', tag_ids: [''] } },
+            headers: http_auth_headers.merge('Accept' => 'application/json')
+      expect(blog_post.reload.tags).to contain_exactly(writing)
+    end
+  end
+
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id (categorizations)' do
     let!(:category) { create :category, site: site, label: 'Medium' }
     let(:update_params) do
