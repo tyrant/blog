@@ -61,6 +61,16 @@ namespace :deploy do
   end
 end
 
+# node_modules is a shared linked dir, so new package.json deps aren't present
+# until installed — run yarn install before the esbuild asset build reads them.
+before "deploy:assets:precompile", :yarn_install do
+  on roles(:app) do
+    within release_path do
+      execute :yarn, "install", "--frozen-lockfile"
+    end
+  end
+end
+
 # comfy_vendor.js lives in the (linked) builds dir, so refresh shared from the
 # just-deployed commit before assets:precompile reads it. Must run AFTER git:update
 # — doing it in deploy:check copies the previous deploy's stale bundle.
