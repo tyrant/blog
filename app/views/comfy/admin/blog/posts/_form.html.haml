@@ -13,11 +13,7 @@
 
 = render "comfy/admin/cms/categories/form", form: form
 
-.form-group.row
-  %label.col-sm-2.col-form-label.pt-0 Substack audience
-  .col-sm-10
-    = form.select :substack_audience, Comfy::Blog::Post::SUBSTACK_AUDIENCES.invert.to_a, {}, class: "form-control", style: "max-width: 20rem;"
-    %small.form-text.text-muted Who the mirrored Substack post is for. Applied on the next sync.
+= form.select :substack_audience, Comfy::Blog::Post::SUBSTACK_AUDIENCES.invert.to_a, { bootstrap: { help: "Who the mirrored Substack post is for. Applied on the next sync." } }, { class: "form-control", style: "max-width: 20rem;" }
 
 - if (all_tags = Tag.alphabetical).present?
   .form-group.row.tags-widget
