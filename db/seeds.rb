@@ -31,7 +31,8 @@ layout = Comfy::Cms::Layout.create!(
   content: '{{ cms:wysiwyg content }}'
 )
 
-cats = ['Shite Advice', 'Whimsy', 'NSFW', 'Medium', 'Substack', 'Twitter', 'LinkedIn', 'FB'].each do |label|
+# Topical categories (Whimsy/NSFW/Shite Advice) are now Tags, not Categories.
+cats = ['Medium', 'Substack', 'Twitter', 'LinkedIn', 'FB'].each do |label|
   Comfy::Cms::Category.create!(
     site: site,
     categorized_type: 'Comfy::Blog::Post',

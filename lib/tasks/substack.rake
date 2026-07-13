@@ -35,6 +35,12 @@ namespace :substack do
     puts "done — tags #{result.tags.inspect}, #{result.links_created} links created."
   end
 
+  desc "Delete the migrated topical categories once their Tag links are in parity (Phase 2)"
+  task retire_category_tags: :environment do
+    result = TopicalCategoryRetirer.execute
+    puts "deleted: #{result.deleted.inspect}, skipped (not in parity): #{result.skipped.inspect}"
+  end
+
   desc "Re-resolve existing Reply Tracker records from their reply URL (backfills previews, corrects target URLs)"
   task backfill_replies: :environment do
     SubstackReply.find_each do |reply|
