@@ -100,6 +100,20 @@ RSpec.describe Comfy::Blog::Post, type: :model do
       it { expect(Comfy::Blog::Post.for_month(1)).to include jan_post }
       it { expect(Comfy::Blog::Post.for_month(1)).to_not include feb_post }
     end
+
+    describe '.title_matching' do
+      let!(:match)    { create :post, site: site, layout: layout, custom_title: 'On Molten Salt Ambrosia' }
+      let!(:no_match) { create :post, site: site, layout: layout, custom_title: 'Something Else Entirely' }
+
+      it { expect(Comfy::Blog::Post.title_matching('molten')).to include match }
+      it { expect(Comfy::Blog::Post.title_matching('molten')).to_not include no_match }
+      it { expect(Comfy::Blog::Post.title_matching('MOLTEN')).to include match }
+      it { expect(Comfy::Blog::Post.title_matching('')).to include(match, no_match) }
+      it { expect(Comfy::Blog::Post.title_matching(nil)).to include(match, no_match) }
+      it 'escapes LIKE wildcards' do
+        expect(Comfy::Blog::Post.title_matching('%')).to_not include match
+      end
+    end
   end
 
   describe '#url' do

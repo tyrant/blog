@@ -28,6 +28,16 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
       it { expect(response).to have_http_status :unauthorized }
     end
+
+    context 'with a title search' do
+      let!(:match)    { create :post, site: site, layout: layout, custom_title: 'Molten Salt Ambrosia' }
+      let!(:no_match) { create :post, site: site, layout: layout, custom_title: 'Unrelated Nonsense' }
+
+      before { get comfy_admin_blog_posts_path(site_id: site.id, q: 'molten'), headers: http_auth_headers }
+
+      it { expect(response.body).to include 'Molten Salt Ambrosia' }
+      it { expect(response.body).to_not include 'Unrelated Nonsense' }
+    end
   end
 
   describe 'GET /admin/sites/:site_id/blog-posts/new' do

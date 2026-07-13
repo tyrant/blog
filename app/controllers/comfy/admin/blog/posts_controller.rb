@@ -12,6 +12,7 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
     posts_scope = @site.blog_posts
       .includes(:categories)
       .for_category(params[:categories])
+      .title_matching(params[:q])
       .order(published_at: :desc)
     @posts = comfy_paginate(posts_scope)
   end

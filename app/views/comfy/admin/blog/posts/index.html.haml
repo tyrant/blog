@@ -7,6 +7,14 @@
 
 = comfy_admin_partial "comfy/admin/blog/partials/posts_before"
 
+= form_with url: comfy_admin_blog_posts_path(@site), method: :get, class: "form-inline mb-3" do
+  - if params[:categories].present?
+    = hidden_field_tag :categories, params[:categories]
+  = text_field_tag :q, params[:q], placeholder: "search post titles", class: "form-control mr-2", style: "width: 22rem;"
+  = submit_tag "Search", class: "btn btn-secondary"
+  - if params[:q].present?
+    = link_to "clear", comfy_admin_blog_posts_path(@site, categories: params[:categories].presence), class: "btn btn-link"
+
 = comfy_paginate @posts
 
 %ul.list

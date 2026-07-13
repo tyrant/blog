@@ -42,6 +42,9 @@ class Comfy::Blog::Post < ActiveRecord::Base
   scope :published, -> { where(is_published: true) }
   scope :for_year,  ->(year) { where(year: year) }
   scope :for_month, ->(month) { where(month: month) }
+  scope :title_matching, ->(query) {
+    where("title ILIKE ?", "%#{sanitize_sql_like(query)}%") if query.present?
+  }
 
   # -- Callbacks ---------------------------------------------------------------
   before_validation :set_slug,
