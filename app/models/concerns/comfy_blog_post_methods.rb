@@ -3,30 +3,32 @@ module ComfyBlogPostMethods
 
   included do
 
-    # A note on SELECT NULL: this could just as easily be SELECT *. The exact
-    # choice of columns doesn't matter: the point is to verify that the SELECT 
-    # sub-query returns zero rows, i.e. NOT EXISTS. 
-    scope :nsfw_banished!, -> {
-      joins(:categorizations)
-        .where("comfy_cms_categorizations.categorized_type = 'Comfy::Blog::Post'")
-        .where("NOT EXISTS(
-          SELECT NULL FROM comfy_cms_categorizations
-            WHERE 
-              comfy_cms_categorizations.categorized_id = comfy_blog_posts.id
-            AND 
-              comfy_cms_categorizations.category_id = (
-                SELECT id FROM comfy_cms_categories WHERE label = 'NSFW'
-              )
-          )")
+    # Filters posts by tag name(s), mirroring WithCategories#for_category — used
+    # for the public ?category= listing and prev/nek nav, now tag-backed.
+    scope :for_tag, ->(*names) {
+      if (names = [names].flatten.compact).present?
+        distinct.joins(:tags).where("tags.name" => names)
+      end
     }
-    
+
+    # A note on SELECT NULL: this could just as easily be SELECT *. The exact
+    # choice of columns doesn't matter: the point is to verify that the SELECT
+    # sub-query returns zero rows, i.e. NOT EXISTS.
+    scope :nsfw_banished!, -> {
+      where("NOT EXISTS(
+        SELECT NULL FROM blog_post_tags
+          JOIN tags ON tags.id = blog_post_tags.tag_id
+          WHERE
+            blog_post_tags.comfy_blog_post_id = comfy_blog_posts.id
+          AND
+            tags.name = 'NSFW'
+        )")
+    }
+
     scope :nsfw_banished, -> (banish) { banish ? nsfw_banished! : where('1=1') }
-    
+
     def nsfw?
-      # count( , include: { categorizations: :categories })
-      # joins(categorizations: :categories).
-      categories.exists?(label: 'NSFW')
-      #categories.any? &:nsfw?
+      tags.exists?(name: 'NSFW')
     end
 
     # We would like the immediate prev/nek posts straddling this post, ordered
@@ -38,20 +40,20 @@ module ComfyBlogPostMethods
     # treatment. Yes, NSFW is a category too, but NSFW must be explicitly
     # opt-in: regular filtering ain't good enough.
 
-    def prev(category: nil, nsfw: false)
+    def prev(tag: nil, nsfw: false)
       site.blog_posts.where('published_at < ?', self.published_at)
         .published
-        .for_category(category&.label)
+        .for_tag(tag&.name)
         .nsfw_banished(!nsfw)
         .order(published_at: :desc)
         .limit(1)
         .first
     end
 
-    def nek(category: nil, nsfw: false)
+    def nek(tag: nil, nsfw: false)
       site.blog_posts.where('published_at > ?', self.published_at)
         .published
-        .for_category(category&.label)
+        .for_tag(tag&.name)
         .nsfw_banished(!nsfw)
         .order(published_at: :asc)
         .limit(1)

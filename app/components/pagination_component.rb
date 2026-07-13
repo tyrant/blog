@@ -49,7 +49,7 @@ class PaginationComponent < ViewComponent::Base
   end
 
   def posts_total_count
-    Comfy::Blog::Post.published.for_category(params[:category]).count
+    Comfy::Blog::Post.published.for_tag(params[:category]).count
   end
 
   def pages_total_count 

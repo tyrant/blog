@@ -79,15 +79,15 @@ RSpec.describe 'Blog Pagination', type: :system do
   end
 
   describe 'Pagination with category filters' do
-    let!(:category) { create :category, site: site, label: 'Test Category' }
+    let!(:category) { Tag.create!(name: 'Test Category') }
     let!(:categorizations) do
       posts[0..3].map do |post|
-        create :categorization, categorized: post, category: category
+        BlogPostTag.without_mirror { post.tags << category }
       end
     end
     
     it 'maintains category filter across pagination' do
-      visit "/blog?category=#{category.label.downcase}"
+      visit "/blog?category=#{category.name}"
       
       # Should load category page successfully
       expect(page).to have_css('body')
@@ -97,7 +97,7 @@ RSpec.describe 'Blog Pagination', type: :system do
         within('[data-controller*="pagination"], .pagination') do
           click_link '2'
         end
-        expect(page).to have_current_path("/blog?category=#{category.label.downcase}&page=2")
+        expect(page).to have_current_path("/blog?category=#{category.name}&page=2")
       else
         # Skip test if no pagination is present
         expect(page).to have_css('body')

@@ -85,7 +85,7 @@ class PostComponent < ViewComponent::Base
   end
 
   def css_classes_for_category(category)
-    label = category.label.parameterize
+    label = category.name.parameterize
 
     classes = %w(inline-block text-xs font-medium mb-2 px-2.5 py-1 float-right clear-both opacity-90 transition) << CAT_COMMON_CSS << CAT_UNIQUE_CSS[label] << POST_CAT_CSS[label] << "duration-#{DURATION}"
     

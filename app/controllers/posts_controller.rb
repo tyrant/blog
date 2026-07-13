@@ -13,8 +13,8 @@ class PostsController < Comfy::Blog::PostsController
         @cms_site.blog_posts.published
       end
   
-    scope = scope.for_category(params[:category]) if params[:category]
-    scope = scope.includes(categorizations: :category).order(:published_at).reverse_order
+    scope = scope.for_tag(params[:category]) if params[:category]
+    scope = scope.includes(:tags).order(:published_at).reverse_order
   
     @blog_posts = comfy_paginate(scope, per_page: ComfyBlog.config.posts_per_page)
     render layout: ComfyBlog.config.app_layout
@@ -64,13 +64,13 @@ class PostsController < Comfy::Blog::PostsController
   end
 
   def prev_nek
-    @cms_post = Comfy::Blog::Post.includes(categorizations: :category)
+    @cms_post = Comfy::Blog::Post.includes(:tags)
                                  .find(params[:id])
-    @possibly_all_categories = [
+    @possibly_all_tags = [
         nil,
-        *Comfy::Cms::Category.public_names
-                             .nsfw_banished(@nsfw_options['banish'])
-                             .order(:label)
+        *Tag.public_names
+            .nsfw_banished(@nsfw_options['banish'])
+            .order(:name)
       ]
   end
 

@@ -202,11 +202,11 @@ class ApplicationController < ActionController::Base
         'blog',
         'BLOG',
         comfy_blog_posts_path,
-        Comfy::Cms::Category.public_names.select(:label).map do |cat|
+        Tag.public_names.order(:name).map do |tag|
           NavItem.new(
-            cat.label.parameterize,
-            cat.label,
-            comfy_blog_posts_path(category: cat.label)
+            tag.name.parameterize,
+            tag.name,
+            comfy_blog_posts_path(category: tag.name)
           )
         end
       ),

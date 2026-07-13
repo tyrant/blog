@@ -61,9 +61,9 @@
       </div>
     <% end %>
 
-    <%= link_to comfy_blog_posts_path(category: @category&.label),
+    <%= link_to comfy_blog_posts_path(category: @category&.name),
                 class: css_classes_for_category do %>
-      <%= @category&.label || 'All Posts' %>
+      <%= @category&.name || 'All Posts' %>
     <% end %>
         
     <% if nek.present? %>

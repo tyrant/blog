@@ -17,7 +17,7 @@ RSpec.describe PaginationComponent, type: :component do
     category_scope = double('category_scope')
     
     allow(Comfy::Blog::Post).to receive(:published).and_return(published_scope)
-    allow(published_scope).to receive(:for_category).and_return(category_scope)
+    allow(published_scope).to receive(:for_tag).and_return(category_scope)
     allow(category_scope).to receive(:count).and_return(25) # Default to 25 posts for testing
   end
 

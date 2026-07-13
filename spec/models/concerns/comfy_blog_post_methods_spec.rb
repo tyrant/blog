@@ -5,19 +5,23 @@ require 'rails_helper'
 describe ComfyBlogPostMethods do
   let!(:site)   { create :site }
   let!(:layout) { create :layout, site: site }
-  let!(:sa)     { create :category, label: 'Shite Advice', site: site }
-  let!(:whimsy) { create :category, label: 'Whimsy', site: site }
-  let!(:nsfw)   { create :category, label: 'NSFW', site: site }
+  let!(:sa)     { Tag.create!(name: 'Shite Advice') }
+  let!(:whimsy) { Tag.create!(name: 'Whimsy') }
+  let!(:nsfw)   { Tag.create!(name: 'NSFW') }
+
+  def tag!(post, tag)
+    BlogPostTag.without_mirror { post.tags << tag }
+  end
 
   describe '#nsfw?' do
     let!(:post) { create :post, site: site, layout: layout }
 
-    context 'posting without an NSFW categorization' do
+    context 'posting without an NSFW tag' do
       it { expect(post.nsfw?).to eq false }
     end
 
-    context 'posting with an NSFW categorization' do
-      let!(:cat) { create :categorization, category: nsfw, categorized: post }
+    context 'posting with an NSFW tag' do
+      before { tag!(post, nsfw) }
 
       it { expect(post.nsfw?).to eq true }
     end
@@ -27,12 +31,12 @@ describe ComfyBlogPostMethods do
     let!(:posts) do
       (0..5).map { |i| create :post, site: site, layout: layout, published_at: DateTime.now + (i - 8).days }
     end
-    let!(:sa_posts) { [0, 2, 4].each { |i| create :categorization, category: sa, categorized: posts[i] } }
-    let!(:whimsy_posts) { [1, 3, 5].each { |i| create :categorization, category: whimsy, categorized: posts[i] } }
+    let!(:sa_posts) { [0, 2, 4].each { |i| tag!(posts[i], sa) } }
+    let!(:whimsy_posts) { [1, 3, 5].each { |i| tag!(posts[i], whimsy) } }
 
     # Raunch: middle two. We want to return posts 2 and 3 ONLY if nsfw is truthy.
     # Otherwise they should never appear in prev/nek.
-    let!(:nsfw_posts) { [2, 3].each { |i| create :categorization, category: nsfw, categorized: posts[i] } }
+    let!(:nsfw_posts) { [2, 3].each { |i| tag!(posts[i], nsfw) } }
 
     describe 'No category filtering' do
       it { expect(posts[0].prev).to eq nil }
@@ -45,59 +49,59 @@ describe ComfyBlogPostMethods do
 
     describe 'Category filtering' do
       describe "filtering just Shite Advice" do
-        it { expect(posts[0].prev(category: sa)).to eq nil }
-        it { expect(posts[0].nek(category: sa)).to eq posts[4] } # 4, not 2 - 2 is NSFW
+        it { expect(posts[0].prev(tag: sa)).to eq nil }
+        it { expect(posts[0].nek(tag: sa)).to eq posts[4] } # 4, not 2 - 2 is NSFW
 
-        it { expect(posts[1].prev(category: sa)).to eq posts[0] }
-        it { expect(posts[1].nek(category: sa)).to eq posts[4] }
+        it { expect(posts[1].prev(tag: sa)).to eq posts[0] }
+        it { expect(posts[1].nek(tag: sa)).to eq posts[4] }
 
-        it { expect(posts[2].prev(category: sa)).to eq posts[0] }
-        it { expect(posts[2].nek(category: sa)).to eq posts[4] }
+        it { expect(posts[2].prev(tag: sa)).to eq posts[0] }
+        it { expect(posts[2].nek(tag: sa)).to eq posts[4] }
 
-        it { expect(posts[3].prev(category: sa)).to eq posts[0] }
-        it { expect(posts[3].nek(category: sa)).to eq posts[4] }
+        it { expect(posts[3].prev(tag: sa)).to eq posts[0] }
+        it { expect(posts[3].nek(tag: sa)).to eq posts[4] }
 
-        it { expect(posts[4].prev(category: sa)).to eq posts[0] }
-        it { expect(posts[4].nek(category: sa)).to eq nil }
+        it { expect(posts[4].prev(tag: sa)).to eq posts[0] }
+        it { expect(posts[4].nek(tag: sa)).to eq nil }
 
-        it { expect(posts[5].prev(category: sa)).to eq posts[4] }
-        it { expect(posts[5].nek(category: sa)).to eq nil }
+        it { expect(posts[5].prev(tag: sa)).to eq posts[4] }
+        it { expect(posts[5].nek(tag: sa)).to eq nil }
       end
 
       describe "filtering just Whimsy" do
-        it { expect(posts[0].prev(category: whimsy)).to eq nil }
-        it { expect(posts[0].nek(category: whimsy)).to eq posts[1] }
+        it { expect(posts[0].prev(tag: whimsy)).to eq nil }
+        it { expect(posts[0].nek(tag: whimsy)).to eq posts[1] }
 
-        it { expect(posts[1].prev(category: whimsy)).to eq nil }
-        it { expect(posts[1].nek(category: whimsy)).to eq posts[5] }
+        it { expect(posts[1].prev(tag: whimsy)).to eq nil }
+        it { expect(posts[1].nek(tag: whimsy)).to eq posts[5] }
 
-        it { expect(posts[2].prev(category: whimsy)).to eq posts[1] }
-        it { expect(posts[2].nek(category: whimsy)).to eq posts[5] }
+        it { expect(posts[2].prev(tag: whimsy)).to eq posts[1] }
+        it { expect(posts[2].nek(tag: whimsy)).to eq posts[5] }
 
-        it { expect(posts[3].prev(category: whimsy)).to eq posts[1] }
-        it { expect(posts[3].nek(category: whimsy)).to eq posts[5] }
+        it { expect(posts[3].prev(tag: whimsy)).to eq posts[1] }
+        it { expect(posts[3].nek(tag: whimsy)).to eq posts[5] }
 
-        it { expect(posts[4].prev(category: whimsy)).to eq posts[1] }
-        it { expect(posts[4].nek(category: whimsy)).to eq posts[5] }
+        it { expect(posts[4].prev(tag: whimsy)).to eq posts[1] }
+        it { expect(posts[4].nek(tag: whimsy)).to eq posts[5] }
 
-        it { expect(posts[5].prev(category: whimsy)).to eq posts[1] }
-        it { expect(posts[5].nek(category: whimsy)).to eq nil }
+        it { expect(posts[5].prev(tag: whimsy)).to eq posts[1] }
+        it { expect(posts[5].nek(tag: whimsy)).to eq nil }
       end
 
       describe "NSFW filter: naughty posts appear only when whitelisted" do
         describe "querying post2 with nsfw filter absent" do
-          it { expect(posts[1].prev(category: sa)).to eq posts[0] }
-          it { expect(posts[1].nek(category: sa)).to eq posts[4] }
+          it { expect(posts[1].prev(tag: sa)).to eq posts[0] }
+          it { expect(posts[1].nek(tag: sa)).to eq posts[4] }
         end
 
         describe "querying post2 with nsfw filter manually false" do
-          it { expect(posts[1].prev(category: sa, nsfw: false)).to eq posts[0] }
-          it { expect(posts[1].nek(category: sa, nsfw: false)).to eq posts[4] }
+          it { expect(posts[1].prev(tag: sa, nsfw: false)).to eq posts[0] }
+          it { expect(posts[1].nek(tag: sa, nsfw: false)).to eq posts[4] }
         end
 
         describe "querying post2 with nsfw filter manually true" do
-          it { expect(posts[1].prev(category: sa, nsfw: true)).to eq posts[0] }
-          it { expect(posts[1].nek(category: sa, nsfw: true)).to eq posts[2] }
+          it { expect(posts[1].prev(tag: sa, nsfw: true)).to eq posts[0] }
+          it { expect(posts[1].nek(tag: sa, nsfw: true)).to eq posts[2] }
         end
 
         describe "querying post2 with category absent and nsfw absent" do

@@ -7,15 +7,15 @@ RSpec.describe PrevNekComponent, type: :component do
 
   let!(:site) { create :site }
   let!(:layout) { create :layout, site: site }
-  let!(:category1) { create :category, label: 'Whimsy', site: site }
-  let!(:category2) { create :category, label: 'NSFW', site: site }
-  
+  let!(:category1) { Tag.create!(name: 'Whimsy') }
+  let!(:category2) { Tag.create!(name: 'NSFW') }
+
   let!(:post1) { create :post, site: site, layout: layout, published_at: 3.days.ago }
   let!(:post2) { create :post, site: site, layout: layout, published_at: 2.days.ago }
   let!(:post3) { create :post, site: site, layout: layout, published_at: 1.day.ago }
-  
-  let!(:categorization1) { create :categorization, category: category1, categorized: post1 }
-  let!(:categorization2) { create :categorization, category: category2, categorized: post3 }
+
+  let!(:categorization1) { BlogPostTag.without_mirror { post1.tags << category1 } }
+  let!(:categorization2) { BlogPostTag.without_mirror { post3.tags << category2 } }
 
   let(:default_nsfw_options) { { 'banish' => false, 'mouseover' => false, 'always' => false } }
   
@@ -45,24 +45,24 @@ RSpec.describe PrevNekComponent, type: :component do
 
   describe 'prev and nek methods' do
     describe 'finding previous post' do
-      before { allow(post2).to receive(:prev).with(category: nil, nsfw: true).and_return post1 }
+      before { allow(post2).to receive(:prev).with(tag: nil, nsfw: true).and_return post1 }
       it { expect(subject.send(:prev)).to eq post1 }
     end
 
     describe 'finding next post' do
-      before { allow(post2).to receive(:nek).with(category: nil, nsfw: true).and_return post3 }
+      before { allow(post2).to receive(:nek).with(tag: nil, nsfw: true).and_return post3 }
       it { expect(subject.send(:nek)).to eq post3 }
     end
 
     describe 'finding next post' do
-      before { allow(post2).to receive(:nek).with(category: nil, nsfw: true).and_return post3 }
+      before { allow(post2).to receive(:nek).with(tag: nil, nsfw: true).and_return post3 }
       it { expect(subject.send(:nek)).to eq post3 }
     end
 
     describe 'respecting NSFW banish setting' do
       before { default_nsfw_options.merge!('banish' => true) }
-      it { expect(post2).to receive(:prev).with(category: nil, nsfw: false); subject.prev }
-      it { expect(post2).to receive(:nek).with(category: nil, nsfw: false); subject.nek }
+      it { expect(post2).to receive(:prev).with(tag: nil, nsfw: false); subject.prev }
+      it { expect(post2).to receive(:nek).with(tag: nil, nsfw: false); subject.nek }
     end
 
     describe 'caching prev and nek results' do

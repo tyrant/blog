@@ -10,11 +10,11 @@ class PrevNekComponent < ViewComponent::Base
   end
 
   def prev
-    @cached_prev ||= @post.prev category: @category, nsfw: !@nsfw_options['banish']
+    @cached_prev ||= @post.prev tag: @category, nsfw: !@nsfw_options['banish']
   end
 
   def nek
-    @cached_nek ||= @post.nek category: @category, nsfw: !@nsfw_options['banish']
+    @cached_nek ||= @post.nek tag: @category, nsfw: !@nsfw_options['banish']
   end
 
   def prev_thumb_or_kiss
@@ -76,7 +76,7 @@ class PrevNekComponent < ViewComponent::Base
                  shadow-lg outline)
     classes << PostComponent::CAT_COMMON_CSS
 
-    label = @category.present? ? @category.label.parameterize : 'all-posts'
+    label = @category.present? ? @category.name.parameterize : 'all-posts'
     classes << PostComponent::CAT_UNIQUE_CSS[label]
     
     classes.join ' '

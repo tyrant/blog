@@ -5,8 +5,8 @@ require 'rails_helper'
 RSpec.describe 'Blog Browsing', type: :system do
   let!(:site) { create :site, identifier: 'blog-browsing-site', hostname: 'blog-browsing.localhost', path: '/', label: 'Blog Browsing Test Site' }
   let!(:layout) { create :layout, site: site, identifier: 'default', label: 'Default Layout', content: '{{ cms:page:content:rich_text }}' }
-  let!(:general_category) { create :category, site: site, label: 'General' }
-  let!(:nsfw_category) { create :category, site: site, label: 'NSFW' }
+  let!(:general_category) { Tag.create!(name: 'General') }
+  let!(:nsfw_category) { Tag.create!(name: 'NSFW') }
 
   let!(:published_post) do
     post = create :post, site: site, layout: layout, published_at: 1.day.ago, is_published: true
@@ -20,8 +20,8 @@ RSpec.describe 'Blog Browsing', type: :system do
     post
   end
 
-  let!(:published_categorization) { create :categorization, categorized: published_post, category: general_category }
-  let!(:nsfw_categorization) { create :categorization, categorized: nsfw_post, category: nsfw_category }
+  let!(:published_categorization) { BlogPostTag.without_mirror { published_post.tags << general_category } }
+  let!(:nsfw_categorization) { BlogPostTag.without_mirror { nsfw_post.tags << nsfw_category } }
   
   before do
     # Mock ComfyBlog configuration
@@ -78,13 +78,13 @@ RSpec.describe 'Blog Browsing', type: :system do
 
   describe 'Category filtering' do
     it 'filters posts by category' do
-      visit "/?category=#{general_category.label.downcase}"
+      visit "/?category=#{general_category.name}"
       
       expect(page).to have_css('body')
     end
     
     it 'shows NSFW posts when filtering by NSFW category' do
-      visit "/?category=#{nsfw_category.label.downcase}"
+      visit "/?category=#{nsfw_category.name}"
       
       expect(page).to have_css('body')
     end

@@ -68,8 +68,8 @@ RSpec.describe 'ApplicationController', type: :request do
   end
 
   describe 'navigation setup' do
-    let!(:category1) { create :category, label: 'Shite Advice', site: site }
-    let!(:category2) { create :category, label: 'Whimsy', site: site }
+    let!(:category1) { Tag.create!(name: 'Shite Advice') }
+    let!(:category2) { Tag.create!(name: 'Whimsy') }
 
     before { get '/the-sex-commandos-thwart-the-third-vaginal-apocalypse' }
 

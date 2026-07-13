@@ -68,14 +68,14 @@ end
 describe 'ConsentIsSexy component usage', type: :system, js: true do
   let!(:site) { Comfy::Cms::Site.find_by(identifier: 'blog') || create(:site, identifier: 'blog', hostname: 'localhost', path: '/', label: 'Blog Site') }
   let!(:layout) { site.layouts.first || create(:layout, site: site, identifier: 'default', label: 'Default Layout', content: '<html><body>{{ cms:page:content }}</body></html>') }
-  let!(:nsfw_category) { create :category, site: site, label: 'NSFW' }
-  let!(:general_category) { create :category, site: site, label: 'General' }
+  let!(:nsfw_category) { Tag.create!(name: 'NSFW') }
+  let!(:general_category) { Tag.create!(name: 'General') }
 
   let!(:nsfw_posts) do
     (1..6).map do |i|
       post = create :post, site: site, layout: layout, published_at: i.days.ago, is_published: true
       post.update!(title: "NSFW Post #{i}", slug: "nsfw-post-#{i}")
-      create :categorization, categorized: post, category: nsfw_category
+      BlogPostTag.without_mirror { post.tags << nsfw_category }
       post
     end
   end
@@ -84,7 +84,7 @@ describe 'ConsentIsSexy component usage', type: :system, js: true do
     (1..6).map do |i|
       post = create :post, site: site, layout: layout, published_at: (i + 6).days.ago, is_published: true
       post.update!(title: "General Post #{i}", slug: "general-post-#{i}")
-      create :categorization, categorized: post, category: general_category
+      BlogPostTag.without_mirror { post.tags << general_category }
       post
     end
   end

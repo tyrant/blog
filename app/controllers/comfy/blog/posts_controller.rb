@@ -13,7 +13,7 @@ class Comfy::Blog::PostsController < Comfy::Cms::BaseController
         @cms_site.blog_posts.published
       end
 
-    scope = scope.for_category(params[:category]) if params[:category]
+    scope = scope.for_tag(params[:category]) if params[:category]
     scope = scope.order(:published_at).reverse_order
 
     @blog_posts = comfy_paginate(scope, per_page: ComfyBlog.config.posts_per_page)

@@ -6,12 +6,12 @@ RSpec.describe PostComponent, type: :component do
   include ViewComponent::TestHelpers
   let!(:site) { create :site }
   let!(:layout) { create :layout, site: site }
-  let!(:category1) { create :category, label: 'Whimsy', site: site }
-  let!(:category2) { create :category, label: 'NSFW', site: site }
+  let!(:category1) { Tag.create!(name: 'Whimsy') }
+  let!(:category2) { Tag.create!(name: 'NSFW') }
   let!(:post) { create :post, site: site, layout: layout, published_at: 1.day.ago }
   let!(:nsfw_post) { create :post, site: site, layout: layout, published_at: 1.day.ago }
-  let!(:categorization1) { create :categorization, category: category1, categorized: post }
-  let!(:categorization2) { create :categorization, category: category2, categorized: nsfw_post }
+  let!(:categorization1) { BlogPostTag.without_mirror { post.tags << category1 } }
+  let!(:categorization2) { BlogPostTag.without_mirror { nsfw_post.tags << category2 } }
 
   let(:default_nsfw_options) { { 'banish' => false, 'mouseover' => false, 'always' => false } }
   subject { PostComponent.new post: post, cms_site: site, nsfw_options: default_nsfw_options }
