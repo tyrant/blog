@@ -12,6 +12,9 @@
                    style: "font-family: monospace; min-height: 22rem;",
                    data: { 'cms-cm-mode': 'application/json' }
 
+  = form.check_box :quotation_rotation_enabled,
+                   label: "Rotate featured quotes weekly across every Substack post (leave off while testing)"
+
   = form.form_actions do
     = submit_tag "Save", class: "btn btn-primary ml-sm-1"
 

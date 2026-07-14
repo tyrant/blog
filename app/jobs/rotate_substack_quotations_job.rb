@@ -11,6 +11,7 @@ class RotateSubstackQuotationsJob < ApplicationJob
   PACING = 0.5 # seconds between posts
 
   def perform
+    return unless SubstackSyncConfig.instance.quotation_rotation_enabled?
     return if SubstackQuotation.none?
 
     client = Substack::Client.new

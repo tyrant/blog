@@ -19,6 +19,7 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
   end
 
   before do
+    SubstackSyncConfig.instance.update!(quotation_rotation_enabled: true)
     allow(Substack::Client).to receive(:new).and_return(client)
     allow(client).to receive(:update_draft)
     allow(client).to receive(:publish_draft)
@@ -48,6 +49,15 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
     it 'republishes to push the rotation live' do
       described_class.new.perform
       expect(client).to have_received(:publish_draft).with(900)
+    end
+  end
+
+  context 'when rotation is disabled' do
+    before { SubstackSyncConfig.instance.update!(quotation_rotation_enabled: false) }
+
+    it 'does no work' do
+      expect(client).to_not receive(:get_draft)
+      described_class.new.perform
     end
   end
 
