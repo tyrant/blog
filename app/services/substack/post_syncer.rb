@@ -29,6 +29,9 @@ module Substack
       # slug); the mirror owns that block, canonically rebuilt from post.url.
       doc["content"].reject! { |block| original_link_block?(block) }
       doc["content"].concat([original_link_heading(post.url)], Array(@config.footer_json))
+      # A random featured reader quote at the very bottom, mirror-managed like the
+      # footer (rebuilt each sync; the recurring job rotates it between syncs).
+      doc["content"] = QuotationBlock.apply(doc["content"], SubstackQuotation.order(Arel.sql("RANDOM()")).first)
       subtitle = @config.subtitle.to_s
       bylines  = [{ id: @config.author_id, is_guest: false }]
 
