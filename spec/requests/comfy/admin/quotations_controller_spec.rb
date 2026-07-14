@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+require 'rails_helper'
+
+RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
+  let!(:site) { create :site }
+
+  before { reset_cms_config }
+
+  describe 'GET index' do
+    before do
+      SubstackQuotation.create!(quotation: 'a gem of a blurb', comment_url: 'https://x/comment/1',
+                                author_name: 'Bob', author_url: 'https://substack.com/@bob',
+                                post_title: 'A Post', post_url: 'https://x/p/a')
+      get comfy_admin_quotations_path, headers: http_auth_headers
+    end
+
+    it { expect(response).to have_http_status :success }
+    it { expect(response.body).to include 'a gem of a blurb' }
+    it { expect(response.body).to include 'Bob' }
+  end
+
+  describe 'POST create' do
+    let(:resolved) do
+      Substack::QuotationResolver::Result.new(post_url: 'https://x/p/a', post_title: 'A Post',
+                                              author_name: 'Bob', author_url: 'https://substack.com/@bob')
+    end
+
+    context 'when the comment resolves' do
+      before { allow(Substack::QuotationResolver).to receive(:execute).and_return(resolved) }
+
+      it 'creates a record' do
+        expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers }
+          .to change(SubstackQuotation, :count).by(1)
+      end
+
+      it 'stores the resolved post and author' do
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        expect(SubstackQuotation.last).to have_attributes(quotation: 'blurb', post_title: 'A Post', author_name: 'Bob')
+      end
+
+      it 'resolves from the comment url' do
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        expect(Substack::QuotationResolver).to have_received(:execute).with(comment_url: 'https://x/comment/5', client: nil)
+      end
+
+      it 'redirects back' do
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        expect(response).to redirect_to comfy_admin_quotations_path
+      end
+
+      it 'rejects a blank quotation' do
+        expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: '' }, headers: http_auth_headers }
+          .to_not change(SubstackQuotation, :count)
+      end
+    end
+
+    context 'when resolution fails' do
+      before { allow(Substack::QuotationResolver).to receive(:execute).and_raise('bad url') }
+
+      it 'creates no record' do
+        expect { post comfy_admin_quotations_path, params: { comment_url: 'bad', quotation: 'blurb' }, headers: http_auth_headers }
+          .to_not change(SubstackQuotation, :count)
+      end
+
+      it 'redirects back' do
+        post comfy_admin_quotations_path, params: { comment_url: 'bad', quotation: 'blurb' }, headers: http_auth_headers
+        expect(response).to redirect_to comfy_admin_quotations_path
+      end
+    end
+  end
+
+  describe 'DELETE destroy' do
+    let!(:quotation) { SubstackQuotation.create!(quotation: 'x', comment_url: 'https://x/comment/1') }
+
+    it 'deletes the quotation' do
+      expect { delete comfy_admin_quotation_path(quotation), headers: http_auth_headers }
+        .to change(SubstackQuotation, :count).by(-1)
+    end
+  end
+
+  describe 'without authentication' do
+    before { get comfy_admin_quotations_path }
+
+    it { expect(response).to have_http_status :unauthorized }
+  end
+end

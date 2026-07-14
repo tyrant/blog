@@ -3,7 +3,8 @@
   - prefix = form.object_name
   - cats_by_id = object.categorizations.index_by(&:category_id)
   .form-group.row.categorizations-widget
-    %label.col-sm-2.col-form-label.pt-0= t(".label")
+    %label.col-sm-2.col-form-label.pt-0.text-sm-right
+      = t(".label")
     %ul.col-sm-10.list-unstyled.mb-0
       = hidden_field_tag "#{prefix}[category_ids][]", ""
       - categories.each do |category|
