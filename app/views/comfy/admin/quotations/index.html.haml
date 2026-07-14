@@ -36,7 +36,7 @@
               = link_to "comment", q.comment_url, target: "_blank"
           .text-nowrap.ml-2
             = link_to comfy_edit_admin_quotation_path(q), class: "text-secondary mr-2", title: "Edit" do
-              %i.fas.fa-pen
+              %i.fas.fa-pencil-alt
             = link_to comfy_admin_quotation_path(q), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger", title: "Delete" do
               %i.fas.fa-times
     = comfy_paginate @quotations
