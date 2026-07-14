@@ -70,6 +70,62 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
   end
 
+  describe 'GET edit' do
+    let!(:quotation) { SubstackQuotation.create!(quotation: 'old blurb', comment_url: 'https://x/comment/1', author_name: 'Bob') }
+
+    before { get comfy_edit_admin_quotation_path(quotation), headers: http_auth_headers }
+
+    it { expect(response).to have_http_status :success }
+    it { expect(response.body).to include 'old blurb' }
+    it { expect(response.body).to include 'Update quotation' }
+  end
+
+  describe 'PATCH update' do
+    let!(:quotation) do
+      SubstackQuotation.create!(quotation: 'old', comment_url: 'https://x/comment/1',
+                                author_name: 'Bob', post_title: 'Old Post')
+    end
+
+    context 'editing only the blurb (same comment url)' do
+      before { allow(Substack::QuotationResolver).to receive(:execute) }
+
+      it 'updates the text' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        expect(quotation.reload.quotation).to eq 'new blurb'
+      end
+
+      it 'does not re-hit Substack' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        expect(Substack::QuotationResolver).to_not have_received(:execute)
+      end
+
+      it 'keeps the existing metadata' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        expect(quotation.reload.post_title).to eq 'Old Post'
+      end
+    end
+
+    context 'changing the comment url' do
+      let(:resolved) do
+        Substack::QuotationResolver::Result.new(post_url: 'https://x/p/b', post_title: 'New Post',
+                                                author_name: 'Eva', author_url: 'https://substack.com/@eva')
+      end
+
+      before { allow(Substack::QuotationResolver).to receive(:execute).and_return(resolved) }
+
+      it 're-resolves the post and author' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old' }, headers: http_auth_headers
+        expect(quotation.reload).to have_attributes(comment_url: 'https://x/comment/9', post_title: 'New Post', author_name: 'Eva')
+      end
+    end
+
+    it 'redirects back' do
+      allow(Substack::QuotationResolver).to receive(:execute)
+      patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'x' }, headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_quotations_path
+    end
+  end
+
   describe 'DELETE destroy' do
     let!(:quotation) { SubstackQuotation.create!(quotation: 'x', comment_url: 'https://x/comment/1') }
 

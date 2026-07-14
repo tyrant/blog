@@ -3,8 +3,17 @@
 class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
   def index
-    quotations = SubstackQuotation.chronological.to_a
-    @quotations = comfy_paginate(Kaminari.paginate_array(quotations), per_page: 25)
+    @quotation = SubstackQuotation.new
+    load_quotations
+  end
+
+  def edit
+    @quotation = SubstackQuotation.find(params[:id])
+    load_quotations
+    render :index
+  rescue ActiveRecord::RecordNotFound
+    flash[:danger] = "Quotation not found."
+    redirect_to comfy_admin_quotations_path
   end
 
   def create
@@ -18,6 +27,23 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
+  def update
+    quotation = SubstackQuotation.find(params[:id])
+    comment_changed = quotation.comment_url != params[:comment_url]
+    quotation.assign_attributes(quotation: params[:quotation], comment_url: params[:comment_url])
+    # Only re-hit Substack when the comment itself changed — a blurb-only edit
+    # keeps the existing post/author metadata.
+    quotation.populate_from_substack! if comment_changed
+    quotation.save!
+    flash[:success] = "Quotation updated."
+  rescue ActiveRecord::RecordNotFound
+    flash[:danger] = "Quotation not found."
+  rescue => e
+    flash[:danger] = "Could not update quotation: #{e.message}"
+  ensure
+    redirect_to comfy_admin_quotations_path
+  end
+
   def destroy
     SubstackQuotation.find(params[:id]).destroy
     flash[:success] = "Quotation deleted."
@@ -25,6 +51,12 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     flash[:danger] = "Quotation not found."
   ensure
     redirect_to comfy_admin_quotations_path
+  end
+
+  private
+
+  def load_quotations
+    @quotations = comfy_paginate(Kaminari.paginate_array(SubstackQuotation.chronological.to_a), per_page: 25)
   end
 
 end

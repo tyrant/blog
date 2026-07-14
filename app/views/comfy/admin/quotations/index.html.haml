@@ -1,15 +1,18 @@
 .page-header
   %h2 Quotations
 
+- editing = @quotation.persisted?
 %section.mb-4
-  %h5 Add a quotation
+  %h5= editing ? "Edit quotation" : "Add a quotation"
   %p.text-muted.small Paste a Substack comment URL and a blurb from it — the post and commenter are looked up automatically.
-  = form_with url: comfy_admin_quotations_path, method: :post do
+  = form_with url: (editing ? comfy_admin_quotation_path(@quotation) : comfy_admin_quotations_path), method: (editing ? :patch : :post) do
     .form-group
-      = text_field_tag :comment_url, nil, class: "form-control", placeholder: "https://…/comment/… or a note URL"
+      = text_field_tag :comment_url, @quotation.comment_url, class: "form-control", placeholder: "https://…/comment/… or a note URL"
     .form-group
-      = text_area_tag :quotation, nil, class: "form-control", rows: 3, placeholder: "the blurb to quote"
-    = submit_tag "Save quotation", class: "btn btn-primary"
+      = text_area_tag :quotation, @quotation.quotation, class: "form-control", rows: 3, placeholder: "the blurb to quote"
+    = submit_tag(editing ? "Update quotation" : "Save quotation", class: "btn btn-primary")
+    - if editing
+      = link_to "Cancel", comfy_admin_quotations_path, class: "btn btn-link"
 
 %section
   %h5= "#{pluralize(@quotations.total_count, 'quotation')} collected"
@@ -25,11 +28,15 @@
             %span.text-muted.small
               By
               = q.author_url.present? ? link_to(q.author_name.presence || "commenter", q.author_url, target: "_blank") : (q.author_name.presence || "commenter")
-              - if q.post_title.present? || q.post_url.present?
-                , on
-                = q.post_url.present? ? link_to(q.post_title.presence || "the post", q.post_url, target: "_blank") : q.post_title
+            %br
+            %span.text-muted.small
+              On
+              = q.post_url.present? ? link_to(q.post_title.presence || "the post", q.post_url, target: "_blank") : q.post_title
               ·
               = link_to "comment", q.comment_url, target: "_blank"
-          = link_to comfy_admin_quotation_path(q), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger ml-2", title: "Delete" do
-            %i.fas.fa-times
+          .text-nowrap.ml-2
+            = link_to comfy_edit_admin_quotation_path(q), class: "text-secondary mr-2", title: "Edit" do
+              %i.fas.fa-pen
+            = link_to comfy_admin_quotation_path(q), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger", title: "Delete" do
+              %i.fas.fa-times
     = comfy_paginate @quotations

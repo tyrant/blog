@@ -78,9 +78,11 @@ Rails.application.routes.draw do
       post   "admin/reply-tracker/log", to: "reply_tracker#create",  as: :admin_reply_tracker_log
       delete "admin/reply-tracker/:id", to: "reply_tracker#destroy", as: :admin_reply_tracker_delete
 
-      get    "admin/quotations",     to: "quotations#index",   as: :admin_quotations
-      post   "admin/quotations",     to: "quotations#create"
-      delete "admin/quotations/:id", to: "quotations#destroy", as: :admin_quotation
+      get    "admin/quotations",          to: "quotations#index",   as: :admin_quotations
+      post   "admin/quotations",          to: "quotations#create"
+      get    "admin/quotations/:id/edit", to: "quotations#edit",    as: :edit_admin_quotation
+      patch  "admin/quotations/:id",      to: "quotations#update"
+      delete "admin/quotations/:id",      to: "quotations#destroy", as: :admin_quotation
 
       resources :tags, as: :admin_tags, path: "admin/tags", except: %i[show]
 
