@@ -159,9 +159,9 @@ RSpec.describe Substack::HtmlToProseMirror do
     end
   end
 
-  describe 'image captions' do
-    context 'a paragraph directly after an image' do
-      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p>The <em>caption</em>.</p>' }
+  describe 'image captions (opt-in via class="caption")' do
+    context 'a class-marked paragraph directly after an image' do
+      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p class="caption">The <em>caption</em>.</p>' }
 
       it 'folds it into the image, leaving no stray paragraph' do
         expect(content.map { |b| b['type'] }).to eq(['captionedImage'])
@@ -177,23 +177,31 @@ RSpec.describe Substack::HtmlToProseMirror do
       end
     end
 
-    context 'two paragraphs after an image' do
-      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p>Caption.</p><p>Body.</p>' }
+    context 'an unmarked paragraph after an image' do
+      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p>Just body text.</p>' }
 
-      it 'captions with only the first, keeping the second as body' do
+      it 'stays body text, not a caption' do
         expect(content.map { |b| b['type'] }).to eq(%w[captionedImage paragraph])
       end
 
-      it 'leaves the second paragraph as body text' do
-        expect(content.last['content'].first['text']).to eq 'Body.'
+      it 'leaves no caption on the image' do
+        expect(content.first['content'].map { |c| c['type'] }).to eq(['image2'])
       end
     end
 
-    context 'an image with no following paragraph' do
-      let(:html) { '<p><img src="http://x.com/a.jpg"></p>' }
+    context 'a caption paragraph followed by a body paragraph' do
+      let(:html) { '<p><img src="http://x.com/a.jpg"></p><p class="caption">Cap.</p><p>Body.</p>' }
 
-      it 'has no caption' do
-        expect(content.first['content'].map { |c| c['type'] }).to eq(['image2'])
+      it 'captions with only the marked one' do
+        expect(content.map { |b| b['type'] }).to eq(%w[captionedImage paragraph])
+      end
+    end
+
+    context 'a class-marked paragraph not after an image' do
+      let(:html) { '<p>Body.</p><p class="caption">Orphan.</p>' }
+
+      it 'stays a plain paragraph with no stray marker' do
+        expect(content.last).to eq('type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Orphan.' }])
       end
     end
   end

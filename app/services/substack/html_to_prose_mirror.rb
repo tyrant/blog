@@ -25,14 +25,15 @@ module Substack
 
     private
 
-    # ComfyAdmin has no caption concept; the convention is that the single
-    # paragraph directly after an image is its caption. Fold such a paragraph
-    # into the image as Substack's "caption" node (only the first — a second
-    # paragraph after the image stays body text).
+    # A paragraph explicitly marked <p class="caption"> directly after an image
+    # folds into it as Substack's "caption" node. Opt-in: unmarked paragraphs
+    # after an image stay body text. The "_caption" marker is transient (set in
+    # paragraph_or_image) and always stripped here so it never reaches Substack.
     def fold_captions(blocks)
       blocks.each_with_object([]) do |block, out|
         prev = out.last
-        if block["type"] == "paragraph" && block["content"].present? &&
+        marked = block["type"] == "paragraph" && block.delete("_caption")
+        if marked && block["content"].present? &&
             prev && prev["type"] == "captionedImage" &&
             prev["content"].none? { |child| child["type"] == "caption" }
           prev["content"] << { "type" => "caption", "content" => block["content"] }
@@ -98,7 +99,11 @@ module Substack
 
       out = []
       content = inline_content(node.children)
-      out << { "type" => "paragraph", "content" => content } if content.any?
+      if content.any?
+        paragraph = { "type" => "paragraph", "content" => content }
+        paragraph["_caption"] = true if node["class"].to_s.split.include?("caption")
+        out << paragraph
+      end
       node.css("img").each { |img| ci = captioned_image(img); out << ci if ci }
       node.css("iframe").each { |frame| yt = youtube_node(frame["src"]); out << yt if yt }
       out

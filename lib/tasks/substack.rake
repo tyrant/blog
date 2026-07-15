@@ -41,6 +41,17 @@ namespace :substack do
     puts "deleted: #{result.deleted.inspect}, skipped (not in parity): #{result.skipped.inspect}"
   end
 
+  desc "Add class=caption to Comfy paragraphs matching existing Substack captions (dry-run unless COMMIT=1)"
+  task harvest_captions: :environment do
+    commit = ENV["COMMIT"] == "1"
+    results = Substack::CaptionHarvester.execute(commit: commit, progress: lambda { |r|
+      note = r.unmatched.any? ? " UNMATCHED=#{r.unmatched.map { |c| c[0, 30] }.inspect}" : ""
+      puts "  ##{r.post_id} #{r.slug.to_s[0, 32].ljust(32)} captions=#{r.captions} marked=#{r.marked}#{note}"
+    })
+    puts "\n#{commit ? 'Committed' : 'Dry run'}. #{results.size} posts with captions, " \
+         "#{results.sum(&:marked)} paragraphs marked, #{results.sum { |r| r.unmatched.size }} unmatched."
+  end
+
   desc "Audit synced posts for manual Substack-only tweaks a resync would clobber (read-only)"
   task scan_divergences: :environment do
     findings = Substack::DivergenceScanner.execute(progress: lambda { |f|
