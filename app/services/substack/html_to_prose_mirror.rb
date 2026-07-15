@@ -16,6 +16,10 @@ module Substack
     BLOCK_TAGS     = %w[p h1 h2 h3 h4 h5 h6 blockquote ul ol hr].freeze
     CONTAINER_TAGS = %w[div section article header footer aside main figure figcaption].freeze
     IMAGE_SIZE_CLASSES = { "img-wide" => "wide", "img-large" => "large", "img-full" => "full" }.freeze
+    # Display width per imageSize so images fill the Substack content column
+    # rather than defaulting to their (sometimes narrower) native width. full/
+    # wide get nil — Substack sizes those itself.
+    RESIZE_WIDTHS = { "normal" => 728, "large" => 1200 }.freeze
 
     def execute
       @image_resolver ||= ->(src) { src }
@@ -191,11 +195,12 @@ module Substack
       resolved = @image_resolver.call(src)
       return nil if resolved.to_s.empty?
 
+      size = image_size(img)
       { "type" => "captionedImage", "content" => [{
         "type"  => "image2",
         "attrs" => { "src" => resolved, "alt" => img["alt"], "title" => img["title"],
-                     "height" => nil, "width" => nil, "resizeWidth" => nil,
-                     "bytes" => nil, "type" => nil, "href" => nil, "imageSize" => image_size(img) }
+                     "height" => nil, "width" => nil, "resizeWidth" => RESIZE_WIDTHS[size],
+                     "bytes" => nil, "type" => nil, "href" => nil, "imageSize" => size }
       }] }
     end
 

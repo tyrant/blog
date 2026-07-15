@@ -120,6 +120,16 @@ RSpec.describe Substack::HtmlToProseMirror do
       it { expect(size_of('<p><img src="http://x/a.jpg" class="foo img-wide bar"></p>')).to eq 'wide' }
     end
 
+    describe 'display width (resizeWidth) fills the content column' do
+      def resize_of(html)
+        described_class.execute(html: html, image_resolver: resolver)['content'].first['content'].first['attrs']['resizeWidth']
+      end
+
+      it { expect(resize_of('<p><img src="http://x/a.jpg"></p>')).to eq 728 }
+      it { expect(resize_of('<p><img src="http://x/a.jpg" class="img-large"></p>')).to eq 1200 }
+      it { expect(resize_of('<p><img src="http://x/a.jpg" class="img-full"></p>')).to be_nil }
+    end
+
     context 'an image nested inside a heading' do
       let(:html) { '<h2><img src="http://x.com/a.jpg" alt="pic"><br></h2>' }
 
