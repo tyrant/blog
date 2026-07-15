@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 namespace :substack do
-  # The canonical post whose subtitle + footer boilerplate we mirror onto every
-  # Substack draft. Re-run capture_footer against another draft to change it.
-  REFERENCE_FOOTER_DRAFT_ID = "206216505"
+  # The canonical draft whose below-body template we mirror onto every Substack
+  # post. Re-run capture_footer against another draft to change it.
+  REFERENCE_FOOTER_DRAFT_ID = "206980888"
 
-  desc "Capture subtitle + footer boilerplate from a reference draft into SubstackSyncConfig"
+  desc "Capture the below-body template from a reference draft into SubstackSyncConfig"
   task :capture_footer, [:draft_id] => :environment do |_t, args|
-    footer = Substack::FooterCapturer.execute(draft_id: args[:draft_id].presence || REFERENCE_FOOTER_DRAFT_ID)
-    puts "Captured subtitle + #{footer.size} footer blocks."
+    template = Substack::TemplateCapturer.execute(draft_id: args[:draft_id].presence || REFERENCE_FOOTER_DRAFT_ID)
+    puts "Captured subtitle + #{template.size}-block template."
   end
 
   desc "Seed the footer only if not already captured — safe to run on every deploy"

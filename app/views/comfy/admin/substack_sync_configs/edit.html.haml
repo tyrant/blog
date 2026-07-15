@@ -23,10 +23,13 @@
     = submit_tag "Save", class: "btn btn-primary ml-sm-1"
 
 %hr
-%h5 Re-capture from a reference post
+%h5 Re-capture template from a reference draft
 %p.text-muted.small
-  Pull the subtitle + footer straight from an existing Substack draft or post
-  (overwrites the fields above). Use its edit-URL id, e.g. 206216505.
+  Rebuild the whole below-body template (everything from the "Original:" link
+  down) from a Substack draft, turning the dynamic bits into directives — the
+  Original link, the quotation run, and the "Bullshit Emeritus" conditional.
+  Overwrites the advice subtitle + template above. Use the draft's edit-URL id,
+  e.g. 206980888.
 = form_with url: recapture_comfy_admin_substack_sync_config_path, method: :post, class: "form-inline" do
   = text_field_tag :reference_draft_id, nil, placeholder: "draft id", class: "form-control mr-2"
   = submit_tag "Re-capture", class: "btn btn-outline-secondary"

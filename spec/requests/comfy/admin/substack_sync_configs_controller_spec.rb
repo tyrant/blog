@@ -41,7 +41,7 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
 
   describe 'POST recapture' do
     before do
-      allow(Substack::FooterCapturer).to receive(:execute).and_return([{ 'type' => 'button' }])
+      allow(Substack::TemplateCapturer).to receive(:execute).and_return([{ 'type' => 'button' }])
       post recapture_comfy_admin_substack_sync_config_path,
         params: { reference_draft_id: '999' }, headers: http_auth_headers
     end
@@ -49,7 +49,7 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
     it { expect(response).to redirect_to edit_comfy_admin_substack_sync_config_path }
 
     it 'invokes the capturer with the given draft id' do
-      expect(Substack::FooterCapturer).to have_received(:execute).with(draft_id: '999')
+      expect(Substack::TemplateCapturer).to have_received(:execute).with(draft_id: '999')
     end
   end
 

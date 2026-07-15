@@ -19,8 +19,8 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
 
   # Pull the subtitle + footer straight from an existing Substack draft/post.
   def recapture
-    footer = Substack::FooterCapturer.execute(draft_id: params[:reference_draft_id])
-    flash[:success] = "Re-captured subtitle + #{footer.size} footer blocks from draft #{params[:reference_draft_id]}."
+    template = Substack::TemplateCapturer.execute(draft_id: params[:reference_draft_id])
+    flash[:success] = "Re-captured subtitle + #{template.size}-block template from draft #{params[:reference_draft_id]}."
   rescue => e
     flash[:danger] = "Re-capture failed: #{e.message}"
   ensure
