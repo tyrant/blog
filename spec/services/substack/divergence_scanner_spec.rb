@@ -79,4 +79,14 @@ RSpec.describe Substack::DivergenceScanner do
       expect(findings.first.flags).to_not include('WIDTH', 'CAPTION')
     end
   end
+
+  context 'when Comfy already carries the full-width class matching Substack' do
+    before { post.update_column(:content_cache, '<p><img src="http://x/a.jpg" class="img-full"></p>') }
+
+    let(:draft) { substack_draft(image_node(size: 'full')) }
+
+    it 'does not flag a width divergence' do
+      expect(findings.first.flags).to_not include('WIDTH')
+    end
+  end
 end

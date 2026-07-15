@@ -57,7 +57,9 @@ module Substack
     def build_finding(post, comfy_body, substack_body)
       comfy_imgs = images(comfy_body)
       sub_imgs = images(substack_body)
-      sizes = sub_imgs.filter_map { |img| image_size(img) }.reject { |s| s == "normal" }
+      comfy_sizes = comfy_imgs.map { |img| normalize_size(image_size(img)) }
+      sub_sizes = sub_imgs.map { |img| normalize_size(image_size(img)) }
+      sizes = sub_sizes.reject { |s| s == "normal" }
       captions = sub_imgs.filter_map { |img| caption_text(img) }
       comfy_captions = comfy_imgs.count { |img| caption_text(img) }
 
@@ -65,7 +67,7 @@ module Substack
       comfy_embeds = embeds(comfy_body)
 
       flags = []
-      flags << "WIDTH" if sizes.any?
+      flags << "WIDTH" if sub_sizes != comfy_sizes
       flags << "CAPTION" if captions.size > comfy_captions
       flags << "VIDEO+#{sub_embeds - comfy_embeds}" if sub_embeds > comfy_embeds
       flags << "IMG+#{sub_imgs.size - comfy_imgs.size}" if sub_imgs.size > comfy_imgs.size
@@ -113,6 +115,12 @@ module Substack
     def image_size(captioned)
       image = Array(captioned["content"]).find { |c| c["type"] == "image2" }
       image&.dig("attrs", "imageSize")
+    end
+
+    # Substack often omits imageSize on normal images while Comfy sets it
+    # explicitly — treat nil and "normal" as the same.
+    def normalize_size(size)
+      size.presence || "normal"
     end
 
     def caption_text(captioned)
