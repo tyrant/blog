@@ -3,6 +3,21 @@
 require 'rails_helper'
 
 RSpec.describe SubstackSyncConfig do
+  describe '#subtitle_for' do
+    let(:site) { create :site }
+    let(:post) { create :post, site: site }
+    let(:config) { described_class.instance.tap { |c| c.update!(subtitle: 'Advice subtitle', subtitle_default: 'Default subtitle') } }
+
+    it 'uses the advice subtitle for Shite Advice posts' do
+      BlogPostTag.without_mirror { post.tags << Tag.create!(name: 'Shite Advice') }
+      expect(config.subtitle_for(post)).to eq 'Advice subtitle'
+    end
+
+    it 'uses the default subtitle otherwise' do
+      expect(config.subtitle_for(post)).to eq 'Default subtitle'
+    end
+  end
+
   describe 'validations' do
     subject(:config) { described_class.instance }
 

@@ -28,11 +28,11 @@ module Substack
       # Drop any Original link the post baked into its own body (often a stale
       # slug); the mirror owns that block, canonically rebuilt from post.url.
       doc["content"].reject! { |block| original_link_block?(block) }
-      doc["content"].concat([original_link_heading(post.url)], Array(@config.footer_json))
-      # A random featured reader quote at the very bottom, mirror-managed like the
-      # footer (rebuilt each sync; the recurring job rotates it between syncs).
-      doc["content"] = QuotationBlock.apply(doc["content"], SubstackQuotation.order(Arel.sql("RANDOM()")).first)
-      subtitle = @config.subtitle.to_s
+      # Everything below the body is the stored template (Original link, footer
+      # boilerplate, random quotations, tag-conditional sections), resolved per
+      # post — directives expand here and never reach Substack.
+      doc["content"].concat(TemplateResolver.resolve(@config.footer_json, post: post))
+      subtitle = @config.subtitle_for(post)
       bylines  = [{ id: @config.author_id, is_guest: false }]
 
       categorization = substack_categorization(post)
@@ -170,23 +170,6 @@ module Substack
       walk.call(block)
 
       linked && texts.join.strip.match?(/\AOriginal:/i)
-    end
-
-    # The "Original: <link>" h5 linking back to the canonical blog post, matching
-    # the block Substack posts carry by hand. post.url is protocol-relative.
-    def original_link_heading(post_url)
-      url = post_url.to_s.sub(%r{\A//}, "https://")
-      {
-        "type"  => "heading",
-        "attrs" => { "textAlign" => "left", "level" => 5 },
-        "content" => [
-          { "type" => "text", "text" => "Original: " },
-          { "type" => "text", "text" => url, "marks" => [{
-            "type" => "link",
-            "attrs" => { "href" => url, "target" => "_blank", "rel" => "noopener noreferrer nofollow", "class" => nil }
-          }] }
-        ]
-      }
     end
 
     def resolve_image(src)

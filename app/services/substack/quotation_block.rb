@@ -1,48 +1,76 @@
 # frozen_string_literal: true
 
 module Substack
-  # Builds and detects the mirror-managed "featured quote" block appended to a
-  # Substack post body: a blockquote of the quotation plus an attribution line
-  # ("By <author>, on <post>"). The attribution's shape is the detection
-  # signature, so an old block can be found and swapped for a fresh one.
+  # Builds and detects the featured-quote blocks. Each quotation renders as a
+  # triplet: an h4 heading linking the post it was left on, a blockquote of the
+  # italicised quote, and a right-aligned line linking the commenter. The
+  # template's syncQuotations directive expands into N of these; the rotation
+  # job finds the run of triplets in a draft and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
-    ATTRIBUTION = /\ABy .+, on .+/m
-
     def build(quotation)
-      {
-        "type"    => "blockquote",
-        "content" => [
-          paragraph([text("“#{quotation.quotation}”")]),
-          paragraph(attribution(quotation))
-        ]
-      }
+      [heading(quotation), blockquote(quotation), attribution(quotation)]
     end
 
-    # True for a block we produced: a blockquote whose last paragraph reads
-    # "By …, on …" and carries a link (so real content blockquotes don't match).
-    def matches?(block)
+    def heading(quotation)
+      { "type" => "heading", "attrs" => { "textAlign" => nil, "level" => 4 },
+        "content" => [text(quotation.post_title, href: quotation.post_url)] }
+    end
+
+    def blockquote(quotation)
+      { "type" => "blockquote", "content" => [
+        { "type" => "paragraph", "attrs" => { "textAlign" => "left" },
+          "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])] }
+      ] }
+    end
+
+    def attribution(quotation)
+      { "type" => "paragraph", "attrs" => { "textAlign" => "right" },
+        "content" => [text(quotation.author_name, href: quotation.author_url)] }
+    end
+
+    # Replace the contiguous run of quotation triplets in an existing draft body
+    # with fresh ones (same count), in place. Returns the content unchanged when
+    # no run is found.
+    def rotate(content, quotations)
+      start = (0...content.size).find { |i| triplet_at?(content, i) }
+      return content unless start
+
+      length = 0
+      length += 1 while triplet_at?(content, start + length * 3)
+      fresh = quotations.first(length).flat_map { |quotation| build(quotation) }
+      content[0...start] + fresh + content[(start + length * 3)..]
+    end
+
+    def triplet_at?(content, index)
+      heading_post_link?(content[index]) &&
+        blockquote_em?(content[index + 1]) &&
+        author_right?(content[index + 2])
+    end
+
+    def heading_post_link?(block)
+      block.is_a?(Hash) && block["type"] == "heading" && link_href(block).to_s.include?("/p/")
+    end
+
+    def blockquote_em?(block)
       return false unless block.is_a?(Hash) && block["type"] == "blockquote"
 
-      last = Array(block["content"]).last
-      last.is_a?(Hash) && paragraph_text(last).match?(ATTRIBUTION) && linked?(last)
+      para = Array(block["content"]).first
+      Array(para&.dig("content")).any? { |node| Array(node["marks"]).any? { |mark| mark["type"] == "em" } }
     end
 
-    # Strip any existing quotation block from a doc's content array and append a
-    # fresh one (or just strip, when there's no quotation to show).
-    def apply(content, quotation)
-      stripped = Array(content).reject { |block| matches?(block) }
-      quotation ? stripped + [build(quotation)] : stripped
+    def author_right?(block)
+      block.is_a?(Hash) && block["type"] == "paragraph" &&
+        block.dig("attrs", "textAlign") == "right" &&
+        link_href(block).to_s.include?("substack.com/@")
     end
 
-    def paragraph(content)
-      { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => content }
-    end
-
-    def text(string, href: nil)
+    def text(string, href: nil, marks: [])
+      marks = marks.dup
+      marks << link(href) if href.present?
       node = { "type" => "text", "text" => string.to_s }
-      node["marks"] = [link(href)] if href.present?
+      node["marks"] = marks if marks.any?
       node
     end
 
@@ -51,21 +79,11 @@ module Substack
                                        "rel" => "noopener noreferrer nofollow", "class" => nil } }
     end
 
-    def attribution(quotation)
-      [
-        text("By "),
-        text(quotation.author_name.presence || "a reader", href: quotation.author_url),
-        text(", on "),
-        text(quotation.post_title.presence || "a post", href: quotation.post_url)
-      ]
-    end
-
-    def paragraph_text(node)
-      Array(node["content"]).filter_map { |n| n["text"] }.join
-    end
-
-    def linked?(node)
-      Array(node["content"]).any? { |n| Array(n["marks"]).any? { |m| m["type"] == "link" } }
+    def link_href(block)
+      Array(block["content"]).each do |node|
+        Array(node["marks"]).each { |mark| return mark.dig("attrs", "href") if mark["type"] == "link" }
+      end
+      nil
     end
   end
 end

@@ -9,6 +9,12 @@ class SubstackSyncConfig < ApplicationRecord
     first_or_create!
   end
 
+  # The subtitle to mirror for a post: the "Shite Advice" one for terrible-advice
+  # posts, the default one otherwise.
+  def subtitle_for(post)
+    post.tags.exists?(name: "Shite Advice") ? subtitle.to_s : subtitle_default.to_s
+  end
+
   # The footer edited as pretty JSON text in the admin form.
   def footer_json_text
     JSON.pretty_generate(footer_json || [])

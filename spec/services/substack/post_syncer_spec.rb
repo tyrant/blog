@@ -10,11 +10,11 @@ RSpec.describe Substack::PostSyncer do
   let!(:post) { create :post, site: site, layout: layout }
   let!(:substack_category) { create :category, site: site, label: 'Substack' }
   let(:client) { instance_double(Substack::Client) }
-  let(:footer) { [{ 'type' => 'button', 'attrs' => { 'text' => 'Subscribe now' } }] }
+  let(:footer) { [{ 'type' => 'syncOriginalLink' }, { 'type' => 'button', 'attrs' => { 'text' => 'Subscribe now' } }] }
   let(:tags) { [{ 'name' => 'writing', 'id' => 't1' }, { 'name' => 'comedy', 'id' => 't2' }] }
   let(:config) do
     instance_double(SubstackSyncConfig, author_id: 42, publication_host: 'pub.substack.com',
-                                        subtitle: 'The fixed subtitle', footer_json: footer, default_tags: tags)
+                                        subtitle_for: 'The fixed subtitle', footer_json: footer, default_tags: tags)
   end
 
   def substack_categorization
@@ -62,20 +62,6 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:create_draft).with(hash_including(bylines: [{ id: 42, is_guest: false }]))
     end
 
-    context 'featured quotation' do
-      it 'appends a random quotation block at the very end' do
-        SubstackQuotation.create!(quotation: 'blurb', comment_url: 'https://x/comment/1', author_name: 'Eva',
-                                  author_url: 'https://substack.com/@eva', post_title: 'P', post_url: 'https://x/p')
-        sync
-        expect(client).to have_received(:create_draft) { |args| expect(Substack::QuotationBlock.matches?(args[:body_doc]['content'].last)).to be true }
-      end
-
-      it 'adds no quotation block when none exist' do
-        sync
-        expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].any? { |b| Substack::QuotationBlock.matches?(b) }).to be false }
-      end
-    end
-
     it 'defaults a new draft to the everyone audience' do
       sync
       expect(client).to have_received(:create_draft).with(hash_including(audience: 'everyone'))
@@ -87,7 +73,7 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:create_draft).with(hash_including(audience: 'only_paid'))
     end
 
-    it 'appends the Original link heading pointing at the canonical post url' do
+    it 'resolves the template Original link to the canonical post url' do
       sync
       expect(client).to have_received(:create_draft) do |args|
         heading = args[:body_doc]['content'].find { |b| b['type'] == 'heading' && b.dig('attrs', 'level') == 5 }
@@ -95,9 +81,9 @@ RSpec.describe Substack::PostSyncer do
       end
     end
 
-    it 'appends the configured footer blocks last' do
+    it 'passes the template’s literal footer blocks through' do
       sync
-      expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].last).to eq(footer.first) }
+      expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].last).to eq(footer.last) }
     end
 
     it 'creates a Substack categorization storing the draft id' do

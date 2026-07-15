@@ -42,9 +42,17 @@ class RotateSubstackQuotationsJob < ApplicationJob
     body = parse_body(remote["draft_body"])
     return unless body
 
-    body["content"] = Substack::QuotationBlock.apply(body["content"], SubstackQuotation.order(Arel.sql("RANDOM()")).first)
+    rotated = Substack::QuotationBlock.rotate(body["content"], fresh_quotations)
+    return if rotated == body["content"] # no quotation region in this draft
+
+    body["content"] = rotated
     client.update_draft(substack_id, draft_body: JSON.generate(body))
     client.publish_draft(substack_id) if remote["is_published"]
+  end
+
+  def fresh_quotations
+    SubstackQuotation.where.not(post_url: [nil, ""]).where.not(author_url: [nil, ""])
+                     .order(Arel.sql("RANDOM()")).limit(10)
   end
 
   def parse_body(raw)

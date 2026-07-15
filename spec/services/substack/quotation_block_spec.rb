@@ -3,64 +3,67 @@
 require 'rails_helper'
 
 RSpec.describe Substack::QuotationBlock do
-  let(:quotation) do
-    SubstackQuotation.new(quotation: 'a witty blurb', author_name: 'Eva', author_url: 'https://substack.com/@eva',
-                          post_title: 'Chapter 19', post_url: 'https://x/p/ch19')
+  def quote(attrs = {})
+    SubstackQuotation.new({ quotation: 'a blurb', post_title: 'Ch 1',
+                            post_url: 'https://pub.substack.com/p/ch-1',
+                            author_name: 'Eva', author_url: 'https://substack.com/@eva' }.merge(attrs))
   end
 
   describe '.build' do
-    subject(:block) { described_class.build(quotation) }
+    subject(:blocks) { described_class.build(quote) }
 
-    it { expect(block['type']).to eq 'blockquote' }
-    it { expect(described_class.paragraph_text(block['content'].first)).to eq '“a witty blurb”' }
-    it { expect(described_class.paragraph_text(block['content'].last)).to eq 'By Eva, on Chapter 19' }
+    it { expect(blocks.size).to eq 3 }
 
-    it 'links the author to their profile' do
-      node = block['content'].last['content'].find { |n| n['text'] == 'Eva' }
-      expect(node.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    it 'heads with the post title linked to the post' do
+      expect(blocks[0]['type']).to eq 'heading'
+      expect(blocks[0]['content'][0]['text']).to eq 'Ch 1'
+      expect(blocks[0]['content'][0].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1'
     end
 
-    it 'links the post title' do
-      node = block['content'].last['content'].find { |n| n['text'] == 'Chapter 19' }
-      expect(node.dig('marks', 0, 'attrs', 'href')).to eq 'https://x/p/ch19'
+    it 'italicises the quote inside a blockquote' do
+      node = blocks[1]['content'][0]['content'][0]
+      expect(blocks[1]['type']).to eq 'blockquote'
+      expect(node['text']).to eq '“a blurb”'
+      expect(node['marks'].map { |m| m['type'] }).to include 'em'
     end
-  end
 
-  describe '.matches?' do
-    it { expect(described_class.matches?(described_class.build(quotation))).to be true }
-    it { expect(described_class.matches?({ 'type' => 'paragraph' })).to be false }
-
-    it 'ignores a real content blockquote without links' do
-      bq = { 'type' => 'blockquote', 'content' => [{ 'type' => 'paragraph',
-             'content' => [{ 'type' => 'text', 'text' => 'By the way, on Tuesdays I nap' }] }] }
-      expect(described_class.matches?(bq)).to be false
+    it 'right-aligns the linked author' do
+      expect(blocks[2]['attrs']['textAlign']).to eq 'right'
+      expect(blocks[2]['content'][0]['text']).to eq 'Eva'
+      expect(blocks[2]['content'][0].dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
     end
   end
 
-  describe '.apply' do
-    let(:content) { [{ 'type' => 'paragraph', 'content' => [] }, described_class.build(quotation)] }
-    let(:other) do
-      SubstackQuotation.new(quotation: 'a fresh one', author_name: 'Bob', author_url: 'https://x/@bob',
-                            post_title: 'P', post_url: 'https://x/p')
+  describe '.triplet_at?' do
+    let(:content) { [{ 'type' => 'paragraph' }] + described_class.build(quote) }
+
+    it { expect(described_class.triplet_at?(content, 1)).to be true }
+    it { expect(described_class.triplet_at?(content, 0)).to be false }
+  end
+
+  describe '.rotate' do
+    let(:content) do
+      [{ 'type' => 'paragraph', 'content' => [] }] +
+        described_class.build(quote(quotation: 'first')) +
+        described_class.build(quote(quotation: 'second')) +
+        [{ 'type' => 'horizontal_rule' }]
+    end
+    let(:fresh) { [quote(quotation: 'fresh A'), quote(quotation: 'fresh B'), quote(quotation: 'fresh C')] }
+
+    it 'swaps the run of triplets for the same count of fresh ones' do
+      result = described_class.rotate(content, fresh)
+      quotes = result.select { |b| b['type'] == 'blockquote' }.map { |b| b['content'][0]['content'][0]['text'] }
+      expect(quotes).to eq ['“fresh A”', '“fresh B”']
     end
 
-    it 'replaces an existing quotation block rather than stacking' do
-      result = described_class.apply(content, other)
-      expect(result.count { |b| described_class.matches?(b) }).to eq 1
+    it 'preserves the surrounding blocks' do
+      result = described_class.rotate(content, fresh)
+      expect([result.first['type'], result.last['type']]).to eq %w[paragraph horizontal_rule]
     end
 
-    it 'swaps in the new quotation text' do
-      result = described_class.apply(content, other)
-      expect(described_class.paragraph_text(result.last['content'].first)).to eq '“a fresh one”'
-    end
-
-    it 'appends at the very end' do
-      result = described_class.apply([{ 'type' => 'paragraph', 'content' => [] }], quotation)
-      expect(described_class.matches?(result.last)).to be true
-    end
-
-    it 'strips the block when there is no quotation' do
-      expect(described_class.apply(content, nil).any? { |b| described_class.matches?(b) }).to be false
+    it 'leaves content with no quotation run untouched' do
+      plain = [{ 'type' => 'paragraph' }]
+      expect(described_class.rotate(plain, fresh)).to eq plain
     end
   end
 end

@@ -4,7 +4,11 @@
 = comfy_form_with model: @config, scope: :substack_sync_config, url: comfy_admin_substack_sync_config_path, method: :patch do |form|
 
   = form.text_area :subtitle,
-                   label: "Subtitle — applied to every mirrored post",
+                   label: "Subtitle — for 'Shite Advice' posts",
+                   style: "field-sizing: content;"
+
+  = form.text_area :subtitle_default,
+                   label: "Subtitle — for all other posts",
                    style: "field-sizing: content;"
 
   = form.text_area :footer_json_text,

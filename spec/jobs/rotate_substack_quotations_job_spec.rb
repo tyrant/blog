@@ -10,12 +10,14 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
   let!(:categorization) { create :categorization, category: category, categorized: post, data: { 'id' => 900 } }
   let!(:quotation) do
     SubstackQuotation.create!(quotation: 'blurb', comment_url: 'https://x/comment/1', author_name: 'Eva',
-                              author_url: 'https://substack.com/@eva', post_title: 'P', post_url: 'https://x/p')
+                              author_url: 'https://substack.com/@eva', post_title: 'P', post_url: 'https://x/p/a')
   end
 
   def draft(published:)
-    { 'id' => 900, 'is_published' => published,
-      'draft_body' => JSON.generate('type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [] }]) }
+    existing = SubstackQuotation.new(quotation: 'old', post_title: 'P', post_url: 'https://x/p/a',
+                                     author_name: 'A', author_url: 'https://substack.com/@a')
+    content = [{ 'type' => 'paragraph', 'content' => [] }] + Substack::QuotationBlock.build(existing) + [{ 'type' => 'horizontal_rule' }]
+    { 'id' => 900, 'is_published' => published, 'draft_body' => JSON.generate('type' => 'doc', 'content' => content) }
   end
 
   before do
@@ -29,11 +31,11 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
   context 'an unpublished draft' do
     before { allow(client).to receive(:get_draft).with(900).and_return(draft(published: false)) }
 
-    it 'updates the draft with a quotation block appended' do
+    it 'swaps in a fresh quotation triplet' do
       described_class.new.perform
-      expect(client).to have_received(:update_draft) do |id, attrs|
+      expect(client).to have_received(:update_draft) do |_id, attrs|
         content = JSON.parse(attrs[:draft_body])['content']
-        expect(content.any? { |b| Substack::QuotationBlock.matches?(b) }).to be true
+        expect((0...content.size).any? { |i| Substack::QuotationBlock.triplet_at?(content, i) }).to be true
       end
     end
 
