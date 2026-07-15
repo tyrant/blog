@@ -97,10 +97,13 @@ module Substack
     end
 
     def heading(node)
+      out = []
       content = inline_content(node.children)
-      return [] if content.empty?
-
-      [{ "type" => "heading", "attrs" => { "level" => node.name[1].to_i.clamp(1, 6) }, "content" => content }]
+      out << { "type" => "heading", "attrs" => { "level" => node.name[1].to_i.clamp(1, 6) }, "content" => content } if content.any?
+      # An <img> inside a heading (some posts nest their main image in an <h2>)
+      # would otherwise be dropped by inline_content — pull it out as its own block.
+      node.css("img").each { |img| ci = captioned_image(img); out << ci if ci }
+      out
     end
 
     def blockquote(node)

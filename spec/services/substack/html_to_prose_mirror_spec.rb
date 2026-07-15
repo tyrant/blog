@@ -76,6 +76,24 @@ RSpec.describe Substack::HtmlToProseMirror do
 
       it { expect(content).to be_empty }
     end
+
+    context 'an image nested inside a heading' do
+      let(:html) { '<h2><img src="http://x.com/a.jpg" alt="pic"><br></h2>' }
+
+      it 'is pulled out as a captionedImage instead of being dropped' do
+        expect(content.map { |b| b['type'] }).to eq(['captionedImage'])
+      end
+
+      it { expect(content.first['content'].first['attrs']['src']).to eq 'cdn:http://x.com/a.jpg' }
+    end
+
+    context 'a heading with both text and an image' do
+      let(:html) { '<h2>Title <img src="http://x.com/a.jpg"></h2>' }
+
+      it 'keeps the heading and adds the image after it' do
+        expect(content.map { |b| b['type'] }).to eq(%w[heading captionedImage])
+      end
+    end
   end
 
   describe 'image captions' do
