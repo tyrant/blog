@@ -176,7 +176,8 @@ module Substack
       data = download_image(src)
       return nil unless data
 
-      @client.upload_image("data:#{data[:content_type]};base64,#{Base64.strict_encode64(data[:body])}")
+      body = ImageUpscaler.fill(data[:body], data[:content_type])
+      @client.upload_image("data:#{data[:content_type]};base64,#{Base64.strict_encode64(body)}")
     rescue => e
       Rails.logger.warn("[SubstackSync] image upload failed for #{src}: #{e.message}")
       nil
