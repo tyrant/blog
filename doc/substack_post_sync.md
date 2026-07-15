@@ -103,6 +103,8 @@ Reader-comment blurbs collected at `/admin/quotations` (a `SubstackQuotation` pe
 paste a comment URL + the quote, and the post/commenter are looked up). The
 `syncQuotations` directive renders `count` random ones, each a triplet: an h4 heading linking
 the post, an italic blockquote of the quote, and a right-aligned line linking the commenter.
+Sampling (`SubstackQuotation.sample_excluding`) is distinct by quote text — so the same quote
+never appears twice — and excludes quotations left on the post being rendered.
 
 - **Weekly rotation** — `RotateSubstackQuotationsJob` (`config/recurring.yml`, every 7 days
   at 6am) swaps each post's quotation triplets for fresh random ones and re-publishes live
