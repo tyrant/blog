@@ -24,6 +24,38 @@ RSpec.describe Substack::HtmlToProseMirror do
     it { expect(content.first['content'].first['text']).to eq 'Title' }
   end
 
+  describe 'whitespace normalisation' do
+    def text_of(html)
+      described_class.execute(html: html, image_resolver: resolver)['content']
+    end
+
+    it 'trims a trailing newline from a paragraph' do
+      expect(text_of("<p>Body text\r\n</p>").first['content'].first['text']).to eq 'Body text'
+    end
+
+    it 'trims a trailing newline from a heading' do
+      expect(text_of("<h2>Title\r\n</h2>").first['content'].first['text']).to eq 'Title'
+    end
+
+    it 'drops a whitespace-only paragraph' do
+      expect(text_of("<p>\r\n</p><p>Real.</p>").map { |b| b['content'].first['text'] }).to eq ['Real.']
+    end
+
+    it 'collapses internal whitespace runs to single spaces' do
+      expect(text_of("<p>a  b\nc</p>").first['content'].first['text']).to eq 'a b c'
+    end
+
+    it 'keeps spacing around inline marks while trimming the trailing newline' do
+      joined = text_of("<p>a <strong>b</strong> c\r\n</p>").first['content'].map { |n| n['text'] }.join
+      expect(joined).to eq 'a b c'
+    end
+
+    it 'trims the trailing newline off a caption' do
+      caption = text_of("<p><img src='http://x/a.jpg'></p><p class='caption'>Cap.\r\n</p>").first['content'].last
+      expect(caption['content'].first['text']).to eq 'Cap.'
+    end
+  end
+
   describe 'inline marks' do
     let(:html) { '<p>a <strong>b</strong> <em>c</em> <a href="http://x.com">d</a></p>' }
     let(:texts) { content.first['content'] }

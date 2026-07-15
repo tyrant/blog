@@ -85,10 +85,27 @@ module Substack
     end
 
     def flush(nodes)
-      content = inline_content(nodes)
-      return [] if content.all? { |n| n["type"] == "text" && n["text"].strip.empty? && !n["marks"] }
+      content = finalize_inline(inline_content(nodes))
+      return [] if content.empty?
 
       [{ "type" => "paragraph", "content" => content }]
+    end
+
+    # HTML collapses whitespace to single spaces and trims it at block edges;
+    # text_node collapses runs, this trims the leading/trailing space off a
+    # block's inline content and drops any node emptied by it (so stray source
+    # newlines don't become blank paragraphs or trailing newlines on Substack).
+    def finalize_inline(content)
+      return content if content.empty?
+
+      content = content.dup
+      content[0]  = strip_text(content[0], :lstrip) if content[0]["type"] == "text"
+      content[-1] = strip_text(content[-1], :rstrip) if content[-1]["type"] == "text"
+      content.reject { |node| node["type"] == "text" && node["text"].empty? }
+    end
+
+    def strip_text(node, method)
+      node.merge("text" => node["text"].to_s.public_send(method))
     end
 
     def paragraph_or_image(node)
@@ -98,7 +115,7 @@ module Substack
       return [video] if video
 
       out = []
-      content = inline_content(node.children)
+      content = finalize_inline(inline_content(node.children))
       if content.any?
         paragraph = { "type" => "paragraph", "content" => content }
         paragraph["_caption"] = true if node["class"].to_s.split.include?("caption")
@@ -144,7 +161,7 @@ module Substack
 
     def heading(node)
       out = []
-      content = inline_content(node.children)
+      content = finalize_inline(inline_content(node.children))
       out << { "type" => "heading", "attrs" => { "level" => node.name[1].to_i.clamp(1, 6) }, "content" => content } if content.any?
       # An <img> inside a heading (some posts nest their main image in an <h2>)
       # would otherwise be dropped by inline_content — pull it out as its own block.
@@ -209,7 +226,7 @@ module Substack
     end
 
     def text_node(text, marks)
-      node = { "type" => "text", "text" => text }
+      node = { "type" => "text", "text" => text.gsub(/\s+/, " ") }
       node["marks"] = marks unless marks.empty?
       node
     end
