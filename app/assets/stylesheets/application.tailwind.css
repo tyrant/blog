@@ -92,8 +92,32 @@
   @apply flex flex-col justify-center basis-full md:basis-1/2;
 }
 
-.book .blurb p { 
+.book .blurb p {
   @apply text-gray-700 dark:text-gray-400 leading-tight mb-4;
+}
+
+/* Substack image-width markers. img-full breaks the post image out to full-bleed
+   where the content column is centred (below lg); on lg+ a side rail sits beside
+   the column, so it stays contained. wide/large currently render like normal. */
+.post-body img.img-full {
+  width: 100vw;
+  max-width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+@media (min-width: 1024px) {
+  .post-body img.img-full {
+    width: 100%;
+    max-width: 100%;
+    left: auto;
+    right: auto;
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 
 /* Book quotation widgets */
