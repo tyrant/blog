@@ -15,11 +15,12 @@ module Substack
       new(**kwargs).execute
     end
 
-    def initialize(client: nil, commit: false, pause: 0.3, progress: nil)
+    def initialize(client: nil, commit: false, pause: 0.3, progress: nil, exclude: [])
       @client = client || Substack::Client.new
       @commit = commit
       @pause = pause
       @progress = progress
+      @exclude = Array(exclude).map(&:to_i)
     end
 
     def execute
@@ -43,6 +44,7 @@ module Substack
       substack_id = categorization.data["id"]
       post = categorization.categorized
       return nil if substack_id.blank? || !post.is_a?(Comfy::Blog::Post)
+      return nil if @exclude.include?(post.id)
 
       captions = substack_captions(substack_id)
       return nil if captions.empty?

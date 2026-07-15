@@ -44,7 +44,8 @@ namespace :substack do
   desc "Add class=caption to Comfy paragraphs matching existing Substack captions (dry-run unless COMMIT=1)"
   task harvest_captions: :environment do
     commit = ENV["COMMIT"] == "1"
-    results = Substack::CaptionHarvester.execute(commit: commit, progress: lambda { |r|
+    exclude = ENV["EXCLUDE"].to_s.split(",").map(&:strip)
+    results = Substack::CaptionHarvester.execute(commit: commit, exclude: exclude, progress: lambda { |r|
       note = r.unmatched.any? ? " UNMATCHED=#{r.unmatched.map { |c| c[0, 30] }.inspect}" : ""
       puts "  ##{r.post_id} #{r.slug.to_s[0, 32].ljust(32)} captions=#{r.captions} marked=#{r.marked}#{note}"
     })

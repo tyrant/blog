@@ -55,6 +55,15 @@ RSpec.describe Substack::CaptionHarvester do
     end
   end
 
+  context 'excluding a post' do
+    subject(:results) { described_class.execute(client: client, pause: 0, commit: true, exclude: [post.id]) }
+
+    it 'skips it entirely' do
+      results
+      expect(fragment.reload.content).to_not include('class="caption"')
+    end
+  end
+
   context 'when the Substack caption was edited away from the paragraph' do
     subject(:results) { described_class.execute(client: client, pause: 0, commit: true) }
 
