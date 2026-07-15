@@ -41,10 +41,14 @@ module Substack
     end
 
     def random_quotations(count)
-      pool = @quotations || SubstackQuotation
-        .where.not(post_url: [nil, ""]).where.not(author_url: [nil, ""])
-        .order(Arel.sql("RANDOM()")).limit(count)
-      pool.first(count)
+      return @quotations.first(count) if @quotations
+
+      SubstackQuotation.sample_excluding(own_substack_url, count)
+    end
+
+    def own_substack_url
+      @own_substack_url ||= @post.categorizations.joins(:category)
+        .find_by(comfy_cms_categories: { label: "Substack" })&.url
     end
 
     def original_link_heading

@@ -56,6 +56,23 @@ RSpec.describe Substack::TemplateResolver do
     end
   end
 
+  describe 'syncQuotations excludes the post it renders on' do
+    before do
+      category = create :category, label: 'Substack', site: site
+      create :categorization, category: category, categorized: post, url: 'https://pub/p/self'
+      SubstackQuotation.create!(quotation: 'self', comment_url: 'https://x/comment/self', post_title: 'S',
+                                post_url: 'https://pub/p/self', author_name: 'A', author_url: 'https://substack.com/@a')
+      SubstackQuotation.create!(quotation: 'other', comment_url: 'https://x/comment/other', post_title: 'O',
+                                post_url: 'https://pub/p/other', author_name: 'B', author_url: 'https://substack.com/@b')
+    end
+
+    it 'renders only quotations from other posts' do
+      quotes = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 5 } }])
+        .select { |b| b['type'] == 'blockquote' }.map { |b| b['content'][0]['content'][0]['text'] }
+      expect(quotes).to eq ['“other”']
+    end
+  end
+
   describe 'syncIf' do
     let(:block) do
       { 'type' => 'syncIf', 'attrs' => { 'tag' => 'Shite Advice' },
