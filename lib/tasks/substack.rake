@@ -41,6 +41,23 @@ namespace :substack do
     puts "deleted: #{result.deleted.inspect}, skipped (not in parity): #{result.skipped.inspect}"
   end
 
+  desc "Audit synced posts for manual Substack-only tweaks a resync would clobber (read-only)"
+  task scan_divergences: :environment do
+    findings = Substack::DivergenceScanner.execute(progress: lambda { |f|
+      next if f.flags.empty?
+
+      details = []
+      details << "sizes=#{f.image_sizes.inspect}" if f.image_sizes.present?
+      details << "captions=#{f.captions.map { |c| c.to_s[0, 30] }.inspect}" if f.captions.present?
+      puts "  ##{f.post_id} #{f.slug.to_s[0, 34].ljust(34)} [#{f.flags.join(',')}] #{details.join(' ')}"
+    })
+    flagged = findings.reject { |f| f.flags.empty? }
+    tally = Hash.new(0)
+    flagged.each { |f| f.flags.each { |flag| tally[flag.sub(/[+-]\d+$/, '').sub(/^ERROR.*/, 'ERROR')] += 1 } }
+    puts "\n#{findings.size} synced posts scanned, #{flagged.size} with divergences."
+    puts "by flag: #{tally.sort_by { |_k, v| -v }.to_h.inspect}"
+  end
+
   desc "Re-resolve existing Reply Tracker records from their reply URL (backfills previews, corrects target URLs)"
   task backfill_replies: :environment do
     SubstackReply.find_each do |reply|
