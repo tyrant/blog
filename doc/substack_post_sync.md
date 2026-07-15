@@ -50,8 +50,10 @@ One size class per image.
 > The class must be on the `<img>` itself, e.g. `<img class="img-full" src="…">`. It won't
 > survive re-uploading/replacing the image in the editor, so add it once the image is settled.
 
-**Caption** — the single paragraph *directly after* an image becomes that image's caption
-(`fold_captions`). A second following paragraph stays body text.
+**Caption** — opt-in: a paragraph marked `<p class="caption">` directly after an image becomes
+that image's caption (`fold_captions`). Unmarked paragraphs after an image stay body text.
+(`rake substack:harvest_captions` back-filled the class onto pre-existing implicit captions;
+`EXCLUDE=id,id` skips posts whose caption you want dropped, `COMMIT=1` to write.)
 
 ### Videos
 
