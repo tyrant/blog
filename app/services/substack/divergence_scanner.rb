@@ -61,9 +61,13 @@ module Substack
       captions = sub_imgs.filter_map { |img| caption_text(img) }
       comfy_captions = comfy_imgs.count { |img| caption_text(img) }
 
+      sub_embeds = embeds(substack_body)
+      comfy_embeds = embeds(comfy_body)
+
       flags = []
       flags << "WIDTH" if sizes.any?
       flags << "CAPTION" if captions.size > comfy_captions
+      flags << "VIDEO+#{sub_embeds - comfy_embeds}" if sub_embeds > comfy_embeds
       flags << "IMG+#{sub_imgs.size - comfy_imgs.size}" if sub_imgs.size > comfy_imgs.size
       flags << "IMG-#{comfy_imgs.size - sub_imgs.size}" if comfy_imgs.size > sub_imgs.size
       flags << "BLOCKS+#{substack_body.size - comfy_body.size}" if substack_body.size > comfy_body.size
@@ -89,6 +93,21 @@ module Substack
       end
       Array(content).each { |block| walk.call(block) }
       found
+    end
+
+    # Substack embed nodes (video players, etc.) that Comfy may not reproduce.
+    EMBED_TYPES = %w[youtube2 video embeddedPublicationPost tweet].freeze
+
+    def embeds(content)
+      count = 0
+      walk = lambda do |node|
+        return unless node.is_a?(Hash)
+
+        count += 1 if EMBED_TYPES.include?(node["type"])
+        Array(node["content"]).each { |child| walk.call(child) }
+      end
+      Array(content).each { |block| walk.call(block) }
+      count
     end
 
     def image_size(captioned)

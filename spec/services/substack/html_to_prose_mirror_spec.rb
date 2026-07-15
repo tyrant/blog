@@ -96,6 +96,58 @@ RSpec.describe Substack::HtmlToProseMirror do
     end
   end
 
+  describe 'youtube embeds' do
+    let(:node) { content.first }
+
+    context 'an iframe embed' do
+      let(:html) { '<iframe src="https://www.youtube.com/embed/To_RJ_mPNqM"></iframe>' }
+
+      it { expect(node['type']).to eq 'youtube2' }
+      it { expect(node['attrs']['videoId']).to eq 'To_RJ_mPNqM' }
+      it { expect(node['attrs']).to eq('videoId' => 'To_RJ_mPNqM', 'startTime' => nil, 'endTime' => nil) }
+    end
+
+    context 'an iframe nested in a figure' do
+      let(:html) { '<figure><iframe src="https://youtu.be/l894JJu5aKY"></iframe></figure>' }
+
+      it { expect(node['type']).to eq 'youtube2' }
+      it { expect(node['attrs']['videoId']).to eq 'l894JJu5aKY' }
+    end
+
+    context 'a bare watch URL alone in a paragraph' do
+      let(:html) { '<p>https://www.youtube.com/watch?v=To_RJ_mPNqM</p>' }
+
+      it { expect(node['type']).to eq 'youtube2' }
+      it { expect(node['attrs']['videoId']).to eq 'To_RJ_mPNqM' }
+    end
+
+    context 'a link-only paragraph' do
+      let(:html) { '<p><a href="https://youtu.be/To_RJ_mPNqM">https://youtu.be/To_RJ_mPNqM</a></p>' }
+
+      it { expect(node['type']).to eq 'youtube2' }
+    end
+
+    context 'a start time in the URL' do
+      let(:html) { '<p>https://www.youtube.com/watch?v=To_RJ_mPNqM&t=90</p>' }
+
+      it { expect(node['attrs']['startTime']).to eq 90 }
+    end
+
+    context 'a youtube link inline with other text' do
+      let(:html) { '<p>Watch this: <a href="https://youtu.be/To_RJ_mPNqM">the clip</a> now</p>' }
+
+      it 'stays a paragraph with a link, not a player' do
+        expect(node['type']).to eq 'paragraph'
+      end
+    end
+
+    context 'a non-youtube iframe' do
+      let(:html) { '<iframe src="https://example.com/thing"></iframe>' }
+
+      it { expect(content).to be_empty }
+    end
+  end
+
   describe 'image captions' do
     context 'a paragraph directly after an image' do
       let(:html) { '<p><img src="http://x.com/a.jpg"></p><p>The <em>caption</em>.</p>' }

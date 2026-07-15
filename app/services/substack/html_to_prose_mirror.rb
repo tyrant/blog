@@ -63,7 +63,7 @@ module Substack
       return true if node.text?
       return false unless node.element?
 
-      !(BLOCK_TAGS.include?(node.name) || CONTAINER_TAGS.include?(node.name) || node.name == "img")
+      !(BLOCK_TAGS.include?(node.name) || CONTAINER_TAGS.include?(node.name) || %w[img iframe].include?(node.name))
     end
 
     def block_nodes(node)
@@ -77,6 +77,7 @@ module Substack
       when "ol"                            then [list(node, "ordered_list", { "order" => 1, "tight" => false })]
       when "hr"                            then [{ "type" => "horizontal_rule" }]
       when "img"                           then [captioned_image(node)].compact
+      when "iframe"                        then [youtube_node(node["src"])].compact
       else blocks(node.children)
       end
     end
@@ -89,11 +90,50 @@ module Substack
     end
 
     def paragraph_or_image(node)
+      # A paragraph that is nothing but a YouTube URL/link becomes a video player,
+      # matching Substack's own paste-a-link behaviour.
+      video = paragraph_youtube(node)
+      return [video] if video
+
       out = []
       content = inline_content(node.children)
       out << { "type" => "paragraph", "content" => content } if content.any?
       node.css("img").each { |img| ci = captioned_image(img); out << ci if ci }
+      node.css("iframe").each { |frame| yt = youtube_node(frame["src"]); out << yt if yt }
       out
+    end
+
+    def paragraph_youtube(node)
+      return nil if node.css("img, iframe").any?
+
+      link = node.at_css("a")
+      url = if link && node.text.strip == link.text.strip
+              link["href"]
+            elsif node.text.strip.match?(%r{\Ahttps?://\S+\z})
+              node.text.strip
+            end
+      url && youtube_node(url)
+    end
+
+    # Substack's YouTube embed node. Only real YouTube URLs become players; any
+    # other iframe/url yields nil (dropped).
+    def youtube_node(url)
+      id = youtube_id(url)
+      return nil unless id
+
+      { "type" => "youtube2", "attrs" => { "videoId" => id, "startTime" => youtube_start(url), "endTime" => nil } }
+    end
+
+    def youtube_id(url)
+      str = url.to_s
+      return nil unless str.match?(/youtu\.?be/i)
+
+      str[%r{(?:youtu\.be/|/embed/|/shorts/|/v/)([\w-]{11})}, 1] || str[%r{[?&]v=([\w-]{11})}, 1]
+    end
+
+    def youtube_start(url)
+      match = url.to_s.match(/[?&](?:t|start)=(\d+)/)
+      match && match[1].to_i
     end
 
     def heading(node)

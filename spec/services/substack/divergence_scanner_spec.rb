@@ -51,6 +51,17 @@ RSpec.describe Substack::DivergenceScanner do
     end
   end
 
+  context 'a Substack youtube embed Comfy lacks' do
+    let(:draft) do
+      substack_draft({ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Body text' }] },
+                     { 'type' => 'youtube2', 'attrs' => { 'videoId' => 'abc' } })
+    end
+
+    it 'flags the video divergence' do
+      expect(findings.first.flags).to include('VIDEO+1')
+    end
+  end
+
   context 'a draft that matches the Comfy rebuild' do
     let(:draft) { substack_draft({ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Body text' }] }) }
 
