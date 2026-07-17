@@ -15,7 +15,7 @@ module Substack
 
     BLOCK_TAGS     = %w[p h1 h2 h3 h4 h5 h6 blockquote ul ol hr].freeze
     CONTAINER_TAGS = %w[div section article header footer aside main figure figcaption].freeze
-    IMAGE_SIZE_CLASSES = { "img-wide" => "wide", "img-large" => "large", "img-full" => "full" }.freeze
+    IMAGE_SIZE_CLASSES = { "img-large" => "large", "img-full" => "full" }.freeze
     # Display width per imageSize so images fill the Substack content column
     # rather than defaulting to their (sometimes narrower) native width. full/
     # wide get nil — Substack sizes those itself.
@@ -204,8 +204,8 @@ module Substack
       }] }
     end
 
-    # An "img-wide"/"img-large"/"img-full" class on the <img> maps to Substack's
-    # imageSize; no such class means the default "normal".
+    # An "img-large"/"img-full" class on the <img> maps to Substack's imageSize
+    # (its only real sizes beyond the default "normal"); no such class means normal.
     def image_size(img)
       classes = img["class"].to_s.split
       IMAGE_SIZE_CLASSES.each { |css_class, size| return size if classes.include?(css_class) }

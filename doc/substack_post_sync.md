@@ -40,11 +40,13 @@ nested inside a heading (`<h2><img></h2>`) are pulled out automatically.
 **Width** — add one class to the `<img>` (via the editor's HTML view). No class = normal.
 One size class per image.
 
+Substack has only three image sizes; these are the only classes it honours (`img-wide`
+doesn't exist as a Substack size — an unknown class just falls back to `normal`):
+
 | Class on `<img>`  | Substack `imageSize` | On the Comfy site               |
 |-------------------|----------------------|---------------------------------|
-| *(none)*          | `normal`             | unchanged                       |
-| `img-large`       | `large`              | like normal (no CSS yet)        |
-| `img-wide`        | `wide`               | like normal (no CSS yet)        |
+| *(none)*          | `normal` (728px)     | unchanged                       |
+| `img-large`       | `large` (1200px)     | like normal (no CSS yet)        |
 | `img-full`        | `full`               | **full-bleed** below `lg`       |
 
 > The class must be on the `<img>` itself, e.g. `<img class="img-full" src="…">`. It won't

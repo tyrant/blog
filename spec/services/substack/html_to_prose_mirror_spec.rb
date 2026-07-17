@@ -117,7 +117,9 @@ RSpec.describe Substack::HtmlToProseMirror do
       it { expect(size_of('<p><img src="http://x/a.jpg"></p>')).to eq 'normal' }
       it { expect(size_of('<p><img src="http://x/a.jpg" class="img-full"></p>')).to eq 'full' }
       it { expect(size_of('<p><img src="http://x/a.jpg" class="img-large"></p>')).to eq 'large' }
-      it { expect(size_of('<p><img src="http://x/a.jpg" class="foo img-wide bar"></p>')).to eq 'wide' }
+      it 'ignores unknown size classes (Substack has no such size)' do
+        expect(size_of('<p><img src="http://x/a.jpg" class="foo img-wide bar"></p>')).to eq 'normal'
+      end
     end
 
     describe 'display width (resizeWidth) fills the content column' do
