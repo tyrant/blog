@@ -174,9 +174,39 @@ module Substack
     end
 
     def blockquote(node)
-      content = blocks(node.children)
+      content = quote_paragraphs(node)
       content = [{ "type" => "paragraph" }] if content.empty?
       { "type" => "blockquote", "content" => content }
+    end
+
+    # Redactor won't keep <p> inside a blockquote — it stores multiple paragraphs
+    # as <br>-separated inline runs. Substack has no line-break node, so split each
+    # run of <br>s back into a paragraph boundary (its only way to show the breaks).
+    def quote_paragraphs(node)
+      return blocks(node.children) if node.element_children.any? { |c| block_tag?(c.name) }
+
+      split_on_breaks(node.children).filter_map do |run|
+        content = finalize_inline(inline_content(run))
+        { "type" => "paragraph", "content" => content } if content.any?
+      end
+    end
+
+    def block_tag?(name)
+      BLOCK_TAGS.include?(name) || CONTAINER_TAGS.include?(name)
+    end
+
+    # Groups children into runs split on <br>; whitespace-only runs between double
+    # <br>s drop out later in finalize_inline, so a run of breaks yields one boundary.
+    def split_on_breaks(children)
+      runs = [[]]
+      children.each do |child|
+        if child.element? && child.name == "br"
+          runs << [] unless runs.last.empty?
+        else
+          runs.last << child
+        end
+      end
+      runs
     end
 
     def list(node, type, attrs)

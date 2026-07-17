@@ -92,6 +92,27 @@ RSpec.describe Substack::HtmlToProseMirror do
     it { expect(content.first['type']).to eq 'blockquote' }
     it { expect(content.first['content'].first['type']).to eq 'paragraph' }
     it { expect(content.first['content'].first['content'].first['text']).to eq 'quoted' }
+
+    context 'with <br><br>-separated paragraphs (Redactor strips <p> in quotes)' do
+      let(:html) { '<blockquote>one<br><br>two<br><br>three</blockquote>' }
+      let(:paras) { content.first['content'] }
+
+      it { expect(paras.map { |p| p['type'] }).to eq %w[paragraph paragraph paragraph] }
+      it { expect(paras.map { |p| p['content'].first['text'] }).to eq %w[one two three] }
+    end
+
+    context 'with whitespace around the breaks' do
+      let(:html) { "<blockquote>\n\tone\n\t<br>\n\t<br>\n\ttwo\n</blockquote>" }
+      let(:paras) { content.first['content'] }
+
+      it { expect(paras.map { |p| p['content'].first['text'] }).to eq %w[one two] }
+    end
+
+    context 'with a single <br> break (Substack has no soft break)' do
+      let(:html) { '<blockquote>a<br>b</blockquote>' }
+
+      it { expect(content.first['content'].map { |p| p['content'].first['text'] }).to eq %w[a b] }
+    end
   end
 
   describe 'images' do
