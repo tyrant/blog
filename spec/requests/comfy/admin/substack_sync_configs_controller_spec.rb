@@ -27,6 +27,16 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
       it { expect(SubstackSyncConfig.instance.footer_json).to eq [{ 'type' => 'button' }] }
     end
 
+    context 'with a rotation interval' do
+      before do
+        patch comfy_admin_substack_sync_config_path,
+          params: { substack_sync_config: { quotation_rotation_days: '3', footer_json_text: '[]' } },
+          headers: http_auth_headers
+      end
+
+      it { expect(SubstackSyncConfig.instance.quotation_rotation_days).to eq 3 }
+    end
+
     context 'with invalid footer JSON' do
       before do
         patch comfy_admin_substack_sync_config_path,
@@ -50,6 +60,19 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
 
     it 'invokes the capturer with the given draft id' do
       expect(Substack::TemplateCapturer).to have_received(:execute).with(draft_id: '999')
+    end
+  end
+
+  describe 'POST sync_all' do
+    before do
+      allow(SyncAllSubstackPostsJob).to receive(:perform_later)
+      post sync_all_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+    end
+
+    it { expect(response).to redirect_to edit_comfy_admin_substack_sync_config_path }
+
+    it 'enqueues the bulk sync job' do
+      expect(SyncAllSubstackPostsJob).to have_received(:perform_later)
     end
   end
 

@@ -35,6 +35,35 @@ RSpec.describe SubstackSyncConfig do
       config.footer_json = { 'type' => 'button' }
       expect(config).to_not be_valid
     end
+
+    it 'is invalid with a zero rotation interval' do
+      config.quotation_rotation_days = 0
+      expect(config).to_not be_valid
+    end
+
+    it 'is invalid with a non-integer rotation interval' do
+      config.quotation_rotation_days = 1.5
+      expect(config).to_not be_valid
+    end
+  end
+
+  describe '#quotation_rotation_due?' do
+    subject(:config) { described_class.instance }
+
+    it 'is due when never rotated' do
+      config.quotations_rotated_at = nil
+      expect(config.quotation_rotation_due?).to be true
+    end
+
+    it 'is due once the interval has elapsed' do
+      config.update!(quotation_rotation_days: 7, quotations_rotated_at: 8.days.ago)
+      expect(config.quotation_rotation_due?).to be true
+    end
+
+    it 'is not due within the interval' do
+      config.update!(quotation_rotation_days: 7, quotations_rotated_at: 2.days.ago)
+      expect(config.quotation_rotation_due?).to be false
+    end
   end
 
   describe '#footer_json_text' do

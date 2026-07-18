@@ -4,14 +4,17 @@
 # fetches each draft, swaps in a fresh random SubstackQuotation, and saves —
 # re-publishing already-published posts so the change goes live (no email is
 # re-sent). Sequential with gentle pacing to stay under Substack's rate limit.
-# Runs weekly on the prod worker via config/recurring.yml.
+# Fires daily via config/recurring.yml but self-gates on the configured
+# rotation interval (SubstackSyncConfig#quotation_rotation_days).
 class RotateSubstackQuotationsJob < ApplicationJob
   queue_as :default
 
   PACING = 0.5 # seconds between posts
 
   def perform
-    return unless SubstackSyncConfig.instance.quotation_rotation_enabled?
+    config = SubstackSyncConfig.instance
+    return unless config.quotation_rotation_enabled?
+    return unless config.quotation_rotation_due?
     return if SubstackQuotation.none?
 
     client = Substack::Client.new
@@ -22,6 +25,8 @@ class RotateSubstackQuotationsJob < ApplicationJob
     ensure
       sleep PACING
     end
+
+    config.update!(quotations_rotated_at: Time.current)
   end
 
   private

@@ -35,6 +35,11 @@
         const codemirror = CodeMirror.fromTextArea(textarea, options);
         if (mode === 'application/json') {
           autoFold(codemirror, FOLD_BY_DEFAULT);
+          // Collapse the top-level array/object (line 0) on load for editors
+          // whose whole value is one big structure, e.g. the Substack footer.
+          if (textarea.dataset.cmsCmFoldRoot != null) {
+            codemirror.foldCode(CodeMirror.Pos(0, 0));
+          }
         }
         codeMirrorInstances.push(codemirror);
       }

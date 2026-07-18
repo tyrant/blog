@@ -4,9 +4,17 @@ class SubstackSyncConfig < ApplicationRecord
   # nil is allowed so the singleton row can be first_or_create!'d empty; a set
   # footer must be a JSON array of ProseMirror blocks.
   validate :footer_json_is_array
+  validates :quotation_rotation_days, numericality: { only_integer: true, greater_than: 0 }
 
   def self.instance
     first_or_create!
+  end
+
+  # Whether enough days have elapsed since the last rotation for the scheduled
+  # (daily-firing) job to rotate again — the runtime override for what used to be
+  # a hardcoded weekly cron.
+  def quotation_rotation_due?
+    quotations_rotated_at.nil? || quotations_rotated_at + quotation_rotation_days.days <= Time.current
   end
 
   # The subtitle to mirror for a post: the "Shite Advice" one for terrible-advice

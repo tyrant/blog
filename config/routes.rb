@@ -69,6 +69,7 @@ Rails.application.routes.draw do
                path: "admin/substack-sync",
                only: %i[edit update] do
         post :recapture
+        post :sync_all
       end
 
       get  "admin/reply-drafter",          to: "reply_drafter#show",     as: :admin_reply_drafter

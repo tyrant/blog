@@ -27,6 +27,13 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
     redirect_to edit_comfy_admin_substack_sync_config_path
   end
 
+  # Full re-sync of every Substack-linked post on the prod worker.
+  def sync_all
+    SyncAllSubstackPostsJob.perform_later
+    flash[:success] = "Re-syncing all Substack posts on the worker."
+    redirect_to edit_comfy_admin_substack_sync_config_path
+  end
+
   private
 
   def load_config
@@ -34,7 +41,7 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
   end
 
   def config_params
-    params.require(:substack_sync_config).permit(:subtitle, :subtitle_default, :footer_json_text, :quotation_rotation_enabled)
+    params.require(:substack_sync_config).permit(:subtitle, :subtitle_default, :footer_json_text, :quotation_rotation_enabled, :quotation_rotation_days)
   end
 
 end

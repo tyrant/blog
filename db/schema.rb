@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_15_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_18_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -405,6 +405,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_15_000001) do
     t.jsonb "default_tags"
     t.boolean "quotation_rotation_enabled", default: false, null: false
     t.text "subtitle_default"
+    t.integer "quotation_rotation_days", default: 7, null: false
+    t.datetime "quotations_rotated_at"
   end
 
   create_table "tags", force: :cascade do |t|

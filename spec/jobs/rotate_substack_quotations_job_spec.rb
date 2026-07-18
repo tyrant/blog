@@ -52,6 +52,20 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
       described_class.new.perform
       expect(client).to have_received(:publish_draft).with(900)
     end
+
+    it 'stamps the last-rotated time' do
+      described_class.new.perform
+      expect(SubstackSyncConfig.instance.quotations_rotated_at).to be_present
+    end
+  end
+
+  context 'when the rotation interval has not elapsed' do
+    before { SubstackSyncConfig.instance.update!(quotation_rotation_days: 7, quotations_rotated_at: 2.days.ago) }
+
+    it 'does no work' do
+      expect(client).to_not receive(:get_draft)
+      described_class.new.perform
+    end
   end
 
   context 'when rotation is disabled' do
