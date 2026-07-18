@@ -6,6 +6,7 @@ RSpec.describe Substack::QuotationBlock do
   def quote(attrs = {})
     SubstackQuotation.new({ quotation: 'a blurb', post_title: 'Ch 1',
                             post_url: 'https://pub.substack.com/p/ch-1',
+                            comment_url: 'https://pub.substack.com/p/ch-1/comment/42',
                             author_name: 'Eva', author_url: 'https://substack.com/@eva' }.merge(attrs))
   end
 
@@ -25,6 +26,17 @@ RSpec.describe Substack::QuotationBlock do
       expect(blocks[1]['type']).to eq 'blockquote'
       expect(node['text']).to eq '“a blurb”'
       expect(node['marks'].map { |m| m['type'] }).to include 'em'
+    end
+
+    it 'trails the quote with a 🔗 linking the original comment' do
+      link = blocks[1]['content'][0]['content'].last
+      expect(link['text']).to eq '🔗'
+      expect(link.dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
+    end
+
+    it 'omits the comment link when there is no comment_url' do
+      nodes = described_class.build(quote(comment_url: nil))[1]['content'][0]['content']
+      expect(nodes.none? { |n| n['text'] == '🔗' }).to be true
     end
 
     it 'right-aligns the linked author' do

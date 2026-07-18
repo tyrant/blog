@@ -3,7 +3,8 @@
 module Substack
   # Builds and detects the featured-quote blocks. Each quotation renders as a
   # triplet: an h4 heading linking the post it was left on, a blockquote of the
-  # italicised quote, and a right-aligned line linking the commenter. The
+  # italicised quote (trailed by a 🔗 link to the original comment), and a
+  # right-aligned line linking the commenter. The
   # template's syncQuotations directive expands into N of these; the rotation
   # job finds the run of triplets in a draft and swaps them for fresh ones.
   module QuotationBlock
@@ -19,9 +20,13 @@ module Substack
     end
 
     def blockquote(quotation)
+      nodes = [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])]
+      if quotation.comment_url.present?
+        nodes << text(" ")
+        nodes << text("🔗", href: quotation.comment_url)
+      end
       { "type" => "blockquote", "content" => [
-        { "type" => "paragraph", "attrs" => { "textAlign" => "left" },
-          "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])] }
+        { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => nodes }
       ] }
     end
 
