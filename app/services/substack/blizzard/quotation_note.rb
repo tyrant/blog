@@ -2,10 +2,10 @@
 
 # Builds a Substack Note body_json from a SubstackQuotation, for the blizzard's
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
-# marks): a bold "Review:" label, a bold post-title link, the italic quote
-# trailed by a 🔗 to the original comment, the linked author (textAlign set,
-# though Notes appear to ignore it), and a "More reviews" link. The post itself
-# rides along as a preview-card attachment (added by the ticker).
+# marks; Notes have no heading or paragraph alignment): a bold "Review:" label, a
+# bold post-title link, the italic quote trailed by a 🔗 to the original comment,
+# the linked author, and a "More reviews" link. The post itself rides along as a
+# preview-card attachment (added by the ticker).
 module Substack
   module Blizzard
     module QuotationNote
@@ -37,12 +37,12 @@ module Substack
       end
 
       def attribution(quotation)
-        { "type" => "paragraph", "attrs" => { "textAlign" => "right" },
+        { "type" => "paragraph",
           "content" => [text("— "), text(quotation.author_name, marks: [link(quotation.author_url)])] }
       end
 
       def more_reviews
-        { "type" => "paragraph", "attrs" => { "textAlign" => "left" },
+        { "type" => "paragraph",
           "content" => [text("More reviews at "), text(REVIEWS_URL, marks: [link(REVIEWS_URL)])] }
       end
 

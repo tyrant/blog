@@ -47,16 +47,14 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       expect(nodes.none? { |n| n['text'] == '🔗' }).to be true
     end
 
-    it 'attributes the quote to the linked author, right-aligned' do
+    it 'attributes the quote to the linked author' do
       block = doc['content'][3]
-      expect(block['attrs']).to eq('textAlign' => 'right')
       expect(block['content'].last['text']).to eq 'Eva'
       expect(block['content'].last['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva'
     end
 
-    it 'ends with a left-aligned "More reviews" line linking the reviews page' do
+    it 'ends with a "More reviews" line linking the reviews page' do
       block = doc['content'][4]
-      expect(block['attrs']).to eq('textAlign' => 'left')
       expect(block['content'].first['text']).to eq 'More reviews at '
       link = block['content'].last
       expect(link['text']).to eq described_class::REVIEWS_URL
