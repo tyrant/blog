@@ -94,6 +94,43 @@ namespace :substack do
     task tick: :environment do
       BlizzardRepostTick.run(commit: true)
     end
+
+    # Run LOCALLY (residential IP). Posts a quotation Note live so you can see
+    # exactly how Substack renders it, then deletes it on confirm. Notes don't
+    # email, so the only exposure is a brief appearance in the feed.
+    #   rails substack:blizzard:preview_quotation            # random quotation
+    #   QUOTATION_ID=42 rails substack:blizzard:preview_quotation
+    desc "Post a quotation Note to eyeball it, then delete on confirm (run on your Mac)"
+    task preview_quotation: :environment do
+      BlizzardQuotationPreview.run
+    end
+  end
+end
+
+module BlizzardQuotationPreview
+  module_function
+
+  def run
+    substack = Substack::Client.new
+    note = Substack::Blizzard::QuotationPreviewer.execute(
+      base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
+      username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
+      password: ENV["BLIZZARD_ADMIN_PASS"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.password,
+      id:       ENV["QUOTATION_ID"],
+      substack: substack
+    )
+    abort "No quotations to preview." if note.nil?
+
+    puts note["text"]
+    puts "→ #{note['url']}   (now live — go look)"
+    print "Delete this preview note? [Y/n] "
+    answer = $stdin.gets.to_s.strip.downcase
+    if answer.empty? || answer.start_with?("y")
+      substack.delete_note(note["id"])
+      puts "Deleted."
+    else
+      puts "Left live: #{note['url']}"
+    end
   end
 end
 

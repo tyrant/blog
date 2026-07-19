@@ -69,6 +69,18 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     render json: Substack::Blizzard::WeightedPicker.execute(dry_run: true) || {}
   end
 
+  # A random (or ?id=) quotation note, built exactly as the ticker would fire it,
+  # for the local preview task to post-and-inspect. Nothing is claimed.
+  def quotation_preview
+    quotation = params[:id].present? ? SubstackQuotation.find(params[:id]) :
+      SubstackQuotation.order(Arel.sql("RANDOM()")).first
+    render json: (quotation && {
+      "text"      => quotation.quotation,
+      "post_url"  => quotation.post_url,
+      "body_json" => Substack::Blizzard::QuotationNote.build(quotation)
+    }) || {}
+  end
+
   # Phase two: record a completed repost (append note to the entry, by uid).
   def repost_confirm
     Substack::Blizzard::RepostRecorder.execute(

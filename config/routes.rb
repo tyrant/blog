@@ -91,6 +91,7 @@ Rails.application.routes.draw do
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick
       get  "admin/substack-blizzard/repost/preview", to: "substack_blizzard#repost_preview", as: :admin_substack_blizzard_repost_preview
+      get  "admin/substack-blizzard/quotation/preview", to: "substack_blizzard#quotation_preview", as: :admin_substack_blizzard_quotation_preview
       post "admin/substack-blizzard/repost/confirm", to: "substack_blizzard#repost_confirm", as: :admin_substack_blizzard_repost_confirm
       post "admin/substack-blizzard/settings",       to: "substack_blizzard#update_settings", as: :admin_substack_blizzard_settings
       post "admin/substack-blizzard/backfill-all",  to: "substack_blizzard#backfill_all",  as: :admin_substack_blizzard_backfill_all

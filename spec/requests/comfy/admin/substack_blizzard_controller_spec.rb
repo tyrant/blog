@@ -182,6 +182,39 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
   end
 
+  describe 'GET quotation/preview.json (local preview task)' do
+    let!(:quotation) do
+      SubstackQuotation.create!(quotation: 'a memorable blurb', comment_url: 'https://x/comment/1',
+                                post_title: 'Ch 1', post_url: 'https://mikeyclarke.substack.com/p/ch-1',
+                                author_name: 'Eva', author_url: 'https://substack.com/@eva')
+    end
+
+    describe 'a random quotation' do
+      before { get comfy_admin_substack_blizzard_quotation_preview_path(format: :json), headers: http_auth_headers }
+
+      it { expect(response).to have_http_status :success }
+      it { expect(response.parsed_body['text']).to eq 'a memorable blurb' }
+      it { expect(response.parsed_body['post_url']).to eq 'https://mikeyclarke.substack.com/p/ch-1' }
+      it { expect(response.parsed_body['body_json']['type']).to eq 'doc' }
+    end
+
+    describe 'a specific quotation by id' do
+      let!(:other) { SubstackQuotation.create!(quotation: 'a different blurb', comment_url: 'https://x/comment/2') }
+      before { get comfy_admin_substack_blizzard_quotation_preview_path(id: other.id, format: :json), headers: http_auth_headers }
+
+      it { expect(response.parsed_body['text']).to eq 'a different blurb' }
+    end
+
+    describe 'no quotations exist' do
+      before do
+        SubstackQuotation.delete_all
+        get comfy_admin_substack_blizzard_quotation_preview_path(format: :json), headers: http_auth_headers
+      end
+
+      it { expect(response.parsed_body).to eq({}) }
+    end
+  end
+
   describe 'POST settings' do
     before do
       post comfy_admin_substack_blizzard_settings_path,

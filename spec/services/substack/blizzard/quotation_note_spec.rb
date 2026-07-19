@@ -57,7 +57,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       block = doc['content'][4]
       expect(block['content'].first['text']).to eq 'More reviews at '
       link = block['content'].last
-      expect(link['text']).to eq described_class::REVIEWS_URL
+      expect(link['text']).to eq 'the Reviews page'
       expect(link['marks'].last.dig('attrs', 'href')).to eq described_class::REVIEWS_URL
     end
   end
