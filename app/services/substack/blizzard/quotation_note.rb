@@ -41,11 +41,11 @@ module Substack
           "content" => [text("— "), text(quotation.author_name, marks: [link(quotation.author_url)])] }
       end
 
-      # Anchor text must not be the bare URL: Substack auto-embeds bare URLs and
-      # drops this (a page, not a card-able post), so link descriptive text instead.
+      # Substack strips an explicit link mark to the reviews page (a page, not a
+      # card-able post), but auto-linkifies a bare URL sitting in plain text — so
+      # emit the URL unmarked in parens and let Substack turn it into the link.
       def more_reviews
-        { "type" => "paragraph",
-          "content" => [text("More reviews at "), text("the Reviews page", marks: [link(REVIEWS_URL)])] }
+        { "type" => "paragraph", "content" => [text("More at the Reviews Page (#{REVIEWS_URL})")] }
       end
 
       def text(string, marks: [])

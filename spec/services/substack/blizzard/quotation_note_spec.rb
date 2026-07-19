@@ -53,12 +53,14 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       expect(block['content'].last['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva'
     end
 
-    it 'ends with a "More reviews" line linking the reviews page' do
-      block = doc['content'][4]
-      expect(block['content'].first['text']).to eq 'More reviews at '
-      link = block['content'].last
-      expect(link['text']).to eq 'the Reviews page'
-      expect(link['marks'].last.dig('attrs', 'href')).to eq described_class::REVIEWS_URL
+    it 'ends with a plain reviews-page line with the bare URL for Substack to auto-linkify' do
+      node = doc['content'][4]['content'].first
+      expect(node['text']).to eq "More at the Reviews Page (#{described_class::REVIEWS_URL})"
+    end
+
+    it 'leaves the reviews-page URL unmarked (an explicit link mark gets stripped)' do
+      node = doc['content'][4]['content'].first
+      expect(node['marks']).to be_nil
     end
   end
 end
