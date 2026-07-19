@@ -37,6 +37,16 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
       it { expect(SubstackSyncConfig.instance.quotation_rotation_days).to eq 3 }
     end
 
+    context 'with a reviews draft id' do
+      before do
+        patch comfy_admin_substack_sync_config_path,
+          params: { substack_sync_config: { reviews_draft_id: '207698961', footer_json_text: '[]' } },
+          headers: http_auth_headers
+      end
+
+      it { expect(SubstackSyncConfig.instance.reviews_draft_id).to eq 207698961 }
+    end
+
     context 'with invalid footer JSON' do
       before do
         patch comfy_admin_substack_sync_config_path,

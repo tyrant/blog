@@ -41,7 +41,7 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
   end
 
   def config_params
-    params.require(:substack_sync_config).permit(:subtitle, :subtitle_default, :footer_json_text, :quotation_rotation_enabled, :quotation_rotation_days)
+    params.require(:substack_sync_config).permit(:subtitle, :subtitle_default, :footer_json_text, :quotation_rotation_enabled, :quotation_rotation_days, :reviews_draft_id)
   end
 
 end

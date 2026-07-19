@@ -53,6 +53,12 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: '' }, headers: http_auth_headers }
           .to_not change(SubstackQuotation, :count)
       end
+
+      it 'rebuilds the reviews page' do
+        allow(SyncReviewsPageJob).to receive(:perform_later)
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        expect(SyncReviewsPageJob).to have_received(:perform_later)
+      end
     end
 
     context 'when resolution fails' do
@@ -103,6 +109,12 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
         expect(quotation.reload.post_title).to eq 'Old Post'
       end
+
+      it 'rebuilds the reviews page' do
+        allow(SyncReviewsPageJob).to receive(:perform_later)
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        expect(SyncReviewsPageJob).to have_received(:perform_later)
+      end
     end
 
     context 'changing the comment url' do
@@ -132,6 +144,25 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it 'deletes the quotation' do
       expect { delete comfy_admin_quotation_path(quotation), headers: http_auth_headers }
         .to change(SubstackQuotation, :count).by(-1)
+    end
+
+    it 'rebuilds the reviews page' do
+      allow(SyncReviewsPageJob).to receive(:perform_later)
+      delete comfy_admin_quotation_path(quotation), headers: http_auth_headers
+      expect(SyncReviewsPageJob).to have_received(:perform_later)
+    end
+  end
+
+  describe 'POST sync_reviews' do
+    before do
+      allow(SyncReviewsPageJob).to receive(:perform_later)
+      post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
+    end
+
+    it { expect(response).to redirect_to comfy_admin_quotations_path }
+
+    it 'enqueues the reviews rebuild' do
+      expect(SyncReviewsPageJob).to have_received(:perform_later)
     end
   end
 

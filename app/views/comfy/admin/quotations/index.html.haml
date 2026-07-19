@@ -14,6 +14,16 @@
     - if editing
       = link_to "Cancel", comfy_admin_quotations_path, class: "btn btn-link"
 
+%section.mb-4
+  %h5 Reviews page
+  %p.text-muted.small
+    Every quotation is mirrored to the dedicated Substack "Reviews" page. It rebuilds
+    automatically whenever a quotation is added, edited or deleted; use this to force a rebuild.
+    Set the page's draft id under
+    = succeed "." do
+      = link_to "Substack Sync settings", edit_comfy_admin_substack_sync_config_path
+  = button_to "Rebuild Reviews page now", comfy_sync_reviews_admin_quotations_path, method: :post, class: "btn btn-outline-secondary btn-sm"
+
 %section
   %h5= "#{pluralize(@quotations.total_count, 'quotation')} collected"
   - if @quotations.empty?

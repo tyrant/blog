@@ -20,6 +20,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation = SubstackQuotation.new(quotation: params[:quotation], comment_url: params[:comment_url])
     quotation.populate_from_substack!
     quotation.save!
+    SyncReviewsPageJob.perform_later
     flash[:success] = "Saved quotation#{quotation.author_name ? " by #{quotation.author_name}" : ""}."
   rescue => e
     flash[:danger] = "Could not save quotation: #{e.message}"
@@ -35,6 +36,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     # keeps the existing post/author metadata.
     quotation.populate_from_substack! if comment_changed
     quotation.save!
+    SyncReviewsPageJob.perform_later
     flash[:success] = "Quotation updated."
   rescue ActiveRecord::RecordNotFound
     flash[:danger] = "Quotation not found."
@@ -46,10 +48,19 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
   def destroy
     SubstackQuotation.find(params[:id]).destroy
+    SyncReviewsPageJob.perform_later
     flash[:success] = "Quotation deleted."
   rescue ActiveRecord::RecordNotFound
     flash[:danger] = "Quotation not found."
   ensure
+    redirect_to comfy_admin_quotations_path
+  end
+
+  # Rebuild the Reviews page from every quotation now (also auto-enqueued on any
+  # add/edit/delete).
+  def sync_reviews
+    SyncReviewsPageJob.perform_later
+    flash[:success] = "Rebuilding the Reviews page from all quotations on the worker."
     redirect_to comfy_admin_quotations_path
   end
 

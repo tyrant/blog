@@ -22,6 +22,9 @@
   = form.text_field :quotation_rotation_days,
                     label: "Rotate featured quotes every … days"
 
+  = form.text_field :reviews_draft_id,
+                    label: "Reviews page — Substack draft id (lists every quotation; e.g. 207698961)"
+
   = form.form_actions do
     = submit_tag "Save", class: "btn btn-primary ml-sm-1"
 
