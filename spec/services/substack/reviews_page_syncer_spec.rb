@@ -52,6 +52,27 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
     end
 
+    context 'with a manually-authored intro above the review list' do
+      let(:intro) { { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Good gracious gumdrops.' }] } }
+      let(:existing) { { 'type' => 'doc', 'content' => [intro] + Substack::QuotationBlock.build(first) } }
+
+      before do
+        allow(client).to receive(:get_draft).with(555)
+          .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => false,
+                      'draft_body' => JSON.generate(existing))
+      end
+
+      it 'keeps the intro block above the regenerated triplets' do
+        sync
+        expect(body_doc['content'].first).to eq intro
+      end
+
+      it 'regenerates the review list once, not stacking the old run' do
+        sync
+        expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
+      end
+    end
+
     it 'does not publish while it is still a draft' do
       allow(client).to receive(:publish_draft)
       sync
