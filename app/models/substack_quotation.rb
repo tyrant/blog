@@ -26,6 +26,7 @@ class SubstackQuotation < ApplicationRecord
       post_url:       resolved.post_url,
       post_title:     resolved.post_title,
       post_image_url: resolved.post_image_url,
+      post_id:        resolved.post_id,
       author_url:     resolved.author_url,
       author_name:    resolved.author_name
     )

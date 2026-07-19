@@ -14,13 +14,14 @@ RSpec.describe Substack::QuotationResolver do
       allow(client).to receive(:get_note).with('294035746').and_return('item' => {
         'comment' => { 'name' => 'Eva Solen', 'handle' => 'evasolen', 'user_id' => 123 },
         'post' => { 'title' => 'Chapter 19', 'canonical_url' => 'https://evasolen.substack.com/p/chapter-19',
-                    'cover_image' => 'https://substackcdn.com/image/fetch/cover.jpg' }
+                    'cover_image' => 'https://substackcdn.com/image/fetch/cover.jpg', 'id' => 42 }
       })
     end
 
     it { expect(resolved.post_url).to eq 'https://evasolen.substack.com/p/chapter-19' }
     it { expect(resolved.post_title).to eq 'Chapter 19' }
     it { expect(resolved.post_image_url).to eq 'https://substackcdn.com/image/fetch/cover.jpg' }
+    it { expect(resolved.post_id).to eq 42 }
     it { expect(resolved.author_name).to eq 'Eva Solen' }
     it { expect(resolved.author_url).to eq 'https://substack.com/@evasolen' }
   end

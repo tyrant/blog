@@ -52,26 +52,35 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
     end
 
-    it 'has no thumbnail when the quotation lacks a post image' do
+    it 'leads with a plain post-title heading when there is no post id' do
       sync
-      expect(body_doc['content'].none? { |b| b['type'] == 'captionedImage' }).to be true
+      types = body_doc['content'].map { |b| b['type'] }
+      expect(types.first).to eq 'heading'
+      expect(body_doc['content'].none? { |b| b['type'] == 'digestPostEmbed' }).to be true
     end
 
-    context 'with a post image' do
-      let!(:first) { quote(quotation: 'first', post_image_url: 'https://cdn/cover.jpg') }
+    context 'with a post id' do
+      let!(:first) { quote(quotation: 'first', post_id: 192565792, post_image_url: 'https://cdn/cover.jpg') }
 
-      it 'prepends a cover thumbnail linking the post above the heading' do
+      it 'leads each review with a small post-embed card instead of the heading' do
         sync
-        image = body_doc['content'].first
-        expect(image['type']).to eq 'captionedImage'
-        expect(image['content'][0]['attrs']['src']).to eq 'https://cdn/cover.jpg'
-        expect(image['content'][0]['attrs']['href']).to eq 'https://sub/p/a'
+        card = body_doc['content'].first
+        expect(card['type']).to eq 'digestPostEmbed'
+        expect(card['attrs']).to include('size' => 'sm', 'id' => 192565792, 'canonical_url' => 'https://sub/p/a',
+                                         'title' => 'A', 'cover_image' => 'https://cdn/cover.jpg')
       end
 
-      it 'orders the thumbnail directly before its post-title heading' do
+      it 'drops the post-title heading in favour of the card' do
         sync
         types = body_doc['content'].map { |b| b['type'] }
-        expect(types.first(2)).to eq %w[captionedImage heading]
+        expect(types.first(3)).to eq %w[digestPostEmbed blockquote paragraph]
+      end
+
+      it 'gives each card a unique nodeId' do
+        quote(quotation: 'second', post_id: 111)
+        sync
+        ids = body_doc['content'].select { |b| b['type'] == 'digestPostEmbed' }.map { |b| b['attrs']['nodeId'] }
+        expect(ids.uniq.size).to eq 2
       end
     end
 
