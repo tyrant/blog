@@ -10,6 +10,16 @@
       = text_field_tag :comment_url, @quotation.comment_url, class: "form-control", placeholder: "https://…/comment/… or a note URL"
     .form-group
       = text_area_tag :quotation, @quotation.quotation, class: "form-control", rows: 3, placeholder: "the blurb to quote"
+    - if editing
+      %p.text-muted.small.mb-1
+        Post title/URL are auto-filled from the comment. Set them by hand when the comment
+        is on a third-party note whose post can't be resolved (they stand unless you change the comment URL above).
+      .form-group
+        %label.small.text-muted{ for: "post_title" } Post title
+        = text_field_tag :post_title, @quotation.post_title, class: "form-control", placeholder: "post title"
+      .form-group
+        %label.small.text-muted{ for: "post_url" } Post URL
+        = text_field_tag :post_url, @quotation.post_url, class: "form-control", placeholder: "https://…/p/…"
     = submit_tag(editing ? "Update quotation" : "Save quotation", class: "btn btn-primary")
     - if editing
       = link_to "Cancel", comfy_admin_quotations_path, class: "btn btn-link"

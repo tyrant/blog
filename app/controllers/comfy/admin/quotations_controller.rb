@@ -32,8 +32,14 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation = SubstackQuotation.find(params[:id])
     comment_changed = quotation.comment_url != params[:comment_url]
     quotation.assign_attributes(quotation: params[:quotation], comment_url: params[:comment_url])
+    # The edit form submits post_url/post_title; assign only the keys sent so a
+    # blurb-only edit (which omits them) doesn't blank the existing metadata.
+    quotation.assign_attributes(params.permit(:post_url, :post_title))
     # Only re-hit Substack when the comment itself changed — a blurb-only edit
-    # keeps the existing post/author metadata.
+    # keeps the existing post/author metadata. Changing the comment re-resolves
+    # (and overrides the manual post fields above); otherwise the manually-entered
+    # post_url/post_title stand — needed when the comment is on a third-party note
+    # whose post can't be auto-resolved.
     quotation.populate_from_substack! if comment_changed
     quotation.save!
     SyncReviewsPageJob.perform_later

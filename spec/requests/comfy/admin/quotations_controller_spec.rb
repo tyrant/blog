@@ -84,6 +84,8 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'old blurb' }
     it { expect(response.body).to include 'Update quotation' }
+    it { expect(response.body).to include 'name="post_url"' }
+    it { expect(response.body).to include 'name="post_title"' }
   end
 
   describe 'PATCH update' do
@@ -115,6 +117,11 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
         expect(SyncReviewsPageJob).to have_received(:perform_later)
       end
+
+      it 'saves manually-entered post title and url' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Manual Post' }, headers: http_auth_headers
+        expect(quotation.reload).to have_attributes(post_url: 'https://manual/p/z', post_title: 'Manual Post')
+      end
     end
 
     context 'changing the comment url' do
@@ -128,6 +135,11 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       it 're-resolves the post and author' do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old' }, headers: http_auth_headers
         expect(quotation.reload).to have_attributes(comment_url: 'https://x/comment/9', post_title: 'New Post', author_name: 'Eva')
+      end
+
+      it 'overrides manually-entered post fields when the comment changes' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old', post_title: 'Manual Post' }, headers: http_auth_headers
+        expect(quotation.reload.post_title).to eq 'New Post'
       end
     end
 
