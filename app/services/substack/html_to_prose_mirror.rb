@@ -4,8 +4,8 @@
 # Substack's draft_body expects. Node/mark names mirror Substack's own editor
 # output (heading/blockquote/bullet_list/ordered_list/list_item/captionedImage,
 # marks strong/em/link). Unknown elements are unwrapped so their text survives.
-# A "callout-block" class (on a <p>, or a <div> wrapping several <p>s) becomes a
-# Substack calloutBlock.
+# A <p class="callout-block"> becomes a Substack calloutBlock (<br><br> runs
+# inside it split into separate callout paragraphs).
 #
 # Images are resolved through image_resolver (src -> CDN url); the syncer wires
 # it to upload each image to Substack. A nil result drops the image.
@@ -76,7 +76,6 @@ module Substack
 
     def block_nodes(node)
       return [] unless node.element?
-      return [callout(node)] if callout?(node) && node.name != "p"
 
       case node.name
       when "p"                             then paragraph_or_image(node)
@@ -122,15 +121,15 @@ module Substack
       return [video] if video
 
       out = []
-      content = finalize_inline(inline_content(node.children))
-      if content.any?
-        classes = node["class"].to_s.split
-        paragraph = { "type" => "paragraph", "content" => content }
-        paragraph["_caption"] = true if classes.include?("caption")
-        if classes.include?("callout-block")
-          paragraph["attrs"] = { "textAlign" => nil }
-          out << { "type" => "calloutBlock", "content" => [paragraph] }
-        else
+      classes = node["class"].to_s.split
+      if classes.include?("callout-block")
+        callout = callout_block(node)
+        out << callout if callout
+      else
+        content = finalize_inline(inline_content(node.children))
+        if content.any?
+          paragraph = { "type" => "paragraph", "content" => content }
+          paragraph["_caption"] = true if classes.include?("caption")
           out << paragraph
         end
       end
@@ -139,17 +138,15 @@ module Substack
       out
     end
 
-    def callout?(node)
-      node.element? && node["class"].to_s.split.include?("callout-block")
-    end
-
-    # A <div class="callout-block"> wrapping paragraphs becomes Substack's
-    # calloutBlock. Its inner paragraphs carry textAlign to match Substack's shape.
-    def callout(node)
-      content = blocks(node.children)
-      content.each { |block| block["attrs"] ||= { "textAlign" => nil } if block["type"] == "paragraph" }
-      content = [{ "type" => "paragraph", "attrs" => { "textAlign" => nil } }] if content.empty?
-      { "type" => "calloutBlock", "content" => content }
+    # A <p class="callout-block"> becomes Substack's calloutBlock. Substack has no
+    # soft-break node, so <br><br> runs split into separate callout paragraphs (as
+    # blockquotes do); each carries textAlign to match Substack's shape.
+    def callout_block(node)
+      paragraphs = split_on_breaks(node.children).filter_map do |run|
+        content = finalize_inline(inline_content(run))
+        { "type" => "paragraph", "attrs" => { "textAlign" => nil }, "content" => content } if content.any?
+      end
+      { "type" => "calloutBlock", "content" => paragraphs } if paragraphs.any?
     end
 
     def paragraph_youtube(node)

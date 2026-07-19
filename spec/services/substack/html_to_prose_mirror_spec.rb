@@ -126,8 +126,8 @@ RSpec.describe Substack::HtmlToProseMirror do
       it { expect(node['content'].first['content'].first['text']).to eq 'Heed this' }
     end
 
-    context 'with a <div class="callout-block"> wrapping several paragraphs' do
-      let(:html) { '<div class="callout-block"><p>One</p><p>Two</p></div>' }
+    context 'with <br><br> runs inside the callout' do
+      let(:html) { '<p class="callout-block">One<br><br>Two</p>' }
       let(:node) { content.first }
 
       it { expect(content.size).to eq 1 }
