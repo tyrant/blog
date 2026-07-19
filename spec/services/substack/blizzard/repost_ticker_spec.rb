@@ -70,6 +70,29 @@ RSpec.describe Substack::Blizzard::RepostTicker do
     end
   end
 
+  context 'a quotation repost (no entry to confirm)' do
+    before do
+      stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/tick.json")
+        .to_return(status: 200, body: group.merge('categorization_id' => nil, 'uid' => nil, 'template_url' => nil).to_json)
+    end
+
+    let!(:confirm) do
+      stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/confirm.json").to_return(status: 200, body: { ok: true }.to_json)
+    end
+
+    it { expect(result.posted.size).to eq 1 }
+
+    it 'posts the note' do
+      result
+      expect(a_request(:post, 'https://substack.com/api/v1/comment/feed')).to have_been_made
+    end
+
+    it 'skips the confirm step' do
+      result
+      expect(confirm).to_not have_been_requested
+    end
+  end
+
   context 'a group with no body_json' do
     before do
       stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/tick.json")

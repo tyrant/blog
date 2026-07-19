@@ -16,6 +16,10 @@ module Substack
 
       arguments dry_run: false, now: nil, random: nil
 
+      # Share of reposts drawn from the SubstackQuotation pool instead of a text
+      # group. Falls back to a text group when the pool is empty.
+      QUOTATION_ODDS = 0.25
+
       def execute
         @now    ||= Time.current
         @random ||= Random.new
@@ -23,6 +27,11 @@ module Substack
         config = BlizzardScheduleConfig.instance
         config.with_lock do
           next nil unless due?(config)
+
+          if quotation_turn? && (quotation = random_quotation)
+            config.update!(last_reposted_at: @now) unless @dry_run
+            next hydrate_quotation(quotation)
+          end
 
           picked = weighted_sample(RepostOdds.execute(now: @now))
           next nil if picked.nil?
@@ -33,6 +42,27 @@ module Substack
       end
 
       private
+
+      def quotation_turn?
+        @random.rand < QUOTATION_ODDS
+      end
+
+      def random_quotation
+        SubstackQuotation.order(Arel.sql("RANDOM()")).first
+      end
+
+      # A quotation repost isn't tracked against any entry, so it carries no
+      # categorization_id/uid — the ticker posts it and skips the confirm step.
+      def hydrate_quotation(quotation)
+        {
+          "categorization_id" => nil,
+          "uid"               => nil,
+          "text"              => quotation.quotation,
+          "body_json"         => QuotationNote.build(quotation),
+          "post_url"          => quotation.post_url,
+          "template_url"      => nil
+        }
+      end
 
       def due?(config)
         last = config.last_reposted_at

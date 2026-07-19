@@ -61,7 +61,9 @@ module Substack
           "url"       => NoteParser.build_note_url(group["template_url"], created["id"]),
           "timestamp" => NoteParser.timestamp(created) || Time.current.utc.iso8601
         }
-        confirm(group, record)
+        # Quotation reposts aren't tracked against an entry, so there's nothing
+        # to confirm back.
+        confirm(group, record) if group["categorization_id"].present?
         record.merge("text" => group["text"])
       end
 

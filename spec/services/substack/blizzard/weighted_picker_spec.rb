@@ -80,4 +80,39 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
     let(:data) { { 'blizzard' => [entry('e1', {}, [])] } }
     it { expect(pick).to be_nil }
   end
+
+  describe 'quotation reposts' do
+    let!(:quotation) do
+      SubstackQuotation.create!(quotation: 'zing', comment_url: 'https://sub/p/z/comment/1',
+                                post_url: 'https://sub/p/z', post_title: 'Z', author_name: 'Eva',
+                                author_url: 'https://substack.com/@eva')
+    end
+
+    describe 'a roll under the odds picks a random quotation' do
+      subject(:pick) { described_class.execute(random: double(rand: 0)) }
+
+      it { expect(pick['text']).to eq 'zing' }
+      it { expect(pick['post_url']).to eq 'https://sub/p/z' }
+      it { expect(pick['categorization_id']).to be_nil }
+      it { expect(pick['body_json']['content'][1]['type']).to eq 'blockquote' }
+
+      it 'claims the interval' do
+        pick
+        expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_present
+      end
+    end
+
+    describe 'a roll over the odds still picks a text group' do
+      subject(:pick) { described_class.execute(random: double(rand: 0.9)) }
+
+      it { expect(pick['uid']).to eq 'e0' }
+    end
+
+    describe 'an empty pool falls back to a text group' do
+      before { SubstackQuotation.delete_all }
+      subject(:pick) { described_class.execute(random: double(rand: 0)) }
+
+      it { expect(pick['uid']).to eq 'e0' }
+    end
+  end
 end
