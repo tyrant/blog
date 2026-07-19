@@ -94,7 +94,7 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
       it { expect(pick['text']).to eq 'zing' }
       it { expect(pick['post_url']).to eq 'https://sub/p/z' }
       it { expect(pick['categorization_id']).to be_nil }
-      it { expect(pick['body_json']['content'][1]['type']).to eq 'blockquote' }
+      it { expect(pick['body_json']['content'].any? { |b| b['type'] == 'blockquote' }).to be true }
 
       it 'claims the interval' do
         pick

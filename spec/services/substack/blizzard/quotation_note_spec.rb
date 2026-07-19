@@ -16,35 +16,51 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(doc['type']).to eq 'doc' }
     it { expect(doc['attrs']).to eq('schemaVersion' => 'v1') }
 
-    it 'leads with the post title as a bold link to the post' do
+    it 'opens with a bold "Review:" label' do
       node = doc['content'][0]['content'][0]
+      expect(node['text']).to eq 'Review:'
+      expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
+    end
+
+    it 'follows with the post title as a bold link to the post' do
+      node = doc['content'][1]['content'][0]
       expect(node['text']).to eq 'Ch 1'
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold link]
       expect(node['marks'].last.dig('attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1'
     end
 
     it 'italicises the quote inside a blockquote' do
-      node = doc['content'][1]['content'][0]['content'][0]
-      expect(doc['content'][1]['type']).to eq 'blockquote'
+      node = doc['content'][2]['content'][0]['content'][0]
+      expect(doc['content'][2]['type']).to eq 'blockquote'
       expect(node['text']).to eq '“a blurb”'
       expect(node['marks'].map { |m| m['type'] }).to eq %w[italic]
     end
 
     it 'trails the quote with a 🔗 linking the original comment' do
-      link = doc['content'][1]['content'][0]['content'].last
+      link = doc['content'][2]['content'][0]['content'].last
       expect(link['text']).to eq '🔗'
       expect(link.dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
     end
 
     it 'omits the comment link when there is no comment_url' do
-      nodes = described_class.build(quote(comment_url: nil))['content'][1]['content'][0]['content']
+      nodes = described_class.build(quote(comment_url: nil))['content'][2]['content'][0]['content']
       expect(nodes.none? { |n| n['text'] == '🔗' }).to be true
     end
 
-    it 'attributes the quote to the linked author' do
-      node = doc['content'][2]['content'].last
-      expect(node['text']).to eq 'Eva'
-      expect(node['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva'
+    it 'attributes the quote to the linked author, right-aligned' do
+      block = doc['content'][3]
+      expect(block['attrs']).to eq('textAlign' => 'right')
+      expect(block['content'].last['text']).to eq 'Eva'
+      expect(block['content'].last['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva'
+    end
+
+    it 'ends with a left-aligned "More reviews" line linking the reviews page' do
+      block = doc['content'][4]
+      expect(block['attrs']).to eq('textAlign' => 'left')
+      expect(block['content'].first['text']).to eq 'More reviews at '
+      link = block['content'].last
+      expect(link['text']).to eq described_class::REVIEWS_URL
+      expect(link['marks'].last.dig('attrs', 'href')).to eq described_class::REVIEWS_URL
     end
   end
 end
