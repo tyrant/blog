@@ -115,6 +115,36 @@ RSpec.describe Substack::HtmlToProseMirror do
     end
   end
 
+  describe 'callout block' do
+    context 'with a single <p class="callout-block">' do
+      let(:html) { '<p class="callout-block">Heed this</p>' }
+      let(:node) { content.first }
+
+      it { expect(node['type']).to eq 'calloutBlock' }
+      it { expect(node['content'].first['type']).to eq 'paragraph' }
+      it { expect(node['content'].first['attrs']).to eq('textAlign' => nil) }
+      it { expect(node['content'].first['content'].first['text']).to eq 'Heed this' }
+    end
+
+    context 'with a <div class="callout-block"> wrapping several paragraphs' do
+      let(:html) { '<div class="callout-block"><p>One</p><p>Two</p></div>' }
+      let(:node) { content.first }
+
+      it { expect(content.size).to eq 1 }
+      it { expect(node['type']).to eq 'calloutBlock' }
+      it { expect(node['content'].map { |p| p['type'] }).to eq %w[paragraph paragraph] }
+      it { expect(node['content'].map { |p| p['content'].first['text'] }).to eq %w[One Two] }
+      it { expect(node['content'].map { |p| p['attrs'] }).to eq [{ 'textAlign' => nil }, { 'textAlign' => nil }] }
+    end
+
+    context 'with inline marks inside the callout' do
+      let(:html) { '<p class="callout-block">a <em>b</em></p>' }
+      let(:texts) { content.first['content'].first['content'] }
+
+      it { expect(texts.last['marks'].first['type']).to eq 'em' }
+    end
+  end
+
   describe 'images' do
     let(:html) { '<p><img src="http://x.com/a.jpg" alt="pic"></p>' }
     let(:node) { content.first }

@@ -4,6 +4,8 @@
 # Substack's draft_body expects. Node/mark names mirror Substack's own editor
 # output (heading/blockquote/bullet_list/ordered_list/list_item/captionedImage,
 # marks strong/em/link). Unknown elements are unwrapped so their text survives.
+# A "callout-block" class (on a <p>, or a <div> wrapping several <p>s) becomes a
+# Substack calloutBlock.
 #
 # Images are resolved through image_resolver (src -> CDN url); the syncer wires
 # it to upload each image to Substack. A nil result drops the image.
@@ -74,6 +76,7 @@ module Substack
 
     def block_nodes(node)
       return [] unless node.element?
+      return [callout(node)] if callout?(node) && node.name != "p"
 
       case node.name
       when "p"                             then paragraph_or_image(node)
@@ -121,13 +124,32 @@ module Substack
       out = []
       content = finalize_inline(inline_content(node.children))
       if content.any?
+        classes = node["class"].to_s.split
         paragraph = { "type" => "paragraph", "content" => content }
-        paragraph["_caption"] = true if node["class"].to_s.split.include?("caption")
-        out << paragraph
+        paragraph["_caption"] = true if classes.include?("caption")
+        if classes.include?("callout-block")
+          paragraph["attrs"] = { "textAlign" => nil }
+          out << { "type" => "calloutBlock", "content" => [paragraph] }
+        else
+          out << paragraph
+        end
       end
       node.css("img").each { |img| ci = captioned_image(img); out << ci if ci }
       node.css("iframe").each { |frame| yt = youtube_node(frame["src"]); out << yt if yt }
       out
+    end
+
+    def callout?(node)
+      node.element? && node["class"].to_s.split.include?("callout-block")
+    end
+
+    # A <div class="callout-block"> wrapping paragraphs becomes Substack's
+    # calloutBlock. Its inner paragraphs carry textAlign to match Substack's shape.
+    def callout(node)
+      content = blocks(node.children)
+      content.each { |block| block["attrs"] ||= { "textAlign" => nil } if block["type"] == "paragraph" }
+      content = [{ "type" => "paragraph", "attrs" => { "textAlign" => nil } }] if content.empty?
+      { "type" => "calloutBlock", "content" => content }
     end
 
     def paragraph_youtube(node)
