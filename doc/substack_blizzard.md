@@ -81,8 +81,21 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
 - `Substack::Blizzard::QuotationNote` — builds a Note `body_json` from a `SubstackQuotation`
   in the **Note** ProseMirror schema (blockquote + bold/italic/link marks; Notes have no
   heading or paragraph alignment): a bold post-title link, the italic quote trailed by a 🔗
-  to the original comment, and the linked author — mirroring the post-footer syncQuotations
-  template. The post rides along as a card attachment (added by the ticker).
+  to the original comment, the linked author, and a **"More at the Reviews Page (`<url>`)"**
+  line — mirroring the post-footer syncQuotations template. The post rides along as a card
+  attachment (added by the ticker). **Reviews-link gotcha:** the reviews-page URL is emitted
+  as **plain text, unmarked** — an explicit `link` mark to that URL gets **stripped on
+  publish** (it's a `type:"page"`, not a card-able post; stripped even with descriptive anchor
+  text), whereas a **bare URL in plain text is auto-linkified and kept** by Substack. Don't
+  re-wrap it in a link mark. (The post-title/comment/author links survive because they sit on
+  non-URL anchor text.)
+- `Substack::Blizzard::QuotationPreviewer` — **runs on your Mac**: posts a real quotation Note
+  so its live Substack rendering can be eyeballed before it fires for real, then hands back its
+  id/url to delete. Fetches the built note from prod
+  (`GET /admin/substack-blizzard/quotation/preview.json`, random or `?id=`, nothing claimed),
+  posts note + post-card attachment via `Substack::Client`. Driven by the
+  `substack:blizzard:preview_quotation` task (below) — the only faithful way to catch
+  Substack-side rendering surprises (like the reviews-link stripping) before they go live.
 - `Substack::Blizzard::RepostRecorder` — records a completed repost (append
   `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url).
 - `Substack::Blizzard::RepostTicker` — **runs on your Mac**: asks prod for the next
@@ -197,12 +210,18 @@ The local cron (residential IP):
 | Task | Where | What |
 |------|-------|------|
 | `substack:blizzard:tick[_dry_run]` | **Mac** | Post the next weighted repost; confirm back on prod. |
+| `substack:blizzard:preview_quotation` | **Mac** | Post a quotation Note to eyeball its Substack rendering, then delete on a `[Y/n]` prompt. `QUOTATION_ID=<id>` pins one. |
 | `substack:blizzard:backfill[_dry_run]` | prod | Build `blizzard` from `notes` URLs (also via the buttons). |
 | `substack:blizzard:append_urls[_dry_run]` | prod | Append the post URL to each entry's `body_json`. |
 | `substack:blizzard:fill_missing_body_json[_dry_run]` | prod | Plain `body_json` from text for entries lacking it (lossy). |
 | `substack:blizzard:proof` | either | Round-trip test: post a throwaway Note, read back, delete. |
 
 `_dry_run` variants write nothing. All writing tasks are idempotent.
+
+`preview_quotation` **must be run interactively** (a real terminal): it posts the Note live,
+prints its URL, and waits at a `[Y/n]` delete prompt so you can open it first. Run
+non-interactively (stdin not a TTY) it reads empty and **auto-deletes** before you can look.
+The Note is briefly public in the meantime (Notes don't send email, so no subscriber blast).
 
 ## body_json and the post URL
 
