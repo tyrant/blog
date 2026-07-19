@@ -9,7 +9,7 @@ module Substack
 
     arguments :comment_url, client: nil
 
-    Result = Struct.new(:post_url, :post_title, :author_name, :author_url, keyword_init: true)
+    Result = Struct.new(:post_url, :post_title, :post_image_url, :author_name, :author_url, keyword_init: true)
 
     def execute
       @client ||= Substack::Client.new
@@ -21,10 +21,11 @@ module Substack
       post    = item["post"] || {}
 
       Result.new(
-        post_url:    post["canonical_url"],
-        post_title:  post["title"],
-        author_name: comment["name"],
-        author_url:  profile_url(comment["handle"])
+        post_url:       post["canonical_url"],
+        post_title:     post["title"],
+        post_image_url: post["cover_image"],
+        author_name:    comment["name"],
+        author_url:     profile_url(comment["handle"])
       )
     end
 

@@ -20,6 +20,9 @@
       .form-group
         %label.small.text-muted{ for: "post_url" } Post URL
         = text_field_tag :post_url, @quotation.post_url, class: "form-control", placeholder: "https://…/p/…"
+      .form-group
+        %label.small.text-muted{ for: "post_image_url" } Post image URL (Reviews-page thumbnail)
+        = text_field_tag :post_image_url, @quotation.post_image_url, class: "form-control", placeholder: "https://…cover image…"
     = submit_tag(editing ? "Update quotation" : "Save quotation", class: "btn btn-primary")
     - if editing
       = link_to "Cancel", comfy_admin_quotations_path, class: "btn btn-link"

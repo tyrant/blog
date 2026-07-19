@@ -118,9 +118,9 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         expect(SyncReviewsPageJob).to have_received(:perform_later)
       end
 
-      it 'saves manually-entered post title and url' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Manual Post' }, headers: http_auth_headers
-        expect(quotation.reload).to have_attributes(post_url: 'https://manual/p/z', post_title: 'Manual Post')
+      it 'saves manually-entered post title, url and image' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Manual Post', post_image_url: 'https://manual/cover.jpg' }, headers: http_auth_headers
+        expect(quotation.reload).to have_attributes(post_url: 'https://manual/p/z', post_title: 'Manual Post', post_image_url: 'https://manual/cover.jpg')
       end
     end
 

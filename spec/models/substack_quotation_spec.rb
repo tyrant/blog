@@ -50,14 +50,15 @@ RSpec.describe SubstackQuotation do
     before do
       allow(client).to receive(:get_note).with('5').and_return('item' => {
         'comment' => { 'name' => 'Bob', 'handle' => 'bob' },
-        'post' => { 'title' => 'A Post', 'canonical_url' => 'https://x/p/a' }
+        'post' => { 'title' => 'A Post', 'canonical_url' => 'https://x/p/a',
+                    'cover_image' => 'https://cdn/cover.jpg' }
       })
     end
 
     it 'fills post and author fields from the comment' do
       quotation.populate_from_substack!(client: client)
       expect(quotation).to have_attributes(
-        post_url: 'https://x/p/a', post_title: 'A Post',
+        post_url: 'https://x/p/a', post_title: 'A Post', post_image_url: 'https://cdn/cover.jpg',
         author_name: 'Bob', author_url: 'https://substack.com/@bob'
       )
     end

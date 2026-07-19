@@ -23,10 +23,11 @@ class SubstackQuotation < ApplicationRecord
   def populate_from_substack!(client: nil)
     resolved = Substack::QuotationResolver.execute(comment_url: comment_url, client: client)
     assign_attributes(
-      post_url:    resolved.post_url,
-      post_title:  resolved.post_title,
-      author_url:  resolved.author_url,
-      author_name: resolved.author_name
+      post_url:       resolved.post_url,
+      post_title:     resolved.post_title,
+      post_image_url: resolved.post_image_url,
+      author_url:     resolved.author_url,
+      author_name:    resolved.author_name
     )
   end
 end

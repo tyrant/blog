@@ -2,8 +2,9 @@
 
 # Rebuilds the review list on the dedicated "Reviews" Substack page (a standalone
 # page/post whose id lives in SubstackSyncConfig#reviews_draft_id) so it lists
-# every featurable SubstackQuotation as a QuotationBlock triplet (post-title
-# heading → the quote + 🔗 → the author), newest first. Any manually-authored
+# every featurable SubstackQuotation as a QuotationBlock triplet (an optional
+# cover thumbnail → post-title heading → the quote + 🔗 → the author), newest
+# first. Any manually-authored
 # intro above the first triplet is preserved; the syncer owns the run of triplets
 # below it. Draft writes aren't Cloudflare-blocked from the prod IP, so this runs
 # on the prod worker. No-op when no draft id is configured.
@@ -39,12 +40,25 @@ module Substack
       { "type" => "doc", "content" => content }
     end
 
-    # Everything above the first generated quotation triplet is manually-authored
-    # intro and is kept; the syncer replaces the triplet run below it.
+    # Everything above the first review is manually-authored intro and is kept;
+    # the syncer replaces the review run below it. A review's cover thumbnail (an
+    # image directly above its triplet) is folded into the review region so it
+    # isn't mistaken for intro on the next sync.
     def intro(remote)
       content = Array(parsed_body(remote)["content"])
-      boundary = (0...content.size).find { |i| QuotationBlock.triplet_at?(content, i) }
+      boundary = review_start(content)
       boundary ? content[0...boundary] : content
+    end
+
+    def review_start(content)
+      first = (0...content.size).find { |i| QuotationBlock.triplet_at?(content, i) }
+      return nil unless first
+
+      first.positive? && image_block?(content[first - 1]) ? first - 1 : first
+    end
+
+    def image_block?(block)
+      block.is_a?(Hash) && block["type"] == "captionedImage"
     end
 
     def parsed_body(remote)
@@ -54,7 +68,25 @@ module Substack
     end
 
     def quotation_blocks
-      SubstackQuotation.featurable.chronological.flat_map { |quotation| QuotationBlock.build(quotation) }
+      SubstackQuotation.featurable.chronological.flat_map { |quotation| review_unit(quotation) }
+    end
+
+    # A cover thumbnail (when we have one) above the post-title heading, linked to
+    # the post. Substack post images are block-level (no float), so it stacks
+    # above the triplet rather than beside it.
+    def review_unit(quotation)
+      blocks = QuotationBlock.build(quotation)
+      blocks.unshift(thumbnail(quotation)) if quotation.post_image_url.present?
+      blocks
+    end
+
+    def thumbnail(quotation)
+      { "type" => "captionedImage", "content" => [{
+        "type" => "image2",
+        "attrs" => { "src" => quotation.post_image_url, "alt" => quotation.post_title, "title" => nil,
+                     "height" => nil, "width" => nil, "resizeWidth" => nil, "bytes" => nil, "type" => nil,
+                     "href" => quotation.post_url, "imageSize" => "normal" }
+      }] }
     end
   end
 end

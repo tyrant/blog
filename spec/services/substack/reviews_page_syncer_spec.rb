@@ -52,6 +52,29 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
     end
 
+    it 'has no thumbnail when the quotation lacks a post image' do
+      sync
+      expect(body_doc['content'].none? { |b| b['type'] == 'captionedImage' }).to be true
+    end
+
+    context 'with a post image' do
+      let!(:first) { quote(quotation: 'first', post_image_url: 'https://cdn/cover.jpg') }
+
+      it 'prepends a cover thumbnail linking the post above the heading' do
+        sync
+        image = body_doc['content'].first
+        expect(image['type']).to eq 'captionedImage'
+        expect(image['content'][0]['attrs']['src']).to eq 'https://cdn/cover.jpg'
+        expect(image['content'][0]['attrs']['href']).to eq 'https://sub/p/a'
+      end
+
+      it 'orders the thumbnail directly before its post-title heading' do
+        sync
+        types = body_doc['content'].map { |b| b['type'] }
+        expect(types.first(2)).to eq %w[captionedImage heading]
+      end
+    end
+
     context 'with a manually-authored intro above the review list' do
       let(:intro) { { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Good gracious gumdrops.' }] } }
       let(:existing) { { 'type' => 'doc', 'content' => [intro] + Substack::QuotationBlock.build(first) } }
@@ -70,6 +93,16 @@ RSpec.describe Substack::ReviewsPageSyncer do
       it 'regenerates the review list once, not stacking the old run' do
         sync
         expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
+      end
+
+      context 'when the first review carries a cover thumbnail' do
+        let(:thumb) { { 'type' => 'captionedImage', 'content' => [{ 'type' => 'image2', 'attrs' => { 'src' => 'x' } }] } }
+        let(:existing) { { 'type' => 'doc', 'content' => [intro, thumb] + Substack::QuotationBlock.build(first) } }
+
+        it 'folds the leading thumbnail into the review region, not the intro' do
+          sync
+          expect(body_doc['content'].first).to eq intro
+        end
       end
     end
 
