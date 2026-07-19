@@ -77,28 +77,23 @@ module Substack
       SubstackQuotation.featurable.chronological.flat_map { |quotation| review_unit(quotation) }
     end
 
-    # The post-embed card (or the plain post-title heading fallback) followed by
-    # the quote and author from the shared QuotationBlock triplet.
+    # The shared quotation unit (post-embed card + quote + author), after ensuring
+    # the quotation's embed snapshot is populated.
     def review_unit(quotation)
-      heading, blockquote, attribution = QuotationBlock.build(quotation)
-      attrs = embed_attrs(quotation)
-      lead = attrs ? { "type" => "digestPostEmbed", "attrs" => attrs.merge("nodeId" => SecureRandom.uuid) } : heading
-      [lead, blockquote, attribution]
+      ensure_embed(quotation)
+      QuotationBlock.unit(quotation)
     end
 
-    # The stored digestPostEmbed snapshot, lazily fetched+cached the first time a
-    # quotation is synced (deduped per post within a run). Nil (heading fallback)
-    # when the post can't be fetched.
-    def embed_attrs(quotation)
-      return quotation.post_embed if quotation.post_embed.present?
-      return nil if quotation.post_url.blank?
+    # Populate the quotation's digestPostEmbed snapshot the first time it's synced,
+    # fetched+cached per post within a run. No-op once stored or when unfetchable.
+    def ensure_embed(quotation)
+      return if quotation.post_embed.present? || quotation.post_url.blank?
 
       unless embed_cache.key?(quotation.post_url)
         embed_cache[quotation.post_url] = Substack::QuotationEmbed.execute(post_url: quotation.post_url, client: @client)
       end
       attrs = embed_cache[quotation.post_url]
       quotation.update!(post_embed: attrs) if attrs
-      attrs
     end
 
     def embed_cache

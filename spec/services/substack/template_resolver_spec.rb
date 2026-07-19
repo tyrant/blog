@@ -48,6 +48,12 @@ RSpec.describe Substack::TemplateResolver do
       expect(resolve([{ 'type' => 'syncQuotations' }]).count { |b| b['type'] == 'blockquote' }).to eq 3
     end
 
+    it 'leads each quotation with a post-embed card when a snapshot exists' do
+      SubstackQuotation.update_all(post_embed: { 'size' => 'sm', 'id' => 9 })
+      result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1 } }])
+      expect(result.first['type']).to eq 'digestPostEmbed'
+    end
+
     it 'uses injected quotations when given' do
       injected = [SubstackQuotation.new(quotation: 'inj', post_title: 'P', post_url: 'https://x/p',
                                         author_name: 'A', author_url: 'https://substack.com/@a')]

@@ -37,7 +37,7 @@ module Substack
     end
 
     def quotation_blocks(count)
-      random_quotations(count).flat_map { |quotation| Substack::QuotationBlock.build(quotation) }
+      random_quotations(count).flat_map { |quotation| Substack::QuotationBlock.unit(quotation) }
     end
 
     def random_quotations(count)

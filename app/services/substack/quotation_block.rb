@@ -2,16 +2,35 @@
 
 module Substack
   # Builds and detects the featured-quote blocks. Each quotation renders as a
-  # triplet: an h4 heading linking the post it was left on, a blockquote of the
+  # three-block unit: a lead (a native post-embed card when the quotation has a
+  # post_embed snapshot, else an h4 heading linking the post), a blockquote of the
   # italicised quote (trailed by a 🔗 link to the original comment), and a
-  # right-aligned line linking the commenter. The
-  # template's syncQuotations directive expands into N of these; the rotation
-  # job finds the run of triplets in a draft and swaps them for fresh ones.
+  # right-aligned line linking the commenter. The template's syncQuotations
+  # directive expands into N of these; the rotation job finds the run in a draft
+  # and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
+    def unit(quotation)
+      [lead(quotation), blockquote(quotation), attribution(quotation)]
+    end
+
+    # The heading-only unit (no embed card) — kept for the heading fallback and
+    # for callers/tests that want the plain triplet.
     def build(quotation)
       [heading(quotation), blockquote(quotation), attribution(quotation)]
+    end
+
+    def lead(quotation)
+      card(quotation) || heading(quotation)
+    end
+
+    # Substack's native "small" post-embed, from the stored snapshot; nil when the
+    # quotation has no snapshot (falls back to the heading). nodeId is per-node.
+    def card(quotation)
+      return nil if quotation.post_embed.blank?
+
+      { "type" => "digestPostEmbed", "attrs" => quotation.post_embed.merge("nodeId" => SecureRandom.uuid) }
     end
 
     def heading(quotation)
@@ -44,14 +63,30 @@ module Substack
 
       length = 0
       length += 1 while triplet_at?(content, start + length * 3)
-      fresh = quotations.first(length).flat_map { |quotation| build(quotation) }
+      fresh = quotations.first(length).flat_map { |quotation| unit(quotation) }
       content[0...start] + fresh + content[(start + length * 3)..]
     end
 
+    # A quotation unit: a lead (post-embed card or a post-linking heading), an
+    # em-blockquote, then a paragraph (the author line, or a bare spacer). The
+    # third block is only required to be a paragraph — the reference draft's
+    # card units carry a plain "." there rather than a linked author.
     def triplet_at?(content, index)
-      heading_post_link?(content[index]) &&
+      quotation_lead?(content[index]) &&
         blockquote_em?(content[index + 1]) &&
-        author_right?(content[index + 2])
+        paragraph?(content[index + 2])
+    end
+
+    def quotation_lead?(block)
+      heading_post_link?(block) || post_embed_card?(block)
+    end
+
+    def post_embed_card?(block)
+      block.is_a?(Hash) && block["type"] == "digestPostEmbed"
+    end
+
+    def paragraph?(block)
+      block.is_a?(Hash) && block["type"] == "paragraph"
     end
 
     def heading_post_link?(block)

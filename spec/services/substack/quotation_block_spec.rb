@@ -46,11 +46,39 @@ RSpec.describe Substack::QuotationBlock do
     end
   end
 
+  describe '.unit' do
+    it 'leads with a heading when the quotation has no embed snapshot' do
+      expect(described_class.unit(quote).first['type']).to eq 'heading'
+    end
+
+    it 'leads with a post-embed card when the quotation has a snapshot' do
+      lead = described_class.unit(quote(post_embed: { 'size' => 'sm', 'id' => 7 })).first
+      expect(lead['type']).to eq 'digestPostEmbed'
+      expect(lead['attrs']).to include('size' => 'sm', 'id' => 7)
+      expect(lead['attrs']['nodeId']).to be_present
+    end
+  end
+
+  describe '.card' do
+    it { expect(described_class.card(quote)).to be_nil }
+
+    it 'gives each card a unique nodeId' do
+      quotation = quote(post_embed: { 'size' => 'sm' })
+      expect(described_class.card(quotation)['attrs']['nodeId']).to_not eq described_class.card(quotation)['attrs']['nodeId']
+    end
+  end
+
   describe '.triplet_at?' do
     let(:content) { [{ 'type' => 'paragraph' }] + described_class.build(quote) }
 
     it { expect(described_class.triplet_at?(content, 1)).to be true }
     it { expect(described_class.triplet_at?(content, 0)).to be false }
+
+    it 'matches a card-led unit whose third block is a bare paragraph' do
+      card = described_class.card(quote(post_embed: { 'size' => 'sm' }))
+      unit = [card, described_class.build(quote)[1], { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => '.' }] }]
+      expect(described_class.triplet_at?(unit, 0)).to be true
+    end
   end
 
   describe '.rotate' do

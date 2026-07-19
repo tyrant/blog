@@ -48,6 +48,26 @@ RSpec.describe Substack::TemplateCapturer do
     expect(footer.count { |b| b['type'] == 'blockquote' }).to eq 0
   end
 
+  context 'when the quotation units are post-embed cards' do
+    def card_unit
+      [{ 'type' => 'digestPostEmbed', 'attrs' => { 'canonical_url' => 'https://pub/p/x', 'size' => 'sm' } },
+       { 'type' => 'blockquote', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'q', 'marks' => [{ 'type' => 'em' }] }] }] },
+       { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => '.' }] }]
+    end
+
+    let(:blocks) do
+      [{ 'type' => 'heading', 'attrs' => { 'level' => 5 }, 'content' => [{ 'type' => 'text', 'text' => 'Original: https://x' }] }] +
+        card_unit + card_unit + [{ 'type' => 'subscribeWidget' }]
+    end
+
+    it 'still collapses the card run into one syncQuotations directive' do
+      capture
+      directive = footer.find { |b| b['type'] == 'syncQuotations' }
+      expect(directive['attrs']['count']).to eq 2
+      expect(footer.none? { |b| b['type'] == 'digestPostEmbed' }).to be true
+    end
+  end
+
   it 'wraps the Bullshit Emeritus section in a tag conditional' do
     capture
     conditional = footer.find { |b| b['type'] == 'syncIf' }
