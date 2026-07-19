@@ -80,22 +80,29 @@ module Substack
     # The post-embed card (or the plain post-title heading fallback) followed by
     # the quote and author from the shared QuotationBlock triplet.
     def review_unit(quotation)
-      _heading, blockquote, attribution = QuotationBlock.build(quotation)
-      lead = quotation.post_id.present? ? embed_card(quotation) : _heading
+      heading, blockquote, attribution = QuotationBlock.build(quotation)
+      attrs = embed_attrs(quotation)
+      lead = attrs ? { "type" => "digestPostEmbed", "attrs" => attrs.merge("nodeId" => SecureRandom.uuid) } : heading
       [lead, blockquote, attribution]
     end
 
-    # Substack's native "small" post-embed (digestPostEmbed). We supply the id +
-    # canonical_url + title + cover; Substack rehydrates bylines/counts from the id
-    # at render. nodeId is unique per node.
-    def embed_card(quotation)
-      { "type" => "digestPostEmbed", "attrs" => {
-        "nodeId" => SecureRandom.uuid, "caption" => nil, "cta" => nil,
-        "showBylines" => true, "showDescription" => true, "showImage" => true,
-        "size" => "sm", "isEditorNode" => true, "type" => "newsletter",
-        "id" => quotation.post_id, "canonical_url" => quotation.post_url,
-        "title" => quotation.post_title, "cover_image" => quotation.post_image_url
-      } }
+    # The stored digestPostEmbed snapshot, lazily fetched+cached the first time a
+    # quotation is synced (deduped per post within a run). Nil (heading fallback)
+    # when the post can't be fetched.
+    def embed_attrs(quotation)
+      return quotation.post_embed if quotation.post_embed.present?
+      return nil if quotation.post_url.blank?
+
+      unless embed_cache.key?(quotation.post_url)
+        embed_cache[quotation.post_url] = Substack::QuotationEmbed.execute(post_url: quotation.post_url, client: @client)
+      end
+      attrs = embed_cache[quotation.post_url]
+      quotation.update!(post_embed: attrs) if attrs
+      attrs
+    end
+
+    def embed_cache
+      @embed_cache ||= {}
     end
   end
 end

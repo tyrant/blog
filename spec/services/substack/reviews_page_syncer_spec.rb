@@ -28,6 +28,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
       allow(client).to receive(:get_draft).with(555)
         .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => false)
       allow(client).to receive(:update_draft)
+      allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
     end
 
     it 'writes to the configured draft' do
@@ -52,22 +53,22 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
     end
 
-    it 'leads with a plain post-title heading when there is no post id' do
+    it 'falls back to a plain post-title heading when no embed can be built' do
       sync
       types = body_doc['content'].map { |b| b['type'] }
       expect(types.first).to eq 'heading'
       expect(body_doc['content'].none? { |b| b['type'] == 'digestPostEmbed' }).to be true
     end
 
-    context 'with a post id' do
-      let!(:first) { quote(quotation: 'first', post_id: 192565792, post_image_url: 'https://cdn/cover.jpg') }
+    context 'with a stored embed snapshot' do
+      let(:snapshot) { { 'size' => 'sm', 'id' => 192565792, 'title' => 'A', 'isEditorNode' => true } }
+      let!(:first) { quote(quotation: 'first', post_embed: snapshot) }
 
-      it 'leads each review with a small post-embed card instead of the heading' do
+      it 'leads each review with the snapshot as a small post-embed card' do
         sync
         card = body_doc['content'].first
         expect(card['type']).to eq 'digestPostEmbed'
-        expect(card['attrs']).to include('size' => 'sm', 'id' => 192565792, 'canonical_url' => 'https://sub/p/a',
-                                         'title' => 'A', 'cover_image' => 'https://cdn/cover.jpg')
+        expect(card['attrs']).to include(snapshot)
       end
 
       it 'drops the post-title heading in favour of the card' do
@@ -77,10 +78,27 @@ RSpec.describe Substack::ReviewsPageSyncer do
       end
 
       it 'gives each card a unique nodeId' do
-        quote(quotation: 'second', post_id: 111)
+        quote(quotation: 'second', post_embed: snapshot)
         sync
         ids = body_doc['content'].select { |b| b['type'] == 'digestPostEmbed' }.map { |b| b['attrs']['nodeId'] }
         expect(ids.uniq.size).to eq 2
+      end
+    end
+
+    context 'when a quotation has no snapshot yet' do
+      let(:snapshot) { { 'size' => 'sm', 'id' => 99, 'isEditorNode' => true } }
+
+      before { allow(Substack::QuotationEmbed).to receive(:execute).and_return(snapshot) }
+
+      it 'lazily builds and stores the snapshot' do
+        sync
+        expect(first.reload.post_embed).to eq snapshot
+      end
+
+      it 'fetches once per post url across duplicate quotations' do
+        quote(quotation: 'second')
+        sync
+        expect(Substack::QuotationEmbed).to have_received(:execute).once
       end
     end
 
@@ -130,6 +148,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
         .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => true)
       allow(client).to receive(:update_draft)
       allow(client).to receive(:publish_draft)
+      allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
     end
 
     it 'republishes to push the edit live' do

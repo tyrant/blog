@@ -21,11 +21,8 @@
         %label.small.text-muted{ for: "post_url" } Post URL
         = text_field_tag :post_url, @quotation.post_url, class: "form-control", placeholder: "https://…/p/…"
       .form-group
-        %label.small.text-muted{ for: "post_image_url" } Post image URL (Reviews-page thumbnail)
+        %label.small.text-muted{ for: "post_image_url" } Post image URL (fallback thumbnail)
         = text_field_tag :post_image_url, @quotation.post_image_url, class: "form-control", placeholder: "https://…cover image…"
-      .form-group
-        %label.small.text-muted{ for: "post_id" } Post id (for the Reviews-page embed card; blank = plain title link)
-        = text_field_tag :post_id, @quotation.post_id, class: "form-control", placeholder: "e.g. 192565792"
     = submit_tag(editing ? "Update quotation" : "Save quotation", class: "btn btn-primary")
     - if editing
       = link_to "Cancel", comfy_admin_quotations_path, class: "btn btn-link"
