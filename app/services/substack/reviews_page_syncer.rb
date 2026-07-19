@@ -53,12 +53,10 @@ module Substack
     end
 
     def review_start(content)
-      pair = (0...content.size).find do |i|
-        QuotationBlock.blockquote_em?(content[i]) && QuotationBlock.author_right?(content[i + 1])
-      end
-      return nil unless pair
+      quote = (0...content.size).find { |i| QuotationBlock.blockquote_em?(content[i]) }
+      return nil unless quote
 
-      boundary = pair
+      boundary = quote
       boundary -= 1 while boundary.positive? && title_block?(content[boundary - 1])
       boundary
     end

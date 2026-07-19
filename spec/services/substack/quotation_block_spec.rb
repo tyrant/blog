@@ -28,9 +28,8 @@ RSpec.describe Substack::QuotationBlock do
       expect(node['marks'].map { |m| m['type'] }).to include 'em'
     end
 
-    it 'trails the quote with a 🔗 linking the original comment' do
-      link = blocks[1]['content'][0]['content'].last
-      expect(link['text']).to eq '🔗'
+    it 'includes a 🔗 linking the original comment inside the quote line' do
+      link = blocks[1]['content'][0]['content'].find { |n| n['text'] == '🔗' }
       expect(link.dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
     end
 
@@ -39,10 +38,16 @@ RSpec.describe Substack::QuotationBlock do
       expect(nodes.none? { |n| n['text'] == '🔗' }).to be true
     end
 
-    it 'right-aligns the linked author' do
-      expect(blocks[2]['attrs']['textAlign']).to eq 'right'
-      expect(blocks[2]['content'][0]['text']).to eq 'Eva'
-      expect(blocks[2]['content'][0].dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    it 'trails the quote line with an em-dash and the linked author' do
+      nodes = blocks[1]['content'][0]['content']
+      expect(nodes[-2]['text']).to eq ' — '
+      expect(nodes.last['text']).to eq 'Eva'
+      expect(nodes.last.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    end
+
+    it 'closes the unit with a centred "." spacer' do
+      expect(blocks[2]['attrs']['textAlign']).to eq 'center'
+      expect(blocks[2]['content'][0]['text']).to eq '.'
     end
   end
 

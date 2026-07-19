@@ -4,21 +4,21 @@ module Substack
   # Builds and detects the featured-quote blocks. Each quotation renders as a
   # three-block unit: a lead (a native post-embed card when the quotation has a
   # post_embed snapshot, else an h4 heading linking the post), a blockquote of the
-  # italicised quote (trailed by a 🔗 link to the original comment), and a
-  # right-aligned line linking the commenter. The template's syncQuotations
-  # directive expands into N of these; the rotation job finds the run in a draft
-  # and swaps them for fresh ones.
+  # italicised quote (a 🔗 to the original comment then an em-dash and the linked
+  # commenter, all inline), and a centred "." spacer paragraph. The template's
+  # syncQuotations directive expands into N of these; the rotation job finds the
+  # run in a draft and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
     def unit(quotation)
-      [lead(quotation), blockquote(quotation), attribution(quotation)]
+      [lead(quotation), blockquote(quotation), spacer]
     end
 
     # The heading-only unit (no embed card) — kept for the heading fallback and
     # for callers/tests that want the plain triplet.
     def build(quotation)
-      [heading(quotation), blockquote(quotation), attribution(quotation)]
+      [heading(quotation), blockquote(quotation), spacer]
     end
 
     def lead(quotation)
@@ -44,14 +44,16 @@ module Substack
         nodes << text(" ")
         nodes << text("🔗", href: quotation.comment_url)
       end
+      nodes << text(" — ")
+      nodes << text(quotation.author_name, href: quotation.author_url)
       { "type" => "blockquote", "content" => [
         { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => nodes }
       ] }
     end
 
-    def attribution(quotation)
-      { "type" => "paragraph", "attrs" => { "textAlign" => "right" },
-        "content" => [text(quotation.author_name, href: quotation.author_url)] }
+    # A centred "." separator paragraph after each quote.
+    def spacer
+      { "type" => "paragraph", "attrs" => { "textAlign" => "center" }, "content" => [text(".")] }
     end
 
     # Replace the contiguous run of quotation triplets in an existing draft body
@@ -98,12 +100,6 @@ module Substack
 
       para = Array(block["content"]).first
       Array(para&.dig("content")).any? { |node| Array(node["marks"]).any? { |mark| mark["type"] == "em" } }
-    end
-
-    def author_right?(block)
-      block.is_a?(Hash) && block["type"] == "paragraph" &&
-        block.dig("attrs", "textAlign") == "right" &&
-        link_href(block).to_s.include?("substack.com/@")
     end
 
     def text(string, href: nil, marks: [])
