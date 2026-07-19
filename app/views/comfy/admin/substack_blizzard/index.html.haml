@@ -65,7 +65,10 @@
 %section.mb-4
   %h5 Automated reposting
   %span.text-muted.small
-    One note is reposted every interval, picked at random weighted by each entry’s summed Note likes plus parent Post likes: heavily-liked entries repost more often.
+    One Note is reposted every interval. 75% of the time it’s a text group, picked at random weighted by each entry’s summed Note likes plus parent Post likes (heavily-liked entries repost more often). The other 25% is a random featured quotation from the
+    = succeed "," do
+      = link_to "Quotations pool", comfy_admin_quotations_path
+    posted as a Note (bold post-title link → the quote linking its original comment → the author), mirroring the post-footer quotation template. Quotation reposts aren’t tracked, so the odds table below reflects only the 75% text share.
   = form_with url: comfy_admin_substack_blizzard_settings_path, method: :post, class: "form-inline mt-2" do
     %label.mr-2{ for: "interval_minutes" } Repost every (minutes):
     = number_field_tag :interval_minutes, @config.interval_minutes, min: 1, max: 1440, class: "form-control mr-3", style: "width: 6rem;"

@@ -38,6 +38,11 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Per-post cooldown (hours):'
     end
 
+    it 'explains the 75/25 text-vs-quotation split' do
+      expect(response.body).to include 'random featured quotation'
+      expect(response.body).to include 'href="/admin/quotations"'
+    end
+
     it 'shows the most-likely-to-repost leaderboard' do
       expect(response.body).to include 'Most likely to repost next'
     end

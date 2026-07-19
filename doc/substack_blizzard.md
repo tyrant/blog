@@ -73,10 +73,16 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
   writes its `likes`; a failed fetch keeps the last-known value.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` from a real note.
 - `Substack::Blizzard::WeightedPicker` — the prod side of reposting: under the config row
-  lock, if `interval_minutes` has elapsed, weighted-samples one eligible entry
-  (weight = 1 + Σ note likes + post likes; excludes entries whose post is in cooldown or
-  lacking `body_json`),
-  stamps `last_reposted_at`, and returns it hydrated. `dry_run` previews without claiming.
+  lock, if `interval_minutes` has elapsed, it either (25% of the time, `QUOTATION_ODDS`)
+  hands back a **random featured quotation** built into a Note, or weighted-samples one
+  eligible text entry (weight = 1 + Σ note likes + post likes; excludes entries whose post
+  is in cooldown or lacking `body_json`). Either way it stamps `last_reposted_at` and
+  returns the pick hydrated. `dry_run` previews without claiming.
+- `Substack::Blizzard::QuotationNote` — builds a Note `body_json` from a `SubstackQuotation`
+  in the **Note** ProseMirror schema (blockquote + bold/italic/link marks; Notes have no
+  heading or paragraph alignment): a bold post-title link, the italic quote trailed by a 🔗
+  to the original comment, and the linked author — mirroring the post-footer syncQuotations
+  template. The post rides along as a card attachment (added by the ticker).
 - `Substack::Blizzard::RepostRecorder` — records a completed repost (append
   `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url).
 - `Substack::Blizzard::RepostTicker` — **runs on your Mac**: asks prod for the next
@@ -111,7 +117,8 @@ FAILED line); re-run with a fresh value in the right environment.
 
 A small form sets **Repost every (minutes)** and **Per-post cooldown (hours)** (POSTs to
 `#update_settings`), and shows when the last repost fired. That's the whole control
-surface — selection is automatic and weighted; there's no schedule to arrange.
+surface — selection is automatic (75% weighted text group, 25% random quotation); there's
+no schedule to arrange. The 25% share is the `QUOTATION_ODDS` constant, not a form field.
 
 ### Due list, re-seed, manual paste-back
 
@@ -141,12 +148,20 @@ flash immediately. All are additive/idempotent, so re-clicking is safe.
    `substack_likes`. This is the popularity signal.
 2. **Tick** (your Mac, every ~2 min via cron): asks prod for the next repost. Prod
    (`WeightedPicker`) gates itself to one pick per `interval_minutes`, so most ticks are
-   no-ops. When it's time, it weighted-samples one eligible entry and hands it back; the
+   no-ops. When it's time, it hands back either a text entry or a quotation (see below); the
    Mac posts it and confirms back. **Two-phase** (claim by stamping `last_reposted_at`,
    then confirm by appending the note) under a DB row lock, so overlapping ticks can't
    double-fire.
 
-**Weighting:** an entry's pick probability ∝ `1 + Σ(its notes' likes) + its post's likes`.
+**Text vs. quotation (75 / 25):** on each due pick, `WeightedPicker` rolls
+`QUOTATION_ODDS` (0.25, a constant). **25%** → a random `SubstackQuotation`
+([the Quotations pool](substack_post_sync.md#quotations)) built into a Note by `QuotationNote` and
+posted with the post as a card attachment; if the pool is empty it falls back to a text
+group. **75%** → the weighted text pick below. Quotation reposts are **not tracked** (no
+`categorization_id`/`uid`), so the ticker skips the confirm/`RepostRecorder` step and the
+admin odds leaderboard reflects only the 75% text share.
+
+**Weighting (the text 75%):** an entry's pick probability ∝ `1 + Σ(its notes' likes) + its post's likes`.
 The `+1` base gives never-posted / zero-like entries a small chance; the sums make
 heavily-liked entries (and popular posts — a post's likes lift every one of its entries —
 and, deliberately, entries reposted often) win more. Entries reposted within
