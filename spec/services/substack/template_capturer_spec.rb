@@ -31,9 +31,10 @@ RSpec.describe Substack::TemplateCapturer do
 
   def footer = SubstackSyncConfig.instance.footer_json
 
-  it 'stores the draft subtitle as the advice subtitle' do
+  it 'leaves the existing subtitle untouched' do
+    SubstackSyncConfig.instance.update!(subtitle: 'Keep me')
     capture
-    expect(SubstackSyncConfig.instance.subtitle).to eq 'The subtitle'
+    expect(SubstackSyncConfig.instance.subtitle).to eq 'Keep me'
   end
 
   it 'captures from the Original link onward, dropping the body' do

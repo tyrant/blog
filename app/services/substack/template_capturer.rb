@@ -7,7 +7,7 @@
 #   the Original heading            → syncOriginalLink
 #   the run of quotation triplets    → syncQuotations {count}
 #   configured conditional sections  → syncIf {tag}
-# Also stores the draft's subtitle as the "Shite Advice" subtitle.
+# Only footer_json is written — the subtitle fields are left untouched.
 module Substack
   class TemplateCapturer
     include ServiceInterface
@@ -29,7 +29,7 @@ module Substack
       substitute_quotations!(template)
       wrap_conditionals!(template)
 
-      SubstackSyncConfig.instance.update!(subtitle: draft["draft_subtitle"], footer_json: template)
+      SubstackSyncConfig.instance.update!(footer_json: template)
       template
     end
 
