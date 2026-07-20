@@ -213,4 +213,35 @@ RSpec.describe Comfy::Blog::Post, type: :model do
     end
 
   end
+
+  describe '#substack_url' do
+    subject { post.substack_url }
+
+    def categorize(label, url)
+      create :categorization, category: create(:category, label: label, site: site), categorized: post, url: url
+    end
+
+    it { is_expected.to be_nil }
+
+    context 'with a published /p/ url' do
+      before { categorize('Substack', 'https://mikeyclarke.substack.com/p/hi') }
+      it { is_expected.to eq 'https://mikeyclarke.substack.com/p/hi' }
+    end
+
+    context 'with an unpublished draft editor url' do
+      before { categorize('Substack', 'https://mikeyclarke.substack.com/publish/post/123') }
+      it { is_expected.to be_nil }
+    end
+  end
+
+  describe '#medium_url' do
+    subject { post.medium_url }
+
+    it { is_expected.to be_nil }
+
+    context 'with a Medium url' do
+      before { create :categorization, category: create(:category, label: 'Medium', site: site), categorized: post, url: 'https://mikey-clarke.medium.com/x' }
+      it { is_expected.to eq 'https://mikey-clarke.medium.com/x' }
+    end
+  end
 end

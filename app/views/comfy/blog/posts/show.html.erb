@@ -38,6 +38,20 @@
       <%= @cms_post.content_cache.html_safe %>
     </div>
 
+    <% if @cms_post.substack_url || @cms_post.medium_url %>
+      <div class="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
+        <span class="text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Also read on</span>
+        <% if @cms_post.substack_url %>
+          <%= link_to "Substack", @cms_post.substack_url, target: "_blank", rel: "noopener noreferrer",
+                      class: "inline-flex items-center px-4 py-1.5 rounded-full bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium shadow-sm transition-colors duration-150" %>
+        <% end %>
+        <% if @cms_post.medium_url %>
+          <%= link_to "Medium", @cms_post.medium_url, target: "_blank", rel: "noopener noreferrer",
+                      class: "inline-flex items-center px-4 py-1.5 rounded-full bg-gray-800 hover:bg-black text-white text-sm font-medium shadow-sm transition-colors duration-150" %>
+        <% end %>
+      </div>
+    <% end %>
+
     <%= render ConsentIsSexyYoComponent.new(mode: 'row', nsfw_options: @nsfw_options) %>
 
     <div class="mb-3">

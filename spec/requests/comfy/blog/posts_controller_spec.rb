@@ -40,6 +40,20 @@ RSpec.describe 'Comfy::Blog::PostsController', type: :request do
       it { expect(response).to have_http_status :success }
     end
 
+    context 'with Substack and Medium mirrors' do
+      before do
+        create :categorization, category: create(:category, label: 'Substack', site: site),
+                                categorized: published_post, url: 'https://mikeyclarke.substack.com/p/hi'
+        create :categorization, category: create(:category, label: 'Medium', site: site),
+                                categorized: published_post, url: 'https://mikey-clarke.medium.com/x'
+        get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}"
+      end
+
+      it { expect(response.body).to include 'Also read on' }
+      it { expect(response.body).to include 'https://mikeyclarke.substack.com/p/hi' }
+      it { expect(response.body).to include 'https://mikey-clarke.medium.com/x' }
+    end
+
     context 'for unpublished post' do
       it {
         expect { get "/blog/#{unpublished_post.year}/#{unpublished_post.month}/#{unpublished_post.slug}" }

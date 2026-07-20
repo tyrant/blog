@@ -66,6 +66,18 @@ class Comfy::Blog::Post < ActiveRecord::Base
       &.url || ''
   end
 
+  # Public cross-link to this post's Substack mirror — only once published (a
+  # /p/ URL; unpublished categorizations hold the draft editor URL instead).
+  def substack_url
+    url = socials_url_for(platform: "substack")
+    url if url.include?("/p/")
+  end
+
+  # Public cross-link to this post's Medium mirror (all are public URLs).
+  def medium_url
+    socials_url_for(platform: "medium").presence
+  end
+
 protected
 
   def set_slug
