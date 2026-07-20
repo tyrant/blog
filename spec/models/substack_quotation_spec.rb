@@ -10,6 +10,37 @@ RSpec.describe SubstackQuotation do
     it { expect(described_class.new(comment_url: 'u')).to_not be_valid }
   end
 
+  describe 'position' do
+    def quote = described_class.create!(quotation: 'q', comment_url: "https://x/comment/#{SecureRandom.hex(4)}")
+
+    it 'appends new records to the end' do
+      a = quote
+      b = quote
+      expect(b.position).to eq a.position + 1
+    end
+
+    it '.by_position orders by the stored position' do
+      a = quote
+      b = quote
+      a.update!(position: 5)
+      b.update!(position: 2)
+      expect(described_class.by_position.to_a).to eq [b, a]
+    end
+  end
+
+  describe '.reshuffle!' do
+    before { 5.times { |i| described_class.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}") } }
+
+    it 'assigns a contiguous 0..n-1 position to every record' do
+      described_class.reshuffle!
+      expect(described_class.pluck(:position).sort).to eq [0, 1, 2, 3, 4]
+    end
+
+    it 'keeps every record (just reorders)' do
+      expect { described_class.reshuffle! }.to_not change(described_class, :count)
+    end
+  end
+
   describe '.sample_excluding' do
     def quote(text, post_url, author: 'https://substack.com/@a')
       described_class.create!(quotation: text, comment_url: "https://x/comment/#{text.parameterize}",

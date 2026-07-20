@@ -3,9 +3,22 @@
 class SubstackQuotation < ApplicationRecord
   validates :quotation, :comment_url, presence: true
 
+  before_create :assign_position
+
   scope :chronological, -> { order(created_at: :desc) }
+  # The display order on the Reviews page — reshuffled by the admin's "Rebuild
+  # Reviews page now" button, otherwise stable (new quotations append to the end).
+  scope :by_position, -> { order(:position, :id) }
   # Quotations complete enough to render as a linked triplet.
   scope :featurable, -> { where.not(post_url: [nil, ""]).where.not(author_url: [nil, ""]) }
+
+  # Randomise the Reviews-page order. Called by the "Rebuild Reviews page now"
+  # button so the reshuffle persists across the ordinary (add/edit/delete) syncs.
+  def self.reshuffle!
+    transaction do
+      pluck(:id).shuffle.each_with_index { |id, index| where(id: id).update_all(position: index) }
+    end
+  end
 
   # Up to `count` random featurable quotations, distinct by quote text, and
   # excluding any left on the given Substack post (no point pointing a reader at
@@ -30,5 +43,11 @@ class SubstackQuotation < ApplicationRecord
       author_url:     resolved.author_url,
       author_name:    resolved.author_name
     )
+  end
+
+  private
+
+  def assign_position
+    self.position ||= (self.class.maximum(:position) || -1) + 1
   end
 end

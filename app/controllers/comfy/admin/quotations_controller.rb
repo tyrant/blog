@@ -62,11 +62,12 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
-  # Rebuild the Reviews page from every quotation now (also auto-enqueued on any
-  # add/edit/delete).
+  # Reshuffle the Reviews-page order and rebuild it now. The reshuffle persists,
+  # so the ordinary add/edit/delete syncs keep it until the button is clicked again.
   def sync_reviews
+    SubstackQuotation.reshuffle!
     SyncReviewsPageJob.perform_later
-    flash[:success] = "Rebuilding the Reviews page from all quotations on the worker."
+    flash[:success] = "Reshuffled and rebuilding the Reviews page from all quotations on the worker."
     redirect_to comfy_admin_quotations_path
   end
 

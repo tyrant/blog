@@ -47,6 +47,15 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 2
     end
 
+    it 'renders quotations in stored position order' do
+      first.update!(position: 2)
+      quote(quotation: 'second').update!(position: 1)
+      sync
+      quotes = body_doc['content'].select { |b| b['type'] == 'blockquote' }
+        .map { |b| b['content'][0]['content'][0]['text'] }
+      expect(quotes).to eq ['“second”', '“first”']
+    end
+
     it 'skips quotations missing post/author links' do
       quote(quotation: 'incomplete', post_url: nil, author_url: nil)
       sync

@@ -2,8 +2,9 @@
 
 # Rebuilds the review list on the dedicated "Reviews" Substack page (a standalone
 # page/post whose id lives in SubstackSyncConfig#reviews_draft_id) so it lists
-# every featurable SubstackQuotation, newest first: each review is a native
-# "small" post-embed card (digestPostEmbed, when we have the post id) — or the
+# every featurable SubstackQuotation, in their stored position order (reshuffled
+# by the admin button): each review is a native "small" post-embed card
+# (digestPostEmbed, when we have the post id) — or the
 # plain post-title heading as a fallback — followed by the quote + 🔗 and the
 # author. Any manually-authored intro above the first review is preserved; the
 # syncer owns the run below it. Draft writes aren't Cloudflare-blocked from the
@@ -72,7 +73,7 @@ module Substack
     end
 
     def quotation_blocks
-      SubstackQuotation.featurable.chronological.flat_map { |quotation| review_unit(quotation) }
+      SubstackQuotation.featurable.by_position.flat_map { |quotation| review_unit(quotation) }
     end
 
     # The shared quotation unit (post-embed card + quote + author), after ensuring

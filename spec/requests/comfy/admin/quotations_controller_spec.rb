@@ -166,15 +166,22 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   end
 
   describe 'POST sync_reviews' do
-    before do
-      allow(SyncReviewsPageJob).to receive(:perform_later)
+    before { allow(SyncReviewsPageJob).to receive(:perform_later) }
+
+    it 'redirects back' do
       post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_quotations_path
     end
 
-    it { expect(response).to redirect_to comfy_admin_quotations_path }
-
     it 'enqueues the reviews rebuild' do
+      post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
       expect(SyncReviewsPageJob).to have_received(:perform_later)
+    end
+
+    it 'reshuffles the quotation order' do
+      allow(SubstackQuotation).to receive(:reshuffle!)
+      post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
+      expect(SubstackQuotation).to have_received(:reshuffle!)
     end
   end
 
