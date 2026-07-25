@@ -66,7 +66,7 @@ module Substack
       def more_reviews
         { 
           "type" => "paragraph", 
-          "content" => [text("Enjoy oodles more kudos at my Reviews Page: #{REVIEWS_URL}")]
+          "content" => [text("Enjoy oodles more kudos at my Reviews Page (#{REVIEWS_URL})")]
         }
       end
 
