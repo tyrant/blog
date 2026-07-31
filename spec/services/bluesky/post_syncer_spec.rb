@@ -81,10 +81,15 @@ RSpec.describe Bluesky::PostSyncer do
   end
 
   describe 'the link-card thumbnail' do
-    before { allow(client).to receive(:create_post).and_return(created) }
+    before do
+      allow(client).to receive(:create_post).and_return(created)
+      # The resize seam runs the vipsthumbnail CLI in a subprocess; stub it so
+      # wiring tests don't depend on the binary. Exercised for real below.
+      allow_any_instance_of(described_class).to receive(:resize_to_jpeg).and_return('jpegbytes')
+    end
 
     context 'a post with no image' do
-      it 'omits the thumb and never uploads a blob' do
+      it 'never uploads a blob' do
         allow(client).to receive(:upload_blob)
         sync
         expect(client).to_not have_received(:upload_blob)
@@ -95,15 +100,15 @@ RSpec.describe Bluesky::PostSyncer do
       let(:blob) { { '$type' => 'blob', 'ref' => { '$link' => 'bafk1' } } }
 
       before do
-        post.update_column(:content_cache, '<img src="https://cdn.example/pic.jpg">')
-        stub_request(:get, 'https://cdn.example/pic.jpg')
-          .to_return(status: 200, body: 'imgbytes', headers: { 'Content-Type' => 'image/jpeg' })
+        post.update_column(:content_cache, '<img src="https://cdn.example/pic.png">')
+        stub_request(:get, 'https://cdn.example/pic.png')
+          .to_return(status: 200, body: 'rawpng', headers: { 'Content-Type' => 'image/png' })
         allow(client).to receive(:upload_blob).and_return(blob)
       end
 
-      it 'uploads the fetched image bytes' do
+      it 'uploads the resized jpeg' do
         sync
-        expect(client).to have_received(:upload_blob).with('imgbytes', 'image/jpeg')
+        expect(client).to have_received(:upload_blob).with('jpegbytes', 'image/jpeg')
       end
 
       it 'attaches the returned blob as the card thumb' do
@@ -114,35 +119,43 @@ RSpec.describe Bluesky::PostSyncer do
     end
 
     context 'a post with a local ActiveStorage image' do
-      let(:blob) do
+      let(:image_blob) do
         ActiveStorage::Blob.create_and_upload!(io: File.open(Rails.root.join('spec/fixtures/files/test_image.jpg')),
                                                filename: 'test_image.jpg', content_type: 'image/jpeg')
       end
-      let(:as_url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{blob.signed_id}/test_image.jpg" }
-      let(:thumb_blob) { { '$type' => 'blob', 'ref' => { '$link' => 'bafk2' } } }
+      let(:as_url) { "http://localhost:3000/rails/active_storage/blobs/redirect/#{image_blob.signed_id}/test_image.jpg" }
 
       before do
         post.update_column(:content_cache, "<img src=\"#{as_url}\">")
-        allow(client).to receive(:upload_blob).and_return(thumb_blob)
+        allow(client).to receive(:upload_blob).and_return({ '$type' => 'blob' })
       end
 
-      it 'uploads the resized blob bytes as an image' do
+      it 'downloads the blob, resizes and uploads it' do
         sync
-        expect(client).to have_received(:upload_blob).with(kind_of(String), 'image/jpeg')
-      end
-
-      it 'attaches the returned blob as the card thumb' do
-        sync
-        expect(client).to have_received(:create_post)
-          .with(hash_including('embed' => hash_including('external' => hash_including('thumb' => thumb_blob))))
+        expect(client).to have_received(:upload_blob).with('jpegbytes', 'image/jpeg')
       end
     end
 
-    context 'a remote image larger than Bluesky’s blob limit' do
+    context 'an unsupported image type' do
       before do
-        post.update_column(:content_cache, '<img src="https://cdn.example/huge.jpg">')
-        stub_request(:get, 'https://cdn.example/huge.jpg')
-          .to_return(status: 200, body: 'x' * (described_class::MAX_BLOB_BYTES + 1), headers: { 'Content-Type' => 'image/jpeg' })
+        post.update_column(:content_cache, '<img src="https://cdn.example/pic.svg">')
+        stub_request(:get, 'https://cdn.example/pic.svg')
+          .to_return(status: 200, body: '<svg/>', headers: { 'Content-Type' => 'image/svg+xml' })
+        allow(client).to receive(:upload_blob)
+      end
+
+      it 'is skipped before any resize' do
+        sync
+        expect(client).to_not have_received(:upload_blob)
+      end
+    end
+
+    context 'when the resize fails or the binary is missing' do
+      before do
+        post.update_column(:content_cache, '<img src="https://cdn.example/pic.png">')
+        stub_request(:get, 'https://cdn.example/pic.png')
+          .to_return(status: 200, body: 'rawpng', headers: { 'Content-Type' => 'image/png' })
+        allow_any_instance_of(described_class).to receive(:resize_to_jpeg).and_return(nil)
         allow(client).to receive(:upload_blob)
       end
 
@@ -150,6 +163,48 @@ RSpec.describe Bluesky::PostSyncer do
         sync
         expect(client).to_not have_received(:upload_blob)
       end
+    end
+
+    context 'a resized image larger than Bluesky’s blob limit' do
+      before do
+        post.update_column(:content_cache, '<img src="https://cdn.example/pic.png">')
+        stub_request(:get, 'https://cdn.example/pic.png')
+          .to_return(status: 200, body: 'rawpng', headers: { 'Content-Type' => 'image/png' })
+        allow_any_instance_of(described_class).to receive(:resize_to_jpeg).and_return('x' * (described_class::MAX_BLOB_BYTES + 1))
+        allow(client).to receive(:upload_blob)
+      end
+
+      it 'skips the upload' do
+        sync
+        expect(client).to_not have_received(:upload_blob)
+      end
+    end
+  end
+
+  describe '#resize_to_jpeg' do
+    subject(:syncer) { described_class.allocate }
+
+    let(:jpeg_bytes) { File.binread(Rails.root.join('spec/fixtures/files/test_image.jpg')) }
+
+    context 'with the vipsthumbnail CLI', if: system('command -v vipsthumbnail > /dev/null 2>&1') do
+      it 'returns jpeg bytes (SOI marker)' do
+        expect(syncer.send(:resize_to_jpeg, jpeg_bytes, '.jpg')[0, 2].bytes).to eq [0xFF, 0xD8]
+      end
+    end
+
+    context 'when the binary is missing' do
+      before { allow(Open3).to receive(:capture3).and_raise(Errno::ENOENT) }
+
+      it { expect(syncer.send(:resize_to_jpeg, jpeg_bytes, '.jpg')).to be_nil }
+    end
+
+    context 'when the CLI exits non-zero' do
+      before do
+        status = instance_double(Process::Status, success?: false)
+        allow(Open3).to receive(:capture3).and_return(['', 'bad image', status])
+      end
+
+      it { expect(syncer.send(:resize_to_jpeg, jpeg_bytes, '.jpg')).to be_nil }
     end
   end
 

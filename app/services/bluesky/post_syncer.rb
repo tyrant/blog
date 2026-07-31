@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "net/http"
+require "open3"
+require "tempfile"
 
 # Mirrors a Comfy blog post to Bluesky as a teaser (lead + title + canonical
 # link) — Bluesky's 300-grapheme cap can't hold the full post, so this is always
@@ -15,6 +17,20 @@ module Bluesky
     include ServiceInterface
 
     MAX_BLOB_BYTES = 1_000_000
+
+    # Resizing runs the vipsthumbnail CLI in a fork+exec'd subprocess rather than
+    # ActiveStorage's in-process libvips: the SolidQueue worker forks, and libvips
+    # aborts (SIGABRT) or deadlocks when used after a bare fork. An exec'd process
+    # gets clean glib state, and a crash there is a rescuable non-zero exit.
+    THUMB_CMD = "vipsthumbnail"
+    THUMB_MAX_DIMENSION = 1200
+
+    CONTENT_TYPE_EXTENSIONS = {
+      "image/jpeg" => ".jpg",
+      "image/png"  => ".png",
+      "image/webp" => ".webp",
+      "image/gif"  => ".gif"
+    }.freeze
 
     arguments :post_id, client: nil, config: nil
 
@@ -68,34 +84,63 @@ module Bluesky
       { "$type" => "app.bsky.embed.external", "external" => external }
     end
 
-    # Uploads the post's central image as the card thumbnail, resolving it from a
-    # local ActiveStorage blob or a remote URL. Best-effort: any failure (no
-    # image, oversized, download error) posts a card without a thumb rather than
-    # failing the whole sync.
+    # Uploads the post's central image as the card thumbnail. Best-effort: no
+    # image, an unsupported type, a resize failure, or an oversized result posts a
+    # card without a thumb rather than failing the whole sync.
     def upload_thumb(post)
-      image = thumbnail_image(post)
-      return nil unless image && image[:bytes].bytesize <= MAX_BLOB_BYTES
+      source = thumbnail_source(post)
+      return nil unless source
 
-      @client.upload_blob(image[:bytes], image[:content_type])
+      jpeg = resize_to_jpeg(source[:bytes], source[:ext])
+      return nil unless jpeg && jpeg.bytesize <= MAX_BLOB_BYTES
+
+      @client.upload_blob(jpeg, "image/jpeg")
     rescue => e
       Rails.logger.warn("[BlueskySync] thumb upload failed for post #{post.id}: #{e.message}")
       nil
     end
 
-    def thumbnail_image(post)
+    # The post's central image bytes + file extension, read WITHOUT libvips (a raw
+    # blob download or HTTP GET), from a local ActiveStorage blob or a remote URL.
+    def thumbnail_source(post)
       src = post.first_img_src
       return nil if src.blank?
 
-      if Comfy::Blog::Post.active_storage_url?(src)
-        variant = Comfy::Blog::Post.resized_blob_variant_from(src, x: 1200, y: 630)
-        return nil if variant.blank?
+      raw =
+        if Comfy::Blog::Post.active_storage_url?(src)
+          blob = ActiveStorage::Blob.find_signed(src.split("/")[-2])
+          blob && { bytes: blob.download, content_type: blob.content_type }
+        else
+          fetch_remote_image(src)
+        end
+      return nil unless raw
 
-        # resize_to_fill preserves the source format, so the original blob's
-        # content type matches the processed variant's bytes.
-        { bytes: variant.processed.download, content_type: variant.blob.content_type }
-      else
-        fetch_remote_image(src)
+      ext = CONTENT_TYPE_EXTENSIONS[raw[:content_type]]
+      ext && { bytes: raw[:bytes], ext: ext }
+    end
+
+    # Resizes to a bounded JPEG via the vipsthumbnail CLI in an isolated
+    # subprocess. Returns nil on any failure (missing binary, bad image, non-zero
+    # exit) so the sync proceeds without a thumb.
+    def resize_to_jpeg(bytes, ext)
+      Tempfile.create(["bsky-thumb-src", ext]) do |src|
+        src.binmode
+        src.write(bytes)
+        src.flush
+        Tempfile.create(["bsky-thumb-out", ".jpg"]) do |out|
+          size = "#{THUMB_MAX_DIMENSION}x#{THUMB_MAX_DIMENSION}"
+          _stdout, stderr, status = Open3.capture3(THUMB_CMD, src.path, "--size", size,
+                                                   "--output", "#{out.path}[Q=80,strip]")
+          unless status.success?
+            Rails.logger.warn("[BlueskySync] vipsthumbnail failed: #{stderr.to_s[0, 200]}")
+            return nil
+          end
+          File.binread(out.path)
+        end
       end
+    rescue Errno::ENOENT => e
+      Rails.logger.warn("[BlueskySync] vipsthumbnail unavailable: #{e.message}")
+      nil
     end
 
     def fetch_remote_image(url)
