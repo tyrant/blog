@@ -25,9 +25,15 @@ Bundler. See [Foreman's docs](https://github.com/ddollar/foreman/wiki/Don't-Bund
 
 Now that we're on Rails 8: among other libraries, Prod requires libvips42 to do 
 its Blob variant resizing. It's a non-Ruby dependency of the `image_processing` gem.
-Install it manually on Prod thusly:
+
+Prod also needs libvips-tools, which supplies the `vipsthumbnail` CLI. The Bluesky
+post sync shells out to it (via Open3) to build link-card thumbnails, deliberately
+out-of-process: in-process libvips aborts the forked SolidQueue worker with SIGABRT.
+libvips42 ships only the shared library, not the CLI, so this is a separate package.
+
+Install both manually on Prod thusly:
 ```
-sudo apt install libvips42
+sudo apt install libvips42 libvips-tools
 ```
 
 
