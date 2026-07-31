@@ -43,24 +43,30 @@ module Bluesky
       @config ||= BlueskySyncConfig.instance
       @client ||= Bluesky::Client.new
 
-      categorization = bluesky_categorization(post)
-      existing = categorization&.data&.dig("uri")
-      return existing if existing.present?
+      # Serialize concurrent syncs of the same post (e.g. a double-clicked button)
+      # so the check-then-create-then-record is atomic — Bluesky records are
+      # immutable, so a duplicate post can't be edited away. A second job blocks
+      # here until the first commits the categorization, then no-ops on the uri.
+      post.with_lock do
+        categorization = bluesky_categorization(post)
+        existing = categorization&.data&.dig("uri")
+        next existing if existing.present?
 
-      url = canonical_url(post)
-      teaser = TeaserBuilder.execute(post: post, url: url, lead: @config.lead_for(post))
-      record = {
-        "$type"     => "app.bsky.feed.post",
-        "text"      => teaser[:text],
-        "createdAt" => Time.now.utc.iso8601(3),
-        "langs"     => ["en"],
-        "facets"    => teaser[:facets],
-        "embed"     => external_embed(post, url)
-      }
+        url = canonical_url(post)
+        teaser = TeaserBuilder.execute(post: post, url: url, lead: @config.lead_for(post))
+        record = {
+          "$type"     => "app.bsky.feed.post",
+          "text"      => teaser[:text],
+          "createdAt" => Time.now.utc.iso8601(3),
+          "langs"     => ["en"],
+          "facets"    => teaser[:facets],
+          "embed"     => external_embed(post, url)
+        }
 
-      created = @client.create_post(record)
-      link_categorization!(post, categorization, created)
-      created.fetch("uri")
+        created = @client.create_post(record)
+        link_categorization!(post, categorization, created)
+        created.fetch("uri")
+      end
     end
 
     private

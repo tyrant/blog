@@ -78,6 +78,11 @@ RSpec.describe Bluesky::PostSyncer do
     it 'returns the created uri' do
       expect(sync).to eq 'at://did:plc:me/app.bsky.feed.post/rk9'
     end
+
+    it 'serializes on the post row to prevent duplicate posts' do
+      expect_any_instance_of(Comfy::Blog::Post).to receive(:with_lock)
+      sync
+    end
   end
 
   describe 'the link-card thumbnail' do

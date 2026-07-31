@@ -93,4 +93,28 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
       expect { described_class.new.perform }.to_not raise_error
     end
   end
+
+  context 'when every attempt errors (e.g. a dead session cookie)' do
+    before { allow(client).to receive(:get_draft).and_raise(Substack::Client::Error, 'boom') }
+
+    it 'does not advance the rotation clock' do
+      described_class.new.perform
+      expect(SubstackSyncConfig.instance.quotations_rotated_at).to be_nil
+    end
+  end
+
+  context 'when some attempts succeed and some error' do
+    let!(:other_post) { create :post, site: site }
+    let!(:other_categorization) { create :categorization, category: category, categorized: other_post, data: { 'id' => 901 } }
+
+    before do
+      allow(client).to receive(:get_draft).with(900).and_return(draft(published: false))
+      allow(client).to receive(:get_draft).with(901).and_raise(Substack::Client::Error, 'boom')
+    end
+
+    it 'advances the rotation clock' do
+      described_class.new.perform
+      expect(SubstackSyncConfig.instance.quotations_rotated_at).to be_present
+    end
+  end
 end

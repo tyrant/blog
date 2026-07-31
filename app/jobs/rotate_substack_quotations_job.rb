@@ -18,15 +18,22 @@ class RotateSubstackQuotationsJob < ApplicationJob
     return if SubstackQuotation.none?
 
     client = Substack::Client.new
+    processed = 0
+    errored = 0
     substack_categorizations.find_each do |categorization|
       rotate(categorization, client)
+      processed += 1
     rescue => e
+      errored += 1
       Rails.logger.error("[RotateSubstackQuotationsJob] categorization #{categorization.id}: #{e.message}")
     ensure
       sleep PACING
     end
 
-    config.update!(quotations_rotated_at: Time.current)
+    # Advance the rotation clock unless every attempt errored (e.g. a dead session
+    # cookie). Stamping it on a fully-failed run would self-gate retries for the
+    # whole rotation interval, silently freezing quotations.
+    config.update!(quotations_rotated_at: Time.current) unless processed.zero? && errored.positive?
   end
 
   private
