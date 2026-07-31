@@ -8,7 +8,7 @@ Personal blog built on Rails with ComfortableMexicanSofa CMS (merged into app, n
 - **Database**: PostgreSQL
 - **Image Processing**: libvips via ActiveStorage (not MiniMagick)
 - **Testing**: RSpec, FactoryBot, Capybara, Shoulda Matchers
-- **Deployment**: Capistrano to production server (119.9.131.4), Phusion Passenger
+- **Deployment**: Capistrano to production server (168.144.167.177, DigitalOcean), Phusion Passenger
 
 ## Architecture
 
@@ -111,9 +111,24 @@ HEADLESS=false bundle exec rspec spec/system
 # Deploy to production
 cap production deploy
 
-# Rails console on production
-ssh noob@119.9.131.4 "cd ~/blog/current && RAILS_ENV=production bundle exec rails c"
+# Rails console on production (user runs SSH commands themselves — see Deployment / Ops)
+ssh noob@168.144.167.177 "cd ~/blog/current && RAILS_ENV=production bundle exec rails c"
 ```
+
+## Deployment / Ops
+
+- Auto-deploying is fine anytime — run `bundle exec cap production deploy` yourself as needed.
+- After deploying, verify the commit was actually pushed (`git status`, `git log origin/mistress`) before reporting the deploy as successful — Capistrano ships the pushed commit, not local HEAD.
+- Do NOT run direct SSH commands on the production server yourself (installing libraries/packages, arbitrary server ops, remote consoles) — the user reserves those. Prepare the exact command and hand it off to run.
+
+## Environment / Shell Notes
+
+- The bare `cap` command is a zsh wrapper unavailable in non-interactive shells — invoke deploys via `bundle exec cap` instead.
+
+## Substack Integration
+
+- Substack strips plain URLs from rendered output — verify URL fixes against Substack's actual rendered result rather than assuming they'll appear.
+- Scope "Substack Notes" queries to Substack-linked posts only, not all posts.
 
 ## Don't
 
