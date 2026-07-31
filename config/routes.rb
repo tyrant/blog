@@ -72,6 +72,11 @@ Rails.application.routes.draw do
         post :sync_all
       end
 
+      resource :bluesky_sync_config,
+               as: :admin_bluesky_sync_config,
+               path: "admin/bluesky-sync",
+               only: %i[edit update]
+
       get  "admin/reply-drafter",          to: "reply_drafter#show",     as: :admin_reply_drafter
       post "admin/reply-drafter/generate", to: "reply_drafter#generate", as: :admin_reply_drafter_generate
 
