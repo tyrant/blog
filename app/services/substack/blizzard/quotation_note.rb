@@ -64,9 +64,11 @@ module Substack
       # card-able post), but auto-linkifies a bare URL sitting in plain text — so
       # emit the URL unmarked in parens and let Substack turn it into the link.
       def more_reviews
+        verbs = ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick']
+
         { 
           "type" => "paragraph", 
-          "content" => [text("Enjoy oodles more kudos at my Reviews Page (#{REVIEWS_URL})")]
+          "content" => [text("#{verbs.sample} oodles more kudos at my Reviews Page (#{REVIEWS_URL})")]
         }
       end
 
