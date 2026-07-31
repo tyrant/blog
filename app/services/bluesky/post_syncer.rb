@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "net/http"
+
 # Mirrors a Comfy blog post to Bluesky as a teaser (lead + title + canonical
 # link) — Bluesky's 300-grapheme cap can't hold the full post, so this is always
 # a link back to the blog, with a rich link card.
@@ -11,6 +13,8 @@
 module Bluesky
   class PostSyncer
     include ServiceInterface
+
+    MAX_BLOB_BYTES = 1_000_000
 
     arguments :post_id, client: nil, config: nil
 
@@ -49,17 +53,63 @@ module Bluesky
       post.categorizations.joins(:category).find_by(comfy_cms_categories: { label: "Bluesky" })
     end
 
-    # A text-only link card (uri + title + description). Bluesky never fetches the
-    # target's OG tags itself, so the card is built here from the post.
+    # A link card (uri + title + description + optional thumbnail). Bluesky never
+    # fetches the target's OG tags itself, so the card — including the preview
+    # image — is built and uploaded here from the post.
     def external_embed(post, url)
-      {
-        "$type" => "app.bsky.embed.external",
-        "external" => {
-          "uri"         => url,
-          "title"       => post.title.to_s,
-          "description" => description_for(post)
-        }
+      external = {
+        "uri"         => url,
+        "title"       => post.title.to_s,
+        "description" => description_for(post)
       }
+      if (thumb = upload_thumb(post))
+        external["thumb"] = thumb
+      end
+      { "$type" => "app.bsky.embed.external", "external" => external }
+    end
+
+    # Uploads the post's central image as the card thumbnail, resolving it from a
+    # local ActiveStorage blob or a remote URL. Best-effort: any failure (no
+    # image, oversized, download error) posts a card without a thumb rather than
+    # failing the whole sync.
+    def upload_thumb(post)
+      image = thumbnail_image(post)
+      return nil unless image && image[:bytes].bytesize <= MAX_BLOB_BYTES
+
+      @client.upload_blob(image[:bytes], image[:content_type])
+    rescue => e
+      Rails.logger.warn("[BlueskySync] thumb upload failed for post #{post.id}: #{e.message}")
+      nil
+    end
+
+    def thumbnail_image(post)
+      src = post.first_img_src
+      return nil if src.blank?
+
+      if Comfy::Blog::Post.active_storage_url?(src)
+        variant = Comfy::Blog::Post.resized_blob_variant_from(src, x: 1200, y: 630)
+        return nil if variant.blank?
+
+        # resize_to_fill preserves the source format, so the original blob's
+        # content type matches the processed variant's bytes.
+        { bytes: variant.processed.download, content_type: variant.blob.content_type }
+      else
+        fetch_remote_image(src)
+      end
+    end
+
+    def fetch_remote_image(url)
+      uri = URI(url)
+      return nil unless uri.is_a?(URI::HTTP)
+
+      res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
+                            open_timeout: 10, read_timeout: 30) { |http| http.get(uri.request_uri) }
+      return nil unless res.is_a?(Net::HTTPSuccess)
+
+      content_type = res["content-type"]&.split(";")&.first&.strip
+      return nil unless content_type&.start_with?("image/")
+
+      { bytes: res.body, content_type: content_type }
     end
 
     # Comfy's Site#url is protocol-relative ("//host/path"); Bluesky's URI

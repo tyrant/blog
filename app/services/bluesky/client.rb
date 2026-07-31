@@ -31,6 +31,16 @@ module Bluesky
         bearer: session.fetch("accessJwt"))
     end
 
+    # Uploads raw image bytes (Bluesky caps blobs at 1,000,000 bytes); returns the
+    # blob reference to embed as a link-card thumbnail.
+    def upload_blob(bytes, content_type)
+      req = Net::HTTP::Post.new(xrpc_uri("com.atproto.repo.uploadBlob"))
+      req["Content-Type"] = content_type
+      req["Authorization"] = "Bearer #{session.fetch("accessJwt")}"
+      req.body = bytes
+      request(req).fetch("blob")
+    end
+
     private
 
     def did

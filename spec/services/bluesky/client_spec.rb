@@ -42,6 +42,22 @@ RSpec.describe Bluesky::Client do
     end
   end
 
+  describe '#upload_blob' do
+    let!(:session) { stub_session }
+    let!(:upload) do
+      stub_request(:post, 'https://bsky.social/xrpc/com.atproto.repo.uploadBlob')
+        .with(headers: { 'Authorization' => 'Bearer jwt-abc', 'Content-Type' => 'image/jpeg' }, body: 'rawbytes')
+        .to_return(status: 200, body: { blob: { '$type' => 'blob', 'ref' => { '$link' => 'bafk1' } } }.to_json)
+    end
+
+    it { expect(client.upload_blob('rawbytes', 'image/jpeg')).to eq('$type' => 'blob', 'ref' => { '$link' => 'bafk1' }) }
+
+    it 'posts the raw bytes with the image content type' do
+      client.upload_blob('rawbytes', 'image/jpeg')
+      expect(upload).to have_been_requested
+    end
+  end
+
   describe 'missing credentials' do
     let(:password) { nil }
 
