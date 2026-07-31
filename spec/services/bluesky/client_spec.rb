@@ -58,6 +58,23 @@ RSpec.describe Bluesky::Client do
     end
   end
 
+  describe 'connection timeouts' do
+    before do
+      stub_session
+      stub_request(:post, 'https://bsky.social/xrpc/com.atproto.repo.createRecord').to_return(status: 200, body: '{}')
+    end
+
+    it 'applies open and read timeouts to the connection' do
+      captured = nil
+      allow(Net::HTTP).to receive(:start).and_wrap_original do |orig, *args, **kwargs, &blk|
+        captured = kwargs
+        orig.call(*args, **kwargs, &blk)
+      end
+      client.create_post(record)
+      expect(captured).to include(open_timeout: 10, read_timeout: 30)
+    end
+  end
+
   describe 'missing credentials' do
     let(:password) { nil }
 

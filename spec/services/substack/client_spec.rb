@@ -195,6 +195,20 @@ RSpec.describe Substack::Client do
     end
   end
 
+  describe 'connection timeouts' do
+    before { stub_request(:get, 'https://substack.com/api/v1/reader/comment/1').to_return(status: 200, body: '{}') }
+
+    it 'applies open and read timeouts to the connection' do
+      captured = nil
+      allow(Net::HTTP).to receive(:start).and_wrap_original do |orig, *args, **kwargs, &blk|
+        captured = kwargs
+        orig.call(*args, **kwargs, &blk)
+      end
+      client.get_note(1)
+      expect(captured).to include(open_timeout: 10, read_timeout: 30)
+    end
+  end
+
   describe 'error handling' do
     context 'auth failure' do
       before { stub_request(:get, %r{substack\.com}).to_return(status: 403, body: 'nope') }

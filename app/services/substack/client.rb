@@ -17,6 +17,8 @@ module Substack
 
     MAX_RETRIES = 5
     RETRYABLE   = [429, 502, 503, 504].freeze
+    OPEN_TIMEOUT = 10
+    READ_TIMEOUT = 30
 
     def initialize(session_cookie: SubstackSyncConfig.instance.session_cookie,
                    publication_host: SubstackSyncConfig.instance.publication_host)
@@ -142,7 +144,8 @@ module Substack
       attempt = 0
       loop do
         attempt += 1
-        response = Net::HTTP.start(req.uri.host, req.uri.port, use_ssl: true) do |http|
+        response = Net::HTTP.start(req.uri.host, req.uri.port, use_ssl: true,
+                                   open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT) do |http|
           http.request(req)
         end
 
