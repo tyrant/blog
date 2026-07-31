@@ -27,14 +27,15 @@ module Bluesky
       existing = categorization&.data&.dig("uri")
       return existing if existing.present?
 
-      teaser = TeaserBuilder.execute(post: post, url: post.url, lead: @config.lead_for(post))
+      url = canonical_url(post)
+      teaser = TeaserBuilder.execute(post: post, url: url, lead: @config.lead_for(post))
       record = {
         "$type"     => "app.bsky.feed.post",
         "text"      => teaser[:text],
         "createdAt" => Time.now.utc.iso8601(3),
         "langs"     => ["en"],
         "facets"    => teaser[:facets],
-        "embed"     => external_embed(post)
+        "embed"     => external_embed(post, url)
       }
 
       created = @client.create_post(record)
@@ -50,15 +51,22 @@ module Bluesky
 
     # A text-only link card (uri + title + description). Bluesky never fetches the
     # target's OG tags itself, so the card is built here from the post.
-    def external_embed(post)
+    def external_embed(post, url)
       {
         "$type" => "app.bsky.embed.external",
         "external" => {
-          "uri"         => post.url,
+          "uri"         => url,
           "title"       => post.title.to_s,
           "description" => description_for(post)
         }
       }
+    end
+
+    # Comfy's Site#url is protocol-relative ("//host/path"); Bluesky's URI
+    # validator rejects that, so add the https scheme when it's missing.
+    def canonical_url(post)
+      url = post.url
+      url.start_with?("//") ? "https:#{url}" : url
     end
 
     def description_for(post)

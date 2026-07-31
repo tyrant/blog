@@ -43,6 +43,17 @@ RSpec.describe Bluesky::PostSyncer do
         .with(hash_including('embed' => hash_including('$type' => 'app.bsky.embed.external')))
     end
 
+    it 'sends an absolute https url in the card (not Comfy’s protocol-relative one)' do
+      sync
+      expect(client).to have_received(:create_post)
+        .with(hash_including('embed' => hash_including('external' => hash_including('uri' => a_string_starting_with('https://')))))
+    end
+
+    it 'sends an absolute https url in the teaser text' do
+      sync
+      expect(client).to have_received(:create_post).with(hash_including('text' => a_string_including('https://')))
+    end
+
     it 'builds the card description from the post body' do
       sync
       expect(client).to have_received(:create_post)
