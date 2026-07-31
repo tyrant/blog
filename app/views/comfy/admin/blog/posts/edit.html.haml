@@ -12,6 +12,10 @@
       %button.btn.btn-outline-primary.btn-sm.btn-block.my-1{type: "button", id: "sync-to-substack", data: {sync_url: sync_to_substack_comfy_admin_blog_post_path(@site, @post)}}
         Sync to Substack
 
+    - if @post.persisted?
+      %button.btn.btn-outline-primary.btn-sm.btn-block.my-1{type: "button", id: "sync-to-bluesky", data: {sync_url: sync_to_bluesky_comfy_admin_blog_post_path(@site, @post)}}
+        Sync to Bluesky
+
 
 = render "comfy/admin/blog/partials/post_navigation"
 

@@ -244,4 +244,15 @@ RSpec.describe Comfy::Blog::Post, type: :model do
       it { is_expected.to eq 'https://mikey-clarke.medium.com/x' }
     end
   end
+
+  describe '#bluesky_url' do
+    subject { post.bluesky_url }
+
+    it { is_expected.to be_nil }
+
+    context 'with a Bluesky url' do
+      before { create :categorization, category: create(:category, label: 'Bluesky', site: site), categorized: post, url: 'https://bsky.app/profile/me/post/rk1' }
+      it { is_expected.to eq 'https://bsky.app/profile/me/post/rk1' }
+    end
+  end
 end

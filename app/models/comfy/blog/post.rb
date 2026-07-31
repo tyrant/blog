@@ -78,6 +78,11 @@ class Comfy::Blog::Post < ActiveRecord::Base
     socials_url_for(platform: "medium").presence
   end
 
+  # Public cross-link to this post's Bluesky teaser (a bsky.app permalink).
+  def bluesky_url
+    socials_url_for(platform: "bluesky").presence
+  end
+
 protected
 
   def set_slug

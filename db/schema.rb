@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_20_000005) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_31_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -69,6 +69,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_20_000005) do
     t.index ["comfy_blog_post_id", "tag_id"], name: "index_blog_post_tags_on_comfy_blog_post_id_and_tag_id", unique: true
     t.index ["comfy_blog_post_id"], name: "index_blog_post_tags_on_comfy_blog_post_id"
     t.index ["tag_id"], name: "index_blog_post_tags_on_tag_id"
+  end
+
+  create_table "bluesky_sync_configs", force: :cascade do |t|
+    t.string "handle"
+    t.text "app_password"
+    t.string "service_host", default: "https://bsky.social", null: false
+    t.text "lead"
+    t.text "lead_shite"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "comfy_blog_posts", force: :cascade do |t|

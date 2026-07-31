@@ -35,6 +35,7 @@
     CMS.autosave.init();
     CMS.mediumExport.init();
     CMS.substackSync.init();
+    CMS.blueskySync.init();
     CMS.replyDrafter.init();
   };
 
@@ -48,6 +49,7 @@
     CMS.autosave.dispose();
     CMS.mediumExport.dispose();
     CMS.substackSync.dispose();
+    CMS.blueskySync.dispose();
     CMS.replyDrafter.dispose();
   };
 

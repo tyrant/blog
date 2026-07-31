@@ -3,7 +3,7 @@
 class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
 
   before_action :build_post, only: %i[new create]
-  before_action :load_post,  only: %i[edit update destroy sync_to_substack]
+  before_action :load_post,  only: %i[edit update destroy sync_to_substack sync_to_bluesky]
   before_action :authorize
 
   def index
@@ -68,6 +68,13 @@ class Comfy::Admin::Blog::PostsController < Comfy::Admin::Cms::BaseController
 
   def sync_to_substack
     SubstackPostSyncJob.perform_later(@post.id)
+    render json: { success: true }
+  rescue => e
+    render json: { success: false, message: e.message }, status: :unprocessable_content
+  end
+
+  def sync_to_bluesky
+    BlueskyPostSyncJob.perform_later(@post.id)
     render json: { success: true }
   rescue => e
     render json: { success: false, message: e.message }, status: :unprocessable_content

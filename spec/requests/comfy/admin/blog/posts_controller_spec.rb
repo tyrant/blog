@@ -283,4 +283,30 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       it { expect(response).to have_http_status :unauthorized }
     end
   end
+
+  describe 'POST /admin/sites/:site_id/blog-posts/:id/sync-to-bluesky' do
+    context 'with authentication' do
+      before do
+        allow(BlueskyPostSyncJob).to receive(:perform_later)
+        post sync_to_bluesky_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
+             headers: http_auth_headers
+      end
+
+      it { expect(response).to have_http_status :success }
+
+      it 'returns JSON with success: true' do
+        expect(JSON.parse(response.body)['success']).to be true
+      end
+
+      it 'enqueues the sync job for the post' do
+        expect(BlueskyPostSyncJob).to have_received(:perform_later).with(blog_post.id)
+      end
+    end
+
+    context 'without authentication' do
+      before { post sync_to_bluesky_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id) }
+
+      it { expect(response).to have_http_status :unauthorized }
+    end
+  end
 end
