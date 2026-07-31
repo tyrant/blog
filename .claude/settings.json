@@ -40,5 +40,11 @@
       "Bash(bin/rails db:drop:*)",
       "Bash(bundle exec rails db:drop:*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit|Write",
+      "hooks": [{"type": "command", "command": "bundle exec rubocop -a $CLAUDE_FILE 2>/dev/null || true"}]
+    }]
   }
 }
