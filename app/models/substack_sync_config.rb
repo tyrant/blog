@@ -10,6 +10,28 @@ class SubstackSyncConfig < ApplicationRecord
     first_or_create!
   end
 
+  # --- Session-cookie health ---------------------------------------------------
+  # The unofficial API rides one stored substack.sid cookie; when it expires every
+  # sync fails. The client records health at its choke point (transition-only, so
+  # no write storms) and the admin page surfaces it. note_* flip only on change;
+  # record_check! always stamps (used by the manual "Check now").
+
+  def note_session_failure!(message)
+    return unless session_healthy?
+
+    update_columns(session_healthy: false, session_error: message.to_s.first(255), session_checked_at: Time.current)
+  end
+
+  def note_session_recovery!
+    return if session_healthy? && session_error.blank?
+
+    update_columns(session_healthy: true, session_error: nil, session_checked_at: Time.current)
+  end
+
+  def record_check!(healthy:, error: nil)
+    update_columns(session_healthy: healthy, session_error: error&.to_s&.first(255), session_checked_at: Time.current)
+  end
+
   # Whether enough days have elapsed since the last rotation for the scheduled
   # (daily-firing) job to rotate again — the runtime override for what used to be
   # a hardcoded weekly cron.

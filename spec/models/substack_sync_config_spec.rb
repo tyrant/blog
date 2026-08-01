@@ -94,6 +94,58 @@ RSpec.describe SubstackSyncConfig do
     end
   end
 
+  describe 'session health' do
+    subject(:config) { described_class.instance }
+
+    describe '#note_session_failure!' do
+      it 'flips a healthy session to unhealthy with the message' do
+        config.note_session_failure!('cookie rejected (403)')
+        expect(config.reload.session_healthy?).to be false
+      end
+
+      it 'records the error message' do
+        config.note_session_failure!('cookie rejected (403)')
+        expect(config.reload.session_error).to eq 'cookie rejected (403)'
+      end
+
+      it 'does not write when already unhealthy (transition-only)' do
+        config.update_columns(session_healthy: false, session_error: 'old', session_checked_at: 1.day.ago)
+        expect { config.note_session_failure!('new') }.to_not change { config.reload.session_error }
+      end
+    end
+
+    describe '#note_session_recovery!' do
+      before { config.update_columns(session_healthy: false, session_error: 'dead', session_checked_at: 1.day.ago) }
+
+      it 'flips an unhealthy session back to healthy' do
+        config.note_session_recovery!
+        expect(config.reload.session_healthy?).to be true
+      end
+
+      it 'clears the error' do
+        config.note_session_recovery!
+        expect(config.reload.session_error).to be_nil
+      end
+
+      it 'does not write when already healthy (transition-only)' do
+        config.update_columns(session_healthy: true, session_error: nil, session_checked_at: 1.day.ago)
+        expect { config.note_session_recovery! }.to_not change { config.reload.session_checked_at }
+      end
+    end
+
+    describe '#record_check!' do
+      it 'stamps the checked-at time' do
+        config.record_check!(healthy: true)
+        expect(config.reload.session_checked_at).to be_present
+      end
+
+      it 'records an unhealthy check with its error' do
+        config.record_check!(healthy: false, error: 'boom')
+        expect(config.reload).to have_attributes(session_healthy: false, session_error: 'boom')
+      end
+    end
+  end
+
   describe '.instance' do
     it { expect(described_class.instance).to be_persisted }
 

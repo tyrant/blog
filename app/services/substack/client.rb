@@ -30,6 +30,20 @@ module Substack
       request(Net::HTTP::Get.new(uri("/api/v1/reader/comment/#{comment_id}")))
     end
 
+    # A cheap authenticated read to verify the session cookie is still valid.
+    # Returns true on success; raises AuthError (recorded) if the cookie is dead.
+    # Prefers a private draft GET (definitely auth-gated) when a reviews draft is
+    # configured, else the logged-in user's subscriptions.
+    def verify_session
+      draft_id = SubstackSyncConfig.instance.reviews_draft_id
+      if draft_id.present? && @publication_host.present?
+        request(Net::HTTP::Get.new(pub_uri("/api/v1/drafts/#{draft_id}")))
+      else
+        request(Net::HTTP::Get.new(uri("/api/v1/subscriptions")))
+      end
+      true
+    end
+
     # A post lives on its publication subdomain, not substack.com — build the API
     # URL from the post URL's host + /p/<slug>.
     def get_post(post_url)
@@ -169,12 +183,24 @@ module Substack
     def handle(response)
       case response.code.to_i
       when 200..299
+        record_session_health(recovered: true)
         response.body.present? ? JSON.parse(response.body) : {}
       when 401, 403
+        record_session_health(recovered: false, message: "Substack rejected the session cookie (#{response.code})")
         raise AuthError, "Substack rejected the session cookie (#{response.code}) — refresh it"
       else
         raise Error, "Substack API #{response.code}: #{response.body.to_s[0, 300]}"
       end
+    end
+
+    # Record the cookie's health on the config singleton so the admin page can
+    # surface an expired session. Best-effort: never let health bookkeeping break
+    # an actual request.
+    def record_session_health(recovered:, message: nil)
+      config = SubstackSyncConfig.instance
+      recovered ? config.note_session_recovery! : config.note_session_failure!(message)
+    rescue => e
+      Rails.logger.warn("[Substack] session-health record failed: #{e.message}")
     end
   end
 end

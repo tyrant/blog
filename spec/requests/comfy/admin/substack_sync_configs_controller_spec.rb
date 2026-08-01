@@ -14,6 +14,45 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
     it { expect(response.body).to include 'Substack Sync Settings' }
   end
 
+  describe 'GET edit with an unhealthy session' do
+    before do
+      SubstackSyncConfig.instance.update_columns(session_healthy: false, session_error: 'cookie rejected', session_checked_at: Time.current)
+      get edit_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+    end
+
+    it { expect(response.body).to include 'Session cookie rejected' }
+  end
+
+  describe 'POST check_connection' do
+    context 'a valid cookie' do
+      before do
+        allow(Substack::HealthCheck).to receive(:execute).and_return(Substack::HealthCheck::Result.new(status: :ok, message: 'ok'))
+        post check_connection_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+      end
+
+      it { expect(response).to redirect_to edit_comfy_admin_substack_sync_config_path }
+      it { expect(flash[:success]).to be_present }
+    end
+
+    context 'an expired cookie' do
+      before do
+        allow(Substack::HealthCheck).to receive(:execute).and_return(Substack::HealthCheck::Result.new(status: :auth_failed, message: 'dead'))
+        post check_connection_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+      end
+
+      it { expect(flash[:danger]).to be_present }
+    end
+
+    context 'an inconclusive check' do
+      before do
+        allow(Substack::HealthCheck).to receive(:execute).and_return(Substack::HealthCheck::Result.new(status: :inconclusive, message: 'timeout'))
+        post check_connection_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+      end
+
+      it { expect(flash[:warning]).to be_present }
+    end
+  end
+
   describe 'PATCH update' do
     context 'with valid params' do
       before do

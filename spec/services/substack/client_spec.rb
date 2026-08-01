@@ -195,6 +195,53 @@ RSpec.describe Substack::Client do
     end
   end
 
+  describe 'session-health recording' do
+    context 'a rejected cookie' do
+      before do
+        stub_request(:get, %r{substack\.com}).to_return(status: 403, body: 'nope')
+        begin; client.get_note(1); rescue Substack::Client::AuthError; end
+      end
+
+      it { expect(SubstackSyncConfig.instance.reload.session_healthy?).to be false }
+    end
+
+    context 'a successful call after an outage' do
+      before do
+        SubstackSyncConfig.instance.update_columns(session_healthy: false, session_error: 'was dead')
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/1').to_return(status: 200, body: '{}')
+        client.get_note(1)
+      end
+
+      it { expect(SubstackSyncConfig.instance.reload.session_healthy?).to be true }
+    end
+  end
+
+  describe '#verify_session' do
+    context 'with no reviews draft configured' do
+      before { stub_request(:get, 'https://substack.com/api/v1/subscriptions').to_return(status: 200, body: '{}') }
+
+      it { expect(client.verify_session).to be true }
+    end
+
+    context 'with a reviews draft configured' do
+      subject(:client) { described_class.new(session_cookie: cookie, publication_host: 'pub.substack.com') }
+
+      before do
+        SubstackSyncConfig.instance.update!(reviews_draft_id: 555)
+        stub_request(:get, 'https://pub.substack.com/api/v1/drafts/555').to_return(status: 200, body: '{}')
+        client.verify_session
+      end
+
+      it { expect(a_request(:get, 'https://pub.substack.com/api/v1/drafts/555')).to have_been_made }
+    end
+
+    context 'when the cookie is rejected' do
+      before { stub_request(:get, %r{substack\.com}).to_return(status: 401, body: 'no') }
+
+      it { expect { client.verify_session }.to raise_error(Substack::Client::AuthError) }
+    end
+  end
+
   describe 'connection timeouts' do
     before { stub_request(:get, 'https://substack.com/api/v1/reader/comment/1').to_return(status: 200, body: '{}') }
 

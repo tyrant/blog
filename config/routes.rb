@@ -70,6 +70,7 @@ Rails.application.routes.draw do
                only: %i[edit update] do
         post :recapture
         post :sync_all
+        post :check_connection
       end
 
       resource :bluesky_sync_config,

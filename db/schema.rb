@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_31_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_01_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -422,6 +422,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_31_000001) do
     t.integer "quotation_rotation_days", default: 7, null: false
     t.datetime "quotations_rotated_at"
     t.bigint "reviews_draft_id"
+    t.boolean "session_healthy", default: true, null: false
+    t.datetime "session_checked_at"
+    t.string "session_error"
   end
 
   create_table "tags", force: :cascade do |t|

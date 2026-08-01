@@ -1,6 +1,20 @@
 .page-header
   %h2 Substack Sync Settings
 
+.mb-3
+  - if @config.session_checked_at.nil?
+    .alert.alert-secondary.mb-2 Session cookie not yet checked.
+  - elsif @config.session_healthy?
+    .alert.alert-success.mb-2 Session cookie OK — last verified #{time_ago_in_words(@config.session_checked_at)} ago.
+  - else
+    .alert.alert-danger.mb-2
+      %strong Session cookie rejected — refresh it.
+      - if @config.session_error.present?
+        %div.small= @config.session_error
+      %div.small Detected #{time_ago_in_words(@config.session_checked_at)} ago. All Substack sync halts until the cookie is refreshed.
+  = form_with url: check_connection_comfy_admin_substack_sync_config_path, method: :post do
+    = submit_tag "Check connection now", class: "btn btn-outline-secondary btn-sm"
+
 = comfy_form_with model: @config, scope: :substack_sync_config, url: comfy_admin_substack_sync_config_path, method: :patch do |form|
 
   = form.text_area :subtitle,

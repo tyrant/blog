@@ -27,6 +27,20 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
     redirect_to edit_comfy_admin_substack_sync_config_path
   end
 
+  # Verify the stored session cookie on demand and surface the result.
+  def check_connection
+    result = Substack::HealthCheck.execute
+    case result.status
+    when :ok
+      flash[:success] = "Substack session cookie is valid."
+    when :auth_failed
+      flash[:danger] = "Substack rejected the session cookie — refresh it. (#{result.message})"
+    else
+      flash[:warning] = "Couldn't verify the session cookie: #{result.message}"
+    end
+    redirect_to edit_comfy_admin_substack_sync_config_path
+  end
+
   # Full re-sync of every Substack-linked post on the prod worker.
   def sync_all
     SyncAllSubstackPostsJob.perform_later
