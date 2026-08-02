@@ -74,6 +74,10 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     }
 
     it { expect(response).to have_http_status :success }
+
+    it 'renders a generate-subtitle-sample button carrying the config template' do
+      expect(response.body).to include 'data-subtitle-sample'
+    end
   end
 
   describe 'GET /admin/sites/:site_id/blog-posts/:id/edit (newer/older navigation)' do

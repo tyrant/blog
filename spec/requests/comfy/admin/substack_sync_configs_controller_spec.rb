@@ -14,6 +14,22 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
     it { expect(response.body).to include 'Substack Sync Settings' }
   end
 
+  describe 'GET edit — subtitle template tools' do
+    before { get edit_comfy_admin_substack_sync_config_path, headers: http_auth_headers }
+
+    it 'renders the variables JSON textarea with the expected id' do
+      expect(response.body).to match(/id=['"]substack_sync_config_subtitle_variables_json['"]/)
+    end
+
+    it 'renders a generate-sample button wired to the template field' do
+      expect(response.body).to match(/data-template-field=['"]substack_sync_config_subtitle['"]/)
+    end
+
+    it 'wires the sample button to the variables field' do
+      expect(response.body).to match(/data-variables-field=['"]substack_sync_config_subtitle_variables_json['"]/)
+    end
+  end
+
   describe 'GET edit with an unhealthy session' do
     before do
       SubstackSyncConfig.instance.update_columns(session_healthy: false, session_error: 'cookie rejected', session_checked_at: Time.current)
@@ -84,6 +100,16 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
       end
 
       it { expect(SubstackSyncConfig.instance.reviews_draft_id).to eq 207698961 }
+    end
+
+    context 'with subtitle template variables' do
+      before do
+        patch comfy_admin_substack_sync_config_path,
+          params: { substack_sync_config: { subtitle_variables_json: '{"x":["a"]}', footer_json_text: '[]' } },
+          headers: http_auth_headers
+      end
+
+      it { expect(SubstackSyncConfig.instance.subtitle_variables_json).to eq '{"x":["a"]}' }
     end
 
     context 'with invalid footer JSON' do

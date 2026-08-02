@@ -16,6 +16,48 @@ RSpec.describe SubstackSyncConfig do
     it 'uses the default subtitle otherwise' do
       expect(config.subtitle_for(post)).to eq 'Default subtitle'
     end
+
+    context 'with template variables' do
+      let(:config) do
+        described_class.instance.tap do |c|
+          c.update!(subtitle: 'Advice: {{ x }}', subtitle_default: 'Default: {{ x }}',
+                    subtitle_variables_json: '{"x":["only"]}')
+        end
+      end
+
+      it 'renders the advice template for Shite Advice posts' do
+        BlogPostTag.without_mirror { post.tags << Tag.create!(name: 'Shite Advice') }
+        expect(config.subtitle_for(post)).to eq 'Advice: only'
+      end
+
+      it 'renders the default template otherwise' do
+        expect(config.subtitle_for(post)).to eq 'Default: only'
+      end
+    end
+  end
+
+  describe '#subtitle_variables' do
+    subject(:config) { described_class.instance }
+
+    it 'parses the JSON into a hash' do
+      config.subtitle_variables_json = '{"x":["a","b"]}'
+      expect(config.subtitle_variables).to eq('x' => %w[a b])
+    end
+
+    it 'is an empty hash when blank' do
+      config.subtitle_variables_json = nil
+      expect(config.subtitle_variables).to eq({})
+    end
+
+    it 'is an empty hash on invalid JSON' do
+      config.subtitle_variables_json = 'not json'
+      expect(config.subtitle_variables).to eq({})
+    end
+
+    it 'is an empty hash when the JSON is not an object' do
+      config.subtitle_variables_json = '[1,2,3]'
+      expect(config.subtitle_variables).to eq({})
+    end
   end
 
   describe 'validations' do

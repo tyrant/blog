@@ -39,10 +39,23 @@ class SubstackSyncConfig < ApplicationRecord
     quotations_rotated_at.nil? || quotations_rotated_at + quotation_rotation_days.days <= Time.current
   end
 
-  # The subtitle to mirror for a post: the "Shite Advice" one for terrible-advice
-  # posts, the default one otherwise.
+  # The subtitle to mirror for a post: the "Shite Advice" template for terrible-
+  # advice posts, the default template otherwise, rendered with a random pick per
+  # {{ variable }} from subtitle_variables.
   def subtitle_for(post)
-    post.tags.exists?(name: "Shite Advice") ? subtitle.to_s : subtitle_default.to_s
+    template = post.tags.exists?(name: "Shite Advice") ? subtitle.to_s : subtitle_default.to_s
+    Substack::SubtitleTemplate.render(template, subtitle_variables)
+  end
+
+  # The subtitle template variables ({ "var" => ["a", "b"] }) parsed from the JSON
+  # textarea; empty hash when unset or unparseable (the author keeps it consistent).
+  def subtitle_variables
+    return {} if subtitle_variables_json.blank?
+
+    parsed = JSON.parse(subtitle_variables_json)
+    parsed.is_a?(Hash) ? parsed : {}
+  rescue JSON::ParserError
+    {}
   end
 
   # The footer edited as pretty JSON text in the admin form.

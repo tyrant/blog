@@ -16,6 +16,13 @@
       %button.btn.btn-outline-primary.btn-sm.btn-block.my-1{type: "button", id: "sync-to-bluesky", data: {sync_url: sync_to_bluesky_comfy_admin_blog_post_path(@site, @post)}}
         Sync to Bluesky
 
+    - if @post.persisted?
+      - substack_config = SubstackSyncConfig.instance
+      - subtitle_template = @post.tags.exists?(name: "Shite Advice") ? substack_config.subtitle.to_s : substack_config.subtitle_default.to_s
+      %button.btn.btn-outline-secondary.btn-sm.btn-block.my-1{type: "button", data: { subtitle_sample: true, template: subtitle_template, variables: substack_config.subtitle_variables_json.to_s, output: "post-subtitle-sample-output" }}
+        Generate subtitle sample
+      %input.form-control.form-control-sm.my-1{type: "text", readonly: true, id: "post-subtitle-sample-output", placeholder: "Sample subtitle…"}
+
 
 = render "comfy/admin/blog/partials/post_navigation"
 

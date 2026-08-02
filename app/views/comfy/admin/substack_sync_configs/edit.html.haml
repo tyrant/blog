@@ -18,12 +18,27 @@
 = comfy_form_with model: @config, scope: :substack_sync_config, url: comfy_admin_substack_sync_config_path, method: :patch do |form|
 
   = form.text_area :subtitle,
-                   label: "Subtitle — for 'Shite Advice' posts",
+                   label: "Subtitle template — for 'Shite Advice' posts",
                    style: "field-sizing: content;"
 
   = form.text_area :subtitle_default,
-                   label: "Subtitle — for all other posts",
+                   label: "Subtitle template — for all other posts",
                    style: "field-sizing: content;"
+
+  = form.text_area :subtitle_variables_json,
+                   label: "Subtitle template variables — JSON: { \"var\": [\"choice\", …] }; each {{ var }} renders a random choice",
+                   style: "font-family: monospace; min-height: 10rem;"
+
+  .form-group.mb-3
+    %label.form-text.text-muted Preview
+    .d-flex.align-items-center.mb-1
+      %button.btn.btn-outline-secondary.btn-sm.mr-2{type: "button", data: { subtitle_sample: true, template_field: "substack_sync_config_subtitle", variables_field: "substack_sync_config_subtitle_variables_json", output: "subtitle_sample_output" }}
+        Generate sample ('Shite Advice')
+      %input.form-control.form-control-sm{type: "text", readonly: true, id: "subtitle_sample_output", placeholder: "Sample output…"}
+    .d-flex.align-items-center
+      %button.btn.btn-outline-secondary.btn-sm.mr-2{type: "button", data: { subtitle_sample: true, template_field: "substack_sync_config_subtitle_default", variables_field: "substack_sync_config_subtitle_variables_json", output: "subtitle_default_sample_output" }}
+        Generate sample (default)
+      %input.form-control.form-control-sm{type: "text", readonly: true, id: "subtitle_default_sample_output", placeholder: "Sample output…"}
 
   = form.text_area :footer_json_text,
                    label: "Footer blocks (ProseMirror JSON — subscribe CTA through the Subscribe button)",
