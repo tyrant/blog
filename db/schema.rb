@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_02_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_04_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -418,7 +418,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_02_000001) do
     t.jsonb "footer_json"
     t.jsonb "default_tags"
     t.boolean "quotation_rotation_enabled", default: false, null: false
-    t.text "subtitle_default"
     t.integer "quotation_rotation_days", default: 7, null: false
     t.datetime "quotations_rotated_at"
     t.bigint "reviews_draft_id"
