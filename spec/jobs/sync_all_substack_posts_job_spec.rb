@@ -10,10 +10,7 @@ RSpec.describe SyncAllSubstackPostsJob, type: :job do
   let!(:cat_a) { create :categorization, category: category, categorized: post_a, data: { 'id' => 900 } }
   let!(:cat_b) { create :categorization, category: category, categorized: post_b, data: { 'id' => 901 } }
 
-  before do
-    allow(SubstackPostSyncJob).to receive(:perform_later)
-    allow_any_instance_of(described_class).to receive(:sleep)
-  end
+  before { allow(SubstackPostSyncJob).to receive(:perform_later) }
 
   it 'enqueues a SubstackPostSyncJob for every Substack-linked post' do
     described_class.new.perform
