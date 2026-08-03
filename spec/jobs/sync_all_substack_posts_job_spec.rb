@@ -11,27 +11,27 @@ RSpec.describe SyncAllSubstackPostsJob, type: :job do
   let!(:cat_b) { create :categorization, category: category, categorized: post_b, data: { 'id' => 901 } }
 
   before do
-    allow(Substack::PostSyncer).to receive(:execute)
+    allow(SubstackPostSyncJob).to receive(:perform_now)
     allow_any_instance_of(described_class).to receive(:sleep)
   end
 
-  it 'syncs every Substack-linked post' do
+  it 'syncs every Substack-linked post through SubstackPostSyncJob' do
     described_class.new.perform
-    expect(Substack::PostSyncer).to have_received(:execute).with(post_id: post_a.id)
+    expect(SubstackPostSyncJob).to have_received(:perform_now).with(post_a.id)
   end
 
   it 'skips posts without a Substack categorization' do
     other = create :post, site: site
     described_class.new.perform
-    expect(Substack::PostSyncer).to_not have_received(:execute).with(post_id: other.id)
+    expect(SubstackPostSyncJob).to_not have_received(:perform_now).with(other.id)
   end
 
   context 'when one post errors' do
-    before { allow(Substack::PostSyncer).to receive(:execute).with(post_id: post_a.id).and_raise('boom') }
+    before { allow(SubstackPostSyncJob).to receive(:perform_now).with(post_a.id).and_raise('boom') }
 
     it 'swallows the error and continues to the next post' do
       described_class.new.perform
-      expect(Substack::PostSyncer).to have_received(:execute).with(post_id: post_b.id)
+      expect(SubstackPostSyncJob).to have_received(:perform_now).with(post_b.id)
     end
   end
 end
