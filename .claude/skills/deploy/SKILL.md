@@ -47,4 +47,14 @@ The script exits non-zero on a non-200 or a missing substring.
 
 ## Phase 4 — Complete
 
-Only when phases 1–3 are all green: mark the deploy task `completed` and report the shipped SHA, release id, and the health-check result. If a rollback happened, the deploy is **not** complete — report the rollback instead.
+Only when phases 1–3 are all green:
+
+1. Delete the now-merged feature branch (it's redundant once its commits are on `mistress` and shipped):
+   ```bash
+   git branch -d <feature-branch>
+   git push origin --delete <feature-branch>   # if it was ever pushed
+   ```
+   `git branch -d` refuses unless the branch is fully merged, so it's safe. A `remote ref does not exist` error from the push is fine — usually only `mistress` was pushed, not the feature branch.
+2. Mark the deploy task `completed` and report the shipped SHA, release id, and health-check result.
+
+If a rollback happened, the deploy is **not** complete — report the rollback instead, and do **not** delete the branch.
