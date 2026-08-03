@@ -26,6 +26,10 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
       expect(tag).to include 'cms-cm-mode'
     end
 
+    it 'wraps the variables editor in .json-fields for the smaller font' do
+      expect(response.body).to include 'json-fields'
+    end
+
     it 'renders a generate-sample button wired to the template field' do
       expect(response.body).to match(/data-template-field=['"]substack_sync_config_subtitle['"]/)
     end

@@ -25,10 +25,11 @@
                    label: "Subtitle template — for all other posts",
                    style: "field-sizing: content;"
 
-  = form.text_area :subtitle_variables_json,
-                   label: "Subtitle template variables — JSON: { \"var\": [\"choice\", …] }; each {{ var }} renders a random choice",
-                   style: "font-family: monospace; min-height: 10rem;",
-                   data: { 'cms-cm-mode': 'application/json' }
+  .json-fields
+    = form.text_area :subtitle_variables_json,
+                     label: "Subtitle template variables — JSON: { \"var\": [\"choice\", …] }; each {{ var }} renders a random choice",
+                     style: "font-family: monospace; min-height: 10rem;",
+                     data: { 'cms-cm-mode': 'application/json' }
 
   .form-group.mb-3
     %label.form-text.text-muted Preview
