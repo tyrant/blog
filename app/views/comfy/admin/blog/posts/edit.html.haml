@@ -18,7 +18,7 @@
 
     - if @post.persisted?
       - substack_config = SubstackSyncConfig.instance
-      - subtitle_template = @post.tags.exists?(name: "Shite Advice") ? substack_config.subtitle.to_s : substack_config.subtitle_default.to_s
+      - subtitle_template = substack_config.subtitle.to_s
       %button.btn.btn-outline-secondary.btn-sm.btn-block.my-1{type: "button", data: { subtitle_sample: true, template: subtitle_template, variables: substack_config.subtitle_variables_json.to_s, output: "post-subtitle-sample-output" }}
         Generate subtitle sample
       %input.form-control.form-control-sm.my-1{type: "text", readonly: true, id: "post-subtitle-sample-output", placeholder: "Sample subtitle…"}

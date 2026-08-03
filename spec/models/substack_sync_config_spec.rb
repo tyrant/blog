@@ -6,32 +6,26 @@ RSpec.describe SubstackSyncConfig do
   describe '#subtitle_for' do
     let(:site) { create :site }
     let(:post) { create :post, site: site }
-    let(:config) { described_class.instance.tap { |c| c.update!(subtitle: 'Advice subtitle', subtitle_default: 'Default subtitle') } }
+    let(:config) { described_class.instance.tap { |c| c.update!(subtitle: 'The subtitle') } }
 
-    it 'uses the advice subtitle for Shite Advice posts' do
-      BlogPostTag.without_mirror { post.tags << Tag.create!(name: 'Shite Advice') }
-      expect(config.subtitle_for(post)).to eq 'Advice subtitle'
+    it 'uses the subtitle for every post' do
+      expect(config.subtitle_for(post)).to eq 'The subtitle'
     end
 
-    it 'uses the default subtitle otherwise' do
-      expect(config.subtitle_for(post)).to eq 'Default subtitle'
+    it 'uses the same subtitle even for Shite Advice posts' do
+      BlogPostTag.without_mirror { post.tags << Tag.create!(name: 'Shite Advice') }
+      expect(config.subtitle_for(post)).to eq 'The subtitle'
     end
 
     context 'with template variables' do
       let(:config) do
         described_class.instance.tap do |c|
-          c.update!(subtitle: 'Advice: {{ x }}', subtitle_default: 'Default: {{ x }}',
-                    subtitle_variables_json: '{"x":["only"]}')
+          c.update!(subtitle: 'Subtitle: {{ x }}', subtitle_variables_json: '{"x":["only"]}')
         end
       end
 
-      it 'renders the advice template for Shite Advice posts' do
-        BlogPostTag.without_mirror { post.tags << Tag.create!(name: 'Shite Advice') }
-        expect(config.subtitle_for(post)).to eq 'Advice: only'
-      end
-
-      it 'renders the default template otherwise' do
-        expect(config.subtitle_for(post)).to eq 'Default: only'
+      it 'renders the subtitle template with a random variable pick' do
+        expect(config.subtitle_for(post)).to eq 'Subtitle: only'
       end
     end
   end

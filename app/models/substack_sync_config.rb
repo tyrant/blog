@@ -44,12 +44,11 @@ class SubstackSyncConfig < ApplicationRecord
     quotations_rotated_at.nil? || quotations_rotated_at + quotation_rotation_days.days <= Time.current
   end
 
-  # The subtitle to mirror for a post: the "Shite Advice" template for terrible-
-  # advice posts, the default template otherwise, rendered with a random pick per
-  # {{ variable }} from subtitle_variables.
-  def subtitle_for(post)
-    template = post.tags.exists?(name: "Shite Advice") ? subtitle.to_s : subtitle_default.to_s
-    Substack::SubtitleTemplate.render(template, subtitle_variables)
+  # The subtitle to mirror for every post: the single subtitle template, rendered
+  # with a random pick per {{ variable }} from subtitle_variables. (The post arg
+  # is kept for the caller's sake — the subtitle no longer varies by post/tag.)
+  def subtitle_for(_post)
+    Substack::SubtitleTemplate.render(subtitle.to_s, subtitle_variables)
   end
 
   # The subtitle template variables ({ "var" => ["a", "b"] }) parsed from the JSON

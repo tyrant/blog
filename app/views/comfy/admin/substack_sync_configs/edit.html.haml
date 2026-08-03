@@ -18,11 +18,7 @@
 = comfy_form_with model: @config, scope: :substack_sync_config, url: comfy_admin_substack_sync_config_path, method: :patch do |form|
 
   = form.text_area :subtitle,
-                   label: "Subtitle template — for 'Shite Advice' posts",
-                   style: "field-sizing: content;"
-
-  = form.text_area :subtitle_default,
-                   label: "Subtitle template — for all other posts",
+                   label: "Subtitle template — used for every post",
                    style: "field-sizing: content;"
 
   .json-fields
@@ -33,14 +29,10 @@
 
   .form-group.mb-3
     %label.form-text.text-muted Preview
-    .d-flex.align-items-center.mb-1
-      %button.btn.btn-outline-secondary.btn-sm.mr-2{type: "button", data: { subtitle_sample: true, template_field: "substack_sync_config_subtitle", variables_field: "substack_sync_config_subtitle_variables_json", output: "subtitle_sample_output" }}
-        Generate sample ('Shite Advice')
-      %textarea.form-control.form-control-sm{readonly: true, id: "subtitle_sample_output", placeholder: "Sample output…"}
     .d-flex.align-items-center
-      %button.btn.btn-outline-secondary.btn-sm.mr-2{type: "button", data: { subtitle_sample: true, template_field: "substack_sync_config_subtitle_default", variables_field: "substack_sync_config_subtitle_variables_json", output: "subtitle_default_sample_output" }}
-        Generate sample (default)
-      %textarea.form-control.form-control-sm{readonly: true, id: "subtitle_default_sample_output", placeholder: "Sample output…"}
+      %button.btn.btn-outline-secondary.btn-sm.mr-2{type: "button", data: { subtitle_sample: true, template_field: "substack_sync_config_subtitle", variables_field: "substack_sync_config_subtitle_variables_json", output: "subtitle_sample_output" }}
+        Generate sample
+      %textarea.form-control.form-control-sm{readonly: true, id: "subtitle_sample_output", placeholder: "Sample output…"}
 
   = form.text_area :footer_json_text,
                    label: "Footer blocks (ProseMirror JSON — subscribe CTA through the Subscribe button)",
