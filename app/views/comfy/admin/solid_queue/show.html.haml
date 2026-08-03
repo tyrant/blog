@@ -1,0 +1,6 @@
+.page-header.d-flex.align-items-center
+  %h2.mr-auto SolidQueue
+  = link_to "Open full screen ↗", "/admin/jobs", target: "_blank", rel: "noopener", class: "btn btn-outline-secondary btn-sm"
+
+%iframe.solid-queue-frame{ src: "/admin/jobs", title: "SolidQueue jobs dashboard",
+  style: "width: 100%; height: calc(100vh - 11rem); min-height: 600px; border: 1px solid #dee2e6; border-radius: 3px;" }
