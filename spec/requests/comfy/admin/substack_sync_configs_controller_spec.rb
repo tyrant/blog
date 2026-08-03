@@ -21,6 +21,11 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
       expect(response.body).to match(/id=['"]substack_sync_config_subtitle_variables_json['"]/)
     end
 
+    it 'gives the variables textarea the CodeMirror JSON treatment' do
+      tag = response.body[/<textarea[^>]*subtitle_variables_json[^>]*>/]
+      expect(tag).to include 'cms-cm-mode'
+    end
+
     it 'renders a generate-sample button wired to the template field' do
       expect(response.body).to match(/data-template-field=['"]substack_sync_config_subtitle['"]/)
     end

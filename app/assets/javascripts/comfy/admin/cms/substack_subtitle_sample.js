@@ -27,10 +27,10 @@ window.CMS.substackSubtitleSample = {
 
   generate: function (btn) {
     const template = btn.dataset.templateField
-      ? (document.getElementById(btn.dataset.templateField) || {}).value
+      ? this.fieldValue(btn.dataset.templateField)
       : btn.dataset.template;
     const variablesJson = btn.dataset.variablesField
-      ? (document.getElementById(btn.dataset.variablesField) || {}).value
+      ? this.fieldValue(btn.dataset.variablesField)
       : btn.dataset.variables;
 
     const output = document.getElementById(btn.dataset.output);
@@ -38,5 +38,16 @@ window.CMS.substackSubtitleSample = {
 
     const result = renderSubtitleTemplate(template, variablesJson);
     output.value = result.error ? result.error : result.output;
+  },
+
+  // The current value of a field by id. A CodeMirror-editing textarea only syncs
+  // to its <textarea> on form submit, so read the live editor value when present
+  // (its wrapper element is the textarea's next sibling and carries .CodeMirror).
+  fieldValue: function (id) {
+    const el = document.getElementById(id);
+    if (!el) return '';
+    const wrapper = el.nextElementSibling;
+    if (wrapper && wrapper.CodeMirror) return wrapper.CodeMirror.getValue();
+    return el.value;
   },
 };
