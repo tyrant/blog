@@ -26,6 +26,14 @@ describe('renderSubtitleTemplate', () => {
     Math.random.mockRestore();
   });
 
+  it('upper-cases the compliment variable value', () => {
+    expect(renderSubtitleTemplate('{{ compliment }}', '{"compliment":["lovely"]}').output).toBe('LOVELY');
+  });
+
+  it('does not upper-case other variables', () => {
+    expect(renderSubtitleTemplate('{{ other }}', '{"other":["lovely"]}').output).toBe('lovely');
+  });
+
   it('leaves a token whose variable is missing', () => {
     expect(renderSubtitleTemplate('a {{ missing }} b', '{}').output).toBe('a {{ missing }} b');
   });

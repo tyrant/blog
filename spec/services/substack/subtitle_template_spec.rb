@@ -44,5 +44,13 @@ RSpec.describe Substack::SubtitleTemplate do
     it 'treats non-hash variables as empty' do
       expect(described_class.render('{{ x }}', nil)).to eq '{{ x }}'
     end
+
+    it 'upper-cases the compliment variable value' do
+      expect(described_class.render('{{ compliment }}', { 'compliment' => ['lovely'] })).to eq 'LOVELY'
+    end
+
+    it 'does not upper-case other variables' do
+      expect(described_class.render('{{ other }}', { 'other' => ['lovely'] })).to eq 'lovely'
+    end
   end
 end

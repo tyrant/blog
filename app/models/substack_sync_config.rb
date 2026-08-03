@@ -6,6 +6,11 @@ class SubstackSyncConfig < ApplicationRecord
   validate :footer_json_is_array
   validates :quotation_rotation_days, numericality: { only_integer: true, greater_than: 0 }
 
+  # Tidy the subtitle variables JSON on save: sort each array's entries
+  # alphabetically and pretty-print (one entry per line). Invalid JSON is left
+  # untouched for the author to fix.
+  before_save :normalize_subtitle_variables_json
+
   def self.instance
     first_or_create!
   end
@@ -78,5 +83,19 @@ class SubstackSyncConfig < ApplicationRecord
     elsif !footer_json.nil? && !footer_json.is_a?(Array)
       errors.add(:footer_json, "must be a JSON array of blocks")
     end
+  end
+
+  def normalize_subtitle_variables_json
+    return if subtitle_variables_json.blank?
+
+    parsed = JSON.parse(subtitle_variables_json)
+    return unless parsed.is_a?(Hash)
+
+    sorted = parsed.transform_values do |value|
+      value.is_a?(Array) ? value.sort_by { |entry| entry.to_s.downcase } : value
+    end
+    self.subtitle_variables_json = JSON.pretty_generate(sorted)
+  rescue JSON::ParserError
+    nil # leave invalid JSON exactly as entered
   end
 end

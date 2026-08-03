@@ -8,12 +8,18 @@
 module Substack
   module SubtitleTemplate
     TOKEN = /\{\{\s*(\w+)\s*\}\}/
+    # Variables whose rendered value is upper-cased.
+    UPPERCASE_KEYS = %w[compliment].freeze
 
     def self.render(template, variables)
       variables = {} unless variables.is_a?(Hash)
       template.to_s.gsub(TOKEN) do
-        values = variables[Regexp.last_match(1)]
-        values.is_a?(Array) && values.any? ? values.sample.to_s : Regexp.last_match(0)
+        key = Regexp.last_match(1)
+        values = variables[key]
+        next Regexp.last_match(0) unless values.is_a?(Array) && values.any?
+
+        value = values.sample.to_s
+        UPPERCASE_KEYS.include?(key) ? value.upcase : value
       end
     end
   end

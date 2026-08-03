@@ -3,6 +3,9 @@
 // strings). Missing/empty variables leave the token untouched, mirroring the
 // server-side Substack::SubtitleTemplate. Returns { output } on success or
 // { error } if the variables JSON is unparseable.
+// Variables whose rendered value is upper-cased (mirrors Substack::SubtitleTemplate).
+const UPPERCASE_KEYS = ['compliment'];
+
 export function renderSubtitleTemplate(template, variablesJson) {
   let variables = {};
   const raw = (variablesJson || '').trim();
@@ -20,7 +23,8 @@ export function renderSubtitleTemplate(template, variablesJson) {
   const output = String(template || '').replace(/\{\{\s*(\w+)\s*\}\}/g, function (token, key) {
     const values = variables[key];
     if (Array.isArray(values) && values.length) {
-      return String(values[Math.floor(Math.random() * values.length)]);
+      const value = String(values[Math.floor(Math.random() * values.length)]);
+      return UPPERCASE_KEYS.includes(key) ? value.toUpperCase() : value;
     }
     return token;
   });

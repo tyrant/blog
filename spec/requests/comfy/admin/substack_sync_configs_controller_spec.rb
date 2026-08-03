@@ -118,7 +118,7 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
           headers: http_auth_headers
       end
 
-      it { expect(SubstackSyncConfig.instance.subtitle_variables_json).to eq '{"x":["a"]}' }
+      it { expect(SubstackSyncConfig.instance.subtitle_variables).to eq('x' => ['a']) }
     end
 
     context 'with invalid footer JSON' do

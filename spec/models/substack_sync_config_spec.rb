@@ -36,6 +36,35 @@ RSpec.describe SubstackSyncConfig do
     end
   end
 
+  describe 'normalizing subtitle_variables_json on save' do
+    subject(:config) { described_class.instance }
+
+    it 'sorts each array alphabetically (case-insensitive)' do
+      config.update!(subtitle_variables_json: '{"x":["baz","Bar","apple"]}')
+      expect(config.reload.subtitle_variables['x']).to eq %w[apple Bar baz]
+    end
+
+    it 'pretty-prints with each entry on its own line' do
+      config.update!(subtitle_variables_json: '{"x":["a","b"]}')
+      expect(config.reload.subtitle_variables_json).to eq %({\n  "x": [\n    "a",\n    "b"\n  ]\n})
+    end
+
+    it 'leaves invalid JSON untouched' do
+      config.update!(subtitle_variables_json: 'not json')
+      expect(config.reload.subtitle_variables_json).to eq 'not json'
+    end
+
+    it 'leaves a blank value untouched' do
+      config.update!(subtitle_variables_json: '')
+      expect(config.reload.subtitle_variables_json).to eq ''
+    end
+
+    it 'does not sort the object keys, only the arrays' do
+      config.update!(subtitle_variables_json: '{"z":["1"],"a":["2"]}')
+      expect(config.reload.subtitle_variables.keys).to eq %w[z a]
+    end
+  end
+
   describe '#subtitle_variables' do
     subject(:config) { described_class.instance }
 
