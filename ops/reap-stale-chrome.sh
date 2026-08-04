@@ -18,6 +18,13 @@ MAX_SEC=$(( ${1:-10} * 60 ))
 # Only automation browsers — adjust the profile names to match your scripts.
 PATTERN='chrom.*(playwright_profile|medium_playwright_profile|--headless)'
 
+# A browser driven by a live script isn't leaked — skip so we never kill an
+# active run. Heart/clap backlogs legitimately run well over MAX_MIN minutes,
+# and killing their browser mid-run aborts the whole run (TargetClosedError).
+if pgrep -f 'scripts/(substack_heart|medium_clap)\.py' >/dev/null 2>&1; then
+  exit 0
+fi
+
 # Capture first (pgrep exits non-zero when nothing matches — normal, not an error).
 pids=$(pgrep -f "$PATTERN" || true)
 [ -n "$pids" ] || exit 0
