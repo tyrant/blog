@@ -2,10 +2,10 @@
 
 # Builds a Substack Note body_json from a SubstackQuotation, for the blizzard's
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
-# marks; Notes have no heading or paragraph alignment): a bold "Review:" label, a
-# bold post-title link, the italic quote trailed by a 🔗 to the original comment,
-# the linked author, and a "More reviews" link. The post itself rides along as a
-# preview-card attachment (added by the ticker).
+# marks; Notes have no heading or paragraph alignment): a bold "Another <compliment>
+# review (🔗)" label whose 🔗 links the original comment, a bold post-title link,
+# the italic quote, the linked author, and a "More reviews" link. The post itself
+# rides along as a preview-card attachment (added by the ticker).
 module Substack
   module Blizzard
     module QuotationNote
@@ -17,18 +17,24 @@ module Substack
         { 
           "type" => "doc", 
           "attrs" => { "schemaVersion" => "v1" },
-          "content" => [label, 
-                        title(quotation), 
-                        quote(quotation), 
-                        attribution(quotation), 
+          "content" => [label(quotation),
+                        title(quotation),
+                        quote(quotation),
+                        attribution(quotation),
                         more_reviews]
         }
       end
 
-      def label
+      def label(quotation)
+        compliment = Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample
+        opener = ["Another", compliment, "review ("].compact.join(" ")
         {
           "type" => "paragraph",
-          "content" => [text("Review:", marks: [{ "type" => "bold" }])]
+          "content" => [
+            text(opener, marks: [{ "type" => "bold" }]),
+            text("🔗", marks: [{ "type" => "bold" }, link(quotation.comment_url)]),
+            text("):", marks: [{ "type" => "bold" }])
+          ]
         }
       end
 
@@ -40,16 +46,12 @@ module Substack
       end
 
       def quote(quotation)
-        nodes = [text("“#{quotation.quotation}”", marks: [{ "type" => "italic" }])]
-
-        if quotation.comment_url.present?
-          nodes << text(" ")
-          nodes << text("🔗", marks: [link(quotation.comment_url)])
-        end
-
         {
           "type" => "blockquote",
-          "content" => [{ "type" => "paragraph", "content" => nodes }]
+          "content" => [{
+            "type" => "paragraph",
+            "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "italic" }])]
+          }]
         }
       end
 

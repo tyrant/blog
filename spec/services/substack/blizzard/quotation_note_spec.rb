@@ -13,13 +13,38 @@ RSpec.describe Substack::Blizzard::QuotationNote do
   describe '.build' do
     subject(:doc) { described_class.build(quote) }
 
+    before do
+      allow(SubstackSyncConfig).to receive(:instance)
+        .and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] }))
+    end
+
     it { expect(doc['type']).to eq 'doc' }
     it { expect(doc['attrs']).to eq('schemaVersion' => 'v1') }
 
-    it 'opens with a bold "Review:" label' do
+    it 'opens with a bold "Another <compliment> review (" label' do
       node = doc['content'][0]['content'][0]
-      expect(node['text']).to eq 'Review:'
+      expect(node['text']).to eq 'Another cracking review ('
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
+    end
+
+    it 'makes the label 🔗 a bold link to the original comment' do
+      node = doc['content'][0]['content'][1]
+      expect(node['text']).to eq '🔗'
+      expect(node['marks'].map { |m| m['type'] }).to eq %w[bold link]
+      expect(node['marks'].last.dig('attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
+    end
+
+    it 'closes the label with a bold "):"' do
+      node = doc['content'][0]['content'][2]
+      expect(node['text']).to eq '):'
+      expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
+    end
+
+    it 'drops the compliment gracefully when none is configured' do
+      allow(SubstackSyncConfig).to receive(:instance)
+        .and_return(instance_double(SubstackSyncConfig, subtitle_variables: {}))
+      node = described_class.build(quote)['content'][0]['content'][0]
+      expect(node['text']).to eq 'Another review ('
     end
 
     it 'follows with the post title as a bold link to the post' do
@@ -36,14 +61,8 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       expect(node['marks'].map { |m| m['type'] }).to eq %w[italic]
     end
 
-    it 'trails the quote with a 🔗 linking the original comment' do
-      link = doc['content'][2]['content'][0]['content'].last
-      expect(link['text']).to eq '🔗'
-      expect(link.dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
-    end
-
-    it 'omits the comment link when there is no comment_url' do
-      nodes = described_class.build(quote(comment_url: nil))['content'][2]['content'][0]['content']
+    it 'keeps the 🔗 out of the quote blockquote' do
+      nodes = doc['content'][2]['content'][0]['content']
       expect(nodes.none? { |n| n['text'] == '🔗' }).to be true
     end
 
