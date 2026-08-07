@@ -21,30 +21,36 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(doc['type']).to eq 'doc' }
     it { expect(doc['attrs']).to eq('schemaVersion' => 'v1') }
 
-    it 'opens with a bold "Another <compliment> review (" label' do
+    it 'opens with a bold "Another <compliment> review" heading' do
       node = doc['content'][0]['content'][0]
-      expect(node['text']).to eq 'Another cracking review ('
+      expect(node['text']).to eq 'Another cracking review'
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
     end
 
-    it 'makes the label 🔗 a bold link to the original comment' do
+    it 'follows the heading with an unbolded " ("' do
       node = doc['content'][0]['content'][1]
+      expect(node['text']).to eq ' ('
+      expect(node['marks']).to be_nil
+    end
+
+    it 'makes the label 🔗 an unbolded link to the original comment' do
+      node = doc['content'][0]['content'][2]
       expect(node['text']).to eq '🔗'
-      expect(node['marks'].map { |m| m['type'] }).to eq %w[bold link]
+      expect(node['marks'].map { |m| m['type'] }).to eq %w[link]
       expect(node['marks'].last.dig('attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
     end
 
-    it 'closes the label with a bold "):"' do
-      node = doc['content'][0]['content'][2]
-      expect(node['text']).to eq '):'
-      expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
+    it 'closes the label with an unbolded ")"' do
+      node = doc['content'][0]['content'][3]
+      expect(node['text']).to eq ')'
+      expect(node['marks']).to be_nil
     end
 
     it 'drops the compliment gracefully when none is configured' do
       allow(SubstackSyncConfig).to receive(:instance)
         .and_return(instance_double(SubstackSyncConfig, subtitle_variables: {}))
       node = described_class.build(quote)['content'][0]['content'][0]
-      expect(node['text']).to eq 'Another review ('
+      expect(node['text']).to eq 'Another review'
     end
 
     it 'follows with the post title as a bold link to the post' do

@@ -2,10 +2,11 @@
 
 # Builds a Substack Note body_json from a SubstackQuotation, for the blizzard's
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
-# marks; Notes have no heading or paragraph alignment): a bold "Another <compliment>
-# review (🔗)" label whose 🔗 links the original comment, a bold post-title link,
-# the italic quote, the linked author, and a "More reviews" link. The post itself
-# rides along as a preview-card attachment (added by the ticker).
+# marks; Notes have no heading or paragraph alignment): a lead-in label — bold
+# "Another <compliment> review" then an unbolded "(🔗)" whose 🔗 links the original
+# comment — a bold post-title link, the italic quote, the linked author, and a
+# "More reviews" link. The post itself rides along as a preview-card attachment
+# (added by the ticker).
 module Substack
   module Blizzard
     module QuotationNote
@@ -27,13 +28,14 @@ module Substack
 
       def label(quotation)
         compliment = Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample
-        opener = ["Another", compliment, "review ("].compact.join(" ")
+        heading = ["Another", compliment, "review"].compact.join(" ")
         {
           "type" => "paragraph",
           "content" => [
-            text(opener, marks: [{ "type" => "bold" }]),
-            text("🔗", marks: [{ "type" => "bold" }, link(quotation.comment_url)]),
-            text("):", marks: [{ "type" => "bold" }])
+            text(heading, marks: [{ "type" => "bold" }]),
+            text(" ("),
+            text("🔗", marks: [link(quotation.comment_url)]),
+            text(")")
           ]
         }
       end
