@@ -36,7 +36,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it 'makes the label 🔗 an unbolded link to the original comment' do
       node = doc['content'][0]['content'][2]
       link = 'https://pub.substack.com/p/ch-1/comment/42'
-      expect(node['text']).to eq "🔗 #{link}"
+      expect(node['text']).to eq "@ #{link}"
       expect(node['marks'].map { |m| m['type'] }).to eq %w[link]
       expect(node['marks'].last.dig('attrs', 'href')).to eq link
     end

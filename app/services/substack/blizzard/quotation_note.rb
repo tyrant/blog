@@ -34,7 +34,7 @@ module Substack
           "content" => [
             text(heading, marks: [{ "type" => "bold" }]),
             text(" ("),
-            text("🔗 #{quotation.comment_url}", marks: [link(quotation.comment_url)]),
+            text("@ #{quotation.comment_url}", marks: [link(quotation.comment_url)]),
             text("):")
           ]
         }
