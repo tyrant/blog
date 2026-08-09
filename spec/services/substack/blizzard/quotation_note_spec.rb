@@ -27,16 +27,16 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
     end
 
-    it 'follows the heading with a " (🔗 "' do
+    it 'follows the heading with a " (@ "' do
       node = doc['content'][0]['content'][1]
-      expect(node['text']).to eq ' ('
+      expect(node['text']).to eq ' (@ '
       expect(node['marks']).to be_nil
     end
 
-    it 'makes the label 🔗 an unbolded link to the original comment' do
+    it 'makes the label @ an unbolded link to the original comment' do
       node = doc['content'][0]['content'][2]
       link = 'https://pub.substack.com/p/ch-1/comment/42'
-      expect(node['text']).to eq "@ #{link}"
+      expect(node['text']).to eq link
       expect(node['marks'].map { |m| m['type'] }).to eq %w[link]
       expect(node['marks'].last.dig('attrs', 'href')).to eq link
     end
