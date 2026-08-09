@@ -27,9 +27,9 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
     end
 
-    it 'follows the heading with a " (@ "' do
+    it 'follows the heading with a " (🔗 "' do
       node = doc['content'][0]['content'][1]
-      expect(node['text']).to eq ' (@ '
+      expect(node['text']).to eq ' (🔗 '
       expect(node['marks']).to be_nil
     end
 
