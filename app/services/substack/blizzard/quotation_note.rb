@@ -27,7 +27,7 @@ module Substack
       end
 
       def label(quotation)
-        compliment = Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample
+        compliment = Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample&.upcase
         heading = ["Another", compliment, "review"].compact.join(" ")
         {
           "type" => "paragraph",

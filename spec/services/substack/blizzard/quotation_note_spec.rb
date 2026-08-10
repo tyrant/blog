@@ -23,7 +23,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
     it 'opens with a bold "Another <compliment> review" heading' do
       node = doc['content'][0]['content'][0]
-      expect(node['text']).to eq 'Another cracking review'
+      expect(node['text']).to eq 'Another CRACKING review'
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
     end
 
