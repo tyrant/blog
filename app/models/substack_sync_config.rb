@@ -51,6 +51,21 @@ class SubstackSyncConfig < ApplicationRecord
     Substack::SubtitleTemplate.render(subtitle.to_s, subtitle_variables)
   end
 
+  # The ordered Substack draft ids of the Reviews pages: page 1 is reviews_draft_id
+  # (its slug/URL is preserved), pages 2..X live in reviews_extra_draft_ids and are
+  # auto-created by the syncer. Empty when no page-1 id is configured.
+  def reviews_page_ids
+    return [] if reviews_draft_id.blank?
+
+    [reviews_draft_id, *Array(reviews_extra_draft_ids)].compact
+  end
+
+  # Append an auto-created Reviews page id (pages 2..X). Called by the syncer when
+  # the review count grows past another multiple of 20.
+  def add_reviews_page_id!(id)
+    update!(reviews_extra_draft_ids: Array(reviews_extra_draft_ids) + [id])
+  end
+
   # The subtitle template variables ({ "var" => ["a", "b"] }) parsed from the JSON
   # textarea; empty hash when unset or unparseable (the author keeps it consistent).
   def subtitle_variables

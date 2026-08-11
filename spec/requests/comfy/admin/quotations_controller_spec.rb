@@ -59,6 +59,12 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
         expect(SyncReviewsPageJob).to have_received(:perform_later)
       end
+
+      it 'reshuffles the whole pool so reviews redistribute across pages' do
+        allow(SubstackQuotation).to receive(:reshuffle!)
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        expect(SubstackQuotation).to have_received(:reshuffle!)
+      end
     end
 
     context 'when resolution fails' do

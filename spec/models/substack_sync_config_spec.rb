@@ -211,6 +211,40 @@ RSpec.describe SubstackSyncConfig do
     end
   end
 
+  describe '#reviews_page_ids' do
+    subject(:config) { described_class.instance }
+
+    it 'is empty when no page-1 id is configured' do
+      config.update!(reviews_draft_id: nil, reviews_extra_draft_ids: [222])
+      expect(config.reviews_page_ids).to eq []
+    end
+
+    it 'is page 1 alone when no extra pages exist' do
+      config.update!(reviews_draft_id: 111)
+      expect(config.reviews_page_ids).to eq [111]
+    end
+
+    it 'orders page 1 ahead of the extra pages' do
+      config.update!(reviews_draft_id: 111, reviews_extra_draft_ids: [222, 333])
+      expect(config.reviews_page_ids).to eq [111, 222, 333]
+    end
+  end
+
+  describe '#add_reviews_page_id!' do
+    subject(:config) { described_class.instance.tap { |c| c.update!(reviews_draft_id: 111) } }
+
+    it 'appends the id to the extra pages' do
+      config.add_reviews_page_id!(222)
+      expect(config.reload.reviews_extra_draft_ids).to eq [222]
+    end
+
+    it 'preserves earlier extra pages' do
+      config.update!(reviews_extra_draft_ids: [222])
+      config.add_reviews_page_id!(333)
+      expect(config.reload.reviews_page_ids).to eq [111, 222, 333]
+    end
+  end
+
   describe '.instance' do
     it { expect(described_class.instance).to be_persisted }
 

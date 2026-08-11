@@ -20,6 +20,9 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation = SubstackQuotation.new(quotation: params[:quotation], comment_url: params[:comment_url])
     quotation.populate_from_substack!
     quotation.save!
+    # Reshuffle the whole pool on every add so reviews redistribute across the
+    # groups-of-20 pages, then rebuild all pages (creating new ones as needed).
+    SubstackQuotation.reshuffle!
     SyncReviewsPageJob.perform_later
     flash[:success] = "Saved quotation#{quotation.author_name ? " by #{quotation.author_name}" : ""}."
   rescue => e

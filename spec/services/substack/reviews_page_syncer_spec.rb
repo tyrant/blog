@@ -36,9 +36,9 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(client).to have_received(:update_draft).with(555, hash_including(draft_body: kind_of(String)))
     end
 
-    it 'preserves the existing title and subtitle' do
+    it 'titles page 1 and preserves the subtitle' do
       sync
-      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews', draft_subtitle: ''))
+      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews page 1', draft_subtitle: ''))
     end
 
     it 'lists every featurable quotation as a blockquote' do
@@ -163,6 +163,85 @@ RSpec.describe Substack::ReviewsPageSyncer do
     it 'republishes to push the edit live' do
       sync
       expect(client).to have_received(:publish_draft).with(555)
+    end
+  end
+
+  context 'when the pool spans more than one page' do
+    # PER_PAGE = 2, three quotations → page 1 gets two, page 2 gets one.
+    let(:bodies) { {} }
+
+    before do
+      stub_const('Substack::ReviewsPageSyncer::PER_PAGE', 2)
+      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com')
+      quote(quotation: 'one').update!(position: 0)
+      quote(quotation: 'two').update!(position: 1)
+      quote(quotation: 'three').update!(position: 2)
+      allow(client).to receive(:get_draft).with(555)
+        .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews')
+      allow(client).to receive(:get_draft).with(556)
+        .and_return('draft_title' => 'Reviews page 2', 'draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews-page-2')
+      allow(client).to receive(:create_draft).and_return('id' => 556)
+      allow(client).to receive(:publish_draft)
+      allow(client).to receive(:update_draft) do |id, attrs|
+        bodies[id] = JSON.parse(attrs[:draft_body])['content'] if attrs[:draft_body]
+      end
+      allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
+    end
+
+    it 'auto-creates the second page titled "Reviews page 2"' do
+      sync
+      expect(client).to have_received(:create_draft).with(hash_including(title: 'Reviews page 2')).once
+    end
+
+    it 'slugs the new page "reviews-page-2"' do
+      sync
+      expect(client).to have_received(:update_draft).with(556, hash_including(slug: 'reviews-page-2'))
+    end
+
+    it 'publishes the newly created page' do
+      sync
+      expect(client).to have_received(:publish_draft).with(556)
+    end
+
+    it 'records the new page id in the config' do
+      sync
+      expect(config.reload.reviews_extra_draft_ids).to eq [556]
+    end
+
+    it 'titles the two pages in order' do
+      sync
+      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews page 1'))
+      expect(client).to have_received(:update_draft).with(556, hash_including(draft_title: 'Reviews page 2'))
+    end
+
+    it 'puts two reviews on page 1 and one on page 2' do
+      sync
+      expect(bodies[555].count { |b| b['type'] == 'blockquote' }).to eq 2
+      expect(bodies[556].count { |b| b['type'] == 'blockquote' }).to eq 1
+    end
+
+    it 'distributes reviews in stored position order' do
+      sync
+      page1_quotes = bodies[555].select { |b| b['type'] == 'blockquote' }
+        .map { |b| b['content'][0]['content'][0]['text'] }
+      expect(page1_quotes).to eq ['“one”', '“two”']
+    end
+
+    it 'opens and closes each page with a centred pagination nav' do
+      sync
+      first, last = bodies[555].first, bodies[555].last
+      expect([first, last].map { |b| b['type'] }).to eq %w[paragraph paragraph]
+      expect([first, last].map { |b| b.dig('attrs', 'textAlign') }).to eq %w[center center]
+    end
+
+    it 'bolds the current page and links the others in the nav' do
+      sync
+      nav = bodies[555].first['content'].reject { |n| n['text'].strip.empty? }
+      current = nav.find { |n| n['text'] == '1' }
+      other   = nav.find { |n| n['text'] == '2' }
+      expect(current['marks'].map { |m| m['type'] }).to eq %w[strong]
+      expect(other['marks'].find { |m| m['type'] == 'link' }.dig('attrs', 'href'))
+        .to eq 'https://mikeyclarke.substack.com/p/reviews-page-2'
     end
   end
 
