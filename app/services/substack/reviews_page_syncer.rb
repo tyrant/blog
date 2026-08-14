@@ -51,6 +51,7 @@ module Substack
         # first sync (send_email:false — no subscriber email is ever sent).
         @client.publish_draft(id) if drafts[i]["is_published"] || @created_ids.include?(id)
       end
+
       page_ids
     end
 
@@ -62,6 +63,7 @@ module Substack
     def ensure_page_ids(page_count)
       ids = @config.reviews_page_ids
       ids << create_page(ids.size) while ids.size < page_count
+
       ids
     end
 
@@ -71,13 +73,17 @@ module Substack
     def create_page(index)
       bylines = [{ id: @config.author_id, is_guest: false }]
       created = @client.create_draft(
-        title: "Reviews Page #{index + 1}", subtitle: "",
-        body_doc: { "type" => "doc", "content" => [{ "type" => "paragraph" }] }, bylines: bylines
+        title: "Reviews Page #{index + 1}",
+        subtitle: "",
+        body_doc: { "type" => "doc", "content" => [{ "type" => "paragraph" }] },
+        bylines: bylines
       )
+
       id = created.fetch("id")
       @client.update_draft(id, slug: default_slug(index), draft_bylines: bylines)
       @config.add_reviews_page_id!(id)
       @created_ids << id
+
       id
     end
 
@@ -87,7 +93,11 @@ module Substack
       units  = reviews.flat_map { |quotation| review_unit(quotation) }
       content = banner + nav + page_intro + units + nav
       content = [{ "type" => "paragraph" }] if content.empty?
-      { "type" => "doc", "content" => content }
+
+      {
+        "type" => "doc",
+        "content" => content
+      }
     end
 
     # The page's banner: the cover image of the page's first review's post, at
@@ -96,14 +106,31 @@ module Substack
     def banner_image(quotation)
       return [] if quotation.nil? || quotation.post_image_url.blank?
 
-      content = [{ "type" => "image2", "attrs" => banner_attrs(quotation.post_image_url) }]
+      content = [{ 
+        "type" => "image2", 
+        "attrs" => banner_attrs(quotation.post_image_url)
+      }]
       content << { "type" => "caption", "content" => [QuotationBlock.text(quotation.post_title)] } if quotation.post_title.present?
-      [{ "type" => "captionedImage", "content" => content }]
+
+      [{ 
+        "type" => "captionedImage", 
+        "content" => content
+      }]
     end
 
     def banner_attrs(src)
-      { "src" => src, "alt" => nil, "title" => nil, "height" => nil, "width" => nil,
-        "resizeWidth" => 728, "bytes" => nil, "type" => nil, "href" => nil, "imageSize" => "normal" }
+      { 
+        "src" => src, 
+        "alt" => nil, 
+        "title" => nil, 
+        "height" => nil, 
+        "width" => nil,
+        "resizeWidth" => 728, 
+        "bytes" => nil, 
+        "type" => nil, 
+        "href" => nil, 
+        "imageSize" => "normal" 
+      }
     end
 
     # A centred nav row of page numbers, prefixed "Reviews page: ": the current one
@@ -114,12 +141,17 @@ module Substack
                                  QuotationBlock.text(n.to_s, href: urls[n - 1])
         n == 1 ? [number] : [QuotationBlock.text("  ·  "), number]
       end
-      { "type" => "paragraph", "attrs" => { "textAlign" => "center" },
-        "content" => [QuotationBlock.text("Reviews page: ")] + numbers }
+
+      { 
+        "type" => "paragraph", 
+        "attrs" => { "textAlign" => "center" },
+        "content" => [QuotationBlock.text("Reviews page: ")] + numbers
+      }
     end
 
     def page_url(draft, index)
       slug = draft["slug"].presence || default_slug(index)
+
       "https://#{@config.publication_host}/p/#{slug}"
     end
 
@@ -137,6 +169,7 @@ module Substack
       content  = Array(parsed_body(draft)["content"]).reject { |block| nav_block?(block) }
       content  = strip_leading_banner(content)
       boundary = review_start(content)
+
       boundary ? content[0...boundary] : content
     end
 
@@ -144,6 +177,7 @@ module Substack
     # kept as intro (and duplicated) on the next rebuild.
     def strip_leading_banner(content)
       first = content.first
+
       first.is_a?(Hash) && first["type"] == "captionedImage" ? content.drop(1) : content
     end
 
@@ -153,6 +187,7 @@ module Substack
 
       boundary = quote
       boundary -= 1 while boundary.positive? && title_block?(content[boundary - 1])
+
       boundary
     end
 
@@ -165,6 +200,7 @@ module Substack
       return false unless block.is_a?(Hash) && block["type"] == "paragraph"
 
       hrefs = NoteParser.link_hrefs(block)
+
       hrefs.any? && hrefs.all? { |href| href.to_s.include?("/p/reviews") }
     end
 
@@ -178,6 +214,7 @@ module Substack
     # the quotation's embed snapshot is populated.
     def review_unit(quotation)
       ensure_embed(quotation)
+
       QuotationBlock.unit(quotation)
     end
 
@@ -190,6 +227,7 @@ module Substack
         embed_cache[quotation.post_url] = Substack::QuotationEmbed.execute(post_url: quotation.post_url, client: @client)
       end
       attrs = embed_cache[quotation.post_url]
+      
       quotation.update!(post_embed: attrs) if attrs
     end
 

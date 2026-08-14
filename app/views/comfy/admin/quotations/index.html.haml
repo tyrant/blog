@@ -30,12 +30,12 @@
 %section.mb-4
   %h5 Reviews page
   %p.text-muted.small
-    Every quotation is mirrored to the dedicated Substack "Reviews" page. It rebuilds
+    Every quotation is mirrored to the dedicated Substack "Reviews" pages. They rebuild
     automatically whenever a quotation is added, edited or deleted (keeping the current order).
     This button reshuffles their order at random and rebuilds. Set the page's draft id under
     = succeed "." do
       = link_to "Substack Sync settings", edit_comfy_admin_substack_sync_config_path
-  = button_to "Reshuffle & rebuild Reviews page", comfy_sync_reviews_admin_quotations_path, method: :post, class: "btn btn-outline-secondary btn-sm"
+  = button_to "Reshuffle & rebuild Reviews pages", comfy_sync_reviews_admin_quotations_path, method: :post, class: "btn btn-outline-secondary btn-sm"
 
 %section
   %h5= "#{pluralize(@quotations.total_count, 'quotation')} collected"
