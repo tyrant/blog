@@ -42,7 +42,7 @@ module Substack
       page_ids.each_with_index do |id, i|
         body = page_document(i, page_count, urls, groups[i] || [], page_intro)
         @client.update_draft(id,
-          draft_title:       "Reviews page #{i + 1}",
+          draft_title:       "Reviews Page #{i + 1}",
           draft_subtitle:    drafts[i]["draft_subtitle"],
           draft_body:        JSON.generate(body),
           should_send_email: false)
@@ -71,7 +71,7 @@ module Substack
     def create_page(index)
       bylines = [{ id: @config.author_id, is_guest: false }]
       created = @client.create_draft(
-        title: "Reviews page #{index + 1}", subtitle: "",
+        title: "Reviews Page #{index + 1}", subtitle: "",
         body_doc: { "type" => "doc", "content" => [{ "type" => "paragraph" }] }, bylines: bylines
       )
       id = created.fetch("id")

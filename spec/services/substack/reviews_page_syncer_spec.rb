@@ -38,7 +38,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
     it 'titles page 1 and preserves the subtitle' do
       sync
-      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews page 1', draft_subtitle: ''))
+      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews Page 1', draft_subtitle: ''))
     end
 
     it 'lists every featurable quotation as a blockquote' do
@@ -228,7 +228,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
       allow(client).to receive(:get_draft).with(555)
         .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews')
       allow(client).to receive(:get_draft).with(556)
-        .and_return('draft_title' => 'Reviews page 2', 'draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews-page-2')
+        .and_return('draft_title' => 'Reviews Page 2', 'draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews-page-2')
       allow(client).to receive(:create_draft).and_return('id' => 556)
       allow(client).to receive(:publish_draft)
       allow(client).to receive(:update_draft) do |id, attrs|
@@ -237,9 +237,9 @@ RSpec.describe Substack::ReviewsPageSyncer do
       allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
     end
 
-    it 'auto-creates the second page titled "Reviews page 2"' do
+    it 'auto-creates the second page titled "Reviews Page 2"' do
       sync
-      expect(client).to have_received(:create_draft).with(hash_including(title: 'Reviews page 2')).once
+      expect(client).to have_received(:create_draft).with(hash_including(title: 'Reviews Page 2')).once
     end
 
     it 'slugs the new page "reviews-page-2"' do
@@ -259,8 +259,8 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
     it 'titles the two pages in order' do
       sync
-      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews page 1'))
-      expect(client).to have_received(:update_draft).with(556, hash_including(draft_title: 'Reviews page 2'))
+      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews Page 1'))
+      expect(client).to have_received(:update_draft).with(556, hash_including(draft_title: 'Reviews Page 2'))
     end
 
     it 'puts two reviews on page 1 and one on page 2' do
