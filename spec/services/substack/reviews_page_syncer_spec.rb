@@ -147,6 +147,55 @@ RSpec.describe Substack::ReviewsPageSyncer do
       sync
       expect(client).to_not have_received(:publish_draft)
     end
+
+    context 'with a cover image on the first review' do
+      let!(:first) { quote(quotation: 'first', post_title: 'Cover Post', post_image_url: 'https://cdn/img.jpg') }
+
+      it 'opens the page with a standard-width captioned banner image' do
+        sync
+        banner = body_doc['content'].first
+        expect(banner['type']).to eq 'captionedImage'
+        image = banner['content'].find { |n| n['type'] == 'image2' }
+        expect(image['attrs']).to include('src' => 'https://cdn/img.jpg', 'imageSize' => 'normal', 'resizeWidth' => 728)
+      end
+
+      it 'captions the banner with the post title' do
+        sync
+        caption = body_doc['content'].first['content'].find { |n| n['type'] == 'caption' }
+        expect(caption['content'][0]['text']).to eq 'Cover Post'
+      end
+
+      it 'omits the banner when the first review has no cover image' do
+        first.update!(post_image_url: nil)
+        sync
+        expect(body_doc['content'].first['type']).to_not eq 'captionedImage'
+      end
+    end
+
+    context 'when a previous sync already added a banner and intro' do
+      let!(:first) { quote(quotation: 'first', post_title: 'Cover', post_image_url: 'https://cdn/new.jpg') }
+      let(:intro)  { { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Welcome.' }] } }
+      let(:stale_banner) { { 'type' => 'captionedImage', 'content' => [{ 'type' => 'image2', 'attrs' => { 'src' => 'https://cdn/old.jpg' } }] } }
+      let(:existing) { { 'type' => 'doc', 'content' => [stale_banner, intro] + Substack::QuotationBlock.build(first) } }
+
+      before do
+        allow(client).to receive(:get_draft).with(555)
+          .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => false,
+                      'draft_body' => JSON.generate(existing))
+      end
+
+      it 'rebuilds a single banner from the current cover, not the stale one' do
+        sync
+        images = body_doc['content'].select { |b| b['type'] == 'captionedImage' }
+        expect(images.size).to eq 1
+        expect(images.first['content'].find { |n| n['type'] == 'image2' }['attrs']['src']).to eq 'https://cdn/new.jpg'
+      end
+
+      it 'preserves the manually-authored intro' do
+        sync
+        expect(body_doc['content']).to include(intro)
+      end
+    end
   end
 
   context 'when the page is already published' do
@@ -242,6 +291,48 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(current['marks'].map { |m| m['type'] }).to eq %w[strong]
       expect(other['marks'].find { |m| m['type'] == 'link' }.dig('attrs', 'href'))
         .to eq 'https://mikeyclarke.substack.com/p/reviews-page-2'
+    end
+  end
+
+  context 'with banners across multiple pages' do
+    let(:bodies) { {} }
+
+    before do
+      stub_const('Substack::ReviewsPageSyncer::PER_PAGE', 2)
+      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com')
+      quote(quotation: 'one',   post_title: 'First Post',  post_image_url: 'https://cdn/1.jpg').update!(position: 0)
+      quote(quotation: 'two',   post_title: 'Second Post', post_image_url: 'https://cdn/2.jpg').update!(position: 1)
+      quote(quotation: 'three', post_title: 'Third Post',  post_image_url: 'https://cdn/3.jpg').update!(position: 2)
+      allow(client).to receive(:get_draft).with(555)
+        .and_return('draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews')
+      allow(client).to receive(:get_draft).with(556)
+        .and_return('draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews-page-2')
+      allow(client).to receive(:create_draft).and_return('id' => 556)
+      allow(client).to receive(:publish_draft)
+      allow(client).to receive(:update_draft) do |id, attrs|
+        bodies[id] = JSON.parse(attrs[:draft_body])['content'] if attrs[:draft_body]
+      end
+      allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
+    end
+
+    it 'puts the banner before the top pagination nav on page 1' do
+      sync
+      expect(bodies[555][0]['type']).to eq 'captionedImage'
+      expect(bodies[555][1]).to include('type' => 'paragraph', 'attrs' => hash_including('textAlign' => 'center'))
+    end
+
+    it "banners page 1 with its first review's cover and title" do
+      sync
+      banner = bodies[555][0]
+      expect(banner['content'].find { |n| n['type'] == 'image2' }['attrs']['src']).to eq 'https://cdn/1.jpg'
+      expect(banner['content'].find { |n| n['type'] == 'caption' }['content'][0]['text']).to eq 'First Post'
+    end
+
+    it "banners page 2 with its own first review's cover and title" do
+      sync
+      banner = bodies[556][0]
+      expect(banner['content'].find { |n| n['type'] == 'image2' }['attrs']['src']).to eq 'https://cdn/3.jpg'
+      expect(banner['content'].find { |n| n['type'] == 'caption' }['content'][0]['text']).to eq 'Third Post'
     end
   end
 

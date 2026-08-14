@@ -79,12 +79,29 @@ module Substack
     end
 
     def page_document(index, page_count, urls, reviews, draft)
-      nav   = page_count > 1 ? [pagination(index + 1, page_count, urls)] : []
-      lead  = index.zero? ? intro(draft) : []
-      units = reviews.flat_map { |quotation| review_unit(quotation) }
-      content = nav + lead + units + nav
+      banner = banner_image(reviews.first)
+      nav    = page_count > 1 ? [pagination(index + 1, page_count, urls)] : []
+      lead   = index.zero? ? intro(draft) : []
+      units  = reviews.flat_map { |quotation| review_unit(quotation) }
+      content = banner + nav + lead + units + nav
       content = [{ "type" => "paragraph" }] if content.empty?
       { "type" => "doc", "content" => content }
+    end
+
+    # The page's banner: the cover image of the page's first review's post, at
+    # standard width, captioned with that post's title. Empty when there's no
+    # first review or it has no stored cover image.
+    def banner_image(quotation)
+      return [] if quotation.nil? || quotation.post_image_url.blank?
+
+      content = [{ "type" => "image2", "attrs" => banner_attrs(quotation.post_image_url) }]
+      content << { "type" => "caption", "content" => [QuotationBlock.text(quotation.post_title)] } if quotation.post_title.present?
+      [{ "type" => "captionedImage", "content" => content }]
+    end
+
+    def banner_attrs(src)
+      { "src" => src, "alt" => nil, "title" => nil, "height" => nil, "width" => nil,
+        "resizeWidth" => 728, "bytes" => nil, "type" => nil, "href" => nil, "imageSize" => "normal" }
     end
 
     # A centred nav row of page numbers: the current one bold, the rest linked to
@@ -108,15 +125,23 @@ module Substack
     end
 
     # Everything above the first review on page 1 is manually-authored intro and is
-    # kept; the syncer replaces the review run below it. Existing nav rows are
-    # dropped first (the syncer re-adds them), then a review is detected by its
-    # quote+author pair — the leading title block(s) above that pair (embed card,
-    # heading, old cover thumbnail) fold into the review region so they aren't
-    # mistaken for intro on the next sync.
+    # kept; the syncer replaces the review run below it. Existing nav rows and the
+    # leading banner image (both syncer-owned, re-added on rebuild) are dropped
+    # first, then a review is detected by its quote+author pair — the leading title
+    # block(s) above that pair (embed card, heading, old cover thumbnail) fold into
+    # the review region so they aren't mistaken for intro on the next sync.
     def intro(draft)
       content  = Array(parsed_body(draft)["content"]).reject { |block| nav_block?(block) }
+      content  = strip_leading_banner(content)
       boundary = review_start(content)
       boundary ? content[0...boundary] : content
+    end
+
+    # Drop a leading captionedImage — the banner the syncer prepends — so it isn't
+    # kept as intro (and duplicated) on the next rebuild.
+    def strip_leading_banner(content)
+      first = content.first
+      first.is_a?(Hash) && first["type"] == "captionedImage" ? content.drop(1) : content
     end
 
     def review_start(content)
