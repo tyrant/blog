@@ -73,25 +73,26 @@ namespace :substack do
   desc "Backfill post_image_url on featurable quotations missing a cover image (dry-run unless COMMIT=1)"
   task backfill_cover_images: :environment do
     commit = ENV["COMMIT"] == "1"
-    # Only re-resolve the cover; never re-run populate_from_substack! wholesale —
-    # that would overwrite (and possibly blank) manually-entered post_url/title on
-    # third-party-note quotations. Update post_image_url only when one resolves.
+    client = Substack::Client.new
+    # Pull the cover straight from the authoritative post (post_url), not the
+    # comment/note — reviews left as Notes don't carry the post's cover. Only
+    # post_image_url is ever written, so manual post_url/title stay intact.
     quotations = SubstackQuotation.featurable.where(post_image_url: [nil, ""]).to_a
     resolvable = updated = 0
     quotations.each do |quotation|
-      resolved = Substack::QuotationResolver.execute(comment_url: quotation.comment_url)
-      if resolved.post_image_url.blank?
-        puts "  ##{quotation.id} no cover resolved (#{quotation.post_title.to_s[0, 40].inspect})"
+      cover = client.get_post(quotation.post_url)["cover_image"]
+      if cover.blank?
+        puts "  ##{quotation.id} no cover on post (#{quotation.post_title.to_s[0, 40].inspect})"
         next
       end
       resolvable += 1
       if commit
-        quotation.update!(post_image_url: resolved.post_image_url)
+        quotation.update!(post_image_url: cover)
         updated += 1
       end
-      puts "  ##{quotation.id} #{commit ? 'set' : 'would set'} cover: #{resolved.post_image_url}"
+      puts "  ##{quotation.id} #{commit ? 'set' : 'would set'} cover: #{cover}"
     rescue => e
-      warn "  skipped ##{quotation.id} (#{quotation.comment_url}): #{e.message}"
+      warn "  skipped ##{quotation.id} (#{quotation.post_url}): #{e.message}"
     ensure
       sleep 0.5 # gentle pacing over the Substack API
     end
