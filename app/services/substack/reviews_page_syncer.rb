@@ -35,9 +35,12 @@ module Substack
       page_ids = ensure_page_ids(page_count)
       drafts   = page_ids.map { |id| @client.get_draft(id) }
       urls     = drafts.each_with_index.map { |draft, i| page_url(draft, i) }
+      # The manually-authored intro lives on page 1; extract it once and repeat it
+      # on every page.
+      page_intro = intro(drafts.first)
 
       page_ids.each_with_index do |id, i|
-        body = page_document(i, page_count, urls, groups[i] || [], drafts[i])
+        body = page_document(i, page_count, urls, groups[i] || [], page_intro)
         @client.update_draft(id,
           draft_title:       "Reviews page #{i + 1}",
           draft_subtitle:    drafts[i]["draft_subtitle"],
@@ -78,12 +81,11 @@ module Substack
       id
     end
 
-    def page_document(index, page_count, urls, reviews, draft)
+    def page_document(index, page_count, urls, reviews, page_intro)
       banner = banner_image(reviews.first)
       nav    = page_count > 1 ? [pagination(index + 1, page_count, urls)] : []
-      lead   = index.zero? ? intro(draft) : []
       units  = reviews.flat_map { |quotation| review_unit(quotation) }
-      content = banner + nav + lead + units + nav
+      content = banner + nav + page_intro + units + nav
       content = [{ "type" => "paragraph" }] if content.empty?
       { "type" => "doc", "content" => content }
     end
@@ -104,15 +106,16 @@ module Substack
         "resizeWidth" => 728, "bytes" => nil, "type" => nil, "href" => nil, "imageSize" => "normal" }
     end
 
-    # A centred nav row of page numbers: the current one bold, the rest linked to
-    # their page. Separated by " · ".
+    # A centred nav row of page numbers, prefixed "Reviews page: ": the current one
+    # bold, the rest linked to their page, separated by " · ".
     def pagination(current, page_count, urls)
-      nodes = (1..page_count).flat_map do |n|
+      numbers = (1..page_count).flat_map do |n|
         number = n == current ? QuotationBlock.text(n.to_s, marks: [{ "type" => "strong" }]) :
                                  QuotationBlock.text(n.to_s, href: urls[n - 1])
         n == 1 ? [number] : [QuotationBlock.text("  ·  "), number]
       end
-      { "type" => "paragraph", "attrs" => { "textAlign" => "center" }, "content" => nodes }
+      { "type" => "paragraph", "attrs" => { "textAlign" => "center" },
+        "content" => [QuotationBlock.text("Reviews page: ")] + numbers }
     end
 
     def page_url(draft, index)

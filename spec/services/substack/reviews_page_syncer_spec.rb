@@ -283,6 +283,11 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect([first, last].map { |b| b.dig('attrs', 'textAlign') }).to eq %w[center center]
     end
 
+    it 'prefixes the pagination nav with "Reviews page: "' do
+      sync
+      expect(bodies[555].first['content'].first['text']).to eq 'Reviews page: '
+    end
+
     it 'bolds the current page and links the others in the nav' do
       sync
       nav = bodies[555].first['content'].reject { |n| n['text'].strip.empty? }
@@ -333,6 +338,41 @@ RSpec.describe Substack::ReviewsPageSyncer do
       banner = bodies[556][0]
       expect(banner['content'].find { |n| n['type'] == 'image2' }['attrs']['src']).to eq 'https://cdn/3.jpg'
       expect(banner['content'].find { |n| n['type'] == 'caption' }['content'][0]['text']).to eq 'Third Post'
+    end
+  end
+
+  context 'with a page-1 intro repeated on every page' do
+    let(:bodies) { {} }
+    let(:intro)  { { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'People say such wonderful things.' }] } }
+
+    before do
+      stub_const('Substack::ReviewsPageSyncer::PER_PAGE', 2)
+      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com')
+      lead = quote(quotation: 'one')
+      lead.update!(position: 0)
+      quote(quotation: 'two').update!(position: 1)
+      quote(quotation: 'three').update!(position: 2)
+      existing = { 'type' => 'doc', 'content' => [intro] + Substack::QuotationBlock.build(lead) }
+      allow(client).to receive(:get_draft).with(555)
+        .and_return('draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews', 'draft_body' => JSON.generate(existing))
+      allow(client).to receive(:get_draft).with(556)
+        .and_return('draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews-page-2')
+      allow(client).to receive(:create_draft).and_return('id' => 556)
+      allow(client).to receive(:publish_draft)
+      allow(client).to receive(:update_draft) do |id, attrs|
+        bodies[id] = JSON.parse(attrs[:draft_body])['content'] if attrs[:draft_body]
+      end
+      allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
+    end
+
+    it 'keeps the intro on page 1' do
+      sync
+      expect(bodies[555]).to include(intro)
+    end
+
+    it 'repeats the intro on page 2' do
+      sync
+      expect(bodies[556]).to include(intro)
     end
   end
 
