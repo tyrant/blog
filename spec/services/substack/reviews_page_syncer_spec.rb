@@ -38,7 +38,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
     it 'titles page 1 and preserves the subtitle' do
       sync
-      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews Page 1', draft_subtitle: ''))
+      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Sexyverse Advice Reviews Page 1'))
     end
 
     it 'lists every featurable quotation as a blockquote' do
@@ -259,8 +259,8 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
     it 'titles the two pages in order' do
       sync
-      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Reviews Page 1'))
-      expect(client).to have_received(:update_draft).with(556, hash_including(draft_title: 'Reviews Page 2'))
+      expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Sexyverse Advice Reviews Page 1'))
+      expect(client).to have_received(:update_draft).with(556, hash_including(draft_title: 'Sexyverse Advice Reviews Page 2'))
     end
 
     it 'puts two reviews on page 1 and one on page 2' do

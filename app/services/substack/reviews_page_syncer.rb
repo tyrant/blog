@@ -41,11 +41,15 @@ module Substack
 
       page_ids.each_with_index do |id, i|
         body = page_document(i, page_count, urls, groups[i] || [], page_intro)
-        @client.update_draft(id,
-          draft_title:       "Reviews Page #{i + 1}",
-          draft_subtitle:    drafts[i]["draft_subtitle"],
+
+        @client.update_draft(
+          id,
+          draft_title:       "Sexyverse Advice Reviews Page #{i + 1}",
+          draft_subtitle:    SubstackSyncConfig.instance.subtitle_for(nil),
           draft_body:        JSON.generate(body),
-          should_send_email: false)
+          should_send_email: false
+        )
+
         # Push edits live once a page is published: page 1's first publish stays
         # manual (mirroring PostSyncer); auto-created pages publish here on their
         # first sync (send_email:false — no subscriber email is ever sent).
@@ -227,7 +231,7 @@ module Substack
         embed_cache[quotation.post_url] = Substack::QuotationEmbed.execute(post_url: quotation.post_url, client: @client)
       end
       attrs = embed_cache[quotation.post_url]
-      
+
       quotation.update!(post_embed: attrs) if attrs
     end
 
