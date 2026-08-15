@@ -8,19 +8,25 @@ RSpec.describe Substack::NavSyncer do
 
   subject(:sync) { described_class.execute(client: client, config: config) }
 
+  def item(id, post_id, title: nil, slug: nil)
+    { 'id' => id, 'post_id' => post_id, 'link_title' => title, 'post' => (slug ? { 'slug' => slug } : nil) }
+  end
+
   before do
     config.update!(reviews_draft_id: 111, reviews_extra_draft_ids: [222, 333],
                    publication_host: 'mikeyclarke.substack.com')
     allow(client).to receive(:create_nav_item)
+    allow(client).to receive(:delete_nav_item)
+    allow(client).to receive(:reorder_nav_items)
   end
 
-  context 'when some pages have no nav item yet' do
+  describe 'creating missing items' do
     before do
       allow(client).to receive(:navigation_bar_items)
-        .and_return([{ 'post_id' => 111, 'link_title' => 'Reviews Page 1' }])
+        .and_return([item('a', 111, title: 'Reviews Page 1', slug: 'reviews')])
     end
 
-    it 'creates an item only for the missing pages' do
+    it 'creates an item for each page without one' do
       sync
       expect(client).to have_received(:create_nav_item)
         .with(link_title: 'Reviews Page 2', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-2')
@@ -33,7 +39,7 @@ RSpec.describe Substack::NavSyncer do
       expect(client).to_not have_received(:create_nav_item).with(hash_including(link_title: 'Reviews Page 1'))
     end
 
-    it 'returns the post ids it created items for' do
+    it 'returns the created post ids' do
       expect(sync).to eq [222, 333]
     end
 
@@ -46,18 +52,64 @@ RSpec.describe Substack::NavSyncer do
     end
   end
 
-  context 'when every page already has an item' do
+  describe 'pruning stale items' do
     before do
-      allow(client).to receive(:navigation_bar_items)
-        .and_return([{ 'post_id' => 111 }, { 'post_id' => 222 }, { 'post_id' => 333 }])
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
+        item('b', 222, title: 'Reviews Page 2', slug: 'reviews-page-2'),
+        item('c', 333, title: 'Reviews Page 3', slug: 'reviews-page-3'),
+        item('gone', 999, title: 'Reviews Page 4', slug: 'reviews-page-4')
+      ])
     end
 
-    it 'creates nothing' do
+    it 'deletes a Reviews item whose post is no longer a page' do
       sync
-      expect(client).to_not have_received(:create_nav_item)
+      expect(client).to have_received(:delete_nav_item).with('gone')
     end
 
-    it { expect(sync).to eq [] }
+    it 'leaves current pages alone' do
+      sync
+      expect(client).to_not have_received(:delete_nav_item).with('a')
+    end
+
+    it 'never deletes a non-Reviews custom item' do
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
+        item('b', 222, title: 'Reviews Page 2', slug: 'reviews-page-2'),
+        item('c', 333, title: 'Reviews Page 3', slug: 'reviews-page-3'),
+        item('shop', 555, title: 'Merch', slug: 'merch')
+      ])
+      sync
+      expect(client).to_not have_received(:delete_nav_item)
+    end
+  end
+
+  describe 'reordering' do
+    it 'reorders the items into reviews_page_ids order' do
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('b', 222, title: 'Reviews Page 2'), item('c', 333, title: 'Reviews Page 3'),
+        item('a', 111, title: 'Reviews Page 1')
+      ])
+      sync
+      expect(client).to have_received(:reorder_nav_items).with(%w[a b c])
+    end
+
+    it 'keeps non-Reviews items ahead of the Reviews block' do
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('b', 222, title: 'Reviews Page 2'), item('shop', 555, title: 'Merch', slug: 'merch'),
+        item('a', 111, title: 'Reviews Page 1'), item('c', 333, title: 'Reviews Page 3')
+      ])
+      sync
+      expect(client).to have_received(:reorder_nav_items).with(%w[shop a b c])
+    end
+
+    it 'does not reorder when already in order' do
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('a', 111), item('b', 222), item('c', 333)
+      ])
+      sync
+      expect(client).to_not have_received(:reorder_nav_items)
+    end
   end
 
   context 'when the current nav cannot be read' do

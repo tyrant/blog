@@ -193,6 +193,28 @@ RSpec.describe Substack::Client do
       end
     end
 
+    describe '#delete_nav_item' do
+      let!(:stub) { stub_request(:delete, 'https://pub.substack.com/api/v1/publication/navigation-bar-item/nav-1').to_return(status: 200, body: '{}') }
+
+      it 'deletes the item by id' do
+        client.delete_nav_item('nav-1')
+        expect(stub).to have_been_requested
+      end
+    end
+
+    describe '#reorder_nav_items' do
+      let!(:stub) do
+        stub_request(:put, 'https://pub.substack.com/api/v1/publication/navigation-bar-item/siblingRank')
+          .with(body: { 'siblingRank' => %w[a b c] })
+          .to_return(status: 200, body: '{}')
+      end
+
+      it 'PUTs the ordered id list' do
+        client.reorder_nav_items(%w[a b c])
+        expect(stub).to have_been_requested
+      end
+    end
+
     context 'without a publication host' do
       let(:host) { nil }
       it { expect { client.get_draft(7) }.to raise_error(Substack::Client::Error, /publication host/) }

@@ -157,6 +157,18 @@ module Substack
       extract_nav_array(html, key)
     end
 
+    def delete_nav_item(id)
+      request(Net::HTTP::Delete.new(pub_uri("/api/v1/publication/navigation-bar-item/#{id}")))
+    end
+
+    # Reorders the whole custom nav: `ids` is the complete ordered list of nav-item
+    # ids (Substack sets each item's siblingRank from its position).
+    def reorder_nav_items(ids)
+      req = Net::HTTP::Put.new(pub_uri("/api/v1/publication/navigation-bar-item/siblingRank"))
+      req.body = JSON.generate(siblingRank: ids)
+      request(req)
+    end
+
     private
 
     def get_html(uri)
