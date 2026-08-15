@@ -99,6 +99,49 @@ namespace :substack do
     puts "\n#{commit ? 'Committed' : 'Dry run'}. #{quotations.size} imageless, #{resolvable} resolvable, #{updated} updated."
   end
 
+  # One-off: Substack forbids changing a published post's type, and the original
+  # /p/reviews is a static "page" (no byline/reactions/comments). Recreate it as a
+  # newsletter post so it matches pages 2..X. Run AFTER deleting the old page in the
+  # Substack UI (which frees the "reviews" slug and removes its nav item).
+  REVIEWS_INTRO = "People say such wonderful things! Great gracious gumdrops:"
+
+  desc "Recreate Reviews page 1 as a newsletter post at /p/reviews (run AFTER deleting the old page in the UI)"
+  task recreate_reviews_page_1: :environment do
+    config  = SubstackSyncConfig.instance
+    client  = Substack::Client.new(publication_host: config.publication_host)
+    bylines = [{ id: config.author_id, is_guest: false }]
+
+    slug_free = begin
+      client.get_post("https://#{config.publication_host}/p/reviews")
+      false
+    rescue Substack::Client::Error
+      true
+    end
+    abort "The 'reviews' slug is still taken — delete the old page in the Substack UI first." unless slug_free
+
+    created = client.create_draft(
+      title:    "Sexyverse Advice Reviews Page 1",
+      subtitle: config.subtitle_for(nil),
+      body_doc: { "type" => "doc", "content" => [
+        { "type" => "paragraph", "content" => [{ "type" => "text", "text" => REVIEWS_INTRO }] }
+      ] },
+      bylines:  bylines
+    )
+    new_id = created.fetch("id")
+
+    begin
+      client.update_draft(new_id, slug: "reviews", draft_bylines: bylines)
+      client.publish_draft(new_id) # send_email:false default — no subscriber email
+    rescue => e
+      client.delete_draft(new_id) rescue nil
+      abort "Slug/publish failed (#{e.message}); cleaned up draft #{new_id}. /p/reviews still needs attention."
+    end
+
+    config.update!(reviews_draft_id: new_id)
+    Substack::ReviewsPageSyncer.execute
+    puts "Done. /p/reviews is now newsletter post #{new_id}; reviews_draft_id updated; all pages + nav rebuilt."
+  end
+
   desc "Sync the Substack nav bar: ensure a 'Reviews Page N' item per Reviews page (additive). Run locally if the prod IP is Cloudflare-blocked."
   task sync_nav: :environment do
     created = Substack::NavSyncer.execute
