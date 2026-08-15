@@ -99,6 +99,12 @@ namespace :substack do
     puts "\n#{commit ? 'Committed' : 'Dry run'}. #{quotations.size} imageless, #{resolvable} resolvable, #{updated} updated."
   end
 
+  desc "Sync the Substack nav bar: ensure a 'Reviews Page N' item per Reviews page (additive). Run locally if the prod IP is Cloudflare-blocked."
+  task sync_nav: :environment do
+    created = Substack::NavSyncer.execute
+    puts "Nav sync done — created #{created.size} item(s) for post ids #{created.inspect}."
+  end
+
   desc "Re-resolve existing Reply Tracker records from their reply URL (backfills previews, corrects target URLs)"
   task backfill_replies: :environment do
     SubstackReply.find_each do |reply|

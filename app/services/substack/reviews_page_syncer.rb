@@ -56,10 +56,20 @@ module Substack
         @client.publish_draft(id) if drafts[i]["is_published"] || @created_ids.include?(id)
       end
 
+      sync_navigation
       page_ids
     end
 
     private
+
+    # Bring the publication nav bar in line with the pages. Best-effort: a nav
+    # failure (e.g. Cloudflare from the datacenter IP) must never fail the rebuild,
+    # which is the important part.
+    def sync_navigation
+      NavSyncer.execute(client: @client, config: @config)
+    rescue => e
+      Rails.logger.warn("[ReviewsPageSyncer] nav sync failed: #{e.message}")
+    end
 
     # The configured page ids, growing the list by auto-creating any pages the
     # current review count needs beyond what's stored. Never trims on shrink — a

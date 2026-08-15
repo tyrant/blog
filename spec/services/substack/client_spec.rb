@@ -158,6 +158,41 @@ RSpec.describe Substack::Client do
       it { expect(client.upload_image('data:image/png;base64,AAAA')).to eq 'https://cdn/x.png' }
     end
 
+    describe '#create_nav_item' do
+      let!(:stub) do
+        stub_request(:post, 'https://pub.substack.com/api/v1/publication/navigation-bar-item')
+          .with(body: { 'linkTitle' => 'Reviews Page 2', 'linkUrl' => 'https://pub.substack.com/p/reviews-page-2' })
+          .to_return(status: 200, body: { 'id' => 'nav-uuid', 'post_id' => 222 }.to_json)
+      end
+
+      it { expect(client.create_nav_item(link_title: 'Reviews Page 2', link_url: 'https://pub.substack.com/p/reviews-page-2')).to eq({ 'id' => 'nav-uuid', 'post_id' => 222 }) }
+
+      it 'posts linkTitle and linkUrl' do
+        client.create_nav_item(link_title: 'Reviews Page 2', link_url: 'https://pub.substack.com/p/reviews-page-2')
+        expect(stub).to have_been_requested
+      end
+    end
+
+    describe '#navigation_bar_items' do
+      let(:items) do
+        [{ 'id' => 'a', 'post_id' => 111, 'link_title' => 'Reviews Page 1' },
+         { 'id' => 'b', 'post_id' => 222, 'link_title' => 'Reviews Page 2' }]
+      end
+      # Mirror how Substack embeds the array — an escaped JSON string in the preload.
+      let(:html) { %(<html><script>var x={\\"navigationBarItems\\":#{items.to_json.gsub('"') { '\\"' }}};</script></html>) }
+
+      before { stub_request(:get, 'https://pub.substack.com/').to_return(status: 200, body: html) }
+
+      it 'parses the nav items out of the homepage preload' do
+        expect(client.navigation_bar_items.map { |i| i['post_id'] }).to eq [111, 222]
+      end
+
+      it 'raises when the page has no nav block (e.g. a Cloudflare interstitial)' do
+        stub_request(:get, 'https://pub.substack.com/').to_return(status: 200, body: '<html>just a challenge page</html>')
+        expect { client.navigation_bar_items }.to raise_error(Substack::Client::Error, /not found/)
+      end
+    end
+
     context 'without a publication host' do
       let(:host) { nil }
       it { expect { client.get_draft(7) }.to raise_error(Substack::Client::Error, /publication host/) }

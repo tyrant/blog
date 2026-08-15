@@ -20,6 +20,10 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
   subject(:sync) { described_class.execute(client: client, config: config) }
 
+  # The syncer triggers a nav sync at the end; stub it out by default so it never
+  # touches the client double (its own behaviour is covered in nav_syncer_spec).
+  before { allow(Substack::NavSyncer).to receive(:execute).and_return([]) }
+
   context 'with a configured draft id' do
     let!(:first) { quote(quotation: 'first') }
 
@@ -146,6 +150,19 @@ RSpec.describe Substack::ReviewsPageSyncer do
       allow(client).to receive(:publish_draft)
       sync
       expect(client).to_not have_received(:publish_draft)
+    end
+
+    describe 'navigation sync' do
+      it 'triggers a nav sync after rebuilding the pages' do
+        sync
+        expect(Substack::NavSyncer).to have_received(:execute).with(client: client, config: config)
+      end
+
+      it 'still completes the rebuild when the nav sync fails' do
+        allow(Substack::NavSyncer).to receive(:execute).and_raise(StandardError, 'cloudflare')
+        expect { sync }.to_not raise_error
+        expect(client).to have_received(:update_draft).with(555, anything)
+      end
     end
 
     context 'with a cover image on the first review' do

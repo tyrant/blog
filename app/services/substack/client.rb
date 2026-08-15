@@ -135,7 +135,59 @@ module Substack
       request(req)["url"]
     end
 
+    # Creates a publication nav-bar item. A linkUrl pointing at one of the
+    # publication's own posts is resolved server-side to that post (link_url is
+    # then cleared and post_id set on the stored item).
+    def create_nav_item(link_title:, link_url:)
+      req = Net::HTTP::Post.new(pub_uri("/api/v1/publication/navigation-bar-item"))
+      req.body = JSON.generate(linkTitle: link_title, linkUrl: link_url)
+      request(req)
+    end
+
+    # The publication's custom nav items. Substack server-renders these into the
+    # homepage's preload JSON rather than exposing a read endpoint, so we fetch the
+    # (public) homepage and parse them out. Raises (rather than returning []) when
+    # the marker is missing or unparseable — a Cloudflare interstitial returns 200
+    # with no marker, and a silent [] would make callers recreate every item.
+    def navigation_bar_items
+      html = get_html(pub_uri("/"))
+      key = html.index("navigationBarItems")
+      raise Error, "nav items not found in homepage (blocked or markup changed?)" unless key
+
+      extract_nav_array(html, key)
+    end
+
     private
+
+    def get_html(uri)
+      req = Net::HTTP::Get.new(uri)
+      req["User-Agent"] = USER_AGENT
+      res = Net::HTTP.start(uri.host, uri.port, use_ssl: true,
+                            open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT) { |http| http.request(req) }
+      raise Error, "Substack homepage #{res.code}" unless res.code.to_i.between?(200, 299)
+
+      res.body.to_s
+    end
+
+    # The navigationBarItems value is an escaped JSON string in the preload; slice
+    # out the bracket-balanced array and unescape it.
+    def extract_nav_array(html, key)
+      start = html.index("[", key)
+      raise Error, "nav array start not found" unless start
+
+      depth = 0
+      finish = nil
+      html[start..].each_char.with_index do |ch, i|
+        depth += 1 if ch == "["
+        depth -= 1 if ch == "]"
+        (finish = start + i) and break if depth.zero?
+      end
+      raise Error, "nav array not bracket-balanced" unless finish
+
+      JSON.parse(html[start..finish].gsub('\\"', '"').gsub('\\\\') { '\\' })
+    rescue JSON::ParserError => e
+      raise Error, "nav items unparseable: #{e.message}"
+    end
 
     def pub_uri(path)
       raise Error, "No Substack publication host configured" if @publication_host.blank?
