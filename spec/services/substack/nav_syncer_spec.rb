@@ -26,24 +26,24 @@ RSpec.describe Substack::NavSyncer do
         .and_return([item('a', 111, title: 'Reviews Page 1', slug: 'reviews')])
     end
 
-    it 'creates an item for each page without one' do
+    it 'creates a bare-numbered item for each page 2+ without one' do
       sync
       expect(client).to have_received(:create_nav_item)
-        .with(link_title: 'Reviews Page 2', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-2')
+        .with(link_title: '2', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-2')
       expect(client).to have_received(:create_nav_item)
-        .with(link_title: 'Reviews Page 3', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-3')
+        .with(link_title: '3', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-3')
     end
 
-    it 'does not recreate the page that already has an item' do
+    it 'does not recreate the page that already has a correctly-labelled item' do
       sync
-      expect(client).to_not have_received(:create_nav_item).with(hash_including(link_title: 'Reviews Page 1'))
+      expect(client).to_not have_received(:delete_nav_item)
     end
 
     it 'returns the created post ids' do
       expect(sync).to eq [222, 333]
     end
 
-    it 'links page 1 at the /p/reviews slug' do
+    it 'labels page 1 "Reviews Page 1" at the /p/reviews slug' do
       config.update!(reviews_extra_draft_ids: [])
       allow(client).to receive(:navigation_bar_items).and_return([])
       sync
@@ -52,13 +52,36 @@ RSpec.describe Substack::NavSyncer do
     end
   end
 
-  describe 'pruning stale items' do
+  describe 'relabeling drifted titles' do
     before do
       allow(client).to receive(:navigation_bar_items).and_return([
         item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
         item('b', 222, title: 'Reviews Page 2', slug: 'reviews-page-2'),
-        item('c', 333, title: 'Reviews Page 3', slug: 'reviews-page-3'),
-        item('gone', 999, title: 'Reviews Page 4', slug: 'reviews-page-4')
+        item('c', 333, title: 'Reviews Page 3', slug: 'reviews-page-3')
+      ])
+    end
+
+    it 'leaves page 1 untouched (already "Reviews Page 1")' do
+      sync
+      expect(client).to_not have_received(:delete_nav_item).with('a')
+    end
+
+    it 'deletes and recreates pages 2+ with bare-number labels' do
+      sync
+      expect(client).to have_received(:delete_nav_item).with('b')
+      expect(client).to have_received(:create_nav_item).with(link_title: '2', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-2')
+      expect(client).to have_received(:delete_nav_item).with('c')
+      expect(client).to have_received(:create_nav_item).with(link_title: '3', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-3')
+    end
+  end
+
+  describe 'pruning stale items' do
+    before do
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
+        item('b', 222, title: '2', slug: 'reviews-page-2'),
+        item('c', 333, title: '3', slug: 'reviews-page-3'),
+        item('gone', 999, title: '4', slug: 'reviews-page-4')
       ])
     end
 
@@ -75,8 +98,8 @@ RSpec.describe Substack::NavSyncer do
     it 'never deletes a non-Reviews custom item' do
       allow(client).to receive(:navigation_bar_items).and_return([
         item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
-        item('b', 222, title: 'Reviews Page 2', slug: 'reviews-page-2'),
-        item('c', 333, title: 'Reviews Page 3', slug: 'reviews-page-3'),
+        item('b', 222, title: '2', slug: 'reviews-page-2'),
+        item('c', 333, title: '3', slug: 'reviews-page-3'),
         item('shop', 555, title: 'Merch', slug: 'merch')
       ])
       sync
@@ -87,8 +110,9 @@ RSpec.describe Substack::NavSyncer do
   describe 'reordering' do
     it 'reorders the items into reviews_page_ids order' do
       allow(client).to receive(:navigation_bar_items).and_return([
-        item('b', 222, title: 'Reviews Page 2'), item('c', 333, title: 'Reviews Page 3'),
-        item('a', 111, title: 'Reviews Page 1')
+        item('b', 222, title: '2', slug: 'reviews-page-2'),
+        item('c', 333, title: '3', slug: 'reviews-page-3'),
+        item('a', 111, title: 'Reviews Page 1', slug: 'reviews')
       ])
       sync
       expect(client).to have_received(:reorder_nav_items).with(%w[a b c])
@@ -96,8 +120,10 @@ RSpec.describe Substack::NavSyncer do
 
     it 'keeps non-Reviews items ahead of the Reviews block' do
       allow(client).to receive(:navigation_bar_items).and_return([
-        item('b', 222, title: 'Reviews Page 2'), item('shop', 555, title: 'Merch', slug: 'merch'),
-        item('a', 111, title: 'Reviews Page 1'), item('c', 333, title: 'Reviews Page 3')
+        item('b', 222, title: '2', slug: 'reviews-page-2'),
+        item('shop', 555, title: 'Merch', slug: 'merch'),
+        item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
+        item('c', 333, title: '3', slug: 'reviews-page-3')
       ])
       sync
       expect(client).to have_received(:reorder_nav_items).with(%w[shop a b c])
@@ -105,7 +131,9 @@ RSpec.describe Substack::NavSyncer do
 
     it 'does not reorder when already in order' do
       allow(client).to receive(:navigation_bar_items).and_return([
-        item('a', 111), item('b', 222), item('c', 333)
+        item('a', 111, title: 'Reviews Page 1', slug: 'reviews'),
+        item('b', 222, title: '2', slug: 'reviews-page-2'),
+        item('c', 333, title: '3', slug: 'reviews-page-3')
       ])
       sync
       expect(client).to_not have_received(:reorder_nav_items)

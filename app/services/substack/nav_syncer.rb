@@ -27,7 +27,7 @@ module Substack
       @client ||= Substack::Client.new(publication_host: @config.publication_host)
       items = @client.navigation_bar_items
 
-      created = create_missing(items, page_ids)
+      created = ensure_items(items, page_ids)
       items = @client.navigation_bar_items if created.any? # refetch for the new ids
 
       prune_stale(items, page_ids)
@@ -37,14 +37,24 @@ module Substack
 
     private
 
-    def create_missing(items, page_ids)
-      present = items.filter_map { |item| item["post_id"]&.to_i }.to_set
+    # Create an item for each page that lacks one, and relabel any whose title has
+    # drifted (delete + recreate — there's no title-update endpoint). Returns the
+    # post ids (re)created. Page 1 keeps the full "Reviews Page 1"; the rest are bare
+    # numbers ("2", "3", …) to keep the nav bar compact.
+    def ensure_items(items, page_ids)
+      by_post = items.each_with_object({}) { |item, memo| pid = item["post_id"]&.to_i; memo[pid] = item if pid }
       page_ids.each_with_index.filter_map do |post_id, index|
-        next if present.include?(post_id)
+        current = by_post[post_id]
+        next if current && current["link_title"] == title_for(index)
 
-        @client.create_nav_item(link_title: "Reviews Page #{index + 1}", link_url: page_url(index))
+        @client.delete_nav_item(current["id"]) if current
+        @client.create_nav_item(link_title: title_for(index), link_url: page_url(index))
         post_id
       end
+    end
+
+    def title_for(index)
+      index.zero? ? "Reviews Page 1" : (index + 1).to_s
     end
 
     # Delete Reviews items whose post no longer corresponds to a current page (e.g.
