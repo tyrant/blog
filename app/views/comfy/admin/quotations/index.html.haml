@@ -42,26 +42,45 @@
   - if @quotations.empty?
     %p.text-muted No quotations yet.
   - else
-    %p.text-muted.small Drag the handle to reorder — this is the order the Reviews pages use.
+    %p.text-muted.small
+      Drag the handle to reorder — this is the order the Reviews pages use. Dividers mark
+      the groups of 20 that become each Substack Reviews page.
+    :css
+      #quotation-sortable { counter-reset: reviewspage 1; }
+      #quotation-sortable > li:nth-child(20n):not(:last-child)::after {
+        counter-increment: reviewspage;
+        content: "Reviews page " counter(reviewspage);
+        display: block;
+        text-align: center;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #adb5bd;
+        border-top: 1px solid #dee2e6;
+        margin-top: 1rem;
+        padding-top: 0.6rem;
+      }
+      #quotation-sortable.dragging > li::after { display: none; }
     %ul.list-unstyled#quotation-sortable{ data: { reorder_url: comfy_reorder_admin_quotations_path } }
       - @quotations.each_with_index do |q, i|
-        %li.mb-3.d-flex.align-items-start{ data: { id: q.id } }
-          %span.dragger.text-muted.mr-2{ style: "cursor: move; padding-top: 0.2rem;", title: "Drag to reorder" }
-            %i.fas.fa-grip-vertical
-          %span.order-number.badge.badge-light.mr-2{ style: "padding-top: 0.35rem;" }= i + 1
-          .flex-grow-1
-            %blockquote.mb-1{ style: "font-style: italic;" }= "“#{q.quotation}”"
-            %span.text-muted.small
-              By
-              = q.author_url.present? ? link_to(q.author_name.presence || "commenter", q.author_url, target: "_blank") : (q.author_name.presence || "commenter")
-            %br
-            %span.text-muted.small
-              On
-              = q.post_url.present? ? link_to(q.post_title.presence || "the post", q.post_url, target: "_blank") : q.post_title
-              ·
-              = link_to "comment", q.comment_url, target: "_blank"
-          .text-nowrap.ml-2
-            = link_to comfy_edit_admin_quotation_path(q), class: "text-secondary mr-2", title: "Edit" do
-              %i.fas.fa-pencil-alt
-            = link_to comfy_admin_quotation_path(q), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger", title: "Delete" do
-              %i.fas.fa-times
+        %li.mb-3{ data: { id: q.id } }
+          .d-flex.align-items-start
+            %span.dragger.text-muted.mr-2{ style: "cursor: move; padding-top: 0.2rem;", title: "Drag to reorder" }
+              %i.fas.fa-grip-vertical
+            %span.order-number.badge.badge-light.mr-2{ style: "padding-top: 0.35rem;" }= i + 1
+            .flex-grow-1
+              %blockquote.mb-1{ style: "font-style: italic;" }= "“#{q.quotation}”"
+              %span.text-muted.small
+                By
+                = q.author_url.present? ? link_to(q.author_name.presence || "commenter", q.author_url, target: "_blank") : (q.author_name.presence || "commenter")
+              %br
+              %span.text-muted.small
+                On
+                = q.post_url.present? ? link_to(q.post_title.presence || "the post", q.post_url, target: "_blank") : q.post_title
+                ·
+                = link_to "comment", q.comment_url, target: "_blank"
+            .text-nowrap.ml-2
+              = link_to comfy_edit_admin_quotation_path(q), class: "text-secondary mr-2", title: "Edit" do
+                %i.fas.fa-pencil-alt
+              = link_to comfy_admin_quotation_path(q), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger", title: "Delete" do
+                %i.fas.fa-times

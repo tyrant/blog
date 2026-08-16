@@ -6,11 +6,14 @@ window.CMS.quotationsSort = {
     this.list = document.getElementById('quotation-sortable');
     if (!this.list || typeof Sortable === 'undefined') return;
 
-    this.sortable = Sortable.create(this.list, {
+    var self = this;
+    var list = this.list;
+    this.sortable = Sortable.create(list, {
       handle: '.dragger',
       draggable: 'li',
       animation: 150,
-      onEnd: this.persist.bind(this)
+      onStart: function() { list.classList.add('dragging'); },
+      onEnd: function() { list.classList.remove('dragging'); self.persist(); }
     });
   },
 
