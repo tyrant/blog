@@ -6,17 +6,17 @@ class SubstackQuotation < ApplicationRecord
   before_create :assign_position
 
   scope :chronological, -> { order(created_at: :desc) }
-  # The display order on the Reviews page — reshuffled by the admin's "Rebuild
-  # Reviews page now" button, otherwise stable (new quotations append to the end).
+  # The display order on the Reviews pages — set manually by drag-to-reorder in the
+  # admin (SubstackQuotation.reorder!); new quotations append to the end.
   scope :by_position, -> { order(:position, :id) }
   # Quotations complete enough to render as a linked triplet.
   scope :featurable, -> { where.not(post_url: [nil, ""]).where.not(author_url: [nil, ""]) }
 
-  # Randomise the Reviews-page order. Called by the "Rebuild Reviews page now"
-  # button so the reshuffle persists across the ordinary (add/edit/delete) syncs.
-  def self.reshuffle!
+  # Persist a manual Reviews-page order from the admin drag-to-reorder list —
+  # `ordered_ids` is the quotation ids in their new top-to-bottom order.
+  def self.reorder!(ordered_ids)
     transaction do
-      pluck(:id).shuffle.each_with_index { |id, index| where(id: id).update_all(position: index) }
+      ordered_ids.each_with_index { |id, index| where(id: id).update_all(position: index) }
     end
   end
 

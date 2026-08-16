@@ -60,10 +60,10 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         expect(SyncReviewsPageJob).to have_received(:perform_later)
       end
 
-      it 'reshuffles the whole pool so reviews redistribute across pages' do
-        allow(SubstackQuotation).to receive(:reshuffle!)
+      it 'appends the new quotation at the end of the manual order' do
+        SubstackQuotation.create!(quotation: 'existing', comment_url: 'https://x/comment/1').update!(position: 7)
         post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
-        expect(SubstackQuotation).to have_received(:reshuffle!)
+        expect(SubstackQuotation.find_by(quotation: 'blurb').position).to eq 8
       end
     end
 
@@ -184,10 +184,24 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       expect(SyncReviewsPageJob).to have_received(:perform_later)
     end
 
-    it 'reshuffles the quotation order' do
-      allow(SubstackQuotation).to receive(:reshuffle!)
+    it 'does not reshuffle — it mirrors the current manual order' do
+      expect(SubstackQuotation).to_not receive(:reorder!)
       post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
-      expect(SubstackQuotation).to have_received(:reshuffle!)
+    end
+  end
+
+  describe 'PUT reorder' do
+    let!(:a) { SubstackQuotation.create!(quotation: 'a', comment_url: 'https://x/comment/1') }
+    let!(:b) { SubstackQuotation.create!(quotation: 'b', comment_url: 'https://x/comment/2') }
+
+    it 'persists the given order' do
+      put comfy_reorder_admin_quotations_path, params: { order: [b.id, a.id] }, headers: http_auth_headers
+      expect(SubstackQuotation.by_position.to_a).to eq [b, a]
+    end
+
+    it 'responds ok' do
+      put comfy_reorder_admin_quotations_path, params: { order: [b.id, a.id] }, headers: http_auth_headers
+      expect(response).to have_http_status(:ok)
     end
   end
 

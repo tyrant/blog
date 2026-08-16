@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Rebuilds the dedicated "Reviews" Substack pages so they list every featurable
-# SubstackQuotation, in stored position order (reshuffled by the admin button),
+# SubstackQuotation, in stored position order (set by drag-to-reorder in the admin),
 # split into pages of PER_PAGE reviews. Page 1 is the original page whose id lives
 # in SubstackSyncConfig#reviews_draft_id (its "reviews" slug/URL is preserved);
 # pages 2..X are auto-created drafts (slug "reviews-page-N") whose ids are appended

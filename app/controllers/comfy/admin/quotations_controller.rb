@@ -20,9 +20,8 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation = SubstackQuotation.new(quotation: params[:quotation], comment_url: params[:comment_url])
     quotation.populate_from_substack!
     quotation.save!
-    # Reshuffle the whole pool on every add so reviews redistribute across the
-    # groups-of-20 pages, then rebuild all pages (creating new ones as needed).
-    SubstackQuotation.reshuffle!
+    # New quotations append to the end of the manual order (assign_position); the
+    # rebuild mirrors that order to the Reviews pages.
     SyncReviewsPageJob.perform_later
     flash[:success] = "Saved quotation#{quotation.author_name ? " by #{quotation.author_name}" : ""}."
   rescue => e
@@ -65,19 +64,23 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
-  # Reshuffle the Reviews-page order and rebuild it now. The reshuffle persists,
-  # so the ordinary add/edit/delete syncs keep it until the button is clicked again.
+  # Rebuild the Reviews pages now, mirroring the current manual order.
   def sync_reviews
-    SubstackQuotation.reshuffle!
     SyncReviewsPageJob.perform_later
-    flash[:success] = "Reshuffled and rebuilding the Reviews page from all quotations on the worker."
+    flash[:success] = "Rebuilding the Reviews pages from all quotations on the worker."
     redirect_to comfy_admin_quotations_path
+  end
+
+  # Persist a new manual order from the drag-to-reorder list.
+  def reorder
+    SubstackQuotation.reorder!(Array(params[:order]))
+    head :ok
   end
 
   private
 
   def load_quotations
-    @quotations = comfy_paginate(Kaminari.paginate_array(SubstackQuotation.chronological.to_a), per_page: 25)
+    @quotations = SubstackQuotation.by_position.to_a
   end
 
 end

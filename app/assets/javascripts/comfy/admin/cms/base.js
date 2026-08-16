@@ -38,6 +38,7 @@
     CMS.substackSubtitleSample.init();
     CMS.blueskySync.init();
     CMS.replyDrafter.init();
+    CMS.quotationsSort.init();
   };
 
   CMS.dispose = () => {
@@ -53,6 +54,7 @@
     CMS.substackSubtitleSample.dispose();
     CMS.blueskySync.dispose();
     CMS.replyDrafter.dispose();
+    CMS.quotationsSort.dispose();
   };
 
   CMS.getLocale = () => document.querySelector('meta[name="cms-locale"]').content;

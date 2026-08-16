@@ -28,16 +28,17 @@ RSpec.describe SubstackQuotation do
     end
   end
 
-  describe '.reshuffle!' do
-    before { 5.times { |i| described_class.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}") } }
+  describe '.reorder!' do
+    let!(:records) { Array.new(3) { |i| described_class.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}") } }
 
-    it 'assigns a contiguous 0..n-1 position to every record' do
-      described_class.reshuffle!
-      expect(described_class.pluck(:position).sort).to eq [0, 1, 2, 3, 4]
+    it 'assigns positions matching the given id order' do
+      described_class.reorder!([records[2].id, records[0].id, records[1].id])
+      expect(described_class.by_position.to_a).to eq [records[2], records[0], records[1]]
     end
 
-    it 'keeps every record (just reorders)' do
-      expect { described_class.reshuffle! }.to_not change(described_class, :count)
+    it 'positions the ids contiguously from 0' do
+      described_class.reorder!([records[2].id, records[0].id, records[1].id])
+      expect([records[2], records[0], records[1]].map { |r| r.reload.position }).to eq [0, 1, 2]
     end
   end
 
