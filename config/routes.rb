@@ -91,6 +91,7 @@ Rails.application.routes.draw do
       post   "admin/quotations",              to: "quotations#create"
       post   "admin/quotations/sync-reviews", to: "quotations#sync_reviews", as: :sync_reviews_admin_quotations
       put    "admin/quotations/reorder",      to: "quotations#reorder",      as: :reorder_admin_quotations
+      patch  "admin/quotations/page-size",    to: "quotations#update_page_size", as: :page_size_admin_quotations
       get    "admin/quotations/:id/edit",     to: "quotations#edit",         as: :edit_admin_quotation
       patch  "admin/quotations/:id",      to: "quotations#update"
       delete "admin/quotations/:id",      to: "quotations#destroy", as: :admin_quotation

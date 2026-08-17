@@ -5,6 +5,7 @@ class SubstackSyncConfig < ApplicationRecord
   # footer must be a JSON array of ProseMirror blocks.
   validate :footer_json_is_array
   validates :quotation_rotation_days, numericality: { only_integer: true, greater_than: 0 }
+  validates :reviews_page_size, numericality: { only_integer: true, greater_than: 0 }
 
   # Tidy the subtitle variables JSON on save: sort each array's entries
   # alphabetically and pretty-print (one entry per line). Invalid JSON is left

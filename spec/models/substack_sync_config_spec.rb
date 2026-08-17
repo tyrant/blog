@@ -110,6 +110,25 @@ RSpec.describe SubstackSyncConfig do
       config.quotation_rotation_days = 1.5
       expect(config).to_not be_valid
     end
+
+    it 'defaults reviews_page_size to 20' do
+      expect(described_class.instance.reviews_page_size).to eq 20
+    end
+
+    it 'is valid with a positive integer reviews page size' do
+      config.reviews_page_size = 15
+      expect(config).to be_valid
+    end
+
+    it 'is invalid with a zero reviews page size' do
+      config.reviews_page_size = 0
+      expect(config).to_not be_valid
+    end
+
+    it 'is invalid with a non-integer reviews page size' do
+      config.reviews_page_size = 2.5
+      expect(config).to_not be_valid
+    end
   end
 
   describe '#quotation_rotation_due?' do

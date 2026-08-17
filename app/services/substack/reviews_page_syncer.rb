@@ -2,7 +2,7 @@
 
 # Rebuilds the dedicated "Reviews" Substack pages so they list every featurable
 # SubstackQuotation, in stored position order (set by drag-to-reorder in the admin),
-# split into pages of PER_PAGE reviews. Page 1 is the original page whose id lives
+# split into pages of SubstackSyncConfig#reviews_page_size reviews. Page 1 is the original page whose id lives
 # in SubstackSyncConfig#reviews_draft_id (its "reviews" slug/URL is preserved);
 # pages 2..X are auto-created drafts (slug "reviews-page-N") whose ids are appended
 # to SubstackSyncConfig#reviews_extra_draft_ids and published with send_email:false.
@@ -19,8 +19,6 @@ module Substack
 
     arguments client: nil, config: nil
 
-    PER_PAGE = 20
-
     def execute
       @config ||= SubstackSyncConfig.instance
       return if @config.reviews_draft_id.blank?
@@ -29,7 +27,7 @@ module Substack
       @created_ids = []
 
       quotations = SubstackQuotation.featurable.by_position.to_a
-      groups     = quotations.each_slice(PER_PAGE).to_a
+      groups     = quotations.each_slice(@config.reviews_page_size).to_a
       page_count = [groups.size, 1].max
 
       page_ids = ensure_page_ids(page_count)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_11_101521) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_16_221845) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -426,6 +426,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_11_101521) do
     t.string "session_error"
     t.text "subtitle_variables_json"
     t.jsonb "reviews_extra_draft_ids", default: [], null: false
+    t.integer "reviews_page_size", default: 20, null: false
   end
 
   create_table "tags", force: :cascade do |t|

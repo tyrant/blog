@@ -237,8 +237,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
     let(:bodies) { {} }
 
     before do
-      stub_const('Substack::ReviewsPageSyncer::PER_PAGE', 2)
-      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com')
+      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com', reviews_page_size: 2)
       quote(quotation: 'one').update!(position: 0)
       quote(quotation: 'two').update!(position: 1)
       quote(quotation: 'three').update!(position: 2)
@@ -320,8 +319,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
     let(:bodies) { {} }
 
     before do
-      stub_const('Substack::ReviewsPageSyncer::PER_PAGE', 2)
-      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com')
+      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com', reviews_page_size: 2)
       quote(quotation: 'one',   post_title: 'First Post',  post_image_url: 'https://cdn/1.jpg').update!(position: 0)
       quote(quotation: 'two',   post_title: 'Second Post', post_image_url: 'https://cdn/2.jpg').update!(position: 1)
       quote(quotation: 'three', post_title: 'Third Post',  post_image_url: 'https://cdn/3.jpg').update!(position: 2)
@@ -363,8 +361,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
     let(:intro)  { { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'People say such wonderful things.' }] } }
 
     before do
-      stub_const('Substack::ReviewsPageSyncer::PER_PAGE', 2)
-      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com')
+      config.update!(reviews_draft_id: 555, publication_host: 'mikeyclarke.substack.com', reviews_page_size: 2)
       lead = quote(quotation: 'one')
       lead.update!(position: 0)
       quote(quotation: 'two').update!(position: 1)

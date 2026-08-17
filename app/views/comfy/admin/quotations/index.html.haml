@@ -37,6 +37,11 @@
       = link_to "Substack Sync settings", edit_comfy_admin_substack_sync_config_path
   = button_to "Rebuild Reviews Pages", comfy_sync_reviews_admin_quotations_path, method: :post, class: "btn btn-outline-secondary btn-sm"
 
+  = form_with url: comfy_page_size_admin_quotations_path, method: :patch, class: "form-inline mt-2" do
+    %label.small.text-muted.mr-2{ for: "reviews_page_size" } Quotations per Reviews page
+    = number_field_tag :reviews_page_size, @page_size, min: 1, class: "form-control form-control-sm mr-2", style: "width: 5rem;"
+    = submit_tag "Save", class: "btn btn-outline-secondary btn-sm"
+
 %section
   %h5= "#{pluralize(@quotations.size, 'quotation')} collected"
   - if @quotations.empty?
@@ -47,7 +52,7 @@
       the groups of 20 that become each Substack Reviews page.
     :css
       #quotation-sortable { counter-reset: reviewspage 1; }
-      #quotation-sortable > li:nth-child(20n):not(:last-child)::after {
+      #quotation-sortable > li:nth-child(#{@page_size}n):not(:last-child)::after {
         counter-increment: reviewspage;
         content: "Reviews page " counter(reviewspage);
         display: block;

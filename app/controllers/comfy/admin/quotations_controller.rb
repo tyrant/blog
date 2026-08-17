@@ -77,9 +77,21 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     head :ok
   end
 
+  # Set the number of quotations per Substack Reviews page.
+  def update_page_size
+    config = SubstackSyncConfig.instance
+    if config.update(reviews_page_size: params[:reviews_page_size])
+      flash[:success] = "Reviews page size set to #{config.reviews_page_size}. Rebuild to apply."
+    else
+      flash[:danger] = "Could not set page size: #{config.errors.full_messages.to_sentence}."
+    end
+    redirect_to comfy_admin_quotations_path
+  end
+
   private
 
   def load_quotations
+    @page_size = SubstackSyncConfig.instance.reviews_page_size
     @quotations = SubstackQuotation.by_position.to_a
   end
 

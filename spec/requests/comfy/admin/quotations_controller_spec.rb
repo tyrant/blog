@@ -18,6 +18,18 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'a gem of a blurb' }
     it { expect(response.body).to include 'Bob' }
+
+    it 'renders the group divider CSS at the configured page size' do
+      SubstackSyncConfig.instance.update!(reviews_page_size: 12)
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      expect(response.body).to include 'nth-child(12n)'
+    end
+
+    it 'shows the page-size input prefilled with the configured size' do
+      SubstackSyncConfig.instance.update!(reviews_page_size: 12)
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      expect(response.body).to match(/name="reviews_page_size"[^>]*value="12"/)
+    end
   end
 
   describe 'POST create' do
@@ -202,6 +214,26 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it 'responds ok' do
       put comfy_reorder_admin_quotations_path, params: { order: [b.id, a.id] }, headers: http_auth_headers
       expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe 'PATCH update_page_size' do
+    it 'updates the configured reviews page size' do
+      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 12 }, headers: http_auth_headers
+      expect(SubstackSyncConfig.instance.reviews_page_size).to eq 12
+    end
+
+    it 'redirects back with a success flash' do
+      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 12 }, headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_quotations_path
+      expect(flash[:success]).to be_present
+    end
+
+    it 'rejects a zero page size' do
+      SubstackSyncConfig.instance.update!(reviews_page_size: 20)
+      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 0 }, headers: http_auth_headers
+      expect(SubstackSyncConfig.instance.reload.reviews_page_size).to eq 20
+      expect(flash[:danger]).to be_present
     end
   end
 
