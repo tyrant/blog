@@ -154,6 +154,14 @@ RSpec.describe Substack::ReviewsPageSyncer do
       let(:cta_paragraph) do
         { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Crave advanced Bullshit? Subscribe!' }] }
       end
+      # TemplateCapturer's wrap stops right before the subscribeWidget block, so
+      # the button and whatever follows it are siblings after the syncIf, not
+      # nested inside it.
+      let(:subscribe_widget) { { 'type' => 'subscribeWidget' } }
+      let(:closing_paragraph) do
+        { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'And then! Like! Comment! Restack!' }] }
+      end
+      let(:cta_blocks) { [cta_heading, cta_paragraph, subscribe_widget, closing_paragraph] }
 
       it 'appends nothing when the footer template has no matching heading' do
         config.update!(footer_json: [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'unrelated' }] }])
@@ -165,13 +173,15 @@ RSpec.describe Substack::ReviewsPageSyncer do
       context 'when the footer template has a tag-gated subscribe pitch' do
         before do
           config.update!(footer_json: [
-            { 'type' => 'syncIf', 'attrs' => { 'tag' => 'Shite Advice' }, 'content' => [cta_heading, cta_paragraph] }
+            { 'type' => 'syncIf', 'attrs' => { 'tag' => 'Shite Advice' }, 'content' => [cta_heading, cta_paragraph] },
+            subscribe_widget,
+            closing_paragraph
           ])
         end
 
-        it 'appends the pitch below the bottom pagination nav' do
+        it 'appends the pitch, subscribe button, and closing paragraph below the bottom pagination nav' do
           sync
-          expect(body_doc['content'].last(2)).to eq [cta_heading, cta_paragraph]
+          expect(body_doc['content'].last(4)).to eq cta_blocks
         end
 
         it 'unwraps the syncIf so it is not tag-gated on Reviews pages' do
@@ -180,7 +190,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
         end
 
         it 'does not duplicate the CTA when the page already carries it from a previous sync' do
-          previous = { 'type' => 'doc', 'content' => Substack::QuotationBlock.build(first) + [cta_heading, cta_paragraph] }
+          previous = { 'type' => 'doc', 'content' => Substack::QuotationBlock.build(first) + cta_blocks }
           allow(client).to receive(:get_draft).with(555)
             .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => false,
                         'draft_body' => JSON.generate(previous))

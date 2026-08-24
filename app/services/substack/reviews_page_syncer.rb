@@ -121,22 +121,26 @@ module Substack
     # The "Bullshit Emeritus: SUBSCRIBE" pitch and everything below it, pulled
     # live from the post footer template (SubstackSyncConfig#footer_json) so
     # Reviews pages stay in step with it automatically rather than duplicating
-    # it here. TemplateCapturer normally wraps that section in a syncIf gated
-    # on a post tag — unwrapped here since a Reviews page has no post to check
-    # a tag against. [] when the section isn't present yet.
+    # it here. TemplateCapturer normally wraps the heading-through-subscribeWidget
+    # run in a syncIf gated on a post tag, stopping the wrap right before the
+    # subscribeWidget — so the button and whatever follows it (e.g. the closing
+    # "Like it, Restack it…" paragraph) are siblings *after* the syncIf, not
+    # inside it, and have to be reattached here. Unwrapped since a Reviews page
+    # has no post to check a tag against. [] when the section isn't present yet.
     def subscribe_cta_blocks
       find_cta_blocks(@config.footer_json) || []
     end
 
     def find_cta_blocks(blocks)
-      index = Array(blocks).index { |block| cta_heading?(block) }
+      blocks = Array(blocks)
+      index = blocks.index { |block| cta_heading?(block) }
       return blocks[index..] if index
 
-      Array(blocks).each do |block|
+      blocks.each_with_index do |block, i|
         next unless block["type"] == "syncIf"
 
         found = find_cta_blocks(block["content"])
-        return found if found
+        return found + blocks[(i + 1)..] if found
       end
       nil
     end
