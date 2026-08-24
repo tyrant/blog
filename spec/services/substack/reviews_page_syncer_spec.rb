@@ -146,6 +146,50 @@ RSpec.describe Substack::ReviewsPageSyncer do
       end
     end
 
+    describe 'subscribe CTA' do
+      let(:cta_heading) do
+        { 'type' => 'heading', 'attrs' => { 'level' => 3 },
+          'content' => [{ 'type' => 'text', 'text' => 'Bullshit Emeritus: SUBSCRIBE' }] }
+      end
+      let(:cta_paragraph) do
+        { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Crave advanced Bullshit? Subscribe!' }] }
+      end
+
+      it 'appends nothing when the footer template has no matching heading' do
+        config.update!(footer_json: [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'unrelated' }] }])
+        sync
+        texts = body_doc['content'].flat_map { |b| Array(b['content']).map { |n| n['text'] } }
+        expect(texts).to_not include('unrelated')
+      end
+
+      context 'when the footer template has a tag-gated subscribe pitch' do
+        before do
+          config.update!(footer_json: [
+            { 'type' => 'syncIf', 'attrs' => { 'tag' => 'Shite Advice' }, 'content' => [cta_heading, cta_paragraph] }
+          ])
+        end
+
+        it 'appends the pitch below the bottom pagination nav' do
+          sync
+          expect(body_doc['content'].last(2)).to eq [cta_heading, cta_paragraph]
+        end
+
+        it 'unwraps the syncIf so it is not tag-gated on Reviews pages' do
+          sync
+          expect(body_doc['content']).to_not include(hash_including('type' => 'syncIf'))
+        end
+
+        it 'does not duplicate the CTA when the page already carries it from a previous sync' do
+          previous = { 'type' => 'doc', 'content' => Substack::QuotationBlock.build(first) + [cta_heading, cta_paragraph] }
+          allow(client).to receive(:get_draft).with(555)
+            .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => false,
+                        'draft_body' => JSON.generate(previous))
+          sync
+          expect(body_doc['content'].count { |b| b == cta_heading }).to eq 1
+        end
+      end
+    end
+
     it 'does not publish while it is still a draft' do
       allow(client).to receive(:publish_draft)
       sync
@@ -312,6 +356,23 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(current['marks'].map { |m| m['type'] }).to eq %w[strong]
       expect(other['marks'].find { |m| m['type'] == 'link' }.dig('attrs', 'href'))
         .to eq 'https://mikeyclarke.substack.com/p/reviews-page-2'
+    end
+
+    context 'with a subscribe CTA configured' do
+      before do
+        config.update!(footer_json: [
+          { 'type' => 'syncIf', 'attrs' => { 'tag' => 'Shite Advice' }, 'content' => [
+            { 'type' => 'heading', 'attrs' => { 'level' => 3 },
+              'content' => [{ 'type' => 'text', 'text' => 'Bullshit Emeritus: SUBSCRIBE' }] }
+          ] }
+        ])
+      end
+
+      it 'appends the CTA below the bottom pagination nav on every page' do
+        sync
+        expect(bodies[555].last['type']).to eq 'heading'
+        expect(bodies[556].last['type']).to eq 'heading'
+      end
     end
   end
 

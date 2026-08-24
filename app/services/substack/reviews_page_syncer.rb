@@ -10,14 +10,20 @@
 # Each page renders as: a top pagination nav (1 · 2 · … · X, current bold, others
 # linked — omitted when there's only one page), page 1's manually-authored intro,
 # the review units (native digestPostEmbed card — or a post-title heading fallback
-# — then the quote + 🔗 + author), and the same nav at the bottom. Draft writes
-# aren't Cloudflare-blocked from the prod IP, so this runs on the prod worker.
-# No-op when no page-1 draft id is configured.
+# — then the quote + 🔗 + author), the same nav at the bottom, then the post
+# footer template's subscribe CTA ("Bullshit Emeritus: SUBSCRIBE" onward, pulled
+# live from SubstackSyncConfig#footer_json — see SUBSCRIBE_CTA_HEADING). Draft
+# writes aren't Cloudflare-blocked from the prod IP, so this runs on the prod
+# worker. No-op when no page-1 draft id is configured.
 module Substack
   class ReviewsPageSyncer
     include ServiceInterface
 
     arguments client: nil, config: nil
+
+    # Matches TemplateCapturer::CONDITIONALS' heading — the post footer's
+    # "Bullshit Emeritus: SUBSCRIBE" pitch, normally gated behind a post tag.
+    SUBSCRIBE_CTA_HEADING = "Bullshit Emeritus"
 
     def execute
       @config ||= SubstackSyncConfig.instance
@@ -103,13 +109,44 @@ module Substack
       banner = banner_image(reviews.first)
       nav    = page_count > 1 ? [pagination(index + 1, page_count, urls)] : []
       units  = reviews.flat_map { |quotation| review_unit(quotation) }
-      content = banner + nav + page_intro + units + nav
+      content = banner + nav + page_intro + units + nav + subscribe_cta_blocks
       content = [{ "type" => "paragraph" }] if content.empty?
 
       {
         "type" => "doc",
         "content" => content
       }
+    end
+
+    # The "Bullshit Emeritus: SUBSCRIBE" pitch and everything below it, pulled
+    # live from the post footer template (SubstackSyncConfig#footer_json) so
+    # Reviews pages stay in step with it automatically rather than duplicating
+    # it here. TemplateCapturer normally wraps that section in a syncIf gated
+    # on a post tag — unwrapped here since a Reviews page has no post to check
+    # a tag against. [] when the section isn't present yet.
+    def subscribe_cta_blocks
+      find_cta_blocks(@config.footer_json) || []
+    end
+
+    def find_cta_blocks(blocks)
+      index = Array(blocks).index { |block| cta_heading?(block) }
+      return blocks[index..] if index
+
+      Array(blocks).each do |block|
+        next unless block["type"] == "syncIf"
+
+        found = find_cta_blocks(block["content"])
+        return found if found
+      end
+      nil
+    end
+
+    def cta_heading?(block)
+      block.is_a?(Hash) && block["type"] == "heading" && block_text(block).include?(SUBSCRIBE_CTA_HEADING)
+    end
+
+    def block_text(block)
+      Array(block["content"]).flat_map { |n| [n["text"]] + Array(n["content"]).map { |x| x["text"] } }.compact.join
     end
 
     # The page's banner: the cover image of the page's first review's post, at
@@ -180,9 +217,19 @@ module Substack
     def intro(draft)
       content  = Array(parsed_body(draft)["content"]).reject { |block| nav_block?(block) }
       content  = strip_leading_banner(content)
+      content  = strip_trailing_cta(content)
       boundary = review_start(content)
 
       boundary ? content[0...boundary] : content
+    end
+
+    # Drop the syncer-appended subscribe CTA (its own trailing section) so it's
+    # never mistaken for authored intro and carried over — mirrors
+    # strip_leading_banner for the same reason, at the other end of the page.
+    def strip_trailing_cta(content)
+      index = content.index { |block| cta_heading?(block) }
+
+      index ? content[0...index] : content
     end
 
     # Drop a leading captionedImage — the banner the syncer prepends — so it isn't
