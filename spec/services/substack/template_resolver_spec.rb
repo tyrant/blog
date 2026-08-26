@@ -18,6 +18,27 @@ RSpec.describe Substack::TemplateResolver do
     end
   end
 
+  describe 'quotation count substitution' do
+    before do
+      Array.new(2) do |i|
+        SubstackQuotation.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}",
+                                  post_title: 'P', post_url: 'https://x/p', author_name: 'A', author_url: 'https://substack.com/@a')
+      end
+    end
+
+    it 'replaces the leading digits of an "N-and-counting" text node with the featurable count' do
+      blocks = [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'boasts 141-and-counting reviews' }] }]
+      text = resolve(blocks).first['content'].first['text']
+      expect(text).to eq 'boasts 2-and-counting reviews'
+    end
+
+    it 'leaves text without the "-and-counting" marker untouched' do
+      blocks = [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'just some 141 text' }] }]
+      text = resolve(blocks).first['content'].first['text']
+      expect(text).to eq 'just some 141 text'
+    end
+  end
+
   describe 'syncOriginalLink' do
     subject(:heading) { resolve([{ 'type' => 'syncOriginalLink' }]).first }
 

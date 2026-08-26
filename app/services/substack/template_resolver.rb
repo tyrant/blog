@@ -7,6 +7,8 @@ module Substack
   #   {"type": "syncOriginalLink"}                          → the "Original: <url>" heading
   #   {"type": "syncQuotations", "attrs": {"count": 3}}     → N random quotation triplets
   #   {"type": "syncIf", "attrs": {"tag": "…"}, "content":[…]} → its blocks, only if the post is so tagged
+  # Literal text nodes also get their "N-and-counting" quotation tally refreshed
+  # to the live SubstackQuotation.featurable.count on every resolve.
   class TemplateResolver
     def self.resolve(blocks, post:, quotations: nil)
       new(post: post, quotations: quotations).resolve(blocks)
@@ -28,8 +30,25 @@ module Substack
       when "syncOriginalLink" then [original_link_heading]
       when "syncQuotations"   then quotation_blocks(block.dig("attrs", "count") || 3)
       when "syncIf"           then resolve_conditional(block)
-      else [block]
+      else [substitute_quotation_count(block)]
       end
+    end
+
+    # The captured footer text includes a live "N-and-counting" quotation tally
+    # (e.g. "boasts 141-and-counting"), frozen at whatever it read when the
+    # footer was last captured — keep it current on every resolve instead.
+    def substitute_quotation_count(node)
+      return node unless node.is_a?(Hash)
+
+      node = node.merge("text" => node["text"].gsub(/\d+(?=-and-counting)/, quotation_count.to_s)) if
+        node["type"] == "text" && node["text"].to_s.match?(/\d+-and-counting/)
+      node = node.merge("content" => node["content"].map { |child| substitute_quotation_count(child) }) if
+        node["content"].is_a?(Array)
+      node
+    end
+
+    def quotation_count
+      @quotation_count ||= SubstackQuotation.featurable.count
     end
 
     def resolve_conditional(block)
