@@ -107,5 +107,17 @@ namespace :substack do
       end
     end
   end
+
+  # Ad-hoc re-run of the same capture, unconditional (overwrites footer_json).
+  # Invoke directly: cap production substack:capture_footer
+  task :capture_footer do
+    on roles(:app) do
+      within current_path do
+        with rails_env: fetch(:rails_env) do
+          execute :rake, "substack:capture_footer"
+        end
+      end
+    end
+  end
 end
 after "deploy:migrate", "substack:seed_footer"
