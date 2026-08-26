@@ -60,10 +60,18 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(quotes).to eq ['“second”', '“first”']
     end
 
-    it 'skips quotations missing post/author links' do
+    it 'skips quotations missing a post url' do
       quote(quotation: 'incomplete', post_url: nil, author_url: nil)
       sync
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
+    end
+
+    it 'includes quotations missing an author url, as a plain-text author name' do
+      quote(quotation: 'no-author', author_url: nil)
+      sync
+      quotes = body_doc['content'].select { |b| b['type'] == 'blockquote' }
+      node = quotes.find { |b| b['content'][0]['content'][0]['text'] == '“no-author”' }
+      expect(node['content'][0]['content'].last).to eq('type' => 'text', 'text' => 'Eva')
     end
 
     it 'falls back to a plain post-title heading when no embed can be built' do

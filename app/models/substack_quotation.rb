@@ -9,8 +9,9 @@ class SubstackQuotation < ApplicationRecord
   # The display order on the Reviews pages — set manually by drag-to-reorder in the
   # admin (SubstackQuotation.reorder!); new quotations append to the end.
   scope :by_position, -> { order(:position, :id) }
-  # Quotations complete enough to render as a linked triplet.
-  scope :featurable, -> { where.not(post_url: [nil, ""]).where.not(author_url: [nil, ""]) }
+  # Quotations complete enough to render as a triplet. Author is optional —
+  # QuotationBlock renders the name as plain text when author_url is blank.
+  scope :featurable, -> { where.not(post_url: [nil, ""]) }
 
   # Persist a manual Reviews-page order from the admin drag-to-reorder list —
   # `ordered_ids` is the quotation ids in their new top-to-bottom order.

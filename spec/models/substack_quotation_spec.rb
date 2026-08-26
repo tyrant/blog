@@ -62,10 +62,15 @@ RSpec.describe SubstackQuotation do
       expect(texts.count { |t| t == 'same' }).to eq 1
     end
 
-    it 'skips quotations missing a post or author url' do
+    it 'skips quotations missing a post url' do
       quote('ok', 'https://x/p/1')
       described_class.create!(quotation: 'nourl', comment_url: 'https://x/comment/nourl', post_url: nil, author_url: nil)
       expect(described_class.sample_excluding(nil, 10).map(&:quotation)).to eq(['ok'])
+    end
+
+    it 'includes quotations missing an author url' do
+      quote('has-post', 'https://x/p/1', author: nil)
+      expect(described_class.sample_excluding(nil, 10).map(&:quotation)).to eq(['has-post'])
     end
 
     it 'returns at most count' do

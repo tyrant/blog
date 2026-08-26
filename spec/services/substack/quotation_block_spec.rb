@@ -45,6 +45,11 @@ RSpec.describe Substack::QuotationBlock do
       expect(nodes.last.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
     end
 
+    it 'renders the author as plain text when there is no author_url' do
+      nodes = described_class.build(quote(author_url: nil))[1]['content'][0]['content']
+      expect(nodes.last).to eq('type' => 'text', 'text' => 'Eva')
+    end
+
     it 'closes the unit with a centred "." spacer' do
       expect(blocks[2]['attrs']['textAlign']).to eq 'center'
       expect(blocks[2]['content'][0]['text']).to eq '.'
