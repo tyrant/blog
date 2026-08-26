@@ -1,18 +1,23 @@
 # frozen_string_literal: true
 
 module Substack
-  # Builds and detects the featured-quote blocks. Each quotation renders as a
-  # three-block unit: a lead (a native post-embed card when the quotation has a
-  # post_embed snapshot, else an h4 heading linking the post), a blockquote of the
-  # italicised quote (a 🔗 to the original comment then an em-dash and the linked
-  # commenter, all inline), and a centred "." spacer paragraph. The template's
+  # Builds and detects the featured-quote blocks. When the quotation has a
+  # post_embed snapshot, it renders as a two-block unit: a native "medium"
+  # post-embed card whose caption *is* the quote, followed by a right-aligned
+  # attribution paragraph (a 🔗 to the original comment, an em-dash, the linked
+  # commenter). Without a snapshot it falls back to the older three-block shape:
+  # an h4 heading linking the post, a blockquote of the italicised quote (with
+  # the same inline attribution), and a centred "." spacer. The template's
   # syncQuotations directive expands into N of these; the rotation job finds the
-  # run in a draft and swaps them for fresh ones.
+  # run in a draft (of either shape) and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
     def unit(quotation)
-      [lead(quotation), blockquote(quotation), spacer]
+      lead = card(quotation)
+      return [lead, attribution(quotation)] if lead
+
+      [heading(quotation), blockquote(quotation), spacer]
     end
 
     # The heading-only unit (no embed card) — kept for the heading fallback and
@@ -21,16 +26,26 @@ module Substack
       [heading(quotation), blockquote(quotation), spacer]
     end
 
-    def lead(quotation)
-      card(quotation) || heading(quotation)
-    end
-
-    # Substack's native "small" post-embed, from the stored snapshot; nil when the
-    # quotation has no snapshot (falls back to the heading). nodeId is per-node.
+    # Substack's native "medium" post-embed, from the stored snapshot, captioned
+    # with the quote itself; nil when the quotation has no snapshot (falls back
+    # to the heading). nodeId is per-node.
     def card(quotation)
       return nil if quotation.post_embed.blank?
 
-      { "type" => "digestPostEmbed", "attrs" => quotation.post_embed.merge("nodeId" => SecureRandom.uuid) }
+      attrs = quotation.post_embed.merge(
+        "nodeId" => SecureRandom.uuid, "size" => "md", "caption" => "“#{quotation.quotation}”"
+      )
+      { "type" => "digestPostEmbed", "attrs" => attrs }
+    end
+
+    # The card unit's attribution line: a 🔗 to the original comment, an
+    # em-dash, then the linked commenter — right-aligned beneath the card.
+    def attribution(quotation)
+      nodes = []
+      nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
+      nodes << text(" — ")
+      nodes << text(quotation.author_name, href: quotation.author_url)
+      { "type" => "paragraph", "attrs" => { "textAlign" => "right" }, "content" => nodes }
     end
 
     def heading(quotation)
@@ -56,27 +71,50 @@ module Substack
       { "type" => "paragraph", "attrs" => { "textAlign" => "center" }, "content" => [text(".")] }
     end
 
-    # Replace the contiguous run of quotation triplets in an existing draft body
-    # with fresh ones (same count), in place. Returns the content unchanged when
-    # no run is found.
+    # Replace the contiguous run of quotation units in an existing draft body
+    # with fresh ones (same count), in place. Units may be either shape (see
+    # module docs) and a run may mix both, e.g. mid-migration. Returns the
+    # content unchanged when no run is found.
     def rotate(content, quotations)
       start = (0...content.size).find { |i| triplet_at?(content, i) }
       return content unless start
 
-      length = 0
-      length += 1 while triplet_at?(content, start + length * 3)
-      fresh = quotations.first(length).flat_map { |quotation| unit(quotation) }
-      content[0...start] + fresh + content[(start + length * 3)..]
+      count, stop = walk_units(content, start)
+      fresh = quotations.first(count).flat_map { |quotation| unit(quotation) }
+      content[0...start] + fresh + content[stop..]
     end
 
-    # A quotation unit: a lead (post-embed card or a post-linking heading), an
-    # em-blockquote, then a paragraph (the author line, or a bare spacer). The
-    # third block is only required to be a paragraph — the reference draft's
-    # card units carry a plain "." there rather than a linked author.
+    # Walks a contiguous run of quotation units starting at index, returning
+    # [unit count, index just past the run].
+    def walk_units(content, index)
+      count = 0
+      offset = index
+      while (length = unit_length_at(content, offset))
+        count += 1
+        offset += length
+      end
+      [count, offset]
+    end
+
+    # A quotation unit at index: either shape (see module docs). Returns the
+    # block length of the unit found there (2 or 3), or nil if none matches.
+    def unit_length_at(content, index)
+      return 2 if quotation_lead?(content[index]) && attribution_paragraph?(content[index + 1])
+      return 3 if quotation_lead?(content[index]) && blockquote_em?(content[index + 1]) && paragraph?(content[index + 2])
+
+      nil
+    end
+
     def triplet_at?(content, index)
-      quotation_lead?(content[index]) &&
-        blockquote_em?(content[index + 1]) &&
-        paragraph?(content[index + 2])
+      !unit_length_at(content, index).nil?
+    end
+
+    # The card unit's marker block: a right-aligned paragraph carrying a 🔗
+    # link, i.e. an `attribution` output.
+    def attribution_paragraph?(block)
+      return false unless block.is_a?(Hash) && block["type"] == "paragraph" && block.dig("attrs", "textAlign") == "right"
+
+      Array(block["content"]).any? { |node| node["text"] == "🔗" && Array(node["marks"]).any? { |mark| mark["type"] == "link" } }
     end
 
     def quotation_lead?(block)

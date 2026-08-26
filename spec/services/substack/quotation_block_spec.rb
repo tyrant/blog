@@ -57,15 +57,13 @@ RSpec.describe Substack::QuotationBlock do
   end
 
   describe '.unit' do
-    it 'leads with a heading when the quotation has no embed snapshot' do
-      expect(described_class.unit(quote).first['type']).to eq 'heading'
+    it 'is the heading/blockquote/spacer triplet when the quotation has no embed snapshot' do
+      expect(described_class.unit(quote).map { |b| b['type'] }).to eq %w[heading blockquote paragraph]
     end
 
-    it 'leads with a post-embed card when the quotation has a snapshot' do
-      lead = described_class.unit(quote(post_embed: { 'size' => 'sm', 'id' => 7 })).first
-      expect(lead['type']).to eq 'digestPostEmbed'
-      expect(lead['attrs']).to include('size' => 'sm', 'id' => 7)
-      expect(lead['attrs']['nodeId']).to be_present
+    it 'is a card + attribution pair when the quotation has a snapshot' do
+      unit = described_class.unit(quote(post_embed: { 'size' => 'sm', 'id' => 7 }))
+      expect(unit.map { |b| b['type'] }).to eq %w[digestPostEmbed paragraph]
     end
   end
 
@@ -75,6 +73,40 @@ RSpec.describe Substack::QuotationBlock do
     it 'gives each card a unique nodeId' do
       quotation = quote(post_embed: { 'size' => 'sm' })
       expect(described_class.card(quotation)['attrs']['nodeId']).to_not eq described_class.card(quotation)['attrs']['nodeId']
+    end
+
+    it 'forces the "md" size regardless of the stored snapshot size' do
+      lead = described_class.card(quote(post_embed: { 'size' => 'sm', 'id' => 7 }))
+      expect(lead['attrs']).to include('size' => 'md', 'id' => 7)
+    end
+
+    it 'captions the card with the quote text' do
+      lead = described_class.card(quote(quotation: 'card quote', post_embed: { 'size' => 'sm' }))
+      expect(lead['attrs']['caption']).to eq '“card quote”'
+    end
+  end
+
+  describe '.attribution' do
+    subject(:paragraph) { described_class.attribution(quote) }
+
+    it { expect(paragraph['attrs']['textAlign']).to eq 'right' }
+
+    it 'links a 🔗 to the comment, then an em-dash and the linked author, unmarked' do
+      nodes = paragraph['content']
+      expect(nodes.map { |n| n['text'] }).to eq ['🔗', ' — ', 'Eva']
+      expect(nodes[0].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
+      expect(nodes[2].dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+      expect(nodes.flat_map { |n| Array(n['marks']).map { |m| m['type'] } }).to_not include 'em'
+    end
+
+    it 'omits the comment link when there is no comment_url' do
+      nodes = described_class.attribution(quote(comment_url: nil))['content']
+      expect(nodes.map { |n| n['text'] }).to eq [' — ', 'Eva']
+    end
+
+    it 'renders the author as plain text when there is no author_url' do
+      nodes = described_class.attribution(quote(author_url: nil))['content']
+      expect(nodes.last).to eq('type' => 'text', 'text' => 'Eva')
     end
   end
 
@@ -88,6 +120,26 @@ RSpec.describe Substack::QuotationBlock do
       card = described_class.card(quote(post_embed: { 'size' => 'sm' }))
       unit = [card, described_class.build(quote)[1], { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => '.' }] }]
       expect(described_class.triplet_at?(unit, 0)).to be true
+    end
+
+    it 'matches a card + attribution pair (the current two-block shape)' do
+      unit = described_class.unit(quote(post_embed: { 'size' => 'sm' }))
+      expect(described_class.triplet_at?(unit, 0)).to be true
+    end
+  end
+
+  describe '.walk_units' do
+    it 'counts a run of two-block card units and returns the index past it' do
+      content = [{ 'type' => 'paragraph' }] +
+        described_class.unit(quote(post_embed: { 'size' => 'sm' })) +
+        described_class.unit(quote(post_embed: { 'size' => 'sm' })) +
+        [{ 'type' => 'horizontal_rule' }]
+      expect(described_class.walk_units(content, 1)).to eq [2, 5]
+    end
+
+    it 'counts a mixed run of three-block and two-block units' do
+      content = described_class.build(quote) + described_class.unit(quote(post_embed: { 'size' => 'sm' }))
+      expect(described_class.walk_units(content, 0)).to eq [2, 5]
     end
   end
 
@@ -114,6 +166,15 @@ RSpec.describe Substack::QuotationBlock do
     it 'leaves content with no quotation run untouched' do
       plain = [{ 'type' => 'paragraph' }]
       expect(described_class.rotate(plain, fresh)).to eq plain
+    end
+
+    it 'swaps a run of two-block card units for fresh ones, preserving the two-block shape' do
+      card_content = [{ 'type' => 'paragraph' }] +
+        described_class.unit(quote(quotation: 'old', post_embed: { 'size' => 'sm' }))
+      fresh_with_embed = [quote(quotation: 'new', post_embed: { 'size' => 'sm' })]
+      result = described_class.rotate(card_content, fresh_with_embed)
+      expect(result[1]['attrs']['caption']).to eq '“new”'
+      expect(result.size).to eq 3
     end
   end
 end

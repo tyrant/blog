@@ -69,6 +69,27 @@ RSpec.describe Substack::TemplateCapturer do
     end
   end
 
+  context 'when the quotation units are the current card + attribution pairs' do
+    def new_unit
+      Substack::QuotationBlock.unit(SubstackQuotation.new(quotation: 'x', post_title: 'P', post_url: 'https://pub/p/x',
+                                                           comment_url: 'https://pub/p/x/comment/1',
+                                                           author_name: 'A', author_url: 'https://substack.com/@a',
+                                                           post_embed: { 'canonical_url' => 'https://pub/p/x', 'size' => 'sm' }))
+    end
+
+    let(:blocks) do
+      [{ 'type' => 'heading', 'attrs' => { 'level' => 5 }, 'content' => [{ 'type' => 'text', 'text' => 'Original: https://x' }] }] +
+        new_unit + new_unit + [{ 'type' => 'subscribeWidget' }]
+    end
+
+    it 'collapses the two-block run into one syncQuotations directive' do
+      capture
+      directive = footer.find { |b| b['type'] == 'syncQuotations' }
+      expect(directive['attrs']['count']).to eq 2
+      expect(footer.none? { |b| b['type'] == 'digestPostEmbed' }).to be true
+    end
+  end
+
   it 'wraps the Bullshit Emeritus section in a tag conditional' do
     capture
     conditional = footer.find { |b| b['type'] == 'syncIf' }

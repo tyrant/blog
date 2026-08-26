@@ -245,7 +245,7 @@ module Substack
     end
 
     def review_start(content)
-      quote = (0...content.size).find { |i| QuotationBlock.blockquote_em?(content[i]) }
+      quote = (0...content.size).find { |i| QuotationBlock.blockquote_em?(content[i]) || QuotationBlock.attribution_paragraph?(content[i]) }
       return nil unless quote
 
       boundary = quote

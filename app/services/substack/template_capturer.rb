@@ -46,9 +46,8 @@ module Substack
       start = (0...template.size).find { |i| Substack::QuotationBlock.triplet_at?(template, i) }
       return unless start
 
-      count = 0
-      count += 1 while Substack::QuotationBlock.triplet_at?(template, start + count * 3)
-      template[start, count * 3] = [{ "type" => "syncQuotations", "attrs" => { "count" => count } }]
+      count, stop = Substack::QuotationBlock.walk_units(template, start)
+      template[start...stop] = [{ "type" => "syncQuotations", "attrs" => { "count" => count } }]
     end
 
     def wrap_conditionals!(template)

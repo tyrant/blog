@@ -85,17 +85,17 @@ RSpec.describe Substack::ReviewsPageSyncer do
       let(:snapshot) { { 'size' => 'sm', 'id' => 192565792, 'title' => 'A', 'isEditorNode' => true } }
       let!(:first) { quote(quotation: 'first', post_embed: snapshot) }
 
-      it 'leads each review with the snapshot as a small post-embed card' do
+      it 'leads each review with the snapshot as a post-embed card, captioned with the quote' do
         sync
         card = body_doc['content'].first
         expect(card['type']).to eq 'digestPostEmbed'
-        expect(card['attrs']).to include(snapshot)
+        expect(card['attrs']).to include('id' => 192565792, 'title' => 'A', 'size' => 'md', 'caption' => '“first”')
       end
 
       it 'drops the post-title heading in favour of the card' do
         sync
         types = body_doc['content'].map { |b| b['type'] }
-        expect(types.first(3)).to eq %w[digestPostEmbed blockquote paragraph]
+        expect(types.first(2)).to eq %w[digestPostEmbed paragraph]
       end
 
       it 'gives each card a unique nodeId' do
@@ -141,6 +141,25 @@ RSpec.describe Substack::ReviewsPageSyncer do
       it 'regenerates the review list once, not stacking the old run' do
         sync
         expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
+      end
+
+      context 'when the existing review region is the current card + attribution shape' do
+        let(:card_quotation) do
+          SubstackQuotation.new(quotation: 'x', post_title: 'P', post_url: 'https://pub/p/x',
+                                comment_url: 'https://pub/p/x/comment/1', author_name: 'A',
+                                author_url: 'https://substack.com/@a', post_embed: { 'canonical_url' => 'https://pub/p/x' })
+        end
+        let(:existing) { { 'type' => 'doc', 'content' => [intro] + Substack::QuotationBlock.unit(card_quotation) } }
+
+        it 'still finds the boundary and keeps the intro above the regenerated list' do
+          sync
+          expect(body_doc['content'].first).to eq intro
+        end
+
+        it 'strips the stale card + attribution pair rather than folding it into the intro' do
+          sync
+          expect(body_doc['content'].none? { |b| b['type'] == 'digestPostEmbed' }).to be true
+        end
       end
 
       context 'when the first review carries a cover thumbnail' do
