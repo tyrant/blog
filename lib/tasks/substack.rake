@@ -142,6 +142,12 @@ namespace :substack do
     puts "Done. /p/reviews is now newsletter post #{new_id}; reviews_draft_id updated; all pages + nav rebuilt."
   end
 
+  desc "Rebuild the Reviews pages from the whole quotation pool now, instead of waiting for the next quotation edit"
+  task sync_reviews_page: :environment do
+    Substack::ReviewsPageSyncer.execute
+    puts "Reviews page sync done."
+  end
+
   desc "Sync the Substack nav bar: ensure a 'Reviews Page N' item per Reviews page (additive). Run locally if the prod IP is Cloudflare-blocked."
   task sync_nav: :environment do
     created = Substack::NavSyncer.execute

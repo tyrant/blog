@@ -119,5 +119,17 @@ namespace :substack do
       end
     end
   end
+
+  # Rebuild the Reviews pages immediately instead of waiting for a quotation
+  # edit or the admin button. Invoke directly: cap production substack:sync_reviews_page
+  task :sync_reviews_page do
+    on roles(:app) do
+      within current_path do
+        with rails_env: fetch(:rails_env) do
+          execute :rake, "substack:sync_reviews_page"
+        end
+      end
+    end
+  end
 end
 after "deploy:migrate", "substack:seed_footer"
