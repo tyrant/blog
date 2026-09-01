@@ -69,7 +69,7 @@ RSpec.describe Substack::TemplateCapturer do
     end
   end
 
-  context 'when the quotation units are the current card + attribution pairs' do
+  context 'when the quotation units are the current spacer + card + blockquote triplets' do
     def new_unit
       Substack::QuotationBlock.unit(SubstackQuotation.new(quotation: 'x', post_title: 'P', post_url: 'https://pub/p/x',
                                                            comment_url: 'https://pub/p/x/comment/1',
@@ -82,7 +82,7 @@ RSpec.describe Substack::TemplateCapturer do
         new_unit + new_unit + [{ 'type' => 'subscribeWidget' }]
     end
 
-    it 'collapses the two-block run into one syncQuotations directive' do
+    it 'collapses the run into one syncQuotations directive' do
       capture
       directive = footer.find { |b| b['type'] == 'syncQuotations' }
       expect(directive['attrs']['count']).to eq 2

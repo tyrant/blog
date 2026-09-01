@@ -2,20 +2,22 @@
 
 module Substack
   # Builds and detects the featured-quote blocks. When the quotation has a
-  # post_embed snapshot, it renders as a two-block unit: a native "medium"
-  # post-embed card whose caption *is* the quote, followed by a right-aligned
-  # attribution paragraph (a 🔗 to the original comment, an em-dash, the linked
-  # commenter). Without a snapshot it falls back to the older three-block shape:
-  # an h4 heading linking the post, a blockquote of the italicised quote (with
-  # the same inline attribution), and a centred "." spacer. The template's
-  # syncQuotations directive expands into N of these; the rotation job finds the
-  # run in a draft (of either shape) and swaps them for fresh ones.
+  # post_embed snapshot, it renders as a three-block unit: an empty heading
+  # spacer, a native "medium" post-embed card (its caption *is* the quote, but
+  # Substack's mobile CSS hides that caption — kept only for the rich preview),
+  # then a blockquote of the quote (marked em, always visible) with the
+  # attribution nested below it as a second paragraph. Without a snapshot it
+  # falls back to the older three-block shape: an h4 heading linking the post,
+  # a blockquote of the italicised quote (with the same inline attribution),
+  # and a centred "." spacer. The template's syncQuotations directive expands
+  # into N of these; the rotation job finds the run in a draft (of any shape)
+  # and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
     def unit(quotation)
       lead = card(quotation)
-      return [lead, attribution(quotation)] if lead
+      return [lead_spacer, lead, quote_blockquote(quotation)] if lead
 
       [heading(quotation), blockquote(quotation), spacer]
     end
@@ -38,14 +40,29 @@ module Substack
       { "type" => "digestPostEmbed", "attrs" => attrs }
     end
 
-    # The card unit's attribution line: a 🔗 to the original comment, an
-    # em-dash, then the linked commenter — right-aligned beneath the card.
-    def attribution(quotation)
-      nodes = []
-      nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
-      nodes << text(" — ")
-      nodes << text(quotation.author_name, href: quotation.author_url)
-      { "type" => "paragraph", "attrs" => { "textAlign" => "right" }, "content" => nodes }
+    # An empty heading used purely as vertical spacing before a card unit —
+    # matches the reference draft's own spacing and lets the existing
+    # heading/captionedImage/digestPostEmbed "title block" folding (used by
+    # ReviewsPageSyncer's intro boundary) absorb it for free.
+    def lead_spacer
+      { "type" => "heading", "attrs" => { "textAlign" => "center", "level" => 6 } }
+    end
+
+    # The card unit's quote + attribution, both always visible regardless of
+    # Substack's per-device embed styling: the quote (marked em) as the
+    # blockquote's first paragraph, the attribution (🔗, em-dash, linked
+    # commenter) nested below it as a second paragraph.
+    def quote_blockquote(quotation)
+      attribution_nodes = []
+      attribution_nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
+      attribution_nodes << text(" — ")
+      attribution_nodes << text(quotation.author_name, href: quotation.author_url)
+
+      { "type" => "blockquote", "content" => [
+        { "type" => "paragraph", "attrs" => { "textAlign" => "left" },
+          "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])] },
+        { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => attribution_nodes }
+      ] }
     end
 
     def heading(quotation)
@@ -96,13 +113,36 @@ module Substack
       [count, offset]
     end
 
-    # A quotation unit at index: either shape (see module docs). Returns the
+    # A quotation unit at index: any shape (see module docs). Returns the
     # block length of the unit found there (2 or 3), or nil if none matches.
     def unit_length_at(content, index)
+      return 3 if embed_lead_with_blockquote?(content, index)
       return 2 if quotation_lead?(content[index]) && attribution_paragraph?(content[index + 1])
       return 3 if quotation_lead?(content[index]) && blockquote_em?(content[index + 1]) && paragraph?(content[index + 2])
 
       nil
+    end
+
+    # The current card shape: an empty heading spacer, a post-embed card, then
+    # a blockquote carrying both the quote and (nested as a second paragraph)
+    # its attribution.
+    def embed_lead_with_blockquote?(content, index)
+      empty_heading?(content[index]) &&
+        post_embed_card?(content[index + 1]) &&
+        attributed_blockquote?(content[index + 2])
+    end
+
+    def empty_heading?(block)
+      block.is_a?(Hash) && block["type"] == "heading" && Array(block["content"]).empty?
+    end
+
+    # A blockquote whose first paragraph is the em-marked quote and whose
+    # second paragraph is the attribution (carries a link mark).
+    def attributed_blockquote?(block)
+      return false unless blockquote_em?(block)
+
+      attribution_para = Array(block["content"])[1]
+      Array(attribution_para&.dig("content")).any? { |node| Array(node["marks"]).any? { |mark| mark["type"] == "link" } }
     end
 
     def triplet_at?(content, index)

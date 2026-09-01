@@ -10,6 +10,11 @@ module Substack
   # Literal text nodes also get their "N-and-counting" quotation tally refreshed
   # to the live SubstackQuotation.featurable.count on every resolve.
   class TemplateResolver
+    # Matches the live count's digits regardless of phrasing around "counting"
+    # ("141-and-counting", "142 gems and counting", …) — digits followed,
+    # within a short run of non-digit filler, by "and counting"/"and-counting".
+    QUOTATION_COUNT_PATTERN = /\d+(?=[^\d]{0,20}and[\s-]counting)/i
+
     def self.resolve(blocks, post:, quotations: nil)
       new(post: post, quotations: quotations).resolve(blocks)
     end
@@ -40,8 +45,8 @@ module Substack
     def substitute_quotation_count(node)
       return node unless node.is_a?(Hash)
 
-      node = node.merge("text" => node["text"].gsub(/\d+(?=-and-counting)/, quotation_count.to_s)) if
-        node["type"] == "text" && node["text"].to_s.match?(/\d+-and-counting/)
+      node = node.merge("text" => node["text"].gsub(QUOTATION_COUNT_PATTERN, quotation_count.to_s)) if
+        node["type"] == "text" && node["text"].to_s.match?(QUOTATION_COUNT_PATTERN)
       node = node.merge("content" => node["content"].map { |child| substitute_quotation_count(child) }) if
         node["content"].is_a?(Array)
       node

@@ -32,7 +32,13 @@ RSpec.describe Substack::TemplateResolver do
       expect(text).to eq 'boasts 2-and-counting reviews'
     end
 
-    it 'leaves text without the "-and-counting" marker untouched' do
+    it 'replaces the digits of a "N gems and counting" text node with the featurable count' do
+      blocks = [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'rock 142 gems and counting. Check out' }] }]
+      text = resolve(blocks).first['content'].first['text']
+      expect(text).to eq 'rock 2 gems and counting. Check out'
+    end
+
+    it 'leaves text without an "and counting" marker untouched' do
       blocks = [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'just some 141 text' }] }]
       text = resolve(blocks).first['content'].first['text']
       expect(text).to eq 'just some 141 text'
@@ -72,7 +78,7 @@ RSpec.describe Substack::TemplateResolver do
     it 'leads each quotation with a post-embed card when a snapshot exists' do
       SubstackQuotation.update_all(post_embed: { 'size' => 'sm', 'id' => 9 })
       result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1 } }])
-      expect(result.first['type']).to eq 'digestPostEmbed'
+      expect(result.map { |b| b['type'] }).to eq %w[heading digestPostEmbed blockquote]
     end
 
     it 'uses injected quotations when given' do
