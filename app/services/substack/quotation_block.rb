@@ -3,7 +3,7 @@
 module Substack
   # Builds and detects the featured-quote blocks. When the quotation has a
   # post_embed snapshot, it renders as a three-block unit: an empty heading
-  # spacer, a native "medium" post-embed card (its caption *is* the quote, but
+  # spacer, a native "small" post-embed card (its caption *is* the quote, but
   # Substack's mobile CSS hides that caption — kept only for the rich preview),
   # then a blockquote of the quote (marked em, always visible) with the
   # attribution nested below it as a second paragraph. Without a snapshot it
@@ -28,14 +28,14 @@ module Substack
       [heading(quotation), blockquote(quotation), spacer]
     end
 
-    # Substack's native "medium" post-embed, from the stored snapshot, captioned
+    # Substack's native "small" post-embed, from the stored snapshot, captioned
     # with the quote itself; nil when the quotation has no snapshot (falls back
     # to the heading). nodeId is per-node.
     def card(quotation)
       return nil if quotation.post_embed.blank?
 
       attrs = quotation.post_embed.merge(
-        "nodeId" => SecureRandom.uuid, "size" => "md", "caption" => "“#{quotation.quotation}”"
+        "nodeId" => SecureRandom.uuid, "size" => "sm", "caption" => "“#{quotation.quotation}”"
       )
       { "type" => "digestPostEmbed", "attrs" => attrs }
     end

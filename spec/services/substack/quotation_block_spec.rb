@@ -84,9 +84,9 @@ RSpec.describe Substack::QuotationBlock do
       expect(described_class.card(quotation)['attrs']['nodeId']).to_not eq described_class.card(quotation)['attrs']['nodeId']
     end
 
-    it 'forces the "md" size regardless of the stored snapshot size' do
-      lead = described_class.card(quote(post_embed: { 'size' => 'sm', 'id' => 7 }))
-      expect(lead['attrs']).to include('size' => 'md', 'id' => 7)
+    it 'forces the "sm" size regardless of the stored snapshot size' do
+      lead = described_class.card(quote(post_embed: { 'size' => 'md', 'id' => 7 }))
+      expect(lead['attrs']).to include('size' => 'sm', 'id' => 7)
     end
 
     it 'captions the card with the quote text' do

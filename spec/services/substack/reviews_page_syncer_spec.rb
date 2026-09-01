@@ -88,7 +88,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
       it 'leads each review with the snapshot as a post-embed card, captioned with the quote' do
         sync
         card = body_doc['content'].find { |b| b['type'] == 'digestPostEmbed' }
-        expect(card['attrs']).to include('id' => 192565792, 'title' => 'A', 'size' => 'md', 'caption' => '“first”')
+        expect(card['attrs']).to include('id' => 192565792, 'title' => 'A', 'size' => 'sm', 'caption' => '“first”')
       end
 
       it 'uses an empty spacer heading, not a linked post-title heading, in front of the card' do
