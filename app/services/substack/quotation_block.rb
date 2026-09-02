@@ -2,22 +2,22 @@
 
 module Substack
   # Builds and detects the featured-quote blocks. When the quotation has a
-  # post_embed snapshot, it renders as a three-block unit: an empty heading
-  # spacer, a native "small" post-embed card (its caption *is* the quote, but
-  # Substack's mobile CSS hides that caption — kept only for the rich preview),
-  # then a blockquote of the quote (marked em, always visible) with the
-  # attribution nested below it as a second paragraph. Without a snapshot it
-  # falls back to the older three-block shape: an h4 heading linking the post,
-  # a blockquote of the italicised quote (with the same inline attribution),
-  # and a centred "." spacer. The template's syncQuotations directive expands
-  # into N of these; the rotation job finds the run in a draft (of any shape)
-  # and swaps them for fresh ones.
+  # post_embed snapshot, it renders as a three-block unit: a native "small"
+  # post-embed card (its caption *is* the quote, but Substack's mobile CSS
+  # hides that caption — kept only for the rich preview), a blockquote of the
+  # quote (marked em, always visible) with the attribution nested below it as
+  # a second paragraph, then a centred h5 "." spacer beneath the pair. Without
+  # a snapshot it falls back to the older three-block shape: an h4 heading
+  # linking the post, a blockquote of the italicised quote (with the same
+  # inline attribution), and a centred "." spacer. The template's
+  # syncQuotations directive expands into N of these; the rotation job finds
+  # the run in a draft (of any shape) and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
     def unit(quotation)
       lead = card(quotation)
-      return [lead_spacer, lead, quote_blockquote(quotation)] if lead
+      return [lead, quote_blockquote(quotation), trailing_spacer] if lead
 
       [heading(quotation), blockquote(quotation), spacer]
     end
@@ -40,12 +40,10 @@ module Substack
       { "type" => "digestPostEmbed", "attrs" => attrs }
     end
 
-    # An empty heading used purely as vertical spacing before a card unit —
-    # matches the reference draft's own spacing and lets the existing
-    # heading/captionedImage/digestPostEmbed "title block" folding (used by
-    # ReviewsPageSyncer's intro boundary) absorb it for free.
-    def lead_spacer
-      { "type" => "heading", "attrs" => { "textAlign" => "center", "level" => 6 } }
+    # A centred h5 "." spacer beneath a card unit — matches the reference
+    # draft's own spacing between one preview+quote pair and the next.
+    def trailing_spacer
+      { "type" => "heading", "attrs" => { "textAlign" => "center", "level" => 5 }, "content" => [text(".")] }
     end
 
     # The card unit's quote + attribution, both always visible regardless of
@@ -116,24 +114,26 @@ module Substack
     # A quotation unit at index: any shape (see module docs). Returns the
     # block length of the unit found there (2 or 3), or nil if none matches.
     def unit_length_at(content, index)
-      return 3 if embed_lead_with_blockquote?(content, index)
+      return 3 if card_with_trailing_spacer?(content, index)
       return 2 if quotation_lead?(content[index]) && attribution_paragraph?(content[index + 1])
       return 3 if quotation_lead?(content[index]) && blockquote_em?(content[index + 1]) && paragraph?(content[index + 2])
 
       nil
     end
 
-    # The current card shape: an empty heading spacer, a post-embed card, then
-    # a blockquote carrying both the quote and (nested as a second paragraph)
-    # its attribution.
-    def embed_lead_with_blockquote?(content, index)
-      empty_heading?(content[index]) &&
-        post_embed_card?(content[index + 1]) &&
-        attributed_blockquote?(content[index + 2])
+    # The current card shape: a post-embed card, a blockquote carrying both
+    # the quote and (nested as a second paragraph) its attribution, then a
+    # centred "." heading spacer.
+    def card_with_trailing_spacer?(content, index)
+      post_embed_card?(content[index]) &&
+        attributed_blockquote?(content[index + 1]) &&
+        period_heading?(content[index + 2])
     end
 
-    def empty_heading?(block)
-      block.is_a?(Hash) && block["type"] == "heading" && Array(block["content"]).empty?
+    def period_heading?(block)
+      return false unless block.is_a?(Hash) && block["type"] == "heading"
+
+      Array(block["content"]).any? { |node| node["text"].to_s.strip == "." }
     end
 
     # A blockquote whose first paragraph is the em-marked quote and whose

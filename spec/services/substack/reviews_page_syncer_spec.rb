@@ -91,11 +91,11 @@ RSpec.describe Substack::ReviewsPageSyncer do
         expect(card['attrs']).to include('id' => 192565792, 'title' => 'A', 'size' => 'sm', 'caption' => '“first”')
       end
 
-      it 'uses an empty spacer heading, not a linked post-title heading, in front of the card' do
+      it 'closes the card and quote with a centred h5 "." spacer, not a linked post-title heading' do
         sync
         types = body_doc['content'].map { |b| b['type'] }
-        expect(types.first(3)).to eq %w[heading digestPostEmbed blockquote]
-        expect(body_doc['content'].first['content']).to be_blank
+        expect(types.first(3)).to eq %w[digestPostEmbed blockquote heading]
+        expect(body_doc['content'][2]['content'].first['text']).to eq '.'
       end
 
       it 'gives each card a unique nodeId' do

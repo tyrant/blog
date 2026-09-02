@@ -61,18 +61,24 @@ RSpec.describe Substack::QuotationBlock do
       expect(described_class.unit(quote).map { |b| b['type'] }).to eq %w[heading blockquote paragraph]
     end
 
-    it 'is a spacer/card/blockquote triplet when the quotation has a snapshot' do
+    it 'is a card/blockquote/spacer triplet when the quotation has a snapshot' do
       unit = described_class.unit(quote(post_embed: { 'size' => 'sm', 'id' => 7 }))
-      expect(unit.map { |b| b['type'] }).to eq %w[heading digestPostEmbed blockquote]
+      expect(unit.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote heading]
     end
 
     it "puts the quote (marked em) and attribution inside the card unit's blockquote, both visible" do
       unit = described_class.unit(quote(quotation: 'card quote', post_embed: { 'size' => 'sm' }))
-      quote_node = unit[2]['content'][0]['content'][0]
-      attribution_nodes = unit[2]['content'][1]['content']
+      quote_node = unit[1]['content'][0]['content'][0]
+      attribution_nodes = unit[1]['content'][1]['content']
       expect(quote_node['text']).to eq '“card quote”'
       expect(quote_node['marks'].map { |m| m['type'] }).to include 'em'
       expect(attribution_nodes.map { |n| n['text'] }).to eq ['🔗', ' — ', 'Eva']
+    end
+
+    it 'closes the card unit with a centred h5 "." spacer' do
+      unit = described_class.unit(quote(post_embed: { 'size' => 'sm' }))
+      expect(unit[2]).to eq('type' => 'heading', 'attrs' => { 'textAlign' => 'center', 'level' => 5 },
+                             'content' => [{ 'type' => 'text', 'text' => '.' }])
     end
   end
 
@@ -128,7 +134,7 @@ RSpec.describe Substack::QuotationBlock do
       expect(described_class.triplet_at?(unit, 0)).to be true
     end
 
-    it 'matches a spacer/card/blockquote triplet (the current card shape)' do
+    it 'matches a card/blockquote/spacer triplet (the current card shape)' do
       unit = described_class.unit(quote(post_embed: { 'size' => 'sm' }))
       expect(described_class.triplet_at?(unit, 0)).to be true
     end
@@ -179,7 +185,7 @@ RSpec.describe Substack::QuotationBlock do
         described_class.unit(quote(quotation: 'old', post_embed: { 'size' => 'sm' }))
       fresh_with_embed = [quote(quotation: 'new', post_embed: { 'size' => 'sm' })]
       result = described_class.rotate(card_content, fresh_with_embed)
-      expect(result[2]['attrs']['caption']).to eq '“new”'
+      expect(result[1]['attrs']['caption']).to eq '“new”'
       expect(result.size).to eq 4
     end
   end

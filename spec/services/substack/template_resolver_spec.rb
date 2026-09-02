@@ -78,7 +78,7 @@ RSpec.describe Substack::TemplateResolver do
     it 'leads each quotation with a post-embed card when a snapshot exists' do
       SubstackQuotation.update_all(post_embed: { 'size' => 'sm', 'id' => 9 })
       result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1 } }])
-      expect(result.map { |b| b['type'] }).to eq %w[heading digestPostEmbed blockquote]
+      expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote heading]
     end
 
     it 'uses injected quotations when given' do
