@@ -30,6 +30,18 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       get comfy_admin_quotations_path, headers: http_auth_headers
       expect(response.body).to match(/name="reviews_page_size"[^>]*value="12"/)
     end
+
+    it 'badges a previewable quotation' do
+      SubstackQuotation.create!(quotation: 'flagged one', comment_url: 'https://x/comment/2', previewable: true)
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      expect(response.body).to include 'Previewable'
+    end
+
+    it 'does not badge a non-previewable quotation' do
+      doc = Nokogiri::HTML(response.body)
+      item = doc.at_css('#quotation-sortable li')
+      expect(item.text).to_not include 'Previewable'
+    end
   end
 
   describe 'POST create' do

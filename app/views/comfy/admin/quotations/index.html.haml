@@ -78,6 +78,8 @@
             %span.order-number.badge.badge-light.mr-2{ style: "padding-top: 0.35rem;" }= i + 1
             .flex-grow-1
               %blockquote.mb-1{ style: "font-style: italic;" }= "“#{q.quotation}”"
+              - if q.previewable?
+                %span.badge.badge-info.mr-2{ title: "Eligible for the widget above every Substack post" } Previewable
               %span.text-muted.small
                 By
                 = q.author_url.present? ? link_to(q.author_name.presence || "commenter", q.author_url, target: "_blank") : (q.author_name.presence || "commenter")
