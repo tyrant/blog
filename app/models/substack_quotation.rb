@@ -12,6 +12,10 @@ class SubstackQuotation < ApplicationRecord
   # Quotations complete enough to render as a triplet. Author is optional —
   # QuotationBlock renders the name as plain text when author_url is blank.
   scope :featurable, -> { where.not(post_url: [nil, ""]) }
+  # Manually marked (admin checkbox) as reading fine on their own, out of their
+  # parent Post's context — eligible for the text-only widget PostSyncer slots
+  # above every Substack post. Off by default: most blurbs need that context.
+  scope :previewable, -> { where(previewable: true) }
 
   # Persist a manual Reviews-page order from the admin drag-to-reorder list —
   # `ordered_ids` is the quotation ids in their new top-to-bottom order.
@@ -21,11 +25,10 @@ class SubstackQuotation < ApplicationRecord
     end
   end
 
-  # Up to `count` random featurable quotations, distinct by quote text, and
-  # excluding any left on the given Substack post (no point pointing a reader at
-  # the post they're already on).
-  def self.sample_excluding(post_url, count)
-    scope = featurable
+  # Up to `count` random quotations from `scope` (default featurable), distinct
+  # by quote text, and excluding any left on the given Substack post (no point
+  # pointing a reader at the post they're already on).
+  def self.sample_excluding(post_url, count, scope: featurable)
     scope = scope.where.not(post_url: post_url) if post_url.present?
     scope.order(Arel.sql("RANDOM()")).limit(count * 5).to_a
       .uniq { |quotation| quotation.quotation.to_s.strip.downcase }

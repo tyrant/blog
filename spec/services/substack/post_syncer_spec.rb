@@ -289,7 +289,7 @@ RSpec.describe Substack::PostSyncer do
         stub_request(:get, 'http://ex.com/a.jpg').to_return(status: 200, body: 'BYTES', headers: { 'Content-Type' => 'image/jpeg' })
         allow(client).to receive(:upload_image).and_return('https://cdn/x.jpg')
         SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', post_title: 'P', post_url: 'https://x/p',
-                                  author_name: 'A', author_url: 'https://substack.com/@a')
+                                  author_name: 'A', author_url: 'https://substack.com/@a', previewable: true)
       end
 
       it 'inserts the widget ahead of the leading image' do
@@ -321,7 +321,7 @@ RSpec.describe Substack::PostSyncer do
     context 'with no leading image' do
       before do
         SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', post_title: 'P', post_url: 'https://x/p',
-                                  author_name: 'A', author_url: 'https://substack.com/@a')
+                                  author_name: 'A', author_url: 'https://substack.com/@a', previewable: true)
       end
 
       it 'inserts the widget at the very top' do
@@ -330,7 +330,21 @@ RSpec.describe Substack::PostSyncer do
       end
     end
 
-    context 'with no featurable quotations yet' do
+    context 'with no previewable quotations yet' do
+      it 'does not insert a widget' do
+        sync
+        expect(client).to have_received(:create_draft) do |args|
+          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'blockquote' }).to be true
+        end
+      end
+    end
+
+    context 'with a featurable quotation that is not marked previewable' do
+      before do
+        SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', post_title: 'P', post_url: 'https://x/p',
+                                  author_name: 'A', author_url: 'https://substack.com/@a', previewable: false)
+      end
+
       it 'does not insert a widget' do
         sync
         expect(client).to have_received(:create_draft) do |args|
@@ -346,9 +360,11 @@ RSpec.describe Substack::PostSyncer do
         allow(client).to receive(:get_draft).with(1).and_return('id' => 1, 'is_published' => false, 'slug' => nil)
         allow(client).to receive(:update_draft)
         SubstackQuotation.create!(quotation: 'self quote', comment_url: 'https://x/comment/self', post_title: 'S',
-                                  post_url: 'https://pub.substack.com/p/self', author_name: 'A', author_url: 'https://substack.com/@a')
+                                  post_url: 'https://pub.substack.com/p/self', author_name: 'A', author_url: 'https://substack.com/@a',
+                                  previewable: true)
         SubstackQuotation.create!(quotation: 'other quote', comment_url: 'https://x/comment/other', post_title: 'O',
-                                  post_url: 'https://pub.substack.com/p/other', author_name: 'B', author_url: 'https://substack.com/@b')
+                                  post_url: 'https://pub.substack.com/p/other', author_name: 'B', author_url: 'https://substack.com/@b',
+                                  previewable: true)
       end
 
       it 'draws the widget from another post’s quotation' do

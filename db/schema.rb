@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_16_221845) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_03_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -389,6 +389,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_16_221845) do
     t.bigint "post_id"
     t.jsonb "post_embed"
     t.integer "position"
+    t.boolean "previewable", default: false, null: false
   end
 
   create_table "substack_replies", force: :cascade do |t|

@@ -104,6 +104,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it { expect(response.body).to include 'Update quotation' }
     it { expect(response.body).to include 'name="post_url"' }
     it { expect(response.body).to include 'name="post_title"' }
+    it { expect(response.body).to include 'name="previewable"' }
   end
 
   describe 'PATCH update' do
@@ -139,6 +140,17 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       it 'saves manually-entered post title, url and image' do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Manual Post', post_image_url: 'https://manual/cover.jpg' }, headers: http_auth_headers
         expect(quotation.reload).to have_attributes(post_url: 'https://manual/p/z', post_title: 'Manual Post', post_image_url: 'https://manual/cover.jpg')
+      end
+
+      it 'flags the quotation previewable when the checkbox is ticked' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', previewable: '1' }, headers: http_auth_headers
+        expect(quotation.reload.previewable).to be true
+      end
+
+      it 'unflags previewable when the checkbox is left unticked' do
+        quotation.update!(previewable: true)
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old' }, headers: http_auth_headers
+        expect(quotation.reload.previewable).to be false
       end
     end
 

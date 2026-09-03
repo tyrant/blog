@@ -42,6 +42,14 @@ RSpec.describe SubstackQuotation do
     end
   end
 
+  describe '.previewable' do
+    it 'returns only quotations flagged previewable' do
+      flagged = described_class.create!(quotation: 'a', comment_url: 'https://x/comment/a', previewable: true)
+      described_class.create!(quotation: 'b', comment_url: 'https://x/comment/b', previewable: false)
+      expect(described_class.previewable.to_a).to eq [flagged]
+    end
+  end
+
   describe '.sample_excluding' do
     def quote(text, post_url, author: 'https://substack.com/@a')
       described_class.create!(quotation: text, comment_url: "https://x/comment/#{text.parameterize}",
@@ -76,6 +84,13 @@ RSpec.describe SubstackQuotation do
     it 'returns at most count' do
       3.times { |i| quote("q#{i}", "https://x/p/#{i}") }
       expect(described_class.sample_excluding(nil, 2).size).to eq 2
+    end
+
+    it 'samples from a given scope instead of featurable' do
+      quote('not-previewable', 'https://x/p/1')
+      described_class.create!(quotation: 'previewable', comment_url: 'https://x/comment/previewable', previewable: true)
+      texts = described_class.sample_excluding(nil, 10, scope: described_class.previewable).map(&:quotation)
+      expect(texts).to eq ['previewable']
     end
   end
 
