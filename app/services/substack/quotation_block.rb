@@ -74,13 +74,6 @@ module Substack
       ] }
     end
 
-    # A single centred line — quote, 🔗 to the comment, and the linked author —
-    # with no post-embed card. Used to slot one extra random quotation near the
-    # top of a post, distinct from the footer's card-led syncQuotations run.
-    def inline(quotation)
-      { "type" => "paragraph", "attrs" => { "textAlign" => "center" }, "content" => quote_line_nodes(quotation) }
-    end
-
     def quote_line_nodes(quotation)
       nodes = [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])]
       if quotation.comment_url.present?

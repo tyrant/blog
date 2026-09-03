@@ -75,17 +75,16 @@ module Substack
 
     private
 
-    # Slots one extra random Review/Quotation right after the post's leading
-    # image (top of post, before any of the post's own content) — plain text,
-    # no post-embed card, so it reads as a single inline aside distinct from
-    # the footer's card-led syncQuotations run. No-op once there are no
-    # featurable quotations to draw from yet.
+    # Slots one extra random Review/Quotation at the very top of the post,
+    # ahead of its own leading image — a blockquoted single line, no
+    # post-embed card, so it reads as a distinct aside from the footer's
+    # card-led syncQuotations run. No-op once there are no featurable
+    # quotations to draw from yet.
     def insert_random_quotation!(content, post)
       quotation = SubstackQuotation.sample_excluding(own_substack_url(post), 1).first
       return unless quotation
 
-      index = content.first.is_a?(Hash) && content.first["type"] == "captionedImage" ? 1 : 0
-      content.insert(index, QuotationBlock.inline(quotation))
+      content.insert(0, QuotationBlock.blockquote(quotation))
     end
 
     def own_substack_url(post)

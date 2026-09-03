@@ -292,19 +292,20 @@ RSpec.describe Substack::PostSyncer do
                                   author_name: 'A', author_url: 'https://substack.com/@a')
       end
 
-      it 'inserts the widget right after the leading image' do
+      it 'inserts the widget ahead of the leading image' do
         sync
         expect(client).to have_received(:create_draft) do |args|
           types = args[:body_doc]['content'].map { |b| b['type'] }
-          expect(types.first(2)).to eq %w[captionedImage paragraph]
+          expect(types.first(2)).to eq %w[blockquote captionedImage]
         end
       end
 
-      it 'renders the quote, comment link, and author link on one line with no embed card' do
+      it 'renders the quote, comment link, and author link on one left-aligned line with no embed card' do
         sync
         expect(client).to have_received(:create_draft) do |args|
-          widget = args[:body_doc]['content'][1]
-          texts = widget['content'].map { |n| n['text'] }
+          widget = args[:body_doc]['content'][0]
+          expect(widget['content'][0]['attrs']['textAlign']).to eq 'left'
+          texts = widget['content'][0]['content'].map { |n| n['text'] }
           expect(texts).to eq ['“q”', ' ', '🔗', ' — ', 'A']
         end
       end
@@ -325,7 +326,7 @@ RSpec.describe Substack::PostSyncer do
 
       it 'inserts the widget at the very top' do
         sync
-        expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].first['type']).to eq 'paragraph' }
+        expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].first['type']).to eq 'blockquote' }
       end
     end
 
@@ -333,7 +334,7 @@ RSpec.describe Substack::PostSyncer do
       it 'does not insert a widget' do
         sync
         expect(client).to have_received(:create_draft) do |args|
-          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'paragraph' && b.dig('attrs', 'textAlign') == 'center' }).to be true
+          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'blockquote' }).to be true
         end
       end
     end

@@ -122,22 +122,6 @@ RSpec.describe Substack::QuotationBlock do
     end
   end
 
-  describe '.inline' do
-    subject(:widget) { described_class.inline(quote) }
-
-    it { expect(widget['type']).to eq 'paragraph' }
-
-    it { expect(widget['attrs']['textAlign']).to eq 'center' }
-
-    it 'renders the quote, 🔗 comment link, and linked author on one line' do
-      expect(widget['content'].map { |n| n['text'] }).to eq ['“a blurb”', ' ', '🔗', ' — ', 'Eva']
-    end
-
-    it 'includes no post-embed card' do
-      expect(widget['content'].none? { |n| n['type'] == 'digestPostEmbed' }).to be true
-    end
-  end
-
   describe '.triplet_at?' do
     let(:content) { [{ 'type' => 'paragraph' }] + described_class.build(quote) }
 
