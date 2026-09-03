@@ -279,4 +279,86 @@ RSpec.describe Substack::PostSyncer do
       end
     end
   end
+
+  describe 'the random quotation widget' do
+    before { allow(client).to receive(:create_draft).and_return('id' => 1, 'is_published' => false, 'slug' => nil) }
+
+    context 'with a leading image' do
+      before do
+        post.update_column(:content_cache, '<p><img src="http://ex.com/a.jpg"></p><p>Body</p>')
+        stub_request(:get, 'http://ex.com/a.jpg').to_return(status: 200, body: 'BYTES', headers: { 'Content-Type' => 'image/jpeg' })
+        allow(client).to receive(:upload_image).and_return('https://cdn/x.jpg')
+        SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', post_title: 'P', post_url: 'https://x/p',
+                                  author_name: 'A', author_url: 'https://substack.com/@a')
+      end
+
+      it 'inserts the widget right after the leading image' do
+        sync
+        expect(client).to have_received(:create_draft) do |args|
+          types = args[:body_doc]['content'].map { |b| b['type'] }
+          expect(types.first(2)).to eq %w[captionedImage paragraph]
+        end
+      end
+
+      it 'renders the quote, comment link, and author link on one line with no embed card' do
+        sync
+        expect(client).to have_received(:create_draft) do |args|
+          widget = args[:body_doc]['content'][1]
+          texts = widget['content'].map { |n| n['text'] }
+          expect(texts).to eq ['“q”', ' ', '🔗', ' — ', 'A']
+        end
+      end
+
+      it 'includes no post-embed card' do
+        sync
+        expect(client).to have_received(:create_draft) do |args|
+          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'digestPostEmbed' }).to be true
+        end
+      end
+    end
+
+    context 'with no leading image' do
+      before do
+        SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', post_title: 'P', post_url: 'https://x/p',
+                                  author_name: 'A', author_url: 'https://substack.com/@a')
+      end
+
+      it 'inserts the widget at the very top' do
+        sync
+        expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].first['type']).to eq 'paragraph' }
+      end
+    end
+
+    context 'with no featurable quotations yet' do
+      it 'does not insert a widget' do
+        sync
+        expect(client).to have_received(:create_draft) do |args|
+          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'paragraph' && b.dig('attrs', 'textAlign') == 'center' }).to be true
+        end
+      end
+    end
+
+    context 'when the post already has quotations left on it' do
+      let!(:categorization) { link!(url: 'https://pub.substack.com/p/self', data: { 'id' => 1 }) }
+
+      before do
+        allow(client).to receive(:get_draft).with(1).and_return('id' => 1, 'is_published' => false, 'slug' => nil)
+        allow(client).to receive(:update_draft)
+        SubstackQuotation.create!(quotation: 'self quote', comment_url: 'https://x/comment/self', post_title: 'S',
+                                  post_url: 'https://pub.substack.com/p/self', author_name: 'A', author_url: 'https://substack.com/@a')
+        SubstackQuotation.create!(quotation: 'other quote', comment_url: 'https://x/comment/other', post_title: 'O',
+                                  post_url: 'https://pub.substack.com/p/other', author_name: 'B', author_url: 'https://substack.com/@b')
+      end
+
+      it 'draws the widget from another post’s quotation' do
+        sync
+        expect(client).to have_received(:update_draft).with(1, hash_including(draft_body: include('other quote')))
+      end
+
+      it 'never draws the widget from the post it renders on' do
+        sync
+        expect(client).to_not have_received(:update_draft).with(1, hash_including(draft_body: include('self quote')))
+      end
+    end
+  end
 end

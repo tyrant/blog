@@ -28,6 +28,7 @@ module Substack
       # Drop any Original link the post baked into its own body (often a stale
       # slug); the mirror owns that block, canonically rebuilt from post.url.
       doc["content"].reject! { |block| original_link_block?(block) }
+      insert_random_quotation!(doc["content"], post)
       # Everything below the body is the stored template (Original link, footer
       # boilerplate, random quotations, tag-conditional sections), resolved per
       # post — directives expand here and never reach Substack.
@@ -73,6 +74,23 @@ module Substack
     end
 
     private
+
+    # Slots one extra random Review/Quotation right after the post's leading
+    # image (top of post, before any of the post's own content) — plain text,
+    # no post-embed card, so it reads as a single inline aside distinct from
+    # the footer's card-led syncQuotations run. No-op once there are no
+    # featurable quotations to draw from yet.
+    def insert_random_quotation!(content, post)
+      quotation = SubstackQuotation.sample_excluding(own_substack_url(post), 1).first
+      return unless quotation
+
+      index = content.first.is_a?(Hash) && content.first["type"] == "captionedImage" ? 1 : 0
+      content.insert(index, QuotationBlock.inline(quotation))
+    end
+
+    def own_substack_url(post)
+      substack_categorization(post)&.url
+    end
 
     def substack_categorization(post)
       post.categorizations.joins(:category).find_by(comfy_cms_categories: { label: "Substack" })
