@@ -38,9 +38,18 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Per-post cooldown (hours):'
     end
 
-    it 'explains the 75/25 text-vs-quotation split' do
+    it 'explains the 74/24/2 text-vs-quotation-vs-unattached split' do
       expect(response.body).to include 'random featured quotation'
       expect(response.body).to include 'href="/admin/quotations"'
+      expect(response.body).to include '74%'
+      expect(response.body).to include '24%'
+      expect(response.body).to include 'The remaining 2%'
+    end
+
+    it 'shows the unattached-notes section with its JSON editor and backfill button' do
+      expect(response.body).to include 'Unattached Notes'
+      expect(response.body).to include "name='data_json_text'"
+      expect(response.body).to include 'Backfill unattached Notes'
     end
 
     it 'shows the most-likely-to-repost leaderboard' do
@@ -419,6 +428,36 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
 
       it { expect(BackfillPostJob).to_not have_received(:perform_later) }
+      it { expect(flash[:danger]).to be_present }
+    end
+  end
+
+  describe 'POST backfill_unattached' do
+    before do
+      allow(BackfillUnattachedNotesJob).to receive(:perform_later)
+      post comfy_admin_substack_blizzard_backfill_unattached_path, headers: http_auth_headers
+    end
+
+    it { expect(BackfillUnattachedNotesJob).to have_received(:perform_later) }
+    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+    it { expect(flash[:success]).to be_present }
+  end
+
+  describe 'POST notes-json (update_notes_json)' do
+    context 'valid JSON' do
+      before do
+        post comfy_admin_substack_blizzard_notes_json_path,
+             params: { data_json_text: '{"notes":["https://x/note/c-1"]}' }, headers: http_auth_headers
+      end
+
+      it { expect(BlizzardScheduleConfig.instance.data).to eq('notes' => ['https://x/note/c-1']) }
+      it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+      it { expect(flash[:success]).to be_present }
+    end
+
+    context 'invalid JSON' do
+      before { post comfy_admin_substack_blizzard_notes_json_path, params: { data_json_text: 'not json' }, headers: http_auth_headers }
+
       it { expect(flash[:danger]).to be_present }
     end
   end

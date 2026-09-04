@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_03_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_05_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_03_000001) do
     t.integer "interval_minutes", default: 30, null: false
     t.integer "cooldown_hours", default: 12, null: false
     t.datetime "last_reposted_at"
+    t.jsonb "data", default: {}, null: false
   end
 
   create_table "blizzard_stat_snapshots", force: :cascade do |t|

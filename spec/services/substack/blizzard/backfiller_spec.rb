@@ -97,4 +97,21 @@ RSpec.describe Substack::Blizzard::Backfiller do
 
     it { expect(run.flags).to be_empty }
   end
+
+  describe 'against the BlizzardScheduleConfig singleton (unattached-notes pool)' do
+    subject(:run) { described_class.execute(categorization: config, client: client) }
+
+    let(:config) { BlizzardScheduleConfig.instance.tap { |c| c.update!(data: { 'notes' => note_urls }) } }
+    let(:note_urls) { [note_url(111)] }
+    let(:notes_by_id) { { '111' => { 'body_json' => body('unattached', href: nil), 'date' => 't' } } }
+
+    it 'builds a blizzard entry with no url to mislink-check against' do
+      run
+      expect(config.reload.data['blizzard'].first['text']).to eq 'unattached'
+    end
+
+    it 'raises no flags' do
+      expect(run.flags).to be_empty
+    end
+  end
 end

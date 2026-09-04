@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
-# Populates a Substack categorization's data["blizzard"] from its existing
-# data["notes"] URLs: fetches each note, extracts rich body_json + plaintext +
-# timestamp, and groups notes that share the same text into blizzard entries.
+# Populates a record's data["blizzard"] from its existing data["notes"] URLs:
+# fetches each note, extracts rich body_json + plaintext + timestamp, and groups
+# notes that share the same text into blizzard entries. `categorization` is either
+# a Substack Comfy::Cms::Categorization or the BlizzardScheduleConfig singleton
+# (the unattached-notes pool) — both expose #data/#update!(data:); only the
+# categorization has #url, so the mislink check below no-ops for the latter.
 #
 # Additive and idempotent: data["notes"] is never touched, and a note already
 # recorded under any blizzard entry is skipped on re-runs.
@@ -61,7 +64,7 @@ module Substack
       # A note should link to this categorization's canonical post (#url). Flag
       # when the note links to some post but none matches — likely a stray URL.
       def mislinked?(body_json)
-        canonical = NoteParser.post_slug(@categorization.url)
+        canonical = NoteParser.post_slug(@categorization.try(:url))
         return false if canonical.blank?
 
         slugs = NoteParser.link_hrefs(body_json).map { |h| NoteParser.post_slug(h) }.compact

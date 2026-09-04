@@ -10,7 +10,7 @@ class BlizzardStatSnapshot < ApplicationRecord
     data = Comfy::Cms::Categorization
       .joins(:category)
       .where(comfy_cms_categories: { label: "Substack" })
-      .pluck(:data)
+      .pluck(:data) << BlizzardScheduleConfig.instance.data
 
     {
       posts:   Comfy::Blog::Post.count,

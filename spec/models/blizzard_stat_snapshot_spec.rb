@@ -28,6 +28,13 @@ RSpec.describe BlizzardStatSnapshot do
       let!(:other) { create :categorization, category: other_cat, categorized: post, data: { 'blizzard' => [{ 'uid' => 'x', 'notes' => [{ 'url' => 'z' }] }] } }
       it { expect(described_class.current_totals[:entries]).to eq 2 }
     end
+
+    context 'the unattached-notes pool has entries too' do
+      before { BlizzardScheduleConfig.instance.update!(data: { 'blizzard' => [{ 'uid' => 'u0', 'notes' => [{ 'url' => 'u4' }] }] }) }
+
+      it { expect(described_class.current_totals[:entries]).to eq 3 }
+      it { expect(described_class.current_totals[:notes]).to eq 4 }
+    end
   end
 
   describe '.record!' do

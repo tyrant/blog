@@ -61,9 +61,11 @@ module Substack
           "url"       => NoteParser.build_note_url(group["template_url"], created["id"]),
           "timestamp" => NoteParser.timestamp(created) || Time.current.utc.iso8601
         }
-        # Quotation reposts aren't tracked against an entry, so there's nothing
-        # to confirm back.
-        confirm(group, record) if group["categorization_id"].present?
+        # Quotation reposts aren't tracked against an entry, so there's nothing to
+        # confirm back — unattached-note reposts ARE tracked (against
+        # BlizzardScheduleConfig) despite also lacking a categorization_id, so the
+        # uid is checked too.
+        confirm(group, record) if group["categorization_id"].present? || group["uid"].present?
         record.merge("text" => group["text"])
       end
 

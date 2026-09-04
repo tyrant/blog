@@ -43,6 +43,24 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_to back_path
   end
 
+  # Enqueues a backfill of the unattached-notes pool (BlizzardScheduleConfig#data).
+  def backfill_unattached
+    BackfillUnattachedNotesJob.perform_later
+    flash[:success] = "Backfill started for unattached notes — reposts will update shortly."
+    redirect_to back_path
+  end
+
+  # Saves the raw JSON text for the unattached-notes pool (paste Note URLs into
+  # its "notes" key, then Backfill to turn them into tracked entries).
+  def update_notes_json
+    if BlizzardScheduleConfig.instance.update(data_json_text: params[:data_json_text])
+      flash[:success] = "Unattached notes saved."
+    else
+      flash[:danger] = "Could not save: #{BlizzardScheduleConfig.instance.errors.full_messages.to_sentence}."
+    end
+    redirect_to back_path
+  end
+
   # Enqueues a backfill of one post's notes (from the CMS post editor).
   def backfill_post
     post = Comfy::Blog::Post.find_by(id: params[:post_id])

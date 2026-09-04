@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 # Refreshes the stored "likes" count on every note of one Substack categorization
-# by re-fetching each note and reading its reaction_count. Reads are allowed from
+# (or the BlizzardScheduleConfig singleton, for the unattached-notes pool) by
+# re-fetching each note and reading its reaction_count. Reads are allowed from
 # the prod IP, so this runs on the prod worker. Idempotent (overwrites likes).
 #
 # A note that no longer fetches (deleted, transient error) keeps its last-known
@@ -50,8 +51,11 @@ module Substack
       private
 
       # The categorization's Substack post has its own like count, folded into every
-      # one of its entries' repost weights. Stored on the post itself.
+      # one of its entries' repost weights. Stored on the post itself. No-ops for
+      # the BlizzardScheduleConfig singleton (unattached notes have no parent post).
       def refresh_post_likes
+        return unless @categorization.respond_to?(:categorized)
+
         post = @categorization.categorized
         # Only published posts have a /p/slug URL with a like count; a draft-phase
         # categorization (editor URL) has none yet, so skip it.

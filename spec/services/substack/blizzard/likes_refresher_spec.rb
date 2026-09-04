@@ -80,4 +80,20 @@ RSpec.describe Substack::Blizzard::LikesRefresher do
       end
     end
   end
+
+  describe 'against the BlizzardScheduleConfig singleton (unattached-notes pool)' do
+    subject(:run) { described_class.execute(categorization: config, client: client) }
+
+    let(:config) { BlizzardScheduleConfig.instance.tap { |c| c.update!(data: data) } }
+
+    it 'writes the fetched like count on each note' do
+      run
+      likes = config.reload.data['blizzard'][0]['notes'].map { |n| n['likes'] }
+      expect(likes).to eq [7, 12]
+    end
+
+    it 'does not attempt to refresh a post like count (no parent post)' do
+      expect { run }.to_not raise_error
+    end
+  end
 end

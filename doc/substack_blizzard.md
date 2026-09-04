@@ -33,6 +33,15 @@ lives on the post (`comfy_blog_posts.substack_likes`), refreshed by the same job
 
 `#data["notes"]` is the old flat list, kept for now; prune later (like `#scratchpad`).
 
+A third pool — **unattached Notes**, with no parent Post or Quotation — lives in the
+same shape on `BlizzardScheduleConfig#data` (a jsonb column, edited as JSON text in
+the admin's "Unattached Notes" section): paste Note URLs into its `"notes"` key,
+Backfill turns them into tracked `"blizzard"` entries exactly as above. `Backfiller`
+and `LikesRefresher` accept either a Substack categorization or the
+`BlizzardScheduleConfig` singleton (both expose `#data`/`#update!(data:)`); the
+singleton has no `#url`/parent post, so the mislink check and post-likes refresh
+no-op for it.
+
 ### Settings — `BlizzardScheduleConfig`
 
 A singleton row holds the reposting settings:
@@ -73,11 +82,18 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
   writes its `likes`; a failed fetch keeps the last-known value.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` from a real note.
 - `Substack::Blizzard::WeightedPicker` — the prod side of reposting: under the config row
-  lock, if `interval_minutes` has elapsed, it either (25% of the time, `QUOTATION_ODDS`)
-  hands back a **random featured quotation** built into a Note, or weighted-samples one
-  eligible text entry (weight = 1 + Σ note likes + post likes; excludes entries whose post
-  is in cooldown or lacking `body_json`). Either way it stamps `last_reposted_at` and
-  returns the pick hydrated. `dry_run` previews without claiming.
+  lock, if `interval_minutes` has elapsed, it rolls one random number against three
+  cumulative bands — `QUOTATION_ODDS` (24%) hands back a **random featured quotation**
+  built into a Note; the next `UNATTACHED_ODDS` (2%) weighted-samples one eligible
+  **unattached** entry (`Substack::Blizzard::UnattachedOdds`); the remaining 74% weighted-
+  samples one eligible **per-post** text entry (`RepostOdds`; weight = 1 + Σ note likes +
+  post likes; excludes entries whose post is in cooldown or lacking `body_json`). An empty
+  tier falls through to the next one. Either way it stamps `last_reposted_at` and returns
+  the pick hydrated. `dry_run` previews without claiming.
+- `Substack::Blizzard::UnattachedOdds` — the unattached-pool equivalent of `RepostOdds`:
+  candidates from `BlizzardScheduleConfig#data["blizzard"]`, weight = 1 + Σ note likes (no
+  post-likes term — no parent post). Cooldown rests each entry **individually** (there's no
+  post to bench as a group), using the same `cooldown_hours` setting.
 - `Substack::Blizzard::QuotationNote` — builds a Note `body_json` from a `SubstackQuotation`
   in the **Note** ProseMirror schema (blockquote + bold/italic/link marks; Notes have no
   heading or paragraph alignment): a bold post-title link, the italic quote trailed by a 🔗
@@ -97,9 +113,14 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
   `substack:blizzard:preview_quotation` task (below) — the only faithful way to catch
   Substack-side rendering surprises (like the reviews-link stripping) before they go live.
 - `Substack::Blizzard::RepostRecorder` — records a completed repost (append
-  `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url).
+  `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url). A blank
+  `categorization_id` targets `BlizzardScheduleConfig` instead of a categorization — the
+  unattached pool.
 - `Substack::Blizzard::RepostTicker` — **runs on your Mac**: asks prod for the next
-  weighted repost, creates the Note (residential IP), confirms it back.
+  weighted repost, creates the Note (residential IP), confirms it back. Confirms whenever
+  `categorization_id` OR `uid` is present — a quotation pick has neither (untracked); an
+  unattached pick has `uid` but no `categorization_id` (tracked against
+  `BlizzardScheduleConfig`).
 - `RefreshNotePostLikesJob` — daily SolidQueue job; walks every Substack categorization on
   the prod worker and refreshes both note likes and each post's likes. `BackfillAllJob` /
   `BackfillPostJob` — backfill jobs. See
@@ -130,8 +151,17 @@ FAILED line); re-run with a fresh value in the right environment.
 
 A small form sets **Repost every (minutes)** and **Per-post cooldown (hours)** (POSTs to
 `#update_settings`), and shows when the last repost fired. That's the whole control
-surface — selection is automatic (75% weighted text group, 25% random quotation); there's
-no schedule to arrange. The 25% share is the `QUOTATION_ODDS` constant, not a form field.
+surface — selection is automatic (74% weighted per-post text group, 24% random quotation,
+2% weighted unattached note); there's no schedule to arrange. The shares are the
+`QUOTATION_ODDS`/`UNATTACHED_ODDS` constants, not form fields.
+
+### Unattached Notes
+
+A JSON textarea editing `BlizzardScheduleConfig#data` directly (paste Note URLs into its
+`"notes"` key, save), a **Backfill unattached Notes** button (`BackfillUnattachedNotesJob`),
+and that's it — no due-list/add-manually/re-seed tooling for this pool (small enough, and
+edited by hand). Tracked entries accumulate under `"blizzard"` in the same textarea once
+backfilled.
 
 ### Due list, re-seed, manual paste-back
 
@@ -148,7 +178,9 @@ automated reposter.
 ### Backfill / likes buttons
 
 - **"Backfill all posts' notes"** → `BackfillAllJob`.
-- **"Refresh all Note/Post likes"** → `RefreshNotePostLikesJob` (an immediate run of the daily job).
+- **"Backfill unattached Notes"** → `BackfillUnattachedNotesJob` (the third pool, above).
+- **"Refresh all Note/Post likes"** → `RefreshNotePostLikesJob` (an immediate run of the
+  daily job; also refreshes the unattached pool's note likes).
 - **"Backfill this post's notes"** (CMS Post editor sidebar) → `BackfillPostJob`.
 
 All enqueue SolidQueue jobs (run on the prod worker; Substack reads are allowed there) and
@@ -166,19 +198,26 @@ flash immediately. All are additive/idempotent, so re-clicking is safe.
    then confirm by appending the note) under a DB row lock, so overlapping ticks can't
    double-fire.
 
-**Text vs. quotation (75 / 25):** on each due pick, `WeightedPicker` rolls
-`QUOTATION_ODDS` (0.25, a constant). **25%** → a random `SubstackQuotation`
-([the Quotations pool](substack_post_sync.md#quotations)) built into a Note by `QuotationNote` and
-posted with the post as a card attachment; if the pool is empty it falls back to a text
-group. **75%** → the weighted text pick below. Quotation reposts are **not tracked** (no
-`categorization_id`/`uid`), so the ticker skips the confirm/`RepostRecorder` step and the
-admin odds leaderboard reflects only the 75% text share.
+**Text vs. quotation vs. unattached (74 / 24 / 2):** on each due pick, `WeightedPicker`
+rolls one random number against three cumulative bands: `[0, QUOTATION_ODDS)` (0.24) →
+a random `SubstackQuotation` ([the Quotations pool](substack_post_sync.md#quotations))
+built into a Note by `QuotationNote` and posted with the post as a card attachment;
+`[QUOTATION_ODDS, QUOTATION_ODDS + UNATTACHED_ODDS)` (0.02) → the weighted unattached pick
+below; the remaining `[0.26, 1)` (0.74) → the weighted per-post text pick below. An empty
+tier falls through to the next one (quotation → unattached → text). Quotation reposts are
+**not tracked** (no `categorization_id`/`uid`), so the ticker skips the confirm/
+`RepostRecorder` step and the admin odds leaderboard reflects only the 74% per-post text
+share. Unattached reposts **are** tracked (`uid` set, `categorization_id` blank —
+`RepostRecorder` targets `BlizzardScheduleConfig` instead of a categorization).
 
-**Weighting (the text 75%):** an entry's pick probability ∝ `1 + Σ(its notes' likes) + its post's likes`.
-The `+1` base gives never-posted / zero-like entries a small chance; the sums make
-heavily-liked entries (and popular posts — a post's likes lift every one of its entries —
-and, deliberately, entries reposted often) win more. Entries reposted within
-`cooldown_hours` (as a whole post — all its entries), or with no `body_json`, are excluded.
+**Weighting (per-post 74% and unattached 2%):** an entry's pick probability ∝
+`1 + Σ(its notes' likes)`, plus its post's likes for the per-post pool (no such term for
+unattached — no parent post). The `+1` base gives never-posted / zero-like entries a small
+chance; the sums make heavily-liked entries (and popular posts — a post's likes lift every
+one of its entries — and, deliberately, entries reposted often) win more. Entries with no
+`body_json` are excluded; so are entries in cooldown — as a whole **post** (all its
+entries) for the per-post pool, or **individually** for the unattached pool (no post to
+bench as a group) — both against the same `cooldown_hours` setting.
 
 The local cron (residential IP):
 

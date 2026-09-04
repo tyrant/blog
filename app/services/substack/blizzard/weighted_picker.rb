@@ -17,8 +17,13 @@ module Substack
       arguments dry_run: false, now: nil, random: nil
 
       # Share of reposts drawn from the SubstackQuotation pool instead of a text
-      # group. Falls back to a text group when the pool is empty.
-      QUOTATION_ODDS = 0.25
+      # group. Falls back down through the tiers below when the pool is empty.
+      QUOTATION_ODDS = 0.24
+      # Share drawn from the unattached-notes pool (BlizzardScheduleConfig#data),
+      # on top of QUOTATION_ODDS — so [0, QUOTATION_ODDS) is quotation,
+      # [QUOTATION_ODDS, QUOTATION_ODDS + UNATTACHED_ODDS) is unattached, and the
+      # remainder is the per-post text pool. Falls back to text when empty.
+      UNATTACHED_ODDS = 0.02
 
       def execute
         @now    ||= Time.current
@@ -28,9 +33,16 @@ module Substack
         config.with_lock do
           next nil unless due?(config)
 
-          if quotation_turn? && (quotation = random_quotation)
+          roll = @random.rand
+
+          if roll < QUOTATION_ODDS && (quotation = random_quotation)
             config.update!(last_reposted_at: @now) unless @dry_run
             next hydrate_quotation(quotation)
+          end
+
+          if roll < QUOTATION_ODDS + UNATTACHED_ODDS && (picked = weighted_sample(UnattachedOdds.execute(now: @now)))
+            config.update!(last_reposted_at: @now) unless @dry_run
+            next hydrate_unattached(picked)
           end
 
           picked = weighted_sample(RepostOdds.execute(now: @now))
@@ -42,10 +54,6 @@ module Substack
       end
 
       private
-
-      def quotation_turn?
-        @random.rand < QUOTATION_ODDS
-      end
 
       def random_quotation
         SubstackQuotation.order(Arel.sql("RANDOM()")).first
@@ -79,6 +87,22 @@ module Substack
           return candidate if threshold < 0
         end
         candidates.last
+      end
+
+      # An unattached-note repost IS tracked, but against BlizzardScheduleConfig's
+      # own entries rather than a post's categorization — categorization_id stays
+      # nil (there's no post to look up) while uid carries the entry id, which is
+      # how RepostRecorder/RepostTicker tell it apart from an untracked quotation.
+      def hydrate_unattached(candidate)
+        entry = candidate.entry
+        {
+          "categorization_id" => nil,
+          "uid"               => entry["uid"],
+          "text"              => entry["text"],
+          "body_json"         => entry["body_json"],
+          "post_url"          => nil,
+          "template_url"      => Array(entry["notes"]).map { |n| n["url"] }.compact.first
+        }
       end
 
       def hydrate(candidate)

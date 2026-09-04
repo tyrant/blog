@@ -14,8 +14,15 @@ RSpec.describe RefreshNotePostLikesJob do
   before { allow_any_instance_of(described_class).to receive(:sleep) }
 
   it 'refreshes each Substack categorization' do
-    expect(Substack::Blizzard::LikesRefresher).to receive(:execute).with(hash_including(categorization: substack_cat, commit: true))
+    allow(Substack::Blizzard::LikesRefresher).to receive(:execute)
     described_class.perform_now
+    expect(Substack::Blizzard::LikesRefresher).to have_received(:execute).with(hash_including(categorization: substack_cat, commit: true))
+  end
+
+  it 'also refreshes the unattached-notes pool (BlizzardScheduleConfig)' do
+    allow(Substack::Blizzard::LikesRefresher).to receive(:execute)
+    described_class.perform_now
+    expect(Substack::Blizzard::LikesRefresher).to have_received(:execute).with(hash_including(categorization: BlizzardScheduleConfig.instance, commit: true))
   end
 
   it 'skips non-Substack categorizations' do
@@ -37,9 +44,9 @@ RSpec.describe RefreshNotePostLikesJob do
       expect(JobProgress.find_by(key: 'refresh_note_post_likes').status).to eq 'finished'
     end
 
-    it 'advances once per Substack categorization' do
+    it 'advances once per Substack categorization, plus once for the unattached-notes pool' do
       described_class.perform_now
-      expect(JobProgress.find_by(key: 'refresh_note_post_likes').completed).to eq 1
+      expect(JobProgress.find_by(key: 'refresh_note_post_likes').completed).to eq 2
     end
   end
 end

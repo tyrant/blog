@@ -93,6 +93,22 @@ RSpec.describe Substack::Blizzard::RepostTicker do
     end
   end
 
+  context 'an unattached-note repost (no categorization, but tracked by uid)' do
+    before do
+      stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/tick.json")
+        .to_return(status: 200, body: group.merge('categorization_id' => nil, 'post_url' => nil).to_json)
+    end
+
+    let!(:confirm) do
+      stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/confirm.json").to_return(status: 200, body: { ok: true }.to_json)
+    end
+
+    it 'confirms back — unlike a quotation, an unattached note IS tracked' do
+      result
+      expect(confirm.with(body: hash_including('uid' => 'e0'))).to have_been_requested
+    end
+  end
+
   context 'a group with no body_json' do
     before do
       stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/tick.json")

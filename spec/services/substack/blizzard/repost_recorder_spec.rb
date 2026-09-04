@@ -32,4 +32,27 @@ RSpec.describe Substack::Blizzard::RepostRecorder do
     before { described_class.execute(categorization_id: categorization.id, uid: 'nope', url: url, timestamp: '2026-07-04T00:00:00Z') }
     it { expect(categorization.reload.data['blizzard'][0]['notes']).to be_empty }
   end
+
+  context 'a blank categorization_id (the unattached-notes pool)' do
+    let!(:config) do
+      BlizzardScheduleConfig.instance.tap do |c|
+        c.update!(data: { 'blizzard' => [{ 'uid' => 'u0', 'text' => 'g0', 'body_json' => { 'type' => 'doc' }, 'notes' => [] }] })
+      end
+    end
+
+    def record(u = url)
+      described_class.execute(categorization_id: nil, uid: 'u0', url: u, timestamp: '2026-07-04T00:00:00Z')
+    end
+
+    it 'appends the note to BlizzardScheduleConfig instead of a categorization' do
+      record
+      note = config.reload.data['blizzard'][0]['notes'].last
+      expect(note).to include('url' => url, 'timestamp' => '2026-07-04T00:00:00Z', 'likes' => 0)
+    end
+
+    it 'leaves the categorization untouched' do
+      record
+      expect(categorization.reload.data['blizzard'][0]['notes']).to be_empty
+    end
+  end
 end

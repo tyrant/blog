@@ -115,4 +115,51 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
       it { expect(pick['uid']).to eq 'e0' }
     end
   end
+
+  describe 'unattached-note reposts' do
+    before do
+      BlizzardScheduleConfig.instance.update!(data: { 'blizzard' => [
+        { 'uid' => 'u0', 'text' => 'unattached', 'body_json' => { 'type' => 'doc' },
+          'notes' => [{ 'url' => 'u', 'timestamp' => 90.days.ago.iso8601, 'likes' => 3 }] }
+      ] })
+    end
+
+    describe 'a roll in the unattached band picks a weighted unattached entry' do
+      subject(:pick) { described_class.execute(random: double(rand: 0.25)) }
+
+      it { expect(pick['uid']).to eq 'u0' }
+      it { expect(pick['text']).to eq 'unattached' }
+      it { expect(pick['categorization_id']).to be_nil }
+      it { expect(pick['post_url']).to be_nil }
+
+      it 'IS tracked — claims the interval like a text pick' do
+        pick
+        expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_present
+      end
+    end
+
+    describe 'a roll below the unattached band still picks a quotation' do
+      let!(:quotation) do
+        SubstackQuotation.create!(quotation: 'zing', comment_url: 'https://sub/p/z/comment/1',
+                                  post_url: 'https://sub/p/z', post_title: 'Z', author_name: 'Eva',
+                                  author_url: 'https://substack.com/@eva')
+      end
+      subject(:pick) { described_class.execute(random: double(rand: 0)) }
+
+      it { expect(pick['text']).to eq 'zing' }
+    end
+
+    describe 'a roll above the unattached band picks a text group' do
+      subject(:pick) { described_class.execute(random: double(rand: 0.9)) }
+
+      it { expect(pick['uid']).to eq 'e0' }
+    end
+
+    describe 'an empty unattached pool falls back to a text group' do
+      before { BlizzardScheduleConfig.instance.update!(data: {}) }
+      subject(:pick) { described_class.execute(random: double(rand: 0.25)) }
+
+      it { expect(pick['uid']).to eq 'e0' }
+    end
+  end
 end
