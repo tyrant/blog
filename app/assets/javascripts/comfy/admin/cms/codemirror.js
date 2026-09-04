@@ -2,14 +2,16 @@
   const codeMirrorInstances = [];
 
   // JSON keys whose object/array value is collapsed on page load.
-  const FOLD_BY_DEFAULT = ['body_json'];
+  const FOLD_BY_DEFAULT = ['body_json', 'blizzard'];
 
   const autoFold = (cm, keys) => {
     cm.operation(() => {
       for (let line = 0; line < cm.lineCount(); line++) {
         const text = cm.getLine(line);
+        // force: "fold" — a later match nested inside an earlier fold (e.g.
+        // body_json inside blizzard) must not toggle the outer fold back open.
         if (keys.some((key) => text.includes(`"${key}"`))) {
-          cm.foldCode(CodeMirror.Pos(line, 0));
+          cm.foldCode(CodeMirror.Pos(line, 0), null, 'fold');
         }
       }
     });

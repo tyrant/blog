@@ -28,7 +28,18 @@ RSpec.describe 'Categorization JSON editor', type: :system do
     expect(page).to have_css('.CodeMirror-foldgutter', wait: 4)
   end
 
-  it 'folds body_json by default on load' do
-    expect(page).to have_css('.CodeMirror-foldgutter-folded', wait: 4)
+  it 'folds blizzard by default on load (which, nested inside it, takes body_json with it)' do
+    expect(page).to have_css('.CodeMirror-foldgutter-folded', count: 1, wait: 4)
+  end
+
+  context 'blizzard entries with no body_json key (isolates the blizzard fold trigger)' do
+    let!(:categorization) do
+      create :categorization, category: category, categorized: blog_post,
+             data: { 'blizzard' => [{ 'text' => 't', 'notes' => [] }] }
+    end
+
+    it 'still folds blizzard by default on load' do
+      expect(page).to have_css('.CodeMirror-foldgutter-folded', count: 1, wait: 4)
+    end
   end
 end
