@@ -26,7 +26,8 @@ module Substack
         raise "That note has no readable body" if body_json.blank?
 
         entry["post_url"] = NoteParser.attachment_post_url(comment)
-        body_json = NoteParser.append_post_url(body_json, @categorization.url) if @categorization.url.present?
+        canonical_url = @categorization.try(:url)
+        body_json = NoteParser.append_post_url(body_json, canonical_url) if canonical_url.present?
         entry["body_json"] = body_json
         entry["text"]      = NoteParser.plaintext(body_json)
 

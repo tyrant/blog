@@ -98,4 +98,23 @@ RSpec.describe Substack::Blizzard::Reseeder do
     end
     it { expect { run }.to raise_error(ArgumentError, /No blizzard entry/) }
   end
+
+  context 'against the BlizzardScheduleConfig singleton (unattached-notes pool, no #url)' do
+    let!(:config) { BlizzardScheduleConfig.instance.tap { |c| c.update!(data: data) } }
+
+    subject(:run) do
+      described_class.execute(categorization: config, uid: 'e0',
+                              note_url: 'https://substack.com/@mikeyclarke/note/c-999', client: client)
+    end
+
+    it 'does not raise' do
+      expect { run }.to_not raise_error
+    end
+
+    it 'replaces body_json without appending any post url' do
+      run
+      hrefs = Substack::NoteParser.link_hrefs(config.reload.data['blizzard'][0]['body_json'])
+      expect(hrefs).to be_empty
+    end
+  end
 end
