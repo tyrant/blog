@@ -155,6 +155,19 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
       it { expect(pick['uid']).to eq 'e0' }
     end
 
+    describe 'an unattached entry with a captured preview-card attachment' do
+      before do
+        BlizzardScheduleConfig.instance.update!(data: { 'blizzard' => [
+          { 'uid' => 'u0', 'text' => 'unattached', 'body_json' => { 'type' => 'doc' }, 'post_url' => 'https://sub/p/carded',
+            'notes' => [{ 'url' => 'u', 'timestamp' => 90.days.ago.iso8601, 'likes' => 3 }] }
+        ] })
+      end
+
+      subject(:pick) { described_class.execute(random: double(rand: 0.25)) }
+
+      it { expect(pick['post_url']).to eq 'https://sub/p/carded' }
+    end
+
     describe 'an empty unattached pool falls back to a text group' do
       before { BlizzardScheduleConfig.instance.update!(data: {}) }
       subject(:pick) { described_class.execute(random: double(rand: 0.25)) }

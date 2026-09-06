@@ -86,6 +86,14 @@ module Substack
       url.to_s[%r{/p/([^/?#]+)}, 1]
     end
 
+    # The canonical URL of the Post a note's own preview-card attachment points
+    # to (Substack stores this as a separate attachment, not inline body
+    # content — see comment["attachments"]), or nil if the note has none.
+    def attachment_post_url(comment)
+      attachment = Array(comment&.dig("attachments")).find { |a| a["type"] == "post" }
+      attachment&.dig("post", "canonical_url")
+    end
+
     # A new note lives on the same profile as the group's existing notes, so build
     # its URL by swapping the comment id of a template note URL.
     def build_note_url(template_url, new_id)

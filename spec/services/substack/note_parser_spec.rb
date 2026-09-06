@@ -116,4 +116,18 @@ RSpec.describe Substack::NoteParser do
   describe '.normalize' do
     it { expect(described_class.normalize("  a\n b   c ")).to eq 'a b c' }
   end
+
+  describe '.attachment_post_url' do
+    let(:comment) do
+      { 'attachments' => [
+        { 'type' => 'post', 'post' => { 'canonical_url' => 'https://mikeyclarke.substack.com/p/foo' } }
+      ] }
+    end
+
+    it { expect(described_class.attachment_post_url(comment)).to eq 'https://mikeyclarke.substack.com/p/foo' }
+    it { expect(described_class.attachment_post_url({ 'attachments' => [{ 'type' => 'image' }] })).to be_nil }
+    it { expect(described_class.attachment_post_url({ 'attachments' => [] })).to be_nil }
+    it { expect(described_class.attachment_post_url({})).to be_nil }
+    it { expect(described_class.attachment_post_url(nil)).to be_nil }
+  end
 end

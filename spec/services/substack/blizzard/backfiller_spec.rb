@@ -114,4 +114,30 @@ RSpec.describe Substack::Blizzard::Backfiller do
       expect(run.flags).to be_empty
     end
   end
+
+  describe 'capturing a note\'s own preview-card attachment' do
+    let(:note_urls) { [note_url(111)] }
+    let(:notes_by_id) do
+      {
+        '111' => {
+          'body_json'   => body('has a card'),
+          'date'        => 't',
+          'attachments' => [{ 'type' => 'post', 'post' => { 'canonical_url' => 'https://mikeyclarke.substack.com/p/carded' } }]
+        }
+      }
+    end
+
+    before { run }
+
+    it { expect(categorization.reload.data['blizzard'].first['post_url']).to eq 'https://mikeyclarke.substack.com/p/carded' }
+  end
+
+  describe 'a note with no preview-card attachment' do
+    let(:note_urls) { [note_url(111)] }
+    let(:notes_by_id) { { '111' => { 'body_json' => body('no card'), 'date' => 't' } } }
+
+    before { run }
+
+    it { expect(categorization.reload.data['blizzard'].first['post_url']).to be_nil }
+  end
 end

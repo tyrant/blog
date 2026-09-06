@@ -62,6 +62,20 @@ RSpec.describe Substack::Blizzard::Reseeder do
     expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1
   end
 
+  context 'the note has a preview-card attachment' do
+    before do
+      allow(client).to receive(:get_note).and_return(
+        'comment' => { 'body_json' => rich_body,
+                       'attachments' => [{ 'type' => 'post', 'post' => { 'canonical_url' => 'https://mikeyclarke.substack.com/p/carded' } }] }
+      )
+    end
+
+    it 'captures the attachment post_url onto the entry' do
+      run
+      expect(categorization.reload.data['blizzard'][0]['post_url']).to eq 'https://mikeyclarke.substack.com/p/carded'
+    end
+  end
+
   context 'the note has no body' do
     before { allow(client).to receive(:get_note).and_return('comment' => {}) }
     it { expect { run }.to raise_error(/no readable body/) }

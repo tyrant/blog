@@ -18,6 +18,7 @@ Each blog post has a Substack `Comfy::Cms::Categorization`. Its `#data` (jsonb) 
       "uid":       "b1f0…",                                 // stable per-entry id
       "text":      "<plaintext — used for matching + display>",
       "body_json": { "type": "doc", "attrs": {…}, "content": [ … ] }, // ProseMirror, lossless
+      "post_url":  "https://…/p/…",                                  // the note's own preview-card attachment, if any (unattached pool only)
       "notes":     [ { "url": "…/note/c-…", "timestamp": "2025-08-…Z", "likes": 9 }, … ]
     }
   ]
@@ -77,10 +78,12 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
 - `Substack::Blizzard::DueFinder` — entries whose most-recent note is older than N days
   (backs the admin due-list view / manual tools only).
 - `Substack::Blizzard::Backfiller` — builds `blizzard` from `notes` URLs. Additive and
-  idempotent; mints a `uid` for each new entry.
+  idempotent; mints a `uid` for each new entry, capturing that note's own preview-card
+  attachment (if any) as the entry's `post_url` (`NoteParser.attachment_post_url`).
 - `Substack::Blizzard::LikesRefresher` — re-fetches every note of one categorization and
   writes its `likes`; a failed fetch keeps the last-known value.
-- `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` from a real note.
+- `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` (and `post_url`, from the
+  note's own attachment) from a real note.
 - `Substack::Blizzard::WeightedPicker` — the prod side of reposting: under the config row
   lock, if `interval_minutes` has elapsed, it rolls one random number against three
   cumulative bands — `QUOTATION_ODDS` (24%) hands back a **random featured quotation**
@@ -93,7 +96,10 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
 - `Substack::Blizzard::UnattachedOdds` — the unattached-pool equivalent of `RepostOdds`:
   candidates from `BlizzardScheduleConfig#data["blizzard"]`, weight = 1 + Σ note likes (no
   post-likes term — no parent post). Cooldown rests each entry **individually** (there's no
-  post to bench as a group), using the same `cooldown_hours` setting.
+  post to bench as a group), using the same `cooldown_hours` setting. "Unattached" means the
+  note has no parent Post/Categorization in *our* system — the reference note itself can
+  still carry its own Substack post preview-card attachment, which travels along as the
+  entry's `post_url` (see `Backfiller`/`Reseeder`) and rides along on every repost.
 - `Substack::Blizzard::QuotationNote` — builds a Note `body_json` from a `SubstackQuotation`
   in the **Note** ProseMirror schema (blockquote + bold/italic/link marks; Notes have no
   heading or paragraph alignment): a bold post-title link, the italic quote trailed by a 🔗

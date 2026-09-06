@@ -93,6 +93,8 @@ module Substack
       # own entries rather than a post's categorization — categorization_id stays
       # nil (there's no post to look up) while uid carries the entry id, which is
       # how RepostRecorder/RepostTicker tell it apart from an untracked quotation.
+      # post_url comes from the entry's own captured preview-card attachment (an
+      # unattached note can still reference a post — it's just not ours to track).
       def hydrate_unattached(candidate)
         entry = candidate.entry
         {
@@ -100,7 +102,7 @@ module Substack
           "uid"               => entry["uid"],
           "text"              => entry["text"],
           "body_json"         => entry["body_json"],
-          "post_url"          => nil,
+          "post_url"          => entry["post_url"],
           "template_url"      => Array(entry["notes"]).map { |n| n["url"] }.compact.first
         }
       end
