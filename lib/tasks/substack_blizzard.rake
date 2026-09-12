@@ -138,6 +138,7 @@ module BlizzardRepostTick
   module_function
 
   def run(commit:)
+    was_healthy = SubstackSyncConfig.instance.session_healthy?
     result = Substack::Blizzard::RepostTicker.execute(
       base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
       username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
@@ -161,12 +162,40 @@ module BlizzardRepostTick
 
     log "#{commit ? 'Posted' : 'Dry run'}: #{result.posted.size}." \
         " Skipped: #{result.skipped.size}. Failed: #{result.failed.size}."
+
+    report_to_monitor(result, was_healthy: was_healthy) if commit
+  rescue => e
+    MonitorClient.report(script: "substack_blizzard", status: "crashed", errors: [e.message])
+    raise
   end
 
   # Each cron tick appends to /tmp/blizzard_post.log, so stamp the log lines with
   # the local time to make the history legible.
   def log(message)
     puts "[#{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}] #{message}"
+  end
+
+  # Most ticks are no-ops (nothing due yet) — skip those entirely so the monitor's
+  # run history isn't 700+ empty rows a day. A failed attempt only gets reported
+  # when the session just flipped unhealthy, mirroring SubstackSyncConfig's own
+  # transition-only bookkeeping — otherwise a stale cookie would fire an alert
+  # email every ~18 minutes for as long as it stayed broken.
+  def report_to_monitor(result, was_healthy:)
+    return if result.posted.empty? && result.skipped.empty? && result.failed.empty?
+
+    now_healthy = SubstackSyncConfig.instance.reload.session_healthy?
+    repeat_known_failure = result.posted.empty? && result.skipped.empty? &&
+                            result.failed.any? && !was_healthy && !now_healthy
+    return if repeat_known_failure
+
+    MonitorClient.report(
+      script:    "substack_blizzard",
+      status:    "success",
+      processed: result.posted.size,
+      failed:    result.failed.size,
+      skipped:   result.skipped.size,
+      errors:    result.failed.map { |f| f["error"] }
+    )
   end
 end
 

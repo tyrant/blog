@@ -68,6 +68,52 @@ module Substack
       (node["content"] || []).map { |child| node_text(child) }.join
     end
 
+    # Render a body_json doc as HTML, for putting real formatting on the clipboard
+    # (Substack's Note composer is ProseMirror-based and reads text/html on paste).
+    # Scoped to the schema verified in substack:blizzard:proof: nodes paragraph/
+    # blockquote/bulletList/orderedList/listItem, marks bold/italic/link.
+    def to_html(body_json)
+      return "" if body_json.blank?
+
+      Array(body_json["content"]).map { |node| block_html(node) }.join
+    end
+
+    def block_html(node)
+      case node["type"]
+      when "paragraph"
+        inner = inline_html(node["content"])
+        inner.empty? ? "<p><br></p>" : "<p>#{inner}</p>"
+      when "blockquote"
+        "<blockquote>#{Array(node["content"]).map { |n| block_html(n) }.join}</blockquote>"
+      when "bulletList"
+        "<ul>#{Array(node["content"]).map { |n| block_html(n) }.join}</ul>"
+      when "orderedList"
+        "<ol>#{Array(node["content"]).map { |n| block_html(n) }.join}</ol>"
+      when "listItem"
+        "<li>#{Array(node["content"]).map { |n| block_html(n) }.join}</li>"
+      else
+        inline_html(node["content"])
+      end
+    end
+
+    def inline_html(nodes)
+      Array(nodes).map { |node| inline_node_html(node) }.join
+    end
+
+    def inline_node_html(node)
+      return Array(node["content"]).map { |n| inline_node_html(n) }.join unless node["type"] == "text"
+
+      text = CGI.escapeHTML(node["text"].to_s)
+      Array(node["marks"]).reduce(text) do |acc, mark|
+        case mark["type"]
+        when "bold" then "<strong>#{acc}</strong>"
+        when "italic" then "<em>#{acc}</em>"
+        when "link" then %(<a href="#{CGI.escapeHTML(mark.dig("attrs", "href").to_s)}">#{acc}</a>)
+        else acc
+        end
+      end
+    end
+
     # All href values from link marks in the doc.
     def link_hrefs(body_json, acc = [])
       return acc if body_json.blank?

@@ -15,6 +15,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     @due  = comfy_paginate(Kaminari.paginate_array(due), per_page: 20)
     @config = BlizzardScheduleConfig.instance
     @odds = Substack::Blizzard::RepostOdds.execute.max_by(10, &:weight)
+    @next_repost = Substack::Blizzard::WeightedPicker.execute(dry_run: true)
     @blizzard_stats = BlizzardStatSnapshot.current_totals
     @stat_series = stat_series
   end
@@ -139,15 +140,17 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   end
 
   def add_note
-    categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
-    entry = Array(categorization.data["blizzard"]).find { |e| e["uid"] == params[:uid] }
+    target = params[:categorization_id].present? ? Comfy::Cms::Categorization.find(params[:categorization_id]) : BlizzardScheduleConfig.instance
+    entry = Array(target.data["blizzard"]).find { |e| e["uid"] == params[:uid] }
     timestamp = Substack::NoteParser.parse_human_timestamp(params[:timestamp])
     ok = entry && params[:url].present? && timestamp.present?
 
-    if ok
-      entry["notes"] << { "url" => params[:url], "timestamp" => timestamp }
-      categorization.update!(data: categorization.data)
-    end
+    Substack::Blizzard::RepostRecorder.execute(
+      categorization_id: params[:categorization_id].presence,
+      uid:               params[:uid],
+      url:               params[:url],
+      timestamp:         timestamp
+    ) if ok
 
     respond_to do |format|
       format.html do

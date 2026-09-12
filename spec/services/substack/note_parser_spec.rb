@@ -130,4 +130,45 @@ RSpec.describe Substack::NoteParser do
     it { expect(described_class.attachment_post_url({})).to be_nil }
     it { expect(described_class.attachment_post_url(nil)).to be_nil }
   end
+
+  describe '.to_html' do
+    it { expect(described_class.to_html(nil)).to eq '' }
+
+    it 'wraps a plain paragraph' do
+      body = { 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'hello' }] }] }
+      expect(described_class.to_html(body)).to eq '<p>hello</p>'
+    end
+
+    it 'renders bold, italic and link marks' do
+      body = { 'content' => [{ 'type' => 'paragraph', 'content' => [
+        { 'type' => 'text', 'text' => 'bold', 'marks' => [{ 'type' => 'bold' }] },
+        { 'type' => 'text', 'text' => ' ' },
+        { 'type' => 'text', 'text' => 'italic', 'marks' => [{ 'type' => 'italic' }] },
+        { 'type' => 'text', 'text' => ' ' },
+        { 'type' => 'text', 'text' => 'link', 'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://x.com' } }] }
+      ] }] }
+      expect(described_class.to_html(body)).to eq(
+        '<p><strong>bold</strong> <em>italic</em> <a href="https://x.com">link</a></p>'
+      )
+    end
+
+    it 'renders a blockquote' do
+      body = { 'content' => [{ 'type' => 'blockquote', 'content' => [
+        { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'quoted' }] }
+      ] }] }
+      expect(described_class.to_html(body)).to eq '<blockquote><p>quoted</p></blockquote>'
+    end
+
+    it 'renders a bullet list' do
+      body = { 'content' => [{ 'type' => 'bulletList', 'content' => [
+        { 'type' => 'listItem', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'one' }] }] }
+      ] }] }
+      expect(described_class.to_html(body)).to eq '<ul><li><p>one</p></li></ul>'
+    end
+
+    it 'escapes HTML-significant characters in text' do
+      body = { 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => '<script>&"' }] }] }
+      expect(described_class.to_html(body)).to eq '<p>&lt;script&gt;&amp;&quot;</p>'
+    end
+  end
 end

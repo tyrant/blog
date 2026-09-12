@@ -39,7 +39,7 @@ module Substack
       if draft_id.present? && @publication_host.present?
         request(Net::HTTP::Get.new(pub_uri("/api/v1/drafts/#{draft_id}")))
       else
-        request(Net::HTTP::Get.new(uri("/api/v1/subscriptions")))
+        request(Net::HTTP::Get.new(uri("/api/v1/subscriptions?tvOnly=false")))
       end
       true
     end

@@ -275,7 +275,7 @@ RSpec.describe Substack::Client do
 
   describe '#verify_session' do
     context 'with no reviews draft configured' do
-      before { stub_request(:get, 'https://substack.com/api/v1/subscriptions').to_return(status: 200, body: '{}') }
+      before { stub_request(:get, 'https://substack.com/api/v1/subscriptions?tvOnly=false').to_return(status: 200, body: '{}') }
 
       it { expect(client.verify_session).to be true }
     end

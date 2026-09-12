@@ -100,6 +100,21 @@
             %td.text-right= number_with_delimiter(candidate.likes)
             %td.text-right= number_to_percentage(candidate.probability * 100, precision: 2)
 
+  %h6.text-muted.mt-3 Next scheduled repost
+  - if @next_repost.nil?
+    %p.text-muted.small.mb-0 Nothing due right now.
+  - else
+    %p.text-muted.small.mb-1
+      - if @next_repost["categorization_id"].present?
+        - next_post = Comfy::Cms::Categorization.find_by(id: @next_repost["categorization_id"])&.categorized
+        = "Text group for: #{next_post&.title}"
+      - elsif @next_repost["uid"].present?
+        Unattached note
+      - else
+        Quotation
+    = render "copy_and_record_form", entry: @next_repost, categorization_id: @next_repost["categorization_id"],
+      uid: @next_repost["uid"], days: @days, page: params[:page], q: params[:q]
+
 %section.mb-4
   %h5 Unattached Notes
   %p.text-muted.small
@@ -151,19 +166,8 @@
                 - if notes.any?
                   ·
                   = blizzard_note_links(notes)
-              .blizzard-copy.d-flex.align-items-start
-                .border.p-2.flex-grow-1.blizzard-text{ style: "white-space: pre-wrap;" }= due.entry["text"]
-                %button.btn.btn-sm.btn-outline-secondary.ml-2.copy-blizzard-text{ type: "button" } Copy
-              %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
-              = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
-                = hidden_field_tag :categorization_id, due.categorization.id
-                = hidden_field_tag :uid, due.uid
-                = hidden_field_tag :days, @days
-                = hidden_field_tag :page, params[:page]
-                = hidden_field_tag :q, params[:q]
-                = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
-                = text_field_tag :timestamp, nil, placeholder: "timestamp e.g. 21 Jun at 19:00", class: "form-control form-control-sm mr-1"
-                = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
+              = render "copy_and_record_form", entry: due.entry, categorization_id: due.categorization.id,
+                uid: due.uid, days: @days, page: params[:page], q: params[:q]
               %p.text-muted.small.mb-1.mt-2 Or replace this group's stored text with the rich content of a real note:
               = form_with url: comfy_admin_substack_blizzard_reseed_path, method: :post, class: "form-inline" do
                 = hidden_field_tag :categorization_id, due.categorization.id

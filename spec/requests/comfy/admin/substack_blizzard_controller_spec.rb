@@ -56,6 +56,69 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Most likely to repost next'
     end
 
+    context 'a due group with rich formatting in its stored body_json' do
+      let(:data) do
+        { 'blizzard' => [
+          { 'uid' => 'u0', 'text' => 'a bold quoted group', 'notes' => [],
+            'body_json' => { 'type' => 'doc', 'content' => [
+              { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'bold', 'marks' => [{ 'type' => 'bold' }] }] },
+              { 'type' => 'blockquote', 'content' => [
+                { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'quoted' }] }
+              ] }
+            ] } }
+        ] }
+      end
+
+      it 'renders real HTML marks in the copy source, not just plain text' do
+        expect(response.body).to include '<div class=\'blizzard-html\' style=\'display:none;\'><p><strong>bold</strong></p><blockquote><p>quoted</p></blockquote></div>'
+      end
+    end
+
+    context 'next scheduled repost — nothing due' do
+      before do
+        allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(nil)
+        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+      end
+
+      it { expect(response.body).to include 'Nothing due right now.' }
+    end
+
+    context 'next scheduled repost — a text-group pick' do
+      before do
+        allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
+          { 'categorization_id' => categorization.id, 'uid' => 'u0', 'text' => 'picked text', 'body_json' => { 'type' => 'doc' } }
+        )
+        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+      end
+
+      it { expect(response.body).to include 'Text group for:' }
+      it { expect(response.body).to include 'picked text' }
+      it { expect(response.body).to include 'Add manually' }
+    end
+
+    context 'next scheduled repost — an unattached-note pick' do
+      before do
+        allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
+          { 'categorization_id' => nil, 'uid' => 'un1', 'text' => 'unattached pick', 'body_json' => { 'type' => 'doc' } }
+        )
+        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+      end
+
+      it { expect(response.body).to include 'Unattached note' }
+      it { expect(response.body).to include 'Add manually' }
+    end
+
+    context 'next scheduled repost — a quotation pick' do
+      before do
+        allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
+          { 'categorization_id' => nil, 'uid' => nil, 'text' => 'a quote', 'body_json' => { 'type' => 'doc' } }
+        )
+        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+      end
+
+      it { expect(response.body).to include 'Quotation repost — not tracked, just post it.' }
+    end
+
     it 'mounts the background-jobs progress panel' do
       expect(response.body).to include "id='job-progress'"
       expect(response.body).to include 'Background jobs'
@@ -341,6 +404,23 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
              headers: http_auth_headers
       end
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
+    end
+
+    context 'an unattached entry (no categorization_id)' do
+      before do
+        BlizzardScheduleConfig.instance.update!(
+          data: { 'blizzard' => [{ 'uid' => 'un1', 'text' => 'unattached text', 'notes' => [] }] }
+        )
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { categorization_id: '', uid: 'un1',
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-333', timestamp: '2026-06-19T00:00:00Z', days: 14 },
+             headers: http_auth_headers
+      end
+
+      it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+      it { expect(flash[:success]).to be_present }
+      it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['notes'].size).to eq 1 }
+      it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['notes'].first['likes']).to eq 0 }
     end
   end
 
