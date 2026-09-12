@@ -289,7 +289,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     describe 'POST add_note' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { quotation_id: quotation.id, url: 'https://substack.com/@m/note/c-2', timestamp: '2026-06-19T00:00:00Z' },
+             params: { quotation_id: quotation.id, url: 'https://substack.com/@m/note/c-2' },
              headers: http_auth_headers
       end
 

@@ -356,11 +356,13 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   end
 
   describe 'POST add_note (manual paste-back)' do
-    context 'with url and timestamp' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    context 'with a url' do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
-                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-19T00:00:00Z', days: 14 },
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14 },
              headers: http_auth_headers
       end
 
@@ -372,42 +374,62 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
-                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-19T00:00:00Z', days: 14, page: 3 },
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14, page: 3 },
              headers: http_auth_headers
       end
 
       it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14, page: 3) }
     end
 
-    context 'human-friendly timestamp is converted to ISO' do
+    context 'resolves the real creation timestamp from Substack when available' do
       before do
+        SubstackSyncConfig.instance.update!(session_cookie: 'sess')
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/222')
+          .to_return(status: 200, body: { 'comment' => { 'date' => '2025-06-21T07:00:00Z' } }.to_json)
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
-                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '21 Jun 2025 at 19:00', days: 14 },
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14 },
              headers: http_auth_headers
       end
 
       it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2025-06-21T07:00:00Z' }
     end
 
-    context 'unparseable timestamp is rejected' do
+    context 'falls back to the current time when the Substack lookup fails' do
+      around { |example| travel_to(Time.utc(2026, 7, 4, 12, 0, 0)) { example.run } }
+
       before do
+        SubstackSyncConfig.instance.update!(session_cookie: 'sess')
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/222').to_return(status: 500, body: 'boom')
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, uid: 'u0', url: 'u', timestamp: 'gibberish', days: 14 },
+             params: { categorization_id: categorization.id, uid: 'u0',
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14 },
              headers: http_auth_headers
       end
 
-      it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
-      it { expect(flash[:danger]).to be_present }
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2026-07-04T12:00:00Z' }
     end
 
-    context 'missing fields' do
+    context 'falls back to the current time when the url has no recognizable comment id' do
+      around { |example| travel_to(Time.utc(2026, 7, 4, 12, 0, 0)) { example.run } }
+
       before do
         post comfy_admin_substack_blizzard_add_note_path,
-             params: { categorization_id: categorization.id, uid: 'u0', url: '', timestamp: '', days: 14 },
+             params: { categorization_id: categorization.id, uid: 'u0', url: 'https://example.com/not-a-note', days: 14 },
+             headers: http_auth_headers
+      end
+
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2026-07-04T12:00:00Z' }
+    end
+
+    context 'missing url' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { categorization_id: categorization.id, uid: 'u0', url: '', days: 14 },
              headers: http_auth_headers
       end
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
+      it { expect(flash[:danger]).to be_present }
     end
 
     context 'an unattached entry (no categorization_id)' do
@@ -417,7 +439,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         )
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: '', uid: 'un1',
-                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-333', timestamp: '2026-06-19T00:00:00Z', days: 14 },
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-333', days: 14 },
              headers: http_auth_headers
       end
 
@@ -433,7 +455,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { quotation_id: quotation.id,
-                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-444', timestamp: '2026-06-19T00:00:00Z' },
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-444' },
              headers: http_auth_headers
       end
 

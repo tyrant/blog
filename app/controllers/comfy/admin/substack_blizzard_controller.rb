@@ -140,10 +140,10 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   end
 
   def add_note
-    timestamp = Substack::NoteParser.parse_human_timestamp(params[:timestamp])
+    timestamp = resolve_timestamp(params[:url]) if params[:url].present?
 
     if params[:quotation_id].present?
-      ok = SubstackQuotation.exists?(params[:quotation_id]) && params[:url].present? && timestamp.present?
+      ok = SubstackQuotation.exists?(params[:quotation_id]) && params[:url].present?
       Substack::Blizzard::QuotationRecorder.execute(
         quotation_id: params[:quotation_id],
         url:          params[:url],
@@ -152,7 +152,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     else
       target = params[:categorization_id].present? ? Comfy::Cms::Categorization.find(params[:categorization_id]) : BlizzardScheduleConfig.instance
       entry = Array(target.data["blizzard"]).find { |e| e["uid"] == params[:uid] }
-      ok = entry && params[:url].present? && timestamp.present?
+      ok = entry && params[:url].present?
 
       Substack::Blizzard::RepostRecorder.execute(
         categorization_id: params[:categorization_id].presence,
@@ -164,8 +164,7 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
     respond_to do |format|
       format.html do
-        flash[ok ? :success : :danger] = ok ? "Recorded that repost." :
-          "A note URL and a readable timestamp (e.g. “21 Jun at 19:00”) are both required."
+        flash[ok ? :success : :danger] = ok ? "Recorded that repost." : "A note URL is required."
         redirect_back fallback_location: back_path
       end
       format.json { render json: { success: ok }, status: (ok ? :ok : :unprocessable_entity) }
@@ -189,6 +188,20 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   end
 
   private
+
+  # The Note's actual creation time on Substack — a server-side read, allowed from
+  # the prod IP even though writes aren't. Falls back to now when the URL isn't a
+  # recognizable Note URL, the session cookie is stale, or the lookup otherwise
+  # fails — matches the same fallback RepostTicker already uses for automated posts.
+  def resolve_timestamp(url)
+    comment_id = Substack::NoteParser.comment_id_from_url(url)
+    return Time.current.utc.iso8601 if comment_id.blank?
+
+    comment = Substack::NoteParser.comment(Substack::Client.new.get_note(comment_id))
+    Substack::NoteParser.timestamp(comment) || Time.current.utc.iso8601
+  rescue Substack::Client::Error
+    Time.current.utc.iso8601
+  end
 
   def back_path
     comfy_admin_substack_blizzard_path(days: clamp_days(params[:days]), page: params[:page].presence, q: params[:q].presence)
