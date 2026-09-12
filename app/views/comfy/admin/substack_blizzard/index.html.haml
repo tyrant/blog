@@ -113,7 +113,7 @@
       - else
         Quotation
     = render "copy_and_record_form", entry: @next_repost, categorization_id: @next_repost["categorization_id"],
-      uid: @next_repost["uid"], days: @days, page: params[:page], q: params[:q]
+      uid: @next_repost["uid"], quotation_id: @next_repost["quotation_id"], days: @days, page: params[:page], q: params[:q]
 
 %section.mb-4
   %h5 Unattached Notes
@@ -167,7 +167,7 @@
                   ·
                   = blizzard_note_links(notes)
               = render "copy_and_record_form", entry: due.entry, categorization_id: due.categorization.id,
-                uid: due.uid, days: @days, page: params[:page], q: params[:q]
+                uid: due.uid, quotation_id: nil, days: @days, page: params[:page], q: params[:q]
               %p.text-muted.small.mb-1.mt-2 Or replace this group's stored text with the rich content of a real note:
               = form_with url: comfy_admin_substack_blizzard_reseed_path, method: :post, class: "form-inline" do
                 = hidden_field_tag :categorization_id, due.categorization.id

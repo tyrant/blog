@@ -109,14 +109,18 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     context 'next scheduled repost — a quotation pick' do
+      let!(:quotation) { SubstackQuotation.create!(quotation: 'a quote', comment_url: 'https://x/comment/1') }
+
       before do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
-          { 'categorization_id' => nil, 'uid' => nil, 'text' => 'a quote', 'body_json' => { 'type' => 'doc' } }
+          { 'categorization_id' => nil, 'uid' => nil, 'quotation_id' => quotation.id, 'text' => 'a quote', 'body_json' => { 'type' => 'doc' } }
         )
         get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
       end
 
-      it { expect(response.body).to include 'Quotation repost — not tracked, just post it.' }
+      it { expect(response.body).to include 'Quotation' }
+      it { expect(response.body).to include 'Add manually' }
+      it { expect(response.body).to include %(name="quotation_id" id="quotation_id" value="#{quotation.id}") }
     end
 
     it 'mounts the background-jobs progress panel' do
@@ -421,6 +425,21 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(flash[:success]).to be_present }
       it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['notes'].size).to eq 1 }
       it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['notes'].first['likes']).to eq 0 }
+    end
+
+    context 'a quotation (quotation_id, no categorization_id/uid)' do
+      let!(:quotation) { SubstackQuotation.create!(quotation: 'zing', comment_url: 'https://x/comment/1') }
+
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { quotation_id: quotation.id,
+                       url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-444', timestamp: '2026-06-19T00:00:00Z' },
+             headers: http_auth_headers
+      end
+
+      it { expect(flash[:success]).to be_present }
+      it { expect(quotation.reload.notes.size).to eq 1 }
+      it { expect(quotation.reload.notes.first).to include('url' => 'https://substack.com/profile/4619740-mikey-clarke/note/c-444', 'likes' => 0) }
     end
   end
 

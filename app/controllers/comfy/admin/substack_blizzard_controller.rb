@@ -140,23 +140,33 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   end
 
   def add_note
-    target = params[:categorization_id].present? ? Comfy::Cms::Categorization.find(params[:categorization_id]) : BlizzardScheduleConfig.instance
-    entry = Array(target.data["blizzard"]).find { |e| e["uid"] == params[:uid] }
     timestamp = Substack::NoteParser.parse_human_timestamp(params[:timestamp])
-    ok = entry && params[:url].present? && timestamp.present?
 
-    Substack::Blizzard::RepostRecorder.execute(
-      categorization_id: params[:categorization_id].presence,
-      uid:               params[:uid],
-      url:               params[:url],
-      timestamp:         timestamp
-    ) if ok
+    if params[:quotation_id].present?
+      ok = SubstackQuotation.exists?(params[:quotation_id]) && params[:url].present? && timestamp.present?
+      Substack::Blizzard::QuotationRecorder.execute(
+        quotation_id: params[:quotation_id],
+        url:          params[:url],
+        timestamp:    timestamp
+      ) if ok
+    else
+      target = params[:categorization_id].present? ? Comfy::Cms::Categorization.find(params[:categorization_id]) : BlizzardScheduleConfig.instance
+      entry = Array(target.data["blizzard"]).find { |e| e["uid"] == params[:uid] }
+      ok = entry && params[:url].present? && timestamp.present?
+
+      Substack::Blizzard::RepostRecorder.execute(
+        categorization_id: params[:categorization_id].presence,
+        uid:               params[:uid],
+        url:               params[:url],
+        timestamp:         timestamp
+      ) if ok
+    end
 
     respond_to do |format|
       format.html do
-        flash[ok ? :success : :danger] = ok ? "Recorded note for that text group." :
+        flash[ok ? :success : :danger] = ok ? "Recorded that repost." :
           "A note URL and a readable timestamp (e.g. “21 Jun at 19:00”) are both required."
-        redirect_to back_path
+        redirect_back fallback_location: back_path
       end
       format.json { render json: { success: ok }, status: (ok ? :ok : :unprocessable_entity) }
     end

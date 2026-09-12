@@ -59,12 +59,14 @@ module Substack
         SubstackQuotation.order(Arel.sql("RANDOM()")).first
       end
 
-      # A quotation repost isn't tracked against any entry, so it carries no
-      # categorization_id/uid — the ticker posts it and skips the confirm step.
+      # A quotation repost isn't tracked against a Categorization or
+      # BlizzardScheduleConfig entry, so categorization_id/uid stay nil — it's
+      # tracked against the SubstackQuotation's own #notes instead, via quotation_id.
       def hydrate_quotation(quotation)
         {
           "categorization_id" => nil,
           "uid"               => nil,
+          "quotation_id"      => quotation.id,
           "text"              => quotation.quotation,
           "body_json"         => QuotationNote.build(quotation),
           "post_url"          => quotation.post_url,

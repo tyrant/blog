@@ -13,5 +13,12 @@
     = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
     = text_field_tag :timestamp, nil, placeholder: "timestamp e.g. 21 Jun at 19:00", class: "form-control form-control-sm mr-1"
     = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
+- elsif quotation_id.present?
+  %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
+  = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
+    = hidden_field_tag :quotation_id, quotation_id
+    = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
+    = text_field_tag :timestamp, nil, placeholder: "timestamp e.g. 21 Jun at 19:00", class: "form-control form-control-sm mr-1"
+    = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
 - else
-  %p.text-muted.small.mb-1 Quotation repost — not tracked, just post it.
+  %p.text-muted.small.mb-1 Not tracked — just post it.

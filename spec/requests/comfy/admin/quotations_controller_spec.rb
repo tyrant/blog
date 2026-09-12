@@ -261,6 +261,42 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
   end
 
+  describe 'tracked reposts' do
+    let!(:quotation) { SubstackQuotation.create!(quotation: 'zing', comment_url: 'https://x/comment/1') }
+
+    describe 'GET index' do
+      context 'with a tracked repost' do
+        before do
+          quotation.update!(notes: [{ 'url' => 'https://substack.com/@m/note/c-1', 'timestamp' => '2026-06-19T00:00:00Z', 'likes' => 0 }])
+          get comfy_admin_quotations_path, headers: http_auth_headers
+        end
+
+        it { expect(response.body).to include '1 repost' }
+        it { expect(response.body).to include 'href="https://substack.com/@m/note/c-1"' }
+      end
+
+      it 'offers a rich copy source and an Add-manually form per quotation' do
+        get comfy_admin_quotations_path, headers: http_auth_headers
+        expect(response.body).to include 'copy-blizzard-text'
+        expect(response.body).to include %(name="quotation_id" id="quotation_id" value="#{quotation.id}")
+      end
+    end
+
+    # add_note's redirect_back (returning to whichever page the form was on, rather
+    # than always /admin/substack-blizzard) is standard Rails behavior driven by the
+    # browser's real Referer header — not practically simulable in a request spec,
+    # and already precedented unverified elsewhere in this controller (backfill_post).
+    describe 'POST add_note' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { quotation_id: quotation.id, url: 'https://substack.com/@m/note/c-2', timestamp: '2026-06-19T00:00:00Z' },
+             headers: http_auth_headers
+      end
+
+      it { expect(quotation.reload.notes.size).to eq 1 }
+    end
+  end
+
   describe 'without authentication' do
     before { get comfy_admin_quotations_path }
 
