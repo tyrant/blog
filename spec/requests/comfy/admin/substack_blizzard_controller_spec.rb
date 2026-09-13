@@ -33,8 +33,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'blizzard entries'
     end
 
-    it 'shows the automated-reposting settings form' do
-      expect(response.body).to include 'Repost every (minutes):'
+    it 'shows the repost-selection settings form' do
+      expect(response.body).to include 'Suggest a new repost every (minutes):'
       expect(response.body).to include 'Per-post cooldown (hours):'
     end
 
@@ -52,8 +52,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Backfill unattached Notes'
     end
 
-    it 'shows the most-likely-to-repost leaderboard' do
-      expect(response.body).to include 'Most likely to repost next'
+    it 'shows the most-likely-to-be-suggested leaderboard' do
+      expect(response.body).to include 'Most likely to be suggested next'
     end
 
     context 'a due group with rich formatting in its stored body_json' do
@@ -74,7 +74,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
     end
 
-    context 'next scheduled repost — nothing due' do
+    context 'next repost suggestion — nothing due' do
       before do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(nil)
         get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
@@ -83,7 +83,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(response.body).to include 'Nothing due right now.' }
     end
 
-    context 'next scheduled repost — a text-group pick' do
+    context 'next repost suggestion — a text-group pick' do
       before do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
           { 'categorization_id' => categorization.id, 'uid' => 'u0', 'text' => 'picked text', 'body_json' => { 'type' => 'doc' } }
@@ -96,7 +96,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(response.body).to include 'Add manually' }
     end
 
-    context 'next scheduled repost — an unattached-note pick' do
+    context 'next repost suggestion — an unattached-note pick' do
       before do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
           { 'categorization_id' => nil, 'uid' => 'un1', 'text' => 'unattached pick', 'body_json' => { 'type' => 'doc' } }
@@ -108,7 +108,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(response.body).to include 'Add manually' }
     end
 
-    context 'next scheduled repost — a quotation pick' do
+    context 'next repost suggestion — a quotation pick' do
       let!(:quotation) { SubstackQuotation.create!(quotation: 'a quote', comment_url: 'https://x/comment/1') }
 
       before do

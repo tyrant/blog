@@ -2,8 +2,10 @@
 
 Track the rich-text content of Substack Notes as reusable assets and re-post that
 content as fresh Notes over time — **popularity-weighted**, so well-liked content
-reposts more often — keeping a history (and like-count) of every repost. Admin at
-**`/admin/substack-blizzard`**.
+surfaces more often — keeping a history (and like-count) of every repost. Posting a
+Note is always a manual, hands-on step (see "The Cloudflare constraint" below); this
+feature picks *what* to suggest reposting next and gets it copy-paste-ready with full
+rich formatting. Admin at **`/admin/substack-blizzard`**.
 
 ## Concept
 
@@ -27,10 +29,12 @@ Each blog post has a Substack `Comfy::Cms::Categorization`. Its `#data` (jsonb) 
 
 A **blizzard entry** ("group") is one piece of text-content plus every Note that has
 posted it. `body_json` is the master copy used for reposting — it preserves bold /
-italic / links as ProseMirror marks. `text` is its plaintext rendering. An entry is
-identified by its **`uid`** (stable across reordering/deletion). Each note records its
-Substack **`likes`** (the ❤ `reaction_count`), refreshed daily; the post's own like count
-lives on the post (`comfy_blog_posts.substack_likes`), refreshed by the same job.
+italic / links as ProseMirror marks, and ends with the entry's post as an inline link
+paragraph (see "body_json and the post URL" below) so a copy-pasted repost always
+references its source post. `text` is its plaintext rendering. An entry is identified
+by its **`uid`** (stable across reordering/deletion). Each note records its Substack
+**`likes`** (the ❤ `reaction_count`), refreshed daily; the post's own like count lives
+on the post (`comfy_blog_posts.substack_likes`), refreshed by the same job.
 
 `#data["notes"]` is the old flat list, kept for now; prune later (like `#scratchpad`).
 
@@ -43,14 +47,21 @@ and `LikesRefresher` accept either a Substack categorization or the
 singleton has no `#url`/parent post, so the mislink check and post-likes refresh
 no-op for it.
 
+A fourth pool — **quotations** (`SubstackQuotation`, `/admin/quotations`) — is
+featured-review content, not a blizzard entry at all, but reposts of it are tracked
+the same way: a `notes` jsonb column directly on the quotation row (`{url, timestamp,
+likes}`), via `QuotationRecorder`.
+
 ### Settings — `BlizzardScheduleConfig`
 
-A singleton row holds the reposting settings:
+A singleton row holds the selection settings:
 
-- `interval_minutes` (default 30) — minutes between reposts.
+- `interval_minutes` (default 30) — minutes before a new suggestion becomes due again.
 - `cooldown_hours` (default 12) — a post rests this long after any of its entries is
   reposted; while resting, none of that post's entries are eligible.
-- `last_reposted_at` — the claim clock; stamped each time a repost is handed out.
+- `last_reposted_at` — the claim clock; stamped when a suggestion is claimed
+  (non-`dry_run`). In practice only the retired automated path (see below) ever
+  claimed non-dry-run, so this can go stale now that it's gone — see Troubleshooting.
 
 (The legacy `schedule` jsonb column — the removed forecast calendar's saved arrangement
 — is retired but not yet dropped.)
@@ -59,22 +70,39 @@ A singleton row holds the reposting settings:
 
 Substack's internal API is reached with a stored `substack.sid` session cookie.
 
-- **Reads work from anywhere**, including the production DigitalOcean server.
-- **Note-creation POSTs are blocked by Cloudflare from the datacenter IP** — they 403.
-  The identical request succeeds from a **residential IP**.
+- **Reads work from anywhere** — the production DigitalOcean server, your Mac, either.
+- **Note-creation POSTs are blocked for any automated client, full stop.** This was
+  originally thought to be a datacenter-IP block (Cloudflare passing identical
+  requests from a residential Mac), and an automated Mac-driven posting flow ran on
+  that assumption for a while. Further testing disproved it: the same POST 403s from
+  a real Playwright-driven Chromium too — headless or headful, via `page.request` or a
+  genuine in-page `fetch()`, with a valid session cookie *and* a valid `cf_clearance`
+  cookie, with headers and payload byte-matched to a real browser's. Nothing about the
+  request differs from what actually works when a human clicks Post — what differs is
+  that the browser is automation-driven at all (almost certainly a CDP/fingerprint
+  signal), and that isn't spoofable from outside a real, human-operated browser.
 
-So: backfilling, likes-refresh, weighted selection, and the admin UI run server-side on
-prod, but **creating new Notes runs from your Mac** via a local cron.
+So: **posting a Note is always a manual step now**, done by a human in their own
+logged-in Substack tab. Everything in this app up to that point — selection,
+formatting, rich-copy — runs server-side on prod; only the actual click to post
+happens outside this app entirely.
 
 ## Components
 
-- `Substack::Client` — internal-API wrapper (cookie auth). `get_note`, `create_note`,
-  `create_attachment`, `delete_note`. Retries 429/502/503/504; raises `AuthError` on
-  401/403 (stale cookie). Cookie comes from `SubstackSyncConfig.instance` in **the DB
-  of wherever it runs** (local DB for posting, prod DB for reads).
-- `SubstackSyncConfig` — singleton holding the `substack.sid` cookie.
+- `Substack::Client` — internal-API wrapper (cookie auth). `get_note`,
+  `create_attachment` are live (reads/attachment-creation aren't blocked). `create_note`
+  still exists but nothing in the app calls it anymore — Note-creation is blocked
+  regardless of caller (see above); it's retained as a thin wrapper method, not wired
+  to anything.
+- `SubstackSyncConfig` — singleton holding the `substack.sid` cookie. Only needed for
+  reads now (backfill, likes-refresh, re-seed, and resolving a posted Note's real
+  timestamp) — nothing posts through it anymore, so there's no separate "local cookie
+  for posting" concern; one cookie, wherever the app runs (prod).
 - `Substack::NoteParser` — URL↔comment-id, ProseMirror↔plaintext, append/strip the
-  post URL, build a doc from text, parse human timestamps, **`likes`** (`reaction_count`).
+  post URL, build a doc from text, **`likes`** (`reaction_count`), and **`to_html`** —
+  renders a `body_json` doc to real HTML (bold/italic/link marks; blockquote/list
+  nodes), put on the clipboard alongside the plain text so pasting into Substack's
+  Note composer (a ProseMirror editor) keeps the formatting.
 - `Substack::Blizzard::DueFinder` — entries whose most-recent note is older than N days
   (backs the admin due-list view / manual tools only).
 - `Substack::Blizzard::Backfiller` — builds `blizzard` from `notes` URLs. Additive and
@@ -84,15 +112,18 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
   writes its `likes`; a failed fetch keeps the last-known value.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` (and `post_url`, from the
   note's own attachment) from a real note.
-- `Substack::Blizzard::WeightedPicker` — the prod side of reposting: under the config row
-  lock, if `interval_minutes` has elapsed, it rolls one random number against three
-  cumulative bands — `QUOTATION_ODDS` (24%) hands back a **random featured quotation**
-  built into a Note; the next `UNATTACHED_ODDS` (2%) weighted-samples one eligible
-  **unattached** entry (`Substack::Blizzard::UnattachedOdds`); the remaining 74% weighted-
-  samples one eligible **per-post** text entry (`RepostOdds`; weight = 1 + Σ note likes +
-  post likes; excludes entries whose post is in cooldown or lacking `body_json`). An empty
-  tier falls through to the next one. Either way it stamps `last_reposted_at` and returns
-  the pick hydrated. `dry_run` previews without claiming.
+- `Substack::Blizzard::WeightedPicker` — the selection logic behind the admin's "Next
+  repost suggestion" panel: under the config row lock, if `interval_minutes` has
+  elapsed, it rolls one random number against three cumulative bands —
+  `QUOTATION_ODDS` (24%) hands back a **random featured quotation**; the next
+  `UNATTACHED_ODDS` (2%) weighted-samples one eligible **unattached** entry
+  (`Substack::Blizzard::UnattachedOdds`); the remaining 74% weighted-samples one
+  eligible **per-post** text entry (`RepostOdds`; weight = 1 + Σ note likes + post
+  likes; excludes entries whose post is in cooldown or lacking `body_json`). An empty
+  tier falls through to the next one. `dry_run` (what the admin page always uses)
+  previews without claiming; a non-dry-run claim stamps `last_reposted_at`, but
+  nothing currently calls it that way — the `POST /repost/tick.json` endpoint it backs
+  is still routed, just unused now that the local cron is gone.
 - `Substack::Blizzard::UnattachedOdds` — the unattached-pool equivalent of `RepostOdds`:
   candidates from `BlizzardScheduleConfig#data["blizzard"]`, weight = 1 + Σ note likes (no
   post-likes term — no parent post). Cooldown rests each entry **individually** (there's no
@@ -104,29 +135,32 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
   in the **Note** ProseMirror schema (blockquote + bold/italic/link marks; Notes have no
   heading or paragraph alignment): a bold post-title link, the italic quote trailed by a 🔗
   to the original comment, the linked author, and a **"More at the Reviews Page (`<url>`)"**
-  line — mirroring the post-footer syncQuotations template. The post rides along as a card
-  attachment (added by the ticker). **Reviews-link gotcha:** the reviews-page URL is emitted
-  as **plain text, unmarked** — an explicit `link` mark to that URL gets **stripped on
-  publish** (it's a `type:"page"`, not a card-able post; stripped even with descriptive anchor
-  text), whereas a **bare URL in plain text is auto-linkified and kept** by Substack. Don't
-  re-wrap it in a link mark. (The post-title/comment/author links survive because they sit on
-  non-URL anchor text.)
-- `Substack::Blizzard::QuotationPreviewer` — **runs on your Mac**: posts a real quotation Note
-  so its live Substack rendering can be eyeballed before it fires for real, then hands back its
-  id/url to delete. Fetches the built note from prod
-  (`GET /admin/substack-blizzard/quotation/preview.json`, random or `?id=`, nothing claimed),
-  posts note + post-card attachment via `Substack::Client`. Driven by the
-  `substack:blizzard:preview_quotation` task (below) — the only faithful way to catch
-  Substack-side rendering surprises (like the reviews-link stripping) before they go live.
+  line — mirroring the post-footer syncQuotations template. A manually-posted quotation Note
+  doesn't get an automatic preview-card attachment (that was the retired ticker's job) —
+  add one by hand in Substack's composer if you want it. **Reviews-link gotcha:** the
+  reviews-page URL is emitted as **plain text, unmarked** — an explicit `link` mark to
+  that URL gets **stripped on publish** (it's a `type:"page"`, not a card-able post;
+  stripped even with descriptive anchor text), whereas a **bare URL in plain text is
+  auto-linkified and kept** by Substack. Don't re-wrap it in a link mark. (The
+  post-title/comment/author links survive because they sit on non-URL anchor text.)
+- `Substack::Blizzard::QuotationPreviewer` (⚠️ **currently non-functional** — it posts a
+  real Note via `Substack::Client#create_note` to eyeball rendering, which is blocked
+  the same as any other automated Note-creation; kept for reference / in case a
+  workaround ever exists) — fetches the built note from prod
+  (`GET /admin/substack-blizzard/quotation/preview.json`, random or `?id=`, nothing
+  claimed), driven by the `substack:blizzard:preview_quotation` task (below).
 - `Substack::Blizzard::RepostRecorder` — records a completed repost (append
   `{url, timestamp, likes: 0}` to the entry by `uid`, idempotent by url). A blank
   `categorization_id` targets `BlizzardScheduleConfig` instead of a categorization — the
-  unattached pool.
-- `Substack::Blizzard::RepostTicker` — **runs on your Mac**: asks prod for the next
-  weighted repost, creates the Note (residential IP), confirms it back. Confirms whenever
-  `categorization_id` OR `uid` is present — a quotation pick has neither (untracked); an
-  unattached pick has `uid` but no `categorization_id` (tracked against
-  `BlizzardScheduleConfig`).
+  unattached pool. Used by the admin's Add-manually forms via `#add_note`.
+- `Substack::Blizzard::QuotationRecorder` — the quotation-pool equivalent: appends
+  `{url, timestamp, likes: 0}` directly to a `SubstackQuotation#notes`, idempotent by
+  url. `#add_note` delegates to this instead when given a `quotation_id`.
+- `Substack::Blizzard::RepostTicker` (⚠️ **retired, unused** — automated posting is
+  gone) — used to run on a local Mac cron: ask prod for the next weighted repost,
+  create the Note from a residential IP, confirm it back. The code is still here, and
+  `POST /repost/tick.json` / `POST /repost/confirm.json` are still routed, but nothing
+  invokes any of it anymore.
 - `RefreshNotePostLikesJob` — daily SolidQueue job; walks every Substack categorization on
   the prod worker and refreshes both note likes and each post's likes. `BackfillAllJob` /
   `BackfillPostJob` — backfill jobs. See
@@ -136,50 +170,57 @@ prod, but **creating new Notes runs from your Mac** via a local cron.
 ## Authentication / the cookie
 
 Get `substack.sid` from a logged-in browser: DevTools → Application → Cookies →
-`https://substack.com` → `substack.sid` (HttpOnly, so the Console can't read it).
+`https://substack.com` → `substack.sid` (HttpOnly, so the Console can't read it). Only
+needed on **prod** now — nothing posts through this app's stored cookie anymore, only
+reads (backfill, likes, re-seed, and the Add-manually timestamp lookup below).
 
 ```bash
-# locally (posting runs from your Mac, so the LOCAL DB's cookie is what posts)
-SID='s%3A…' bin/rails runner 'SubstackSyncConfig.instance.update!(session_cookie: ENV["SID"])'
-
-# on prod (backfill / likes / re-seed reads)
 ssh noob@<prod> 'cd ~/blog/current && SID="s%3A…" RAILS_ENV=production \
   ~/.rbenv/bin/rbenv exec bundle exec rails runner \
   "SubstackSyncConfig.instance.update!(session_cookie: ENV[\"SID\"])"'
 ```
 
-If the cookie expires you get a clear `AuthError` (admin flash, or the local task's
-FAILED line); re-run with a fresh value in the right environment.
+If the cookie expires you get a clear `AuthError` (an admin flash on backfill/re-seed;
+the Add-manually timestamp lookup just silently falls back to `Time.current` instead —
+see "Adding a repost" below). Re-run with a fresh value.
 
 ## The admin page
 
-### Automated reposting (settings)
+### Repost selection (settings)
 
-A small form sets **Repost every (minutes)** and **Per-post cooldown (hours)** (POSTs to
-`#update_settings`), and shows when the last repost fired. That's the whole control
-surface — selection is automatic (74% weighted per-post text group, 24% random quotation,
-2% weighted unattached note); there's no schedule to arrange. The shares are the
-`QUOTATION_ODDS`/`UNATTACHED_ODDS` constants, not form fields.
+A small form sets **Suggest a new repost every (minutes)** and **Per-post cooldown
+(hours)** (POSTs to `#update_settings`), and shows when a suggestion was last claimed.
+Selection itself is automatic (74% weighted per-post text group, 24% random quotation,
+2% weighted unattached note) — there's no schedule to arrange, and nothing posts on
+its own. The shares are the `QUOTATION_ODDS`/`UNATTACHED_ODDS` constants, not form
+fields. The **"Most likely to be suggested next"** table below is a leaderboard of the
+74% per-post pool's current odds; **"Next repost suggestion"** is a live draw (a fresh
+weighted pick every page load) across all three pools, with the same rich-copy +
+Add-manually tooling as the due list below.
 
 ### Unattached Notes
 
 A JSON textarea editing `BlizzardScheduleConfig#data` directly (paste Note URLs into its
 `"notes"` key, save), a **Backfill unattached Notes** button (`BackfillUnattachedNotesJob`),
-and that's it — no due-list/add-manually/re-seed tooling for this pool (small enough, and
-edited by hand). Tracked entries accumulate under `"blizzard"` in the same textarea once
-backfilled.
+and that's it — no *standing* due-list UI for this pool (small enough, and edited by
+hand); an unattached entry can still turn up in the "Next repost suggestion" draw above,
+complete with its own Add-manually form. Tracked entries accumulate under `"blizzard"`
+in the same textarea once backfilled.
 
 ### Due list, re-seed, manual paste-back
 
 `DueFinder` lists entries whose most-recent note is older than the **Days** filter (1–60),
-most-stale-first, 20/page. Per entry: a **Copy** button, an **Add manually** form (record
-a Note you posted by hand — timestamp accepts Substack's `21 Jun at 19:00` footer format,
-stored UTC), and **Re-seed rich text** (paste a real Note URL to replace that entry's
-`body_json`/`text`; history untouched). These are manual tools, independent of the
-automated reposter.
+most-stale-first, 20/page. Per entry: a **Copy** button (rich text — see `to_html`
+above), an **Add manually** form (paste the Note URL you posted by hand; the timestamp
+is resolved automatically from Substack, no manual entry needed — see below), and
+**Re-seed rich text** (paste a real Note URL to replace that entry's `body_json`/`text`;
+history untouched).
 
-> The server-side **"Create note now"** button uses `Reposter` on prod and is
-> **Cloudflare-blocked** — it can't actually post. Automated posting runs from your Mac.
+**Adding a repost**: paste the URL into Add-manually and submit — `#add_note` extracts
+the comment id and reads the Note's real creation time via `Substack::Client#get_note`
+(falling back to `Time.current` if the URL isn't recognizable, the cookie's stale, or
+the lookup otherwise fails), then records it via `RepostRecorder` (or
+`QuotationRecorder` for a quotation). No timestamp field to fill in by hand.
 
 ### Backfill / likes buttons
 
@@ -197,24 +238,26 @@ flash immediately. All are additive/idempotent, so re-clicking is safe.
 1. **Likes** (prod, daily 4am): `RefreshNotePostLikesJob` re-reads every note's
    `reaction_count` into its `likes`, and each post's `reaction_count` into the post's
    `substack_likes`. This is the popularity signal.
-2. **Tick** (your Mac, every ~2 min via cron): asks prod for the next repost. Prod
-   (`WeightedPicker`) gates itself to one pick per `interval_minutes`, so most ticks are
-   no-ops. When it's time, it hands back either a text entry or a quotation (see below); the
-   Mac posts it and confirms back. **Two-phase** (claim by stamping `last_reposted_at`,
-   then confirm by appending the note) under a DB row lock, so overlapping ticks can't
-   double-fire.
+2. **Suggest** (on page load): the admin's "Next repost suggestion" panel calls
+   `WeightedPicker.execute(dry_run: true)` in-process — a fresh weighted draw every
+   reload, claiming nothing.
+3. **Post** (a human, in their own browser): copy the suggested (or any due-list) rich
+   text, paste it into a new Substack Note, post it.
+4. **Record**: paste the resulting Note URL into that entry's Add-manually form.
+   `#add_note` resolves the real timestamp from Substack and appends it to the entry's
+   (or quotation's) tracked `notes`.
 
 **Text vs. quotation vs. unattached (74 / 24 / 2):** on each due pick, `WeightedPicker`
 rolls one random number against three cumulative bands: `[0, QUOTATION_ODDS)` (0.24) →
 a random `SubstackQuotation` ([the Quotations pool](substack_post_sync.md#quotations))
-built into a Note by `QuotationNote` and posted with the post as a card attachment;
-`[QUOTATION_ODDS, QUOTATION_ODDS + UNATTACHED_ODDS)` (0.02) → the weighted unattached pick
-below; the remaining `[0.26, 1)` (0.74) → the weighted per-post text pick below. An empty
-tier falls through to the next one (quotation → unattached → text). Quotation reposts are
-**not tracked** (no `categorization_id`/`uid`), so the ticker skips the confirm/
-`RepostRecorder` step and the admin odds leaderboard reflects only the 74% per-post text
-share. Unattached reposts **are** tracked (`uid` set, `categorization_id` blank —
-`RepostRecorder` targets `BlizzardScheduleConfig` instead of a categorization).
+built into a Note by `QuotationNote`; `[QUOTATION_ODDS, QUOTATION_ODDS + UNATTACHED_ODDS)`
+(0.02) → the weighted unattached pick below; the remaining `[0.26, 1)` (0.74) → the
+weighted per-post text pick below. An empty tier falls through to the next one
+(quotation → unattached → text). Quotation reposts **are** tracked — recorded onto the
+`SubstackQuotation`'s own `notes` via `QuotationRecorder`, shown on
+`/admin/quotations`, not counted in the per-post-text odds leaderboard. Unattached
+reposts **are** tracked too (`uid` set, `categorization_id` blank — `RepostRecorder`
+targets `BlizzardScheduleConfig` instead of a categorization).
 
 **Weighting (per-post 74% and unattached 2%):** an entry's pick probability ∝
 `1 + Σ(its notes' likes)`, plus its post's likes for the per-post pool (no such term for
@@ -225,24 +268,6 @@ one of its entries — and, deliberately, entries reposted often) win more. Entr
 entries) for the per-post pool, or **individually** for the unattached pool (no post to
 bench as a group) — both against the same `cooldown_hours` setting.
 
-The local cron (residential IP):
-
-```cron
-*/2 * * * * cd /Users/you/Work/blog && PATH="$HOME/.rbenv/shims:/opt/homebrew/bin:/usr/bin:/bin" bin/rails substack:blizzard:tick >> /tmp/blizzard_post.log 2>&1
-```
-
-- `substack:blizzard:tick` → `RepostTicker` → `POST /repost/tick.json` (prod claims one
-  weighted entry, or returns `{}` when not yet due / nothing eligible) → create the Note
-  (attachment card + inline URL stripped) → `POST /repost/confirm.json` (append the note,
-  idempotent by url).
-- `substack:blizzard:tick_dry_run` previews via `GET /repost/preview.json` (read-only, no
-  claim). Both talk to **prod** by default — the local Mac only provides its IP + Substack
-  cookie + admin creds.
-- Env: `BLIZZARD_PROD_URL` (default `https://mikeyclarke.co.nz`), `BLIZZARD_ADMIN_USER` /
-  `BLIZZARD_ADMIN_PASS` (default: app admin creds).
-- On macOS, give `cron` **Full Disk Access** or it silently won't run; cron doesn't fire
-  while the Mac is asleep (no reposts happen then — harmless).
-
 ## Adding a new original Note
 
 1. Compose the rich Note in Substack's editor (include the post's preview card), post it.
@@ -252,44 +277,42 @@ The local cron (residential IP):
 
 ## Rake tasks
 
-| Task | Where | What |
-|------|-------|------|
-| `substack:blizzard:tick[_dry_run]` | **Mac** | Post the next weighted repost; confirm back on prod. |
-| `substack:blizzard:preview_quotation` | **Mac** | Post a quotation Note to eyeball its Substack rendering, then delete on a `[Y/n]` prompt. `QUOTATION_ID=<id>` pins one. |
-| `substack:blizzard:backfill[_dry_run]` | prod | Build `blizzard` from `notes` URLs (also via the buttons). |
-| `substack:blizzard:append_urls[_dry_run]` | prod | Append the post URL to each entry's `body_json`. |
-| `substack:blizzard:fill_missing_body_json[_dry_run]` | prod | Plain `body_json` from text for entries lacking it (lossy). |
-| `substack:blizzard:proof` | either | Round-trip test: post a throwaway Note, read back, delete. |
+| Task | Status | What |
+|------|--------|------|
+| `substack:blizzard:tick[_dry_run]` | ⚠️ retired, unused | Used to post the next weighted repost from a local Mac cron; the cron's gone and `tick` would 403 regardless (Note-creation is blocked). `tick_dry_run` still runs harmlessly but is redundant with the admin page's own in-process preview. |
+| `substack:blizzard:preview_quotation` | ⚠️ non-functional | Posts a quotation Note to eyeball rendering — blocked, same as any automated Note-creation. |
+| `substack:blizzard:proof` | ⚠️ non-functional | Round-trip test incl. posting a throwaway Note — the create step is blocked. |
+| `substack:blizzard:backfill[_dry_run]` | live | Build `blizzard` from `notes` URLs (also via the buttons). |
+| `substack:blizzard:append_urls[_dry_run]` | live | Append each entry's post URL to its `body_json` — covers per-post categorizations (shared canonical `#url`) *and* the unattached pool (each entry's own `post_url`). |
+| `substack:blizzard:fill_missing_body_json[_dry_run]` | live | Plain `body_json` from text for entries lacking it (lossy) — pure local text transform, no Substack calls. |
 
 `_dry_run` variants write nothing. All writing tasks are idempotent.
-
-`preview_quotation` **must be run interactively** (a real terminal): it posts the Note live,
-prints its URL, and waits at a `[Y/n]` delete prompt so you can open it first. Run
-non-interactively (stdin not a TTY) it reads empty and **auto-deletes** before you can look.
-The Note is briefly public in the meantime (Notes don't send email, so no subscriber blast).
 
 ## body_json and the post URL
 
 The stored `body_json` ends with the post URL as an **inline link paragraph**
-(`append_urls`) — correct for the manual/copy path (pasting the URL into Substack makes a
-card). The automated posting path **strips** that inline URL and re-adds the post as a
-**card attachment** (`attachmentIds`), matching Substack's own UI.
+(`append_urls`) — this is the only posting path now (manual copy-paste), so every
+entry's copy source should carry it. (A retired automated path used to strip that
+inline URL and re-add the post as a card attachment instead, matching Substack's own
+UI when it created the Note directly — that distinction no longer applies.)
 
 Rich formatting only survives if captured from a real Note (backfill / re-seed).
 `fill_missing_body_json` is a last-resort fallback producing **plain** paragraphs.
 
 ## Troubleshooting
 
-- **`AuthError` / FAILED on `tick`** — the **local** Substack cookie is stale (posting uses
-  the local DB's cookie); refresh it locally. Prod tick/confirm still work.
-- **Cron never runs (empty `/tmp/blizzard_post.log`)** — give `/usr/sbin/cron` Full Disk
-  Access; note cron doesn't fire while the Mac is asleep.
-- **Nothing ever reposts** — check `last_reposted_at` is advancing and `interval_minutes`;
-  every tick returns `{}` if it's not yet time or every post is in cooldown / every entry
-  lacks `body_json`.
+- **"Next repost suggestion" always says "Nothing due right now"** — check
+  `interval_minutes` and `last_reposted_at`. Since nothing calls the non-dry-run
+  picker anymore, `last_reposted_at` no longer advances on its own — if it's stuck far
+  in the past, `due?` is (harmlessly) permanently true instead; if it looks frozen at
+  a *future-seeming* or otherwise wrong value, that's worth a closer look.
+- **A resolved timestamp doesn't match what you expected** — `#add_note` falls back to
+  `Time.current` silently if the Substack lookup fails (stale cookie, unrecognized
+  URL, network error); refresh the prod cookie if the pulled timestamps should be
+  exact.
 - **Likes all zero / stale** — the daily `RefreshNotePostLikesJob` hasn't run (SolidQueue
   worker down; see [solid_queue.md](solid_queue.md)); hit "Refresh all Note/Post likes" to
   force it.
-- **Entry never picked** — its post may be permanently in cooldown (any of the post's
+- **Entry never suggested** — its post may be permanently in cooldown (any of the post's
   entries has a very recent note), or the entry lacks `body_json` (re-seed it, or
   `fill_missing_body_json`).
