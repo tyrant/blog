@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
-# Picks the next entry to repost, weighted by popularity. Runs server-side (prod
-# has the data); the local ticker calls it every couple of minutes and it gates
-# itself to one pick per interval_minutes.
+# Picks the next entry to suggest reposting, weighted by popularity — always available
+# (no due/interval gating; posting is manual, so there's no pace to throttle).
 #
 # The candidate set + weights come from RepostOdds (postable entries on off-cooldown posts,
 # weight = 1 + sum of note likes) — the same source the admin leaderboard shows, so
-# the displayed odds match what actually fires. On a real pick it stamps
-# last_reposted_at under the config row lock (the claim), so overlapping ticks can't
-# double-fire. dry_run previews without claiming.
+# the displayed odds match what actually fires. dry_run (what the admin page always
+# uses) previews without claiming; a non-dry-run pick stamps last_reposted_at under
+# the config row lock, but nothing currently calls it that way.
 module Substack
   module Blizzard
     class WeightedPicker
@@ -31,8 +30,6 @@ module Substack
 
         config = BlizzardScheduleConfig.instance
         config.with_lock do
-          next nil unless due?(config)
-
           roll = @random.rand
 
           if roll < QUOTATION_ODDS && (quotation = random_quotation)
@@ -72,11 +69,6 @@ module Substack
           "post_url"          => quotation.post_url,
           "template_url"      => nil
         }
-      end
-
-      def due?(config)
-        last = config.last_reposted_at
-        last.nil? || last <= @now - config.interval_minutes.to_i.minutes
       end
 
       def weighted_sample(candidates)

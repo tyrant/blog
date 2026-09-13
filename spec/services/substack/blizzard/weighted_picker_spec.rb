@@ -21,7 +21,7 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
     ] }
   end
 
-  before { BlizzardScheduleConfig.instance.update!(interval_minutes: 30, cooldown_hours: 12, last_reposted_at: nil) }
+  before { BlizzardScheduleConfig.instance.update!(cooldown_hours: 12, last_reposted_at: nil) }
 
   subject(:pick) { described_class.execute }
 
@@ -34,13 +34,8 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
     expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_present
   end
 
-  describe 'not yet due' do
+  describe 'always available (no due/interval gating)' do
     before { BlizzardScheduleConfig.instance.update!(last_reposted_at: 5.minutes.ago) }
-    it { expect(pick).to be_nil }
-  end
-
-  describe 'past the interval is due again' do
-    before { BlizzardScheduleConfig.instance.update!(last_reposted_at: 31.minutes.ago) }
     it { expect(pick).to_not be_nil }
   end
 

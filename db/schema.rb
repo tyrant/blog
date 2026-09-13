@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_12_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_14_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,7 +46,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_12_000001) do
     t.jsonb "schedule", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "interval_minutes", default: 30, null: false
     t.integer "cooldown_hours", default: 12, null: false
     t.datetime "last_reposted_at"
     t.jsonb "data", default: {}, null: false

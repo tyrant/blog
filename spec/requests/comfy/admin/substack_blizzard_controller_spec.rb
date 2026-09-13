@@ -34,7 +34,6 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     it 'shows the repost-selection settings form' do
-      expect(response.body).to include 'Suggest a new repost every (minutes):'
       expect(response.body).to include 'Per-post cooldown (hours):'
     end
 
@@ -80,7 +79,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
       end
 
-      it { expect(response.body).to include 'Nothing due right now.' }
+      it { expect(response.body).to include 'Nothing eligible to suggest right now.' }
     end
 
     context 'next repost suggestion — a text-group pick' do
@@ -223,15 +222,6 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
     end
 
-    describe 'POST repost/tick.json when not yet due' do
-      before do
-        BlizzardScheduleConfig.instance.update!(last_reposted_at: Time.current)
-        post comfy_admin_substack_blizzard_repost_tick_path(format: :json), headers: http_auth_headers
-      end
-
-      it { expect(response.parsed_body).to eq({}) }
-    end
-
     describe 'GET repost/preview.json (dry run, no claiming)' do
       before { get comfy_admin_substack_blizzard_repost_preview_path(format: :json), headers: http_auth_headers }
 
@@ -294,17 +284,16 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST settings' do
     before do
       post comfy_admin_substack_blizzard_settings_path,
-           params: { interval_minutes: 45, cooldown_hours: 8 }, headers: http_auth_headers
+           params: { cooldown_hours: 8 }, headers: http_auth_headers
     end
 
     it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
-    it { expect(BlizzardScheduleConfig.instance.interval_minutes).to eq 45 }
     it { expect(BlizzardScheduleConfig.instance.cooldown_hours).to eq 8 }
 
-    context 'invalid interval is rejected' do
+    context 'invalid cooldown is rejected' do
       before do
         post comfy_admin_substack_blizzard_settings_path,
-             params: { interval_minutes: 0, cooldown_hours: 8 }, headers: http_auth_headers
+             params: { cooldown_hours: -1 }, headers: http_auth_headers
       end
       it { expect(flash[:danger]).to be_present }
     end

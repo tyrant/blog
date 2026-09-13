@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-# Singleton holding the popularity-weighted repost settings: interval_minutes
-# (minutes between reposts), cooldown_hours (how long a post rests after any of its
-# entries reposts), and last_reposted_at (the claim clock). The legacy `schedule` jsonb
-# column is retired — it held the removed forecast calendar's saved arrangement.
+# Singleton holding the popularity-weighted repost settings: cooldown_hours (how long
+# a post rests after any of its entries reposts) and last_reposted_at (an informational
+# timestamp of the last recorded repost — reposting is fully manual, so nothing gates
+# on it). The legacy `schedule` jsonb column is retired — it held the removed forecast
+# calendar's saved arrangement.
 #
 # `data` holds the unattached-Notes pool — Notes with no parent Post or
 # SubstackQuotation — in the same shape as a Substack categorization's #data:
@@ -11,8 +12,7 @@
 # "notes" is the raw list of Note URLs pasted in by hand; "Backfill" turns it into
 # tracked "blizzard" entries, same as a post's notes.
 class BlizzardScheduleConfig < ApplicationRecord
-  validates :interval_minutes, numericality: { only_integer: true, greater_than: 0 }
-  validates :cooldown_hours,   numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :cooldown_hours, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate  :data_is_hash
 
   def self.instance

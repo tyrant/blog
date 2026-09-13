@@ -56,13 +56,12 @@ likes}`), via `QuotationRecorder`.
 
 A singleton row holds the selection settings:
 
-- `interval_minutes` (default 30) — minutes before a new suggestion becomes due again.
 - `cooldown_hours` (default 12) — a post rests this long after any of its entries is
   reposted; while resting, none of that post's entries are eligible.
-- `last_reposted_at` — the pacing clock; stamped whenever `#add_note` actually records
-  a repost (any of the three pools). `WeightedPicker`'s own non-dry-run claim path also
-  stamps it, but nothing calls that anymore (see below) — recording is what resets the
-  clock now.
+- `last_reposted_at` — informational only: the last time `#add_note` actually recorded
+  a repost (any of the three pools). Nothing gates on it — a suggestion is always
+  available; `interval_minutes`/due-gating was removed entirely once posting became
+  fully manual (there's no automated pace left to throttle).
 
 (The legacy `schedule` jsonb column — the removed forecast calendar's saved arrangement
 — is retired but not yet dropped.)
@@ -114,18 +113,19 @@ happens outside this app entirely.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` (and `post_url`, from the
   note's own attachment) from a real note.
 - `Substack::Blizzard::WeightedPicker` — the selection logic behind the admin's "Next
-  repost suggestion" panel: under the config row lock, if `interval_minutes` has
-  elapsed, it rolls one random number against three cumulative bands —
-  `QUOTATION_ODDS` (24%) hands back a **random featured quotation**; the next
-  `UNATTACHED_ODDS` (2%) weighted-samples one eligible **unattached** entry
-  (`Substack::Blizzard::UnattachedOdds`); the remaining 74% weighted-samples one
-  eligible **per-post** text entry (`RepostOdds`; weight = 1 + Σ note likes + post
-  likes; excludes entries whose post is in cooldown or lacking `body_json`). An empty
-  tier falls through to the next one. `dry_run` (what the admin page always uses)
-  previews without claiming; a non-dry-run claim also stamps `last_reposted_at`
-  (the same pacing clock `#add_note` now stamps on an actual recorded repost), but
-  nothing currently calls the picker that way — the `POST /repost/tick.json` endpoint
-  it backs is still routed, just unused now that the local cron is gone.
+  repost suggestion" panel: always available (no due/interval gating — removed once
+  posting became fully manual), it rolls one random number against three cumulative
+  bands under the config row lock — `QUOTATION_ODDS` (24%) hands back a **random
+  featured quotation**; the next `UNATTACHED_ODDS` (2%) weighted-samples one eligible
+  **unattached** entry (`Substack::Blizzard::UnattachedOdds`); the remaining 74%
+  weighted-samples one eligible **per-post** text entry (`RepostOdds`; weight = 1 + Σ
+  note likes + post likes; excludes entries whose post is in cooldown or lacking
+  `body_json`). An empty tier falls through to the next one. `dry_run` (what the admin
+  page always uses) previews without claiming; a non-dry-run claim also stamps
+  `last_reposted_at` (the same informational timestamp `#add_note` now stamps on an
+  actual recorded repost), but nothing currently calls the picker that way — the
+  `POST /repost/tick.json` endpoint it backs is still routed, just unused now that the
+  local cron is gone.
 - `Substack::Blizzard::UnattachedOdds` — the unattached-pool equivalent of `RepostOdds`:
   candidates from `BlizzardScheduleConfig#data["blizzard"]`, weight = 1 + Σ note likes (no
   post-likes term — no parent post). Cooldown rests each entry **individually** (there's no
@@ -190,11 +190,12 @@ see "Adding a repost" below). Re-run with a fresh value.
 
 ### Repost selection (settings)
 
-A small form sets **Suggest a new repost every (minutes)** and **Per-post cooldown
-(hours)** (POSTs to `#update_settings`), and shows when a suggestion was last claimed.
-Selection itself is automatic (74% weighted per-post text group, 24% random quotation,
-2% weighted unattached note) — there's no schedule to arrange, and nothing posts on
-its own. The shares are the `QUOTATION_ODDS`/`UNATTACHED_ODDS` constants, not form
+A small form sets **Per-post cooldown (hours)** (POSTs to `#update_settings`), and
+shows when a repost was last recorded. Selection itself is automatic (74% weighted
+per-post text group, 24% random quotation, 2% weighted unattached note) — there's no
+schedule to arrange, and nothing posts on its own; a suggestion is always available
+(no due/interval gating — reposting is fully manual now, so there's no pace to
+throttle). The shares are the `QUOTATION_ODDS`/`UNATTACHED_ODDS` constants, not form
 fields. The **"Most likely to be suggested next"** table below is a leaderboard of the
 74% per-post pool's current odds; **"Next repost suggestion"** is a live draw (a fresh
 weighted pick every page load) across all three pools, with the same rich-copy +
@@ -303,10 +304,10 @@ Rich formatting only survives if captured from a real Note (backfill / re-seed).
 
 ## Troubleshooting
 
-- **"Next repost suggestion" always says "Nothing due right now"** — check
-  `interval_minutes` and `last_reposted_at`; the latter only advances when a repost is
-  actually recorded via Add-manually (`#add_note`), so it'll look stuck if nothing's
-  been recorded in a while — that's expected, not a bug.
+- **"Next repost suggestion" says "Nothing eligible to suggest right now"** — this
+  means every pool is genuinely empty/ineligible (no `body_json`, everything in
+  cooldown), not a timing issue — there's no due/interval gating anymore, a suggestion
+  is always drawn fresh on page load.
 - **A resolved timestamp doesn't match what you expected** — `#add_note` falls back to
   `Time.current` silently if the Substack lookup fails (stale cookie, unrecognized
   URL, network error); refresh the prod cookie if the pulled timestamps should be
