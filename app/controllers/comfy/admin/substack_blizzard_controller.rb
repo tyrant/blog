@@ -126,19 +126,6 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_to back_path
   end
 
-  def create_note
-    categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
-    record = Substack::Blizzard::Reposter.execute(
-      categorization: categorization,
-      uid:            params[:uid]
-    )
-    flash[:success] = "Posted note: #{record['url']}"
-  rescue => e
-    flash[:danger] = "Could not post note: #{e.message}"
-  ensure
-    redirect_to back_path
-  end
-
   def add_note
     timestamp = resolve_timestamp(params[:url]) if params[:url].present?
 
@@ -161,6 +148,11 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
         timestamp:         timestamp
       ) if ok
     end
+
+    # Automated claiming (WeightedPicker's non-dry-run path) is what used to stamp
+    # this; nothing calls that anymore, so a real recorded repost is what now resets
+    # the "suggest a new repost every X minutes" pacing.
+    BlizzardScheduleConfig.instance.update!(last_reposted_at: Time.current) if ok
 
     respond_to do |format|
       format.html do

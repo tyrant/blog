@@ -59,9 +59,10 @@ A singleton row holds the selection settings:
 - `interval_minutes` (default 30) — minutes before a new suggestion becomes due again.
 - `cooldown_hours` (default 12) — a post rests this long after any of its entries is
   reposted; while resting, none of that post's entries are eligible.
-- `last_reposted_at` — the claim clock; stamped when a suggestion is claimed
-  (non-`dry_run`). In practice only the retired automated path (see below) ever
-  claimed non-dry-run, so this can go stale now that it's gone — see Troubleshooting.
+- `last_reposted_at` — the pacing clock; stamped whenever `#add_note` actually records
+  a repost (any of the three pools). `WeightedPicker`'s own non-dry-run claim path also
+  stamps it, but nothing calls that anymore (see below) — recording is what resets the
+  clock now.
 
 (The legacy `schedule` jsonb column — the removed forecast calendar's saved arrangement
 — is retired but not yet dropped.)
@@ -121,9 +122,10 @@ happens outside this app entirely.
   eligible **per-post** text entry (`RepostOdds`; weight = 1 + Σ note likes + post
   likes; excludes entries whose post is in cooldown or lacking `body_json`). An empty
   tier falls through to the next one. `dry_run` (what the admin page always uses)
-  previews without claiming; a non-dry-run claim stamps `last_reposted_at`, but
-  nothing currently calls it that way — the `POST /repost/tick.json` endpoint it backs
-  is still routed, just unused now that the local cron is gone.
+  previews without claiming; a non-dry-run claim also stamps `last_reposted_at`
+  (the same pacing clock `#add_note` now stamps on an actual recorded repost), but
+  nothing currently calls the picker that way — the `POST /repost/tick.json` endpoint
+  it backs is still routed, just unused now that the local cron is gone.
 - `Substack::Blizzard::UnattachedOdds` — the unattached-pool equivalent of `RepostOdds`:
   candidates from `BlizzardScheduleConfig#data["blizzard"]`, weight = 1 + Σ note likes (no
   post-likes term — no parent post). Cooldown rests each entry **individually** (there's no
@@ -302,10 +304,9 @@ Rich formatting only survives if captured from a real Note (backfill / re-seed).
 ## Troubleshooting
 
 - **"Next repost suggestion" always says "Nothing due right now"** — check
-  `interval_minutes` and `last_reposted_at`. Since nothing calls the non-dry-run
-  picker anymore, `last_reposted_at` no longer advances on its own — if it's stuck far
-  in the past, `due?` is (harmlessly) permanently true instead; if it looks frozen at
-  a *future-seeming* or otherwise wrong value, that's worth a closer look.
+  `interval_minutes` and `last_reposted_at`; the latter only advances when a repost is
+  actually recorded via Add-manually (`#add_note`), so it'll look stuck if nothing's
+  been recorded in a while — that's expected, not a bug.
 - **A resolved timestamp doesn't match what you expected** — `#add_note` falls back to
   `Time.current` silently if the Substack lookup fails (stale cookie, unrecognized
   URL, network error); refresh the prod cookie if the pulled timestamps should be

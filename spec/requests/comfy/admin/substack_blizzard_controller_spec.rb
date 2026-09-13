@@ -368,6 +368,19 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
+      it 'resets the suggestion pacing clock' do
+        expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_present
+      end
+    end
+
+    context 'a missing url does not reset the suggestion pacing clock' do
+      before do
+        post comfy_admin_substack_blizzard_add_note_path,
+             params: { categorization_id: categorization.id, uid: 'u0', url: '', days: 14 },
+             headers: http_auth_headers
+      end
+
+      it { expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_nil }
     end
 
     context 'retains the page number on redirect' do
@@ -462,31 +475,6 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(flash[:success]).to be_present }
       it { expect(quotation.reload.notes.size).to eq 1 }
       it { expect(quotation.reload.notes.first).to include('url' => 'https://substack.com/profile/4619740-mikey-clarke/note/c-444', 'likes' => 0) }
-    end
-  end
-
-  describe 'POST create_note (auto via API)' do
-    before do
-      SubstackSyncConfig.instance.update!(session_cookie: 'sess-abc')
-      stub_request(:post, 'https://substack.com/api/v1/comment/feed')
-        .to_return(status: 200, body: { 'id' => 999, 'date' => '2026-06-19T00:00:00Z' }.to_json)
-      post comfy_admin_substack_blizzard_create_note_path,
-           params: { categorization_id: categorization.id, uid: 'u0', days: 14 },
-           headers: http_auth_headers
-    end
-
-    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
-    it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
-    it { expect(categorization.reload.data['blizzard'][0]['notes'].last['url']).to eq 'https://substack.com/profile/4619740-mikey-clarke/note/c-999' }
-
-    context 'API failure surfaces as a flash, no append' do
-      before do
-        stub_request(:post, 'https://substack.com/api/v1/comment/feed').to_return(status: 500, body: 'boom')
-        post comfy_admin_substack_blizzard_create_note_path,
-             params: { categorization_id: categorization.id, uid: 'u0', days: 14 },
-             headers: http_auth_headers
-      end
-      it { expect(flash[:danger]).to be_present }
     end
   end
 
