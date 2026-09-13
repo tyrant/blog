@@ -57,12 +57,12 @@ namespace :substack do
       BlizzardBackfillRunner.run(commit: true)
     end
 
-    desc "Report appending the canonical post URL to each blizzard body_json (no writes)"
+    desc "Report appending each entry's post URL to its blizzard body_json, incl. unattached notes (no writes)"
     task append_urls_dry_run: :environment do
       BlizzardUrlAppender.run(commit: false)
     end
 
-    desc "Append the canonical post URL (as a trailing link) to each blizzard body_json"
+    desc "Append each entry's post URL (as a trailing link) to its blizzard body_json, incl. unattached notes"
     task append_urls: :environment do
       BlizzardUrlAppender.run(commit: true)
     end
@@ -237,26 +237,29 @@ module BlizzardUrlAppender
   module_function
 
   def run(commit:)
+    missing_url = []
+    appended = append_for_categorizations(commit: commit, missing_url: missing_url) +
+               append_for_unattached(commit: commit, missing_url: missing_url)
+
+    puts "#{commit ? 'Appended URL to' : 'Would append URL to'} #{appended} blizzard entr#{appended == 1 ? 'y' : 'ies'}."
+    puts "Categorizations/entries with blizzard but no post URL (skipped): #{missing_url.join(', ').presence || 'none'}."
+  end
+
+  def append_for_categorizations(commit:, missing_url:)
     cats = Comfy::Cms::Categorization.joins(:category)
       .where(comfy_cms_categories: { label: "Substack" }).order(:id)
     appended = 0
-    missing_url = []
 
     cats.find_each do |cat|
       if cat.url.blank?
-        missing_url << cat.id if Array(cat.data["blizzard"]).any?
+        missing_url << "cat #{cat.id}" if Array(cat.data["blizzard"]).any?
         next
       end
 
       changed = false
       Array(cat.data["blizzard"]).each do |entry|
-        next if entry["body_json"].blank?
+        next unless append_entry_url(entry, cat.url)
 
-        new_bj = Substack::NoteParser.append_post_url(entry["body_json"], cat.url)
-        next if new_bj == entry["body_json"]
-
-        entry["body_json"] = new_bj
-        entry["text"]      = Substack::NoteParser.plaintext(new_bj)
         appended += 1
         changed  = true
       end
@@ -267,8 +270,47 @@ module BlizzardUrlAppender
       end
     end
 
-    puts "#{commit ? 'Appended URL to' : 'Would append URL to'} #{appended} blizzard entr#{appended == 1 ? 'y' : 'ies'}."
-    puts "Categorizations with blizzard but no canonical #url (skipped): #{missing_url.join(', ').presence || 'none'}."
+    appended
+  end
+
+  # Unlike a categorization (one canonical #url shared by every entry), each
+  # unattached entry references its own post via post_url (the source note's
+  # attachment card, captured by Backfiller) — there's no single record-level
+  # URL to fall back on, so each entry supplies its own.
+  def append_for_unattached(commit:, missing_url:)
+    config = BlizzardScheduleConfig.instance
+    appended = 0
+    changed  = false
+
+    Array(config.data["blizzard"]).each do |entry|
+      if entry["post_url"].blank?
+        missing_url << "unattached #{entry['uid']}"
+        next
+      end
+
+      next unless append_entry_url(entry, entry["post_url"])
+
+      appended += 1
+      changed  = true
+    end
+
+    if changed && commit
+      config.data_will_change! # in-place jsonb mutation can dodge dirty-tracking
+      config.save!
+    end
+
+    appended
+  end
+
+  def append_entry_url(entry, url)
+    return false if entry["body_json"].blank?
+
+    new_bj = Substack::NoteParser.append_post_url(entry["body_json"], url)
+    return false if new_bj == entry["body_json"]
+
+    entry["body_json"] = new_bj
+    entry["text"]      = Substack::NoteParser.plaintext(new_bj)
+    true
   end
 end
 
