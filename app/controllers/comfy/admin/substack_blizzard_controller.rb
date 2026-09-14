@@ -20,6 +20,16 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     @stat_series = stat_series
   end
 
+  # A fresh weighted draw, rendered as the same fragment #index uses — what the
+  # "Next repost suggestion" panel's Regenerate button fetches, so it can swap in a
+  # new pick without navigating (which would otherwise re-roll it anyway).
+  def next_repost_suggestion
+    next_repost = Substack::Blizzard::WeightedPicker.execute(dry_run: true)
+    render partial: "next_repost_suggestion", locals: {
+      next_repost: next_repost, days: clamp_days(params[:days]), page: params[:page], q: params[:q]
+    }
+  end
+
   # Enqueues a backfill of every Substack post's notes (runs on the prod worker).
   def backfill_all
     BackfillAllJob.perform_later
@@ -169,11 +179,21 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
       uid:            params[:uid],
       note_url:       params[:note_url]
     )
-    flash[:success] = "Re-seeded rich text from that note (#{entry['text'].to_s.length} chars)."
+    respond_to do |format|
+      format.html do
+        flash[:success] = "Re-seeded rich text from that note (#{entry['text'].to_s.length} chars)."
+        redirect_to back_path
+      end
+      format.json { render json: { success: true, text: entry["text"], html: Substack::NoteParser.to_html(entry["body_json"]) } }
+    end
   rescue => e
-    flash[:danger] = "Could not re-seed: #{e.message}"
-  ensure
-    redirect_to back_path
+    respond_to do |format|
+      format.html do
+        flash[:danger] = "Could not re-seed: #{e.message}"
+        redirect_to back_path
+      end
+      format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }
+    end
   end
 
   private

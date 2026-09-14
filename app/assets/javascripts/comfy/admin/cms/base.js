@@ -28,6 +28,7 @@
     CMS.pageFragments();
     CMS.categories();
     CMS.clipboard();
+    CMS.blizzardNextRepost();
     CMS.files.init();
     CMS.fileLinks();
     CMS.fileUpload.init();

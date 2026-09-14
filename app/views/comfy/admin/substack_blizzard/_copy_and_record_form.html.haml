@@ -2,6 +2,8 @@
   .border.p-2.flex-grow-1.blizzard-text{ style: "white-space: pre-wrap;" }= entry["text"]
   .blizzard-html{ style: "display:none;" }!= Substack::NoteParser.to_html(entry["body_json"])
   %button.btn.btn-sm.btn-outline-secondary.ml-2.copy-blizzard-text{ type: "button" } Copy
+  - if regenerate_url.present?
+    %button.btn.btn-sm.btn-outline-secondary.ml-2.regenerate-suggestion{ type: "button", data: { url: regenerate_url } } Regenerate
 - if categorization_id.present? || uid.present?
   %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
   = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do

@@ -94,6 +94,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(response.body).to include 'picked text' }
       it { expect(response.body).to include 'Add manually' }
       it { expect(response.body).to include 'Re-seed rich text' }
+      it { expect(response.body).to include 'Regenerate' }
     end
 
     context 'next repost suggestion — an unattached-note pick' do
@@ -358,6 +359,53 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       it { expect(flash[:success]).to be_present }
       it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['text']).to start_with 'reseeded' }
+    end
+  end
+
+  describe 'POST reseed, json format (async from the Next repost suggestion widget)' do
+    let(:rich_body) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'reseeded' }] }] } }
+
+    before do
+      SubstackSyncConfig.instance.update!(session_cookie: 'sess')
+      stub_request(:get, 'https://substack.com/api/v1/reader/comment/999')
+        .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body } }.to_json)
+      post comfy_admin_substack_blizzard_reseed_path(format: :json),
+           params: { categorization_id: categorization.id, uid: 'u0',
+                     note_url: 'https://substack.com/@mikeyclarke/note/c-999' },
+           headers: http_auth_headers
+    end
+
+    it { expect(response).to have_http_status :success }
+    it { expect(response.parsed_body['success']).to be true }
+    it { expect(response.parsed_body['text']).to start_with 'reseeded' }
+    it { expect(response.parsed_body['html']).to include '<p>reseeded</p>' }
+
+    context 'fetch fails' do
+      let(:rich_body) { {} }
+
+      it { expect(response).to have_http_status :unprocessable_entity }
+      it { expect(response.parsed_body['success']).to be false }
+      it { expect(response.parsed_body['error']).to be_present }
+    end
+  end
+
+  describe 'GET next_repost_suggestion (Regenerate)' do
+    it 'renders a fresh fragment with no page chrome' do
+      allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
+        { 'categorization_id' => categorization.id, 'uid' => 'u0', 'text' => 'regenerated pick', 'body_json' => { 'type' => 'doc' } }
+      )
+      get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
+
+      expect(response.body).to include 'regenerated pick'
+      expect(response.body).to include 'Regenerate'
+      expect(response.body).to_not include '<html'
+    end
+
+    it 'shows the nothing-eligible message when there is no pick' do
+      allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(nil)
+      get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
+
+      expect(response.body).to include 'Nothing eligible to suggest right now.'
     end
   end
 

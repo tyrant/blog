@@ -99,19 +99,8 @@
             %td.text-right= number_to_percentage(candidate.probability * 100, precision: 2)
 
   %h6.text-muted.mt-3 Next repost suggestion
-  - if @next_repost.nil?
-    %p.text-muted.small.mb-0 Nothing eligible to suggest right now.
-  - else
-    %p.text-muted.small.mb-1
-      - if @next_repost["categorization_id"].present?
-        - next_post = Comfy::Cms::Categorization.find_by(id: @next_repost["categorization_id"])&.categorized
-        = "Text group for: #{next_post&.title}"
-      - elsif @next_repost["uid"].present?
-        Unattached note
-      - else
-        Quotation
-    = render "copy_and_record_form", entry: @next_repost, categorization_id: @next_repost["categorization_id"],
-      uid: @next_repost["uid"], quotation_id: @next_repost["quotation_id"], days: @days, page: params[:page], q: params[:q]
+  #next-repost-suggestion
+    = render "next_repost_suggestion", next_repost: @next_repost, days: @days, page: params[:page], q: params[:q]
 
 %section.mb-4
   %h5 Unattached Notes
@@ -165,5 +154,5 @@
                   ·
                   = blizzard_note_links(notes)
               = render "copy_and_record_form", entry: due.entry, categorization_id: due.categorization.id,
-                uid: due.uid, quotation_id: nil, days: @days, page: params[:page], q: params[:q]
+                uid: due.uid, quotation_id: nil, days: @days, page: params[:page], q: params[:q], regenerate_url: nil
   = comfy_paginate @due

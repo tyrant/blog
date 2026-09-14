@@ -1,0 +1,14 @@
+- if next_repost.nil?
+  %p.text-muted.small.mb-0 Nothing eligible to suggest right now.
+- else
+  %p.text-muted.small.mb-1
+    - if next_repost["categorization_id"].present?
+      - next_post = Comfy::Cms::Categorization.find_by(id: next_repost["categorization_id"])&.categorized
+      = "Text group for: #{next_post&.title}"
+    - elsif next_repost["uid"].present?
+      Unattached note
+    - else
+      Quotation
+  = render "copy_and_record_form", entry: next_repost, categorization_id: next_repost["categorization_id"],
+    uid: next_repost["uid"], quotation_id: next_repost["quotation_id"], days: days, page: page, q: q,
+    regenerate_url: comfy_admin_substack_blizzard_next_repost_suggestion_path

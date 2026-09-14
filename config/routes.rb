@@ -112,6 +112,7 @@ Rails.application.routes.draw do
       post "admin/substack-blizzard/backfill-post", to: "substack_blizzard#backfill_post", as: :admin_substack_blizzard_backfill_post
       post "admin/substack-blizzard/add-note",    to: "substack_blizzard#add_note",    as: :admin_substack_blizzard_add_note
       post "admin/substack-blizzard/reseed",      to: "substack_blizzard#reseed",      as: :admin_substack_blizzard_reseed
+      get  "admin/substack-blizzard/next-repost-suggestion", to: "substack_blizzard#next_repost_suggestion", as: :admin_substack_blizzard_next_repost_suggestion
     end
   end
 

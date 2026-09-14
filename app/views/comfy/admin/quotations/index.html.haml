@@ -96,7 +96,7 @@
                   = blizzard_note_links(q.notes)
               = render "comfy/admin/substack_blizzard/copy_and_record_form",
                 entry: { "text" => q.quotation, "body_json" => Substack::Blizzard::QuotationNote.build(q) },
-                categorization_id: nil, uid: nil, quotation_id: q.id, days: nil, page: nil, q: nil
+                categorization_id: nil, uid: nil, quotation_id: q.id, days: nil, page: nil, q: nil, regenerate_url: nil
             .text-nowrap.ml-2
               = link_to comfy_edit_admin_quotation_path(q), class: "text-secondary mr-2", title: "Edit" do
                 %i.fas.fa-pencil-alt
