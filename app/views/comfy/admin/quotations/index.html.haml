@@ -76,6 +76,8 @@
             %span.dragger.text-muted.mr-2{ style: "cursor: move; padding-top: 0.2rem;", title: "Drag to reorder" }
               %i.fas.fa-grip-vertical
             %span.order-number.badge.badge-light.mr-2{ style: "padding-top: 0.35rem;" }= i + 1
+            - if q.post_image_url.present?
+              = image_tag q.post_image_url, class: "mr-2 rounded", style: "height: 3rem; width: 3rem; object-fit: cover; object-position: center; flex-shrink: 0;"
             .flex-grow-1
               %blockquote.mb-1{ style: "font-style: italic;" }= "“#{q.quotation}”"
               - if q.previewable?

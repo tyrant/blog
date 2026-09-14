@@ -42,6 +42,19 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       item = doc.at_css('#quotation-sortable li')
       expect(item.text).to_not include 'Previewable'
     end
+
+    it 'shows a thumbnail when post_image_url is present' do
+      SubstackQuotation.create!(quotation: 'with an image', comment_url: 'https://x/comment/3',
+                                post_image_url: 'https://x/cover.jpg')
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      expect(response.body).to include 'src="https://x/cover.jpg"'
+    end
+
+    it 'shows no thumbnail when post_image_url is blank' do
+      doc = Nokogiri::HTML(response.body)
+      item = doc.at_css('#quotation-sortable li')
+      expect(item.at_css('img')).to be_nil
+    end
   end
 
   describe 'POST create' do
