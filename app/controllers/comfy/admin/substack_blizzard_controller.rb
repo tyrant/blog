@@ -163,9 +163,9 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
   # Re-seed an entry's body_json from a real (rich) Note — a server-side read,
   # which is allowed from the prod IP.
   def reseed
-    categorization = Comfy::Cms::Categorization.find(params[:categorization_id])
+    target = params[:categorization_id].present? ? Comfy::Cms::Categorization.find(params[:categorization_id]) : BlizzardScheduleConfig.instance
     entry = Substack::Blizzard::Reseeder.execute(
-      categorization: categorization,
+      categorization: target,
       uid:            params[:uid],
       note_url:       params[:note_url]
     )

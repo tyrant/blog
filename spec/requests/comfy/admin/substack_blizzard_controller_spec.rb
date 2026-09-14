@@ -93,6 +93,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it { expect(response.body).to include 'Text group for:' }
       it { expect(response.body).to include 'picked text' }
       it { expect(response.body).to include 'Add manually' }
+      it { expect(response.body).to include 'Re-seed rich text' }
     end
 
     context 'next repost suggestion — an unattached-note pick' do
@@ -105,6 +106,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       it { expect(response.body).to include 'Unattached note' }
       it { expect(response.body).to include 'Add manually' }
+      it { expect(response.body).to include 'Re-seed rich text' }
     end
 
     context 'next repost suggestion — a quotation pick' do
@@ -341,6 +343,21 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'fetch fails' do
       let(:rich_body) { {} }
       it { expect(flash[:danger]).to be_present }
+    end
+
+    context 'an unattached entry (no categorization_id)' do
+      before do
+        BlizzardScheduleConfig.instance.update!(
+          data: { 'blizzard' => [{ 'uid' => 'un1', 'text' => 'unattached text', 'body_json' => {}, 'notes' => [] }] }
+        )
+        post comfy_admin_substack_blizzard_reseed_path,
+             params: { categorization_id: '', uid: 'un1',
+                       note_url: 'https://substack.com/@mikeyclarke/note/c-999', days: 14 },
+             headers: http_auth_headers
+      end
+
+      it { expect(flash[:success]).to be_present }
+      it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['text']).to start_with 'reseeded' }
     end
   end
 

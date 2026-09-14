@@ -111,7 +111,8 @@ happens outside this app entirely.
 - `Substack::Blizzard::LikesRefresher` — re-fetches every note of one categorization and
   writes its `likes`; a failed fetch keeps the last-known value.
 - `Substack::Blizzard::Reseeder` — replaces one entry's `body_json` (and `post_url`, from the
-  note's own attachment) from a real note.
+  note's own attachment) from a real note. Accepts a categorization or (blank
+  `categorization_id`) `BlizzardScheduleConfig` the same way `RepostRecorder` does.
 - `Substack::Blizzard::WeightedPicker` — the selection logic behind the admin's "Next
   repost suggestion" panel: always available (no due/interval gating — removed once
   posting became fully manual), it rolls one random number against three cumulative
@@ -217,7 +218,11 @@ most-stale-first, 20/page. Per entry: a **Copy** button (rich text — see `to_h
 above), an **Add manually** form (paste the Note URL you posted by hand; the timestamp
 is resolved automatically from Substack, no manual entry needed — see below), and
 **Re-seed rich text** (paste a real Note URL to replace that entry's `body_json`/`text`;
-history untouched).
+history untouched). The same Copy/Add-manually/Re-seed trio also appears on the "Next
+repost suggestion" panel above when it draws a text-group or unattached entry — Re-seed
+only makes sense where there's a stored `body_json` to replace, so it's omitted for a
+quotation pick (quotations build their Note content fresh from the `SubstackQuotation`
+row each time, nothing to re-seed).
 
 **Adding a repost**: paste the URL into Add-manually and submit — `#add_note` extracts
 the comment id and reads the Note's real creation time via `Substack::Client#get_note`
