@@ -23,6 +23,12 @@
 
   function submitForm(form) {
     const status = statusEl(form);
+    // rails-ujs (loaded and Rails.start()'d for the main site's forms) binds its
+    // own submit listener to every form regardless of this one being intercepted,
+    // and disables the data-disable-with button expecting a real navigation to
+    // reset it. Since we replace that navigation with a fetch, nothing ever would —
+    // so re-enable it ourselves once the request settles, success or failure.
+    const button = form.querySelector('[type="submit"]');
     status.textContent = '';
     status.classList.remove('text-danger');
 
@@ -43,6 +49,9 @@
       .catch(() => {
         status.textContent = 'Network error.';
         status.classList.add('text-danger');
+      })
+      .finally(() => {
+        if (button) button.disabled = false;
       });
   }
 
