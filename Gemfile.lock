@@ -147,6 +147,7 @@ GEM
     crass (1.0.6)
     cssbundling-rails (1.4.3)
       railties (>= 6.0.0)
+    csv (3.3.6)
     database_cleaner-active_record (2.2.2)
       activerecord (>= 5.a)
       database_cleaner-core (~> 2.0)
@@ -190,6 +191,10 @@ GEM
       haml (>= 4.0.6)
       railties (>= 5.1)
     hashdiff (1.2.1)
+    httparty (0.24.2)
+      csv
+      mini_mime (>= 1.0.0)
+      multi_xml (>= 0.5.2)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     image_processing (1.12.1)
@@ -273,6 +278,8 @@ GEM
       stimulus-rails
       turbo-rails
     msgpack (1.8.1)
+    multi_xml (0.9.1)
+      bigdecimal (>= 3.1, < 5)
     mutex_m (0.3.0)
     net-imap (0.5.12)
       date
@@ -368,6 +375,9 @@ GEM
       io-console (~> 0.5)
     request_store (1.7.0)
       rack (>= 1.4)
+    resend (1.16.0)
+      base64
+      httparty (>= 0.22.0)
     rexml (3.4.4)
     rspec-core (3.13.5)
       rspec-support (~> 3.13.0)
@@ -508,6 +518,7 @@ DEPENDENCIES
   rails (~> 8.0)
   rails-i18n
   redis (>= 4.0.1)
+  resend
   rspec-rails (~> 6.0)
   selenium-webdriver (>= 4.0)
   service_interface

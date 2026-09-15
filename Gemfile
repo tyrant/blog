@@ -27,6 +27,10 @@ gem 'net-ssh', '>= 7.2.0'  # OpenSSL 3.0 compatibility
 # https://stackoverflow.com/questions/70500220/rails-7-ruby-3-1-loaderror-cannot-load-such-file-net-smtp
 gem 'mail', '>= 2.8.0'
 
+# Transactional email over HTTPS (port 443) — DigitalOcean blocks outbound SMTP
+# (port 587 confirmed via `nc -zv smtp.gmail.com 587` timing out on the prod droplet).
+gem 'resend'
+
 gem 'mailkick'
 gem 'base64'
 gem 'ostruct' # removed from Ruby 4.0 default gems; needed by sshkit/capistrano

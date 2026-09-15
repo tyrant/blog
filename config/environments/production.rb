@@ -60,19 +60,12 @@ Rails.application.configure do
   # default_url_options (including mailer) are set from ROOT_URL in
   # config/initializers/default_url_options.rb
 
-  # Outgoing SMTP via Gmail; smtp/* credentials via rails credentials:edit.
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    address: "smtp.gmail.com",
-    port: 587,
-    domain: "mikeyclarke.co.nz",
-    user_name: Rails.application.credentials.dig(:smtp, :user_name),
-    password: Rails.application.credentials.dig(:smtp, :password),
-    authentication: "plain",
-    enable_starttls: true,
-    open_timeout: 5,
-    read_timeout: 5
-  }
+  # Outgoing mail via Resend's HTTPS API (config/initializers/resend.rb sets the
+  # API key) — DigitalOcean blocks outbound SMTP on this droplet (confirmed via
+  # `nc -zv smtp.gmail.com 587` timing out with ufw inactive, so it's a network-level
+  # block, not local), so raw SMTP delivery (Gmail relay, previously configured
+  # here) can't work from this box. resend/* credentials via rails credentials:edit.
+  config.action_mailer.delivery_method = :resend
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
