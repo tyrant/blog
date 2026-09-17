@@ -91,10 +91,10 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
           .to_not change(SubstackQuotation, :count)
       end
 
-      it 'rebuilds the reviews page' do
+      it 'does not auto-rebuild the reviews page (manual Rebuild button only)' do
         allow(SyncReviewsPageJob).to receive(:perform_later)
         post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
-        expect(SyncReviewsPageJob).to have_received(:perform_later)
+        expect(SyncReviewsPageJob).to_not have_received(:perform_later)
       end
 
       it 'appends the new quotation at the end of the manual order' do
@@ -156,10 +156,10 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         expect(quotation.reload.post_title).to eq 'Old Post'
       end
 
-      it 'rebuilds the reviews page' do
+      it 'does not auto-rebuild the reviews page (manual Rebuild button only)' do
         allow(SyncReviewsPageJob).to receive(:perform_later)
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
-        expect(SyncReviewsPageJob).to have_received(:perform_later)
+        expect(SyncReviewsPageJob).to_not have_received(:perform_later)
       end
 
       it 'saves manually-entered post title, url and image' do
@@ -213,10 +213,10 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         .to change(SubstackQuotation, :count).by(-1)
     end
 
-    it 'rebuilds the reviews page' do
+    it 'does not auto-rebuild the reviews page (manual Rebuild button only)' do
       allow(SyncReviewsPageJob).to receive(:perform_later)
       delete comfy_admin_quotation_path(quotation), headers: http_auth_headers
-      expect(SyncReviewsPageJob).to have_received(:perform_later)
+      expect(SyncReviewsPageJob).to_not have_received(:perform_later)
     end
   end
 

@@ -20,9 +20,6 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation = SubstackQuotation.new(quotation: params[:quotation], comment_url: params[:comment_url])
     quotation.populate_from_substack!
     quotation.save!
-    # New quotations append to the end of the manual order (assign_position); the
-    # rebuild mirrors that order to the Reviews pages.
-    SyncReviewsPageJob.perform_later
     flash[:success] = "Saved quotation#{quotation.author_name ? " by #{quotation.author_name}" : ""}."
   rescue => e
     flash[:danger] = "Could not save quotation: #{e.message}"
@@ -45,7 +42,6 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     # whose post can't be auto-resolved.
     quotation.populate_from_substack! if comment_changed
     quotation.save!
-    SyncReviewsPageJob.perform_later
     flash[:success] = "Quotation updated."
   rescue ActiveRecord::RecordNotFound
     flash[:danger] = "Quotation not found."
@@ -57,7 +53,6 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
   def destroy
     SubstackQuotation.find(params[:id]).destroy
-    SyncReviewsPageJob.perform_later
     flash[:success] = "Quotation deleted."
   rescue ActiveRecord::RecordNotFound
     flash[:danger] = "Quotation not found."
