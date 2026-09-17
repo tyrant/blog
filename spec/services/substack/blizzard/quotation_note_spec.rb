@@ -21,9 +21,9 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(doc['type']).to eq 'doc' }
     it { expect(doc['attrs']).to eq('schemaVersion' => 'v1') }
 
-    it 'opens with a bold "Another <compliment> review" heading' do
+    it 'opens with a bold "another <compliment> review" heading' do
       node = doc['content'][0]['content'][0]
-      expect(node['text']).to eq 'Another CRACKING review'
+      expect(node['text']).to eq 'Sexyverse Advice: another CRACKING review'
       expect(node['marks'].map { |m| m['type'] }).to eq %w[bold]
     end
 
@@ -51,7 +51,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       allow(SubstackSyncConfig).to receive(:instance)
         .and_return(instance_double(SubstackSyncConfig, subtitle_variables: {}))
       node = described_class.build(quote)['content'][0]['content'][0]
-      expect(node['text']).to eq 'Another review'
+      expect(node['text']).to eq 'Sexyverse Advice: another review'
     end
 
     it 'follows with the post title as a bold link to the post' do
