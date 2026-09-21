@@ -91,7 +91,11 @@ module Substack
 
         { 
           "type" => "paragraph", 
-          "content" => [text("#{verbs.sample} oodles more kudos at my Reviews Page (#{REVIEWS_URL})")]
+          "content" => [
+            text("#{verbs.sample} oodles more kudos at my Reviews Pages: (🔗 "),
+            text(REVIEWS_URL, marks: [link(REVIEWS_URL)]),
+            text(")")
+          ]
         }
       end
 

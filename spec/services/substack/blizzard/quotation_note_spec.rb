@@ -81,7 +81,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
     describe 'ending with a plain reviews-page line with the bare URL for Substack to auto-linkify' do
       let(:node) { doc['content'][4]['content'].first }
-      it { expect(node['text']).to include "oodles more kudos at my Reviews Page (#{described_class::REVIEWS_URL})" }
+      it { expect(node['text']).to include "oodles more kudos at my Reviews Pages: (🔗 " }
     end
 
     describe 'leaves the reviews-page URL unmarked (an explicit link mark gets stripped)' do
