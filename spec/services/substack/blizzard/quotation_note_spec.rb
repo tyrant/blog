@@ -75,8 +75,8 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
     describe 'attributing the quote to the linked author' do
       let(:block) { doc['content'][3] }
-      it { expect(block['content'].last['text']).to eq 'Eva' }
-      it { expect(block['content'].last['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva' }
+      it { expect(block['content'][1]['text']).to eq 'Eva' }
+      it { expect(block['content'][1]['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva' }
     end
 
     describe 'ending with a plain reviews-page line with the bare URL for Substack to auto-linkify' do

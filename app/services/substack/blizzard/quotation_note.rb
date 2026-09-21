@@ -72,11 +72,13 @@ module Substack
         { 
           "type" => "paragraph",
           "content" => [
-            text("— #{random_quantity&.capitalize} of thanks to the "),
-            text("#{random_compliment} ",
-                 marks: [{ 'type' => 'bold' }]), 
+            text("— #{random_quantity&.capitalize} of thanks to "),
             text(quotation.author_name, 
-                 marks: [link(quotation.author_url)])
+                 marks: [link(quotation.author_url)]),
+            text(", check 'em out, they're "),
+            text(random_compliment,
+                 marks: [{ 'type' => 'bold' }]),
+            text(".")
           ]
         }
       end
