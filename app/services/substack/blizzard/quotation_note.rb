@@ -75,10 +75,10 @@ module Substack
             text("— #{random_quantity&.capitalize} of thanks to "),
             text(quotation.author_name, 
                  marks: [link(quotation.author_url)]),
-            text(", check 'em out, they're "),
+            text(", they're "),
             text(random_compliment,
-                 marks: [{ 'type' => 'bold' }]),
-            text(".")
+                 marks: [{ 'type' => 'bold' }, { 'type' => 'italic' }]),
+            text(", do check 'em out.")
           ]
         }
       end
