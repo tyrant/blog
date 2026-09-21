@@ -18,23 +18,27 @@ module Substack
         { 
           "type" => "doc", 
           "attrs" => { "schemaVersion" => "v1" },
-          "content" => [label(quotation),
-                        title(quotation),
-                        quote(quotation),
-                        attribution(quotation),
-                        more_reviews]
+          "content" => [
+            label(quotation),
+            title(quotation),
+            quote(quotation),
+            attribution(quotation),
+            more_reviews
+          ]
         }
       end
 
       def label(quotation)
-        compliment = Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample&.upcase
-        heading = ["Sexyverse Advice: another", compliment, "review"].compact.join(" ")
+        heading = ["Sexyverse Advice: another", random_compliment&.upcase, "review"].compact.join(" ")
+
         {
           "type" => "paragraph",
           "content" => [
-            text(heading, marks: [{ "type" => "bold" }]),
+            text(heading,
+                 marks: [{ "type" => "bold" }]),
             text(" (🔗 "),
-            text(quotation.comment_url, marks: [link(quotation.comment_url)]),
+            text(quotation.comment_url,
+                 marks: [link(quotation.comment_url)]),
             text("):")
           ]
         }
@@ -43,7 +47,11 @@ module Substack
       def title(quotation)
         { 
           "type" => "paragraph",
-          "content" => [text(quotation.post_title, marks: [{ "type" => "bold" }, link(quotation.post_url)])]
+          "content" => [
+            text(quotation.post_title,
+                 marks: [{ "type" => "bold" }, 
+                 link(quotation.post_url)])
+          ]
         }
       end
 
@@ -52,7 +60,10 @@ module Substack
           "type" => "blockquote",
           "content" => [{
             "type" => "paragraph",
-            "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "italic" }])]
+            "content" => [
+              text("“#{quotation.quotation}”",
+                   marks: [{ "type" => "italic" }])
+            ]
           }]
         }
       end
@@ -60,7 +71,13 @@ module Substack
       def attribution(quotation)
         { 
           "type" => "paragraph",
-          "content" => [text("— "), text(quotation.author_name, marks: [link(quotation.author_url)])]
+          "content" => [
+            text("— #{random_quantity&.capitalize} of thanks to the "),
+            text("#{random_compliment} ",
+                 marks: [{ 'type' => 'bold' }]), 
+            text(quotation.author_name, 
+                 marks: [link(quotation.author_url)])
+          ]
         }
       end
 
@@ -90,6 +107,14 @@ module Substack
           "type" => "link", 
           "attrs" => { "href" => href }
         }
+      end
+
+      def random_compliment
+        Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample
+      end
+
+      def random_quantity
+        Array(SubstackSyncConfig.instance.subtitle_variables["quantity"]).sample
       end
     end
   end
