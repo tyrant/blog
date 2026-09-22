@@ -27,9 +27,9 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       it { expect(node['marks'].map { |m| m['type'] }).to eq %w[bold] }
     end
 
-    describe 'following the heading with a " (🔗 "' do
+    describe 'following the heading with a " (🔗"' do
       let(:node) { doc['content'][0]['content'][1] }
-      it { expect(node['text']).to eq ' (🔗 ' }
+      it { expect(node['text']).to eq ' (🔗' }
       it { expect(node['marks']).to be_nil }
     end
 
@@ -81,7 +81,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
     describe 'ending with a plain reviews-page line with the bare URL for Substack to auto-linkify' do
       let(:node) { doc['content'][4]['content'].first }
-      it { expect(node['text']).to include "oodles more kudos at my Reviews Pages: (🔗 " }
+      it { expect(node['text']).to include "oodles more kudos at my Reviews Pages: (🔗" }
     end
 
     describe 'leaves the reviews-page URL unmarked (an explicit link mark gets stripped)' do

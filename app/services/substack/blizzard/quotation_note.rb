@@ -36,7 +36,7 @@ module Substack
           "content" => [
             text(heading,
                  marks: [{ "type" => "bold" }]),
-            text(" (🔗 "),
+            text(" (🔗"),
             text(quotation.comment_url,
                  marks: [link(quotation.comment_url)]),
             text("):")
@@ -92,7 +92,7 @@ module Substack
         { 
           "type" => "paragraph", 
           "content" => [
-            text("#{verbs.sample} oodles more kudos at my Reviews Pages: (🔗 "),
+            text("#{verbs.sample} oodles more kudos at my Reviews Pages: (🔗"),
             text(REVIEWS_URL, marks: [link(REVIEWS_URL)]),
             text(")")
           ]
