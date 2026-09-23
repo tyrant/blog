@@ -91,11 +91,18 @@ module Substack
           "type" => "substack_mention",
           "attrs" => {
             "id" => quotation.author_user_id,
-            "label" => quotation.author_name,
+            "label" => author_handle(quotation) || quotation.author_name,
             "mentionType" => "user",
             "url" => nil
           }
         }
+      end
+
+      # The handle (unique) rather than the display name (often shared by several
+      # accounts) — pasting "@handle" into Substack's search finds the right person
+      # on the first try, where "@Display Name" can return a wall of namesakes.
+      def author_handle(quotation)
+        quotation.author_url.to_s[%r{substack\.com/@([^/?#]+)}, 1]
       end
 
       # Substack strips an explicit link mark to the reviews page (a page, not a

@@ -69,7 +69,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to the ') }
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'most gnarly ') }
     it { expect(node['content'][2]).to eq('type' => 'substack_mention',
-                                            'attrs' => { 'id' => 69847396, 'label' => 'Eva', 'mentionType' => 'user', 'url' => nil }) }
+                                            'attrs' => { 'id' => 69847396, 'label' => 'eva', 'mentionType' => 'user', 'url' => nil }) }
     it { expect(node['content'][3]).to eq('type' => 'text', 'text' => ", they're ") }
     it { expect(node['content'][4]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
     it { expect(node['content'][5]).to eq('type' => 'text', 'text' => ", do check 'em out.") }
@@ -88,12 +88,27 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
   describe '.author' do
     it { expect(described_class.author(quote)).to eq('type' => 'substack_mention',
-                                                        'attrs' => { 'id' => 69847396, 'label' => 'Eva', 'mentionType' => 'user', 'url' => nil }) }
+                                                        'attrs' => { 'id' => 69847396, 'label' => 'eva', 'mentionType' => 'user', 'url' => nil }) }
+
+    it 'uses the unique handle, not the display name shared by many accounts' do
+      author = described_class.author(quote(author_name: 'Patrick Mill', author_url: 'https://substack.com/@audiohubstudios'))
+      expect(author['attrs']['label']).to eq 'audiohubstudios'
+    end
 
     describe 'when the author has no captured user id' do
       it { expect(described_class.author(quote(author_user_id: nil))).to eq('type' => 'text', 'text' => 'Eva',
                                                                                'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
     end
+
+    describe "when the author's url doesn't carry a parseable handle" do
+      it { expect(described_class.author(quote(author_url: nil))['attrs']['label']).to eq 'Eva' }
+    end
+  end
+
+  describe '.author_handle' do
+    it { expect(described_class.author_handle(quote)).to eq 'eva' }
+    it { expect(described_class.author_handle(quote(author_url: 'https://substack.com/@eva/note/c-1'))).to eq 'eva' }
+    it { expect(described_class.author_handle(quote(author_url: nil))).to be_nil }
   end
 
   describe '.more_reviews' do
