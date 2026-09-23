@@ -72,7 +72,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
                                             'attrs' => { 'id' => 69847396, 'label' => 'eva', 'mentionType' => 'user', 'url' => nil }) }
     it { expect(node['content'][3]).to eq('type' => 'text', 'text' => ", they're ") }
     it { expect(node['content'][4]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
-    it { expect(node['content'][5]).to eq('type' => 'text', 'text' => ", do check 'em out.") }
+    it { expect(node['content'][5]).to eq('type' => 'text', 'text' => ", do check 'em out and/or send them some love.") }
 
     describe 'when no quantity is configured' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] })) }
@@ -119,10 +119,10 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(node['type']).to eq 'paragraph' }
     it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} oodles more kudos at my " }).to be true }
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Reviews Pages', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
-    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ', ') }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ': ') }
     it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
                                             'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => described_class::REVIEWS_URL } }]) }
-    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ':') }
+    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => '.') }
   end
 
   describe '.text' do

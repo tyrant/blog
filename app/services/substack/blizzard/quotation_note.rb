@@ -77,7 +77,7 @@ module Substack
             text(", they're "),
             text(random_compliment,
                  marks: [{ 'type' => 'bold' }, { 'type' => 'italic' }]),
-            text(", do check 'em out.")
+            text(", do check 'em out and/or send them some love.")
           ]
         }
       end
@@ -117,10 +117,10 @@ module Substack
             text("#{verbs.sample} oodles more kudos at my "),
             text("Reviews Pages",
                   marks: [{ "type" => "bold" }, { "type" => "italic" }]),
-            text(", "),
+            text(": "),
             text('blargh-placeholder-text',
                  marks: [link(REVIEWS_URL)]),
-            text(':')
+            text('.')
           ]
         }
       end
