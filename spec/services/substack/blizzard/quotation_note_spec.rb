@@ -61,19 +61,21 @@ RSpec.describe Substack::Blizzard::QuotationNote do
   end
 
   describe '.attribution' do
+    before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'quantity' => ['Bags'], 'superlative' => ['most gnarly'], 'compliment' => ['cracking'] })) }
     subject(:node) { described_class.attribution(quote) }
 
     it { expect(node['type']).to eq 'paragraph' }
-    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to ') }
-    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Eva',
+    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to the ') }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'most gnarly ') }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => 'Eva',
                                             'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
-    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ", they're ") }
-    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
-    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ", do check 'em out.") }
+    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => ", they're ") }
+    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
+    it { expect(node['content'][5]).to eq('type' => 'text', 'text' => ", do check 'em out.") }
 
     describe 'when no quantity is configured' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] })) }
-      it { expect(node['content'][0]['text']).to eq ' of thanks to ' }
+      it { expect(node['content'][0]['text']).to eq ' of thanks to the ' }
     end
   end
 

@@ -71,7 +71,8 @@ module Substack
         { 
           "type" => "paragraph",
           "content" => [
-            text("#{random_quantity&.capitalize} of thanks to "),
+            text("#{random_quantity&.capitalize} of thanks to the "),
+            text("#{random_superlative} "),
             text(quotation.author_name, 
                  marks: [link(quotation.author_url)]),
             text(", they're "),
@@ -124,6 +125,10 @@ module Substack
 
       def random_quantity
         Array(SubstackSyncConfig.instance.subtitle_variables["quantity"]).sample
+      end
+
+      def random_superlative
+        Array(SubstackSyncConfig.instance.subtitle_variables["superlative"]).sample
       end
     end
   end
