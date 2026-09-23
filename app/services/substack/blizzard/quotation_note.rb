@@ -19,38 +19,25 @@ module Substack
           "type" => "doc", 
           "attrs" => { "schemaVersion" => "v1" },
           "content" => [
-            label(quotation),
             title(quotation),
             quote(quotation),
+            source(quotation),
             attribution(quotation),
             more_reviews
           ]
         }
       end
 
-      def label(quotation)
-        heading = ["Sexyverse Advice: another", random_compliment&.upcase, "review"].compact.join(" ")
-
+      def title(quotation)
         {
           "type" => "paragraph",
           "content" => [
-            text(heading,
+            text("Sexyverse Advice: another ",
                  marks: [{ "type" => "bold" }]),
-            text(" (🔗"),
-            text(quotation.comment_url,
-                 marks: [link(quotation.comment_url)]),
-            text("):")
-          ]
-        }
-      end
-
-      def title(quotation)
-        { 
-          "type" => "paragraph",
-          "content" => [
-            text(quotation.post_title,
-                 marks: [{ "type" => "bold" }, 
-                 link(quotation.post_url)])
+            text(random_compliment&.upcase,
+                 marks: [{ "type" => "bold" }, { "type" => "italic" }]),
+            text(" review",
+                 marks: [{ "type" => "bold" }])
           ]
         }
       end
@@ -61,10 +48,22 @@ module Substack
           "content" => [{
             "type" => "paragraph",
             "content" => [
-              text("“#{quotation.quotation}”",
+              text("\"#{quotation.quotation}\"",
                    marks: [{ "type" => "italic" }])
             ]
           }]
+        }
+      end
+
+      def source(quotation)
+        {
+          "type" => "paragraph",
+          "content" => [
+            text("🔗 — "),
+            text('blargh-placeholder-text',
+                 marks: [link(quotation.comment_url)]),
+            text('.')
+          ]
         }
       end
 
@@ -72,7 +71,7 @@ module Substack
         { 
           "type" => "paragraph",
           "content" => [
-            text("— #{random_quantity&.capitalize} of thanks to "),
+            text("#{random_quantity&.capitalize} of thanks to "),
             text(quotation.author_name, 
                  marks: [link(quotation.author_url)]),
             text(", they're "),
@@ -92,9 +91,13 @@ module Substack
         { 
           "type" => "paragraph", 
           "content" => [
-            text("#{verbs.sample} oodles more kudos at my Reviews Pages: (🔗"),
-            text(REVIEWS_URL, marks: [link(REVIEWS_URL)]),
-            text(")")
+            text("#{verbs.sample} oodles more kudos at my "),
+            text("Reviews Pages",
+                  marks: [{ "type" => "bold" }, { "type" => "italic" }]),
+            text(", "),
+            text('blargh-placeholder-text',
+                 marks: [link(REVIEWS_URL)]),
+            text(':')
           ]
         }
       end

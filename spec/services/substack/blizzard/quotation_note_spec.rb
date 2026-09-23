@@ -10,83 +10,112 @@ RSpec.describe Substack::Blizzard::QuotationNote do
                             author_name: 'Eva', author_url: 'https://substack.com/@eva' }.merge(attrs))
   end
 
+  before do
+    allow(SubstackSyncConfig).to receive(:instance)
+      .and_return(instance_double(SubstackSyncConfig,
+                                   subtitle_variables: { 'compliment' => ['cracking'], 'quantity' => ['bags'] }))
+  end
+
   describe '.build' do
     subject(:doc) { described_class.build(quote) }
 
-    before do
-      allow(SubstackSyncConfig).to receive(:instance)
-        .and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] }))
-    end
-
     it { expect(doc['type']).to eq 'doc' }
     it { expect(doc['attrs']).to eq('schemaVersion' => 'v1') }
+    it { expect(doc['content'][0]).to eq described_class.title(quote) }
+    it { expect(doc['content'][1]).to eq described_class.quote(quote) }
+    it { expect(doc['content'][2]).to eq described_class.source(quote) }
+    it { expect(doc['content'][3]).to eq described_class.attribution(quote) }
+    it { expect(doc['content'][4]['type']).to eq 'paragraph' }
+  end
 
-    describe 'opening with a bold "another <compliment> review" heading' do
-      let(:node) { doc['content'][0]['content'][0] }
-      it { expect(node['text']).to eq 'Sexyverse Advice: another CRACKING review' }
-      it { expect(node['marks'].map { |m| m['type'] }).to eq %w[bold] }
+  describe '.title' do
+    subject(:node) { described_class.title(quote) }
+
+    it { expect(node['type']).to eq 'paragraph' }
+    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Sexyverse Advice: another ', 'marks' => [{ 'type' => 'bold' }]) }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'CRACKING', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review', 'marks' => [{ 'type' => 'bold' }]) }
+
+    describe 'when no compliment is configured' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
+      it { expect(node['content'][1]['text']).to eq '' }
     end
+  end
 
-    describe 'following the heading with a " (🔗"' do
-      let(:node) { doc['content'][0]['content'][1] }
-      it { expect(node['text']).to eq ' (🔗' }
-      it { expect(node['marks']).to be_nil }
+  describe '.quote' do
+    subject(:node) { described_class.quote(quote) }
+
+    it { expect(node['type']).to eq 'blockquote' }
+    it { expect(node['content'][0]['type']).to eq 'paragraph' }
+    it { expect(node['content'][0]['content'][0]).to eq('type' => 'text', 'text' => '"a blurb"', 'marks' => [{ 'type' => 'italic' }]) }
+  end
+
+  describe '.source' do
+    subject(:node) { described_class.source(quote) }
+
+    it { expect(node['type']).to eq 'paragraph' }
+    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => '🔗 — ') }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
+                                            'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://pub.substack.com/p/ch-1/comment/42' } }]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => '.') }
+  end
+
+  describe '.attribution' do
+    subject(:node) { described_class.attribution(quote) }
+
+    it { expect(node['type']).to eq 'paragraph' }
+    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to ') }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Eva',
+                                            'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ", they're ") }
+    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
+    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ", do check 'em out.") }
+
+    describe 'when no quantity is configured' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] })) }
+      it { expect(node['content'][0]['text']).to eq ' of thanks to ' }
     end
+  end
 
-    describe 'making the label @ an unbolded link to the original comment' do
-      let(:node) { doc['content'][0]['content'][2] }
-      let(:link) { 'https://pub.substack.com/p/ch-1/comment/42' }
-      it { expect(node['text']).to eq link }
-      it { expect(node['marks'].map { |m| m['type'] }).to eq %w[link] }
-      it { expect(node['marks'].last.dig('attrs', 'href')).to eq link }
+  describe '.more_reviews' do
+    subject(:node) { described_class.more_reviews }
+
+    let(:verbs) { ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick'] }
+
+    it { expect(node['type']).to eq 'paragraph' }
+    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} oodles more kudos at my " }).to be true }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Reviews Pages', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ', ') }
+    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
+                                            'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => described_class::REVIEWS_URL } }]) }
+    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ':') }
+  end
+
+  describe '.text' do
+    it { expect(described_class.text('hello')).to eq('type' => 'text', 'text' => 'hello') }
+    it { expect(described_class.text(nil)).to eq('type' => 'text', 'text' => '') }
+    it { expect(described_class.text('hello', marks: [{ 'type' => 'bold' }])).to eq('type' => 'text', 'text' => 'hello', 'marks' => [{ 'type' => 'bold' }]) }
+  end
+
+  describe '.link' do
+    it { expect(described_class.link('https://example.com')).to eq('type' => 'link', 'attrs' => { 'href' => 'https://example.com' }) }
+  end
+
+  describe '.random_compliment' do
+    it { expect(described_class.random_compliment).to eq 'cracking' }
+
+    describe 'when none configured' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
+      it { expect(described_class.random_compliment).to be_nil }
     end
+  end
 
-    describe 'closing the label with a "):"' do
-      let(:node) { doc['content'][0]['content'][3] }
-      it { expect(node['text']).to eq '):' }
-      it { expect(node['marks']).to be_nil }
-    end
+  describe '.random_quantity' do
+    it { expect(described_class.random_quantity).to eq 'bags' }
 
-    describe 'dropping the compliment gracefully when none is configured' do
-      before { allow(SubstackSyncConfig).to receive(:instance)
-        .and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
-      let(:node) { described_class.build(quote)['content'][0]['content'][0] }
-      it { expect(node['text']).to eq 'Sexyverse Advice: another review' }
-    end
-
-    describe 'following with the post title as a bold link to the post' do
-      let(:node) { doc['content'][1]['content'][0] }
-      it { expect(node['text']).to eq 'Ch 1' }
-      it { expect(node['marks'].map { |m| m['type'] }).to eq %w[bold link] }
-      it { expect(node['marks'].last.dig('attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1' }
-    end
-
-    describe 'italicising the quote inside a blockquote' do
-      let(:node) { doc['content'][2]['content'][0]['content'][0] }
-      it { expect(doc['content'][2]['type']).to eq 'blockquote' }
-      it { expect(node['text']).to eq '“a blurb”' }
-      it { expect(node['marks'].map { |m| m['type'] }).to eq %w[italic] }
-    end
-
-    describe 'keeping the 🔗 out of the quote blockquote' do
-      let(:nodes) { doc['content'][2]['content'][0]['content'] }
-      it { expect(nodes.none? { |n| n['text'] == '🔗' }).to be true }
-    end
-
-    describe 'attributing the quote to the linked author' do
-      let(:block) { doc['content'][3] }
-      it { expect(block['content'][1]['text']).to eq 'Eva' }
-      it { expect(block['content'][1]['marks'].last.dig('attrs', 'href')).to eq 'https://substack.com/@eva' }
-    end
-
-    describe 'ending with a plain reviews-page line with the bare URL for Substack to auto-linkify' do
-      let(:node) { doc['content'][4]['content'].first }
-      it { expect(node['text']).to include "oodles more kudos at my Reviews Pages: (🔗" }
-    end
-
-    describe 'leaves the reviews-page URL unmarked (an explicit link mark gets stripped)' do
-      let(:node) { doc['content'][4]['content'].first }
-      it { expect(node['marks']).to be_nil }
+    describe 'when none configured' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
+      it { expect(described_class.random_quantity).to be_nil }
     end
   end
 end
