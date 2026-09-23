@@ -45,7 +45,8 @@ class SubstackQuotation < ApplicationRecord
       post_image_url: resolved.post_image_url,
       post_id:        resolved.post_id,
       author_url:     resolved.author_url,
-      author_name:    resolved.author_name
+      author_name:    resolved.author_name,
+      author_user_id: resolved.author_user_id
     )
   end
 

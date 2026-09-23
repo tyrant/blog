@@ -7,7 +7,8 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     SubstackQuotation.new({ quotation: 'a blurb', post_title: 'Ch 1',
                             post_url: 'https://pub.substack.com/p/ch-1',
                             comment_url: 'https://pub.substack.com/p/ch-1/comment/42',
-                            author_name: 'Eva', author_url: 'https://substack.com/@eva' }.merge(attrs))
+                            author_name: 'Eva', author_url: 'https://substack.com/@eva',
+                            author_user_id: 69847396 }.merge(attrs))
   end
 
   before do
@@ -67,8 +68,8 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(node['type']).to eq 'paragraph' }
     it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to the ') }
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'most gnarly ') }
-    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => 'Eva',
-                                            'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
+    it { expect(node['content'][2]).to eq('type' => 'substack_mention',
+                                            'attrs' => { 'id' => 69847396, 'label' => 'Eva', 'mentionType' => 'user', 'url' => nil }) }
     it { expect(node['content'][3]).to eq('type' => 'text', 'text' => ", they're ") }
     it { expect(node['content'][4]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
     it { expect(node['content'][5]).to eq('type' => 'text', 'text' => ", do check 'em out.") }
@@ -76,6 +77,22 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     describe 'when no quantity is configured' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] })) }
       it { expect(node['content'][0]['text']).to eq ' of thanks to the ' }
+    end
+
+    describe 'when the author has no captured user id' do
+      subject(:node) { described_class.attribution(quote(author_user_id: nil)) }
+      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => 'Eva',
+                                              'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
+    end
+  end
+
+  describe '.author' do
+    it { expect(described_class.author(quote)).to eq('type' => 'substack_mention',
+                                                        'attrs' => { 'id' => 69847396, 'label' => 'Eva', 'mentionType' => 'user', 'url' => nil }) }
+
+    describe 'when the author has no captured user id' do
+      it { expect(described_class.author(quote(author_user_id: nil))).to eq('type' => 'text', 'text' => 'Eva',
+                                                                               'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
     end
   end
 
@@ -118,6 +135,16 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     describe 'when none configured' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
       it { expect(described_class.random_quantity).to be_nil }
+    end
+  end
+
+  describe '.random_superlative' do
+    before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'superlative' => ['most gnarly'] })) }
+    it { expect(described_class.random_superlative).to eq 'most gnarly' }
+
+    describe 'when none configured' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
+      it { expect(described_class.random_superlative).to be_nil }
     end
   end
 end

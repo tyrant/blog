@@ -99,6 +99,35 @@ namespace :substack do
     puts "\n#{commit ? 'Committed' : 'Dry run'}. #{quotations.size} imageless, #{resolvable} resolvable, #{updated} updated."
   end
 
+  desc "Backfill author_user_id on quotations missing it, so attribution can @mention them (dry-run unless COMMIT=1)"
+  task backfill_author_user_ids: :environment do
+    commit = ENV["COMMIT"] == "1"
+    client = Substack::Client.new
+    quotations = SubstackQuotation.where(author_user_id: nil).to_a
+    resolvable = updated = 0
+
+    quotations.each do |quotation|
+      resolved = Substack::QuotationResolver.execute(comment_url: quotation.comment_url, client: client)
+      if resolved.author_user_id.blank?
+        puts "  ##{quotation.id} no user_id resolved (#{quotation.author_name.inspect})"
+        next
+      end
+
+      resolvable += 1
+      if commit
+        quotation.update!(author_user_id: resolved.author_user_id)
+        updated += 1
+      end
+      puts "  ##{quotation.id} #{commit ? 'set' : 'would set'} author_user_id: #{resolved.author_user_id} (#{quotation.author_name})"
+    rescue => e
+      warn "  skipped ##{quotation.id} (#{quotation.comment_url}): #{e.message}"
+    ensure
+      sleep 0.5 # gentle pacing over the Substack API
+    end
+
+    puts "\n#{commit ? 'Committed' : 'Dry run'}. #{quotations.size} missing, #{resolvable} resolvable, #{updated} updated."
+  end
+
   # One-off: Substack forbids changing a published post's type, and the original
   # /p/reviews is a static "page" (no byline/reactions/comments). Recreate it as a
   # newsletter post so it matches pages 2..X. Run AFTER deleting the old page in the

@@ -24,6 +24,7 @@ RSpec.describe Substack::QuotationResolver do
     it { expect(resolved.post_id).to eq 42 }
     it { expect(resolved.author_name).to eq 'Eva Solen' }
     it { expect(resolved.author_url).to eq 'https://substack.com/@evasolen' }
+    it { expect(resolved.author_user_id).to eq 123 }
   end
 
   context 'a commenter with no handle' do

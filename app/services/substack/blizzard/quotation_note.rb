@@ -73,13 +73,28 @@ module Substack
           "content" => [
             text("#{random_quantity&.capitalize} of thanks to the "),
             text("#{random_superlative} "),
-            text(quotation.author_name, 
-                 marks: [link(quotation.author_url)]),
+            author(quotation),
             text(", they're "),
             text(random_compliment,
                  marks: [{ 'type' => 'bold' }, { 'type' => 'italic' }]),
             text(", do check 'em out.")
           ]
+        }
+      end
+
+      # A real @mention tags the author's Substack account, so they get notified —
+      # falls back to a plain link for quotations predating author_user_id capture.
+      def author(quotation)
+        return text(quotation.author_name, marks: [link(quotation.author_url)]) if quotation.author_user_id.blank?
+
+        {
+          "type" => "substack_mention",
+          "attrs" => {
+            "id" => quotation.author_user_id,
+            "label" => quotation.author_name,
+            "mentionType" => "user",
+            "url" => nil
+          }
         }
       end
 
