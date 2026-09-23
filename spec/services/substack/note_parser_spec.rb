@@ -100,6 +100,14 @@ RSpec.describe Substack::NoteParser do
 
     it { expect(described_class.plaintext(body_json)).to eq "Hello bold\nlink" }
     it { expect(described_class.plaintext(nil)).to eq '' }
+
+    it 'renders a substack_mention node as @label, not an empty string' do
+      body = { 'content' => [{ 'type' => 'paragraph', 'content' => [
+        { 'type' => 'text', 'text' => 'thanks ' },
+        { 'type' => 'substack_mention', 'attrs' => { 'id' => 1, 'label' => 'Eva', 'mentionType' => 'user', 'url' => nil } }
+      ] }] }
+      expect(described_class.plaintext(body)).to eq 'thanks @Eva'
+    end
   end
 
   describe '.normalize' do
@@ -158,6 +166,13 @@ RSpec.describe Substack::NoteParser do
     it 'escapes HTML-significant characters in text' do
       body = { 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => '<script>&"' }] }] }
       expect(described_class.to_html(body)).to eq '<p>&lt;script&gt;&amp;&quot;</p>'
+    end
+
+    it 'renders a substack_mention node as @label, not an empty string' do
+      body = { 'content' => [{ 'type' => 'paragraph', 'content' => [
+        { 'type' => 'substack_mention', 'attrs' => { 'id' => 1, 'label' => 'Eva', 'mentionType' => 'user', 'url' => nil } }
+      ] }] }
+      expect(described_class.to_html(body)).to eq '<p>@Eva</p>'
     end
   end
 end

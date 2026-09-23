@@ -50,6 +50,7 @@ module Substack
 
     def node_text(node)
       return node["text"].to_s if node["type"] == "text"
+      return "@#{node.dig("attrs", "label")}" if node["type"] == "substack_mention"
 
       (node["content"] || []).map { |child| node_text(child) }.join
     end
@@ -87,6 +88,7 @@ module Substack
     end
 
     def inline_node_html(node)
+      return "@#{CGI.escapeHTML(node.dig("attrs", "label").to_s)}" if node["type"] == "substack_mention"
       return Array(node["content"]).map { |n| inline_node_html(n) }.join unless node["type"] == "text"
 
       text = CGI.escapeHTML(node["text"].to_s)
