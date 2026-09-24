@@ -33,7 +33,6 @@ module Substack
       # boilerplate, random quotations, tag-conditional sections), resolved per
       # post — directives expand here and never reach Substack.
       doc["content"].concat(TemplateResolver.resolve(@config.footer_json, post: post))
-      subtitle = @config.subtitle_for(post)
       bylines  = [{ id: @config.author_id, is_guest: false }]
 
       categorization = substack_categorization(post)
@@ -42,10 +41,12 @@ module Substack
       if substack_id
         # Existing Substack post — edit it in place, keyed off the stable id.
         remote = @client.get_draft(substack_id)
-        @client.update_draft(substack_id,
-          draft_title: post.title.to_s, draft_subtitle: subtitle,
-          draft_body: JSON.generate(doc), draft_bylines: bylines,
-          audience: post.substack_audience, should_send_email: false)
+        Substack::Client.retrying_subtitle_rejection do
+          @client.update_draft(substack_id,
+            draft_title: post.title.to_s, draft_subtitle: @config.subtitle_for(post),
+            draft_body: JSON.generate(doc), draft_bylines: bylines,
+            audience: post.substack_audience, should_send_email: false)
+        end
         if remote["is_published"]
           # Push edits to an already-published post live immediately (the email
           # was sent at first publish, so this never re-sends). Never re-slug a
@@ -61,8 +62,10 @@ module Substack
         # No linked Substack post yet — create a fresh draft and record it as a
         # Substack categorization (id in #data; URL self-heals to /p/slug once
         # published). First publish stays a deliberate, manual step.
-        created = @client.create_draft(title: post.title.to_s, subtitle: subtitle, body_doc: doc,
-          bylines: bylines, audience: post.substack_audience)
+        created = Substack::Client.retrying_subtitle_rejection do
+          @client.create_draft(title: post.title.to_s, subtitle: @config.subtitle_for(post), body_doc: doc,
+            bylines: bylines, audience: post.substack_audience)
+        end
         # Give the new post the Comfy post's slug (new drafts only — never
         # re-slug an existing published post). Substack ignores slug on create,
         # so it's a follow-up update.

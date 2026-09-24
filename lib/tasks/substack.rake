@@ -148,14 +148,16 @@ namespace :substack do
     end
     abort "The 'reviews' slug is still taken — delete the old page in the Substack UI first." unless slug_free
 
-    created = client.create_draft(
-      title:    "Sexyverse Advice Reviews Page 1",
-      subtitle: config.subtitle_for(nil),
-      body_doc: { "type" => "doc", "content" => [
-        { "type" => "paragraph", "content" => [{ "type" => "text", "text" => REVIEWS_INTRO }] }
-      ] },
-      bylines:  bylines
-    )
+    created = Substack::Client.retrying_subtitle_rejection do
+      client.create_draft(
+        title:    "Sexyverse Advice Reviews Page 1",
+        subtitle: config.subtitle_for(nil),
+        body_doc: { "type" => "doc", "content" => [
+          { "type" => "paragraph", "content" => [{ "type" => "text", "text" => REVIEWS_INTRO }] }
+        ] },
+        bylines:  bylines
+      )
+    end
     new_id = created.fetch("id")
 
     begin

@@ -46,13 +46,15 @@ module Substack
       page_ids.each_with_index do |id, i|
         body = page_document(i, page_count, urls, groups[i] || [], page_intro)
 
-        @client.update_draft(
-          id,
-          draft_title:       "Sexyverse Advice Reviews Page #{i + 1}",
-          draft_subtitle:    SubstackSyncConfig.instance.subtitle_for(nil),
-          draft_body:        JSON.generate(body),
-          should_send_email: false
-        )
+        Substack::Client.retrying_subtitle_rejection do
+          @client.update_draft(
+            id,
+            draft_title:       "Sexyverse Advice Reviews Page #{i + 1}",
+            draft_subtitle:    SubstackSyncConfig.instance.subtitle_for(nil),
+            draft_body:        JSON.generate(body),
+            should_send_email: false
+          )
+        end
 
         # Push edits live once a page is published: page 1's first publish stays
         # manual (mirroring PostSyncer); auto-created pages publish here on their

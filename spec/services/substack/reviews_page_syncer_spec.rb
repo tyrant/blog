@@ -227,6 +227,21 @@ RSpec.describe Substack::ReviewsPageSyncer do
       end
     end
 
+    describe 'a draft_subtitle rejection' do
+      before do
+        attempts = 0
+        allow(client).to receive(:update_draft) do
+          attempts += 1
+          raise Substack::Client::Error.new('Substack API 400: too long', param: 'draft_subtitle') if attempts == 1
+        end
+      end
+
+      it 'retries with a freshly-rendered subtitle instead of failing the sync' do
+        sync
+        expect(client).to have_received(:update_draft).twice
+      end
+    end
+
     it 'does not publish while it is still a draft' do
       allow(client).to receive(:publish_draft)
       sync

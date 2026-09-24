@@ -328,5 +328,79 @@ RSpec.describe Substack::Client do
       let(:cookie) { nil }
       it { expect { client.get_note(1) }.to raise_error(Substack::Client::AuthError, /No Substack session/) }
     end
+
+    context 'a field-validation rejection' do
+      before do
+        stub_request(:get, %r{substack\.com})
+          .to_return(status: 400, body: { 'errors' => [{ 'location' => 'body', 'param' => 'draft_subtitle', 'value' => 'x' }] }.to_json)
+      end
+
+      it 'exposes the rejected param' do
+        error = begin
+          client.get_note(1)
+        rescue Substack::Client::Error => e
+          e
+        end
+        expect(error.param).to eq 'draft_subtitle'
+      end
+    end
+
+    context 'a body that is not parseable JSON' do
+      before { stub_request(:get, %r{substack\.com}).to_return(status: 400, body: 'not json') }
+
+      it 'leaves param nil rather than raising on top of the original error' do
+        error = begin
+          client.get_note(1)
+        rescue Substack::Client::Error => e
+          e
+        end
+        expect(error.param).to be_nil
+      end
+    end
+  end
+
+  describe '.retrying_subtitle_rejection' do
+    def subtitle_error
+      Substack::Client::Error.new('Substack API 400: nope', param: 'draft_subtitle')
+    end
+
+    it 'returns the block result on success' do
+      expect(described_class.retrying_subtitle_rejection { 'ok' }).to eq 'ok'
+    end
+
+    it 'retries after a draft_subtitle rejection and returns the eventual success' do
+      attempts = 0
+      result = described_class.retrying_subtitle_rejection do
+        attempts += 1
+        raise subtitle_error if attempts < 3
+
+        'ok'
+      end
+      expect(result).to eq 'ok'
+      expect(attempts).to eq 3
+    end
+
+    it 'gives up after max_attempts and raises the last rejection' do
+      attempts = 0
+      expect do
+        described_class.retrying_subtitle_rejection(max_attempts: 2) do
+          attempts += 1
+          raise subtitle_error
+        end
+      end.to raise_error(Substack::Client::Error)
+      expect(attempts).to eq 2
+    end
+
+    it 'does not retry a rejection of a different param' do
+      attempts = 0
+      other_error = Substack::Client::Error.new('Substack API 400: nope', param: 'draft_title')
+      expect do
+        described_class.retrying_subtitle_rejection do
+          attempts += 1
+          raise other_error
+        end
+      end.to raise_error(Substack::Client::Error)
+      expect(attempts).to eq 1
+    end
   end
 end

@@ -12,7 +12,18 @@ module Substack
     USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " \
                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
-    class Error < StandardError; end
+    # `param` is the request field Substack's validation rejected (from the
+    # response body's errors[0].param, e.g. "draft_subtitle"), when parseable —
+    # lets callers retry on a specific field rejection without string-matching
+    # the message.
+    class Error < StandardError
+      attr_reader :param
+
+      def initialize(message, param: nil)
+        super(message)
+        @param = param
+      end
+    end
     class AuthError < Error; end
 
     MAX_RETRIES = 5
@@ -28,6 +39,24 @@ module Substack
 
     def get_note(comment_id)
       request(Net::HTTP::Get.new(uri("/api/v1/reader/comment/#{comment_id}")))
+    end
+
+    # SubstackSyncConfig#subtitle_for renders a random combination from a
+    # template + word lists, with no documented length cap to validate against
+    # up front — Substack's own 400 on the "draft_subtitle" param is the only
+    # reliable signal a given roll was too long. Wrap a block that both renders
+    # a fresh subtitle and submits it (so each retry draws a new combination) to
+    # self-heal on that specific rejection instead of failing the whole sync.
+    def self.retrying_subtitle_rejection(max_attempts: 5)
+      attempts = 0
+      begin
+        yield
+      rescue Error => e
+        attempts += 1
+        raise if e.param != "draft_subtitle" || attempts >= max_attempts
+
+        retry
+      end
     end
 
     # A cheap authenticated read to verify the session cookie is still valid.
@@ -253,8 +282,17 @@ module Substack
         record_session_health(recovered: false, message: "Substack rejected the session cookie (#{response.code})")
         raise AuthError, "Substack rejected the session cookie (#{response.code}) — refresh it"
       else
-        raise Error, "Substack API #{response.code}: #{response.body.to_s[0, 300]}"
+        body = response.body.to_s
+        raise Error.new("Substack API #{response.code}: #{body[0, 2000]}", param: error_param(body))
       end
+    end
+
+    # The field Substack's validation rejected, if the body parses as
+    # {"errors":[{"param": "...", ...}, ...]} — nil for any other shape.
+    def error_param(body)
+      JSON.parse(body)["errors"]&.first&.dig("param")
+    rescue JSON::ParserError
+      nil
     end
 
     # Record the cookie's health on the config singleton so the admin page can

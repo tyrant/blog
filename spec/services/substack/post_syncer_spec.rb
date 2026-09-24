@@ -62,6 +62,23 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:create_draft).with(hash_including(bylines: [{ id: 42, is_guest: false }]))
     end
 
+    describe 'a draft_subtitle rejection' do
+      before do
+        attempts = 0
+        allow(client).to receive(:create_draft) do
+          attempts += 1
+          raise Substack::Client::Error.new('Substack API 400: too long', param: 'draft_subtitle') if attempts == 1
+
+          { 'id' => 555, 'is_published' => false, 'slug' => nil }
+        end
+      end
+
+      it 'retries with a freshly-rendered subtitle instead of failing the sync' do
+        sync
+        expect(client).to have_received(:create_draft).twice
+      end
+    end
+
     it 'defaults a new draft to the everyone audience' do
       sync
       expect(client).to have_received(:create_draft).with(hash_including(audience: 'everyone'))
@@ -207,6 +224,23 @@ RSpec.describe Substack::PostSyncer do
       post.update_column(:slug, 'draft-slug')
       sync
       expect(client).to have_received(:update_draft).with(900, hash_including(slug: 'draft-slug'))
+    end
+
+    describe 'a draft_subtitle rejection' do
+      before do
+        attempts = 0
+        allow(client).to receive(:update_draft) do |_id, attrs|
+          if attrs.key?(:draft_body)
+            attempts += 1
+            raise Substack::Client::Error.new('Substack API 400: too long', param: 'draft_subtitle') if attempts == 1
+          end
+        end
+      end
+
+      it 'retries the content update with a freshly-rendered subtitle' do
+        sync
+        expect(client).to have_received(:update_draft).with(900, hash_including(:draft_body)).twice
+      end
     end
 
     it 'keeps the draft editor URL' do
