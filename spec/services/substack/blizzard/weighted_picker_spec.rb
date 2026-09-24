@@ -110,6 +110,20 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
 
       it { expect(pick['uid']).to eq 'e0' }
     end
+
+    describe 'a quotation reposted within cooldown falls back to a text group' do
+      before { quotation.update!(notes: [{ 'url' => 'u', 'timestamp' => 1.hour.ago.iso8601 }]) }
+      subject(:pick) { described_class.execute(random: double(rand: 0)) }
+
+      it { expect(pick['uid']).to eq 'e0' }
+    end
+
+    describe 'a quotation last reposted outside the cooldown window is still eligible' do
+      before { quotation.update!(notes: [{ 'url' => 'u', 'timestamp' => 90.days.ago.iso8601 }]) }
+      subject(:pick) { described_class.execute(random: double(rand: 0)) }
+
+      it { expect(pick['text']).to eq 'zing' }
+    end
   end
 
   describe 'unattached-note reposts' do

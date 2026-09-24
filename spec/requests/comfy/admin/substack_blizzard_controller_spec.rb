@@ -34,7 +34,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     it 'shows the repost-selection settings form' do
-      expect(response.body).to include 'Per-post cooldown (hours):'
+      expect(response.body).to include 'Repost cooldown (hours, posts + quotations):'
     end
 
     it 'explains the 74/24/2 text-vs-quotation-vs-unattached split' do

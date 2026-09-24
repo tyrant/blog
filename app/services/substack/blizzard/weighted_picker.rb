@@ -16,7 +16,8 @@ module Substack
       arguments dry_run: false, now: nil, random: nil
 
       # Share of reposts drawn from the SubstackQuotation pool instead of a text
-      # group. Falls back down through the tiers below when the pool is empty.
+      # group. Falls back down through the tiers below when the pool is empty or
+      # every quotation is on cooldown.
       QUOTATION_ODDS = 0.24
       # Share drawn from the unattached-notes pool (BlizzardScheduleConfig#data),
       # on top of QUOTATION_ODDS — so [0, QUOTATION_ODDS) is quotation,
@@ -52,8 +53,18 @@ module Substack
 
       private
 
+      # Same cooldown_hours window as RepostOdds/UnattachedOdds, applied per
+      # quotation via its own #notes (a quotation repost isn't tracked against a
+      # BlizzardScheduleConfig entry, so it can't share their eligible/candidate
+      # helpers — see hydrate_quotation below).
       def random_quotation
-        SubstackQuotation.order(Arel.sql("RANDOM()")).first
+        cutoff = @now - BlizzardScheduleConfig.instance.cooldown_hours.to_i.hours
+        SubstackQuotation.all.reject { |quotation| quotation_on_cooldown?(quotation, cutoff) }.sample(random: @random)
+      end
+
+      def quotation_on_cooldown?(quotation, cutoff)
+        latest = Array(quotation.notes).filter_map { |note| Time.zone.parse(note["timestamp"].to_s) rescue nil }.max
+        latest.present? && latest > cutoff
       end
 
       # A quotation repost isn't tracked against a Categorization or
