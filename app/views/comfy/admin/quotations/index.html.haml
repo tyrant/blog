@@ -12,17 +12,23 @@
       = text_area_tag :quotation, @quotation.quotation, class: "form-control", rows: 3, placeholder: "the blurb to quote"
     - if editing
       %p.text-muted.small.mb-1
-        Post title/URL are auto-filled from the comment. Set them by hand when the comment
-        is on a third-party note whose post can't be resolved (they stand unless you change the comment URL above).
-      .form-group
-        %label.small.text-muted{ for: "post_title" } Post title
-        = text_field_tag :post_title, @quotation.post_title, class: "form-control", placeholder: "post title"
+        The post URL is auto-filled from the comment — set it by hand when the comment is on a
+        third-party note whose post can't be resolved. Its title and image are read from Substack
+        on save, so they can't be edited here.
       .form-group
         %label.small.text-muted{ for: "post_url" } Post URL
         = text_field_tag :post_url, @quotation.post_url, class: "form-control", placeholder: "https://…/p/…"
       .form-group
-        %label.small.text-muted{ for: "post_image_url" } Post image URL (fallback thumbnail)
-        = text_field_tag :post_image_url, @quotation.post_image_url, class: "form-control", placeholder: "https://…cover image…"
+        %label.small.text-muted Post title
+        %p.form-control-plaintext.mb-0= @quotation.post_title.presence || "— filled from Substack on save —"
+      .form-group
+        %label.small.text-muted Post image
+        - if @quotation.post_image_url.present?
+          %div
+            = image_tag @quotation.post_image_url, class: "rounded", style: "height: 3rem; width: 3rem; object-fit: cover; object-position: center;"
+            %span.text-muted.small.ml-2= @quotation.post_image_url
+        - else
+          %p.form-control-plaintext.mb-0.text-muted — filled from Substack on save —
       .form-group.form-check
         = check_box_tag :previewable, "1", @quotation.previewable, class: "form-check-input"
         %label.form-check-label{ for: "previewable" } Previewable — reads fine on its own; eligible for the widget above every Substack post

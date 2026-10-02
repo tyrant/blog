@@ -115,4 +115,48 @@ RSpec.describe SubstackQuotation do
       )
     end
   end
+
+  describe '#populate_post_from_substack!' do
+    subject(:quotation) do
+      described_class.new(quotation: 'blurb', comment_url: 'https://x/comment/5', post_url: 'https://x/p/a',
+                          post_title: 'Stale Title', post_image_url: 'https://cdn/stale.jpg')
+    end
+
+    let(:client) { instance_double(Substack::Client) }
+
+    context 'a post with a cover image' do
+      before do
+        allow(client).to receive(:get_post).with('https://x/p/a')
+          .and_return('title' => 'Fresh Title', 'cover_image' => 'https://cdn/fresh.jpg', 'id' => 55)
+      end
+
+      it 'fills title, image and id from the post itself' do
+        quotation.populate_post_from_substack!(client: client)
+        expect(quotation).to have_attributes(post_title: 'Fresh Title',
+                                             post_image_url: 'https://cdn/fresh.jpg', post_id: 55)
+      end
+    end
+
+    context 'a post with no cover image' do
+      before { allow(client).to receive(:get_post).and_return('title' => 'Fresh Title') }
+
+      it 'falls back to the emoji thumbnail' do
+        quotation.populate_post_from_substack!(client: client)
+        expect(quotation.post_image_url).to eq Substack::PostMetadata::FALLBACK_IMAGE_URL
+      end
+    end
+  end
+
+  describe '#clear_post_metadata' do
+    subject(:quotation) do
+      described_class.new(quotation: 'blurb', comment_url: 'https://x/comment/5', post_url: '',
+                          post_title: 'A Post', post_image_url: 'https://cdn/cover.jpg', post_id: 77)
+    end
+
+    before { quotation.clear_post_metadata }
+
+    it { expect(quotation.post_title).to be_nil }
+    it { expect(quotation.post_image_url).to be_nil }
+    it { expect(quotation.post_id).to be_nil }
+  end
 end

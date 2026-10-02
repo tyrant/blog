@@ -128,8 +128,9 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it { expect(response.body).to include 'old blurb' }
     it { expect(response.body).to include 'Update quotation' }
     it { expect(response.body).to include 'name="post_url"' }
-    it { expect(response.body).to include 'name="post_title"' }
     it { expect(response.body).to include 'name="previewable"' }
+    it { expect(response.body).to_not include 'name="post_title"' }
+    it { expect(response.body).to_not include 'name="post_image_url"' }
   end
 
   describe 'PATCH update' do
@@ -162,11 +163,6 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         expect(SyncReviewsPageJob).to_not have_received(:perform_later)
       end
 
-      it 'saves manually-entered post title, url and image' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Manual Post', post_image_url: 'https://manual/cover.jpg' }, headers: http_auth_headers
-        expect(quotation.reload).to have_attributes(post_url: 'https://manual/p/z', post_title: 'Manual Post', post_image_url: 'https://manual/cover.jpg')
-      end
-
       it 'flags the quotation previewable when the checkbox is ticked' do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', previewable: '1' }, headers: http_auth_headers
         expect(quotation.reload.previewable).to be true
@@ -196,6 +192,58 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old', post_title: 'Manual Post' }, headers: http_auth_headers
         expect(quotation.reload.post_title).to eq 'New Post'
       end
+    end
+
+    context 'submitting a post url' do
+      let(:metadata) do
+        Substack::PostMetadata::Result.new(post_title: 'Fetched Post', post_image_url: 'https://cdn/cover.jpg',
+                                           post_id: 55)
+      end
+
+      before { allow(Substack::PostMetadata).to receive(:execute).and_return(metadata) }
+
+      it 'stores the post url as submitted' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        expect(quotation.reload.post_url).to eq 'https://manual/p/z'
+      end
+
+      it 'fills the title and image from that post' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        expect(quotation.reload).to have_attributes(post_title: 'Fetched Post',
+                                                     post_image_url: 'https://cdn/cover.jpg', post_id: 55)
+      end
+
+      it 'looks the metadata up from the submitted url' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        expect(Substack::PostMetadata).to have_received(:execute).with(post_url: 'https://manual/p/z', client: nil)
+      end
+
+      it 'ignores a hand-posted title' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Typed Title' }, headers: http_auth_headers
+        expect(quotation.reload.post_title).to eq 'Fetched Post'
+      end
+    end
+
+    context 'submitting a blank post url' do
+      before do
+        quotation.update!(post_url: 'https://x/p/a', post_image_url: 'https://cdn/cover.jpg', post_id: 77)
+        allow(Substack::PostMetadata).to receive(:execute)
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: '' }, headers: http_auth_headers
+      end
+
+      it { expect(quotation.reload.post_title).to be_nil }
+      it { expect(quotation.reload.post_image_url).to be_nil }
+      it { expect(Substack::PostMetadata).to_not have_received(:execute) }
+    end
+
+    context 'when the post lookup fails' do
+      before do
+        allow(Substack::PostMetadata).to receive(:execute).and_raise(Substack::Client::Error, 'boom')
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+      end
+
+      it { expect(quotation.reload.quotation).to eq 'old' }
+      it { expect(flash[:danger]).to include 'boom' }
     end
 
     it 'redirects back' do

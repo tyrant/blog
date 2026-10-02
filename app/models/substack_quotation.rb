@@ -50,6 +50,22 @@ class SubstackQuotation < ApplicationRecord
     )
   end
 
+  # Title + thumbnail always mirror the Substack post `post_url` names, so the
+  # admin edit form exposes that URL alone.
+  def populate_post_from_substack!(client: nil)
+    resolved = Substack::PostMetadata.execute(post_url: post_url, client: client)
+    assign_attributes(
+      post_title:     resolved.post_title,
+      post_image_url: resolved.post_image_url,
+      post_id:        resolved.post_id
+    )
+  end
+
+  # Drop the metadata derived from post_url, when that URL is cleared.
+  def clear_post_metadata
+    assign_attributes(post_title: nil, post_image_url: nil, post_id: nil)
+  end
+
   private
 
   def assign_position
