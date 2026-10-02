@@ -40,4 +40,25 @@ RSpec.describe Substack::PostMetadata do
 
     it { expect { resolved }.to raise_error(Substack::Client::Error, /Not a Substack post URL/) }
   end
+
+  context 'the publication base URL (a quotation with no specific post)' do
+    let(:url) { 'https://mikeyclarke.substack.com' }
+
+    before { allow(client).to receive(:get_post) }
+
+    it { expect(resolved.post_title).to be_nil }
+    it { expect(resolved.post_image_url).to be_nil }
+    it { expect(resolved.post_id).to be_nil }
+
+    it 'does not hit Substack' do
+      resolved
+      expect(client).to_not have_received(:get_post)
+    end
+  end
+
+  context 'the publication base URL with a trailing slash' do
+    let(:url) { 'https://mikeyclarke.substack.com/' }
+
+    it { expect(resolved.post_title).to be_nil }
+  end
 end

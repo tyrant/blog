@@ -224,6 +224,17 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       end
     end
 
+    context 'submitting the publication base URL (no specific post)' do
+      before do
+        quotation.update!(post_url: 'https://x/p/a', post_title: 'Old Post', post_image_url: 'https://cdn/cover.jpg', post_id: 77)
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://mikeyclarke.substack.com' }, headers: http_auth_headers
+      end
+
+      it { expect(quotation.reload.post_url).to eq 'https://mikeyclarke.substack.com' }
+      it { expect(quotation.reload.post_title).to be_nil }
+      it { expect(quotation.reload.post_image_url).to be_nil }
+    end
+
     context 'submitting a blank post url' do
       before do
         quotation.update!(post_url: 'https://x/p/a', post_image_url: 'https://cdn/cover.jpg', post_id: 77)
