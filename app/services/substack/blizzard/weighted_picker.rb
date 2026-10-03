@@ -15,30 +15,30 @@ module Substack
 
       arguments dry_run: false, now: nil, random: nil
 
-      # Share of reposts drawn from the SubstackQuotation pool instead of a text
-      # group. Falls back down through the tiers below when the pool is empty or
-      # every quotation is on cooldown.
-      QUOTATION_ODDS = 0.24
-      # Share drawn from the unattached-notes pool (BlizzardScheduleConfig#data),
-      # on top of QUOTATION_ODDS — so [0, QUOTATION_ODDS) is quotation,
-      # [QUOTATION_ODDS, QUOTATION_ODDS + UNATTACHED_ODDS) is unattached, and the
-      # remainder is the per-post text pool. Falls back to text when empty.
-      UNATTACHED_ODDS = 0.02
-
       def execute
         @now    ||= Time.current
         @random ||= Random.new
 
         config = BlizzardScheduleConfig.instance
         config.with_lock do
+          # Share of reposts drawn from the SubstackQuotation pool instead of a text
+          # group (admin-editable, BlizzardScheduleConfig#quotation_odds_pct). Falls
+          # back down through the tiers below when the pool is empty or every
+          # quotation is on cooldown.
+          quotation_odds = config.quotation_odds_pct / 100.0
+          # Share drawn from the unattached-notes pool (BlizzardScheduleConfig#data),
+          # on top of quotation_odds — so [0, quotation_odds) is quotation,
+          # [quotation_odds, quotation_odds + unattached_odds) is unattached, and the
+          # remainder is the per-post text pool. Falls back to text when empty.
+          unattached_odds = config.unattached_odds_pct / 100.0
           roll = @random.rand
 
-          if roll < QUOTATION_ODDS && (quotation = random_quotation)
+          if roll < quotation_odds && (quotation = random_quotation)
             config.update!(last_reposted_at: @now) unless @dry_run
             next hydrate_quotation(quotation)
           end
 
-          if roll < QUOTATION_ODDS + UNATTACHED_ODDS && (picked = weighted_sample(UnattachedOdds.execute(now: @now)))
+          if roll < quotation_odds + unattached_odds && (picked = weighted_sample(UnattachedOdds.execute(now: @now)))
             config.update!(last_reposted_at: @now) unless @dry_run
             next hydrate_unattached(picked)
           end

@@ -133,6 +133,20 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     redirect_to back_path
   end
 
+  # Admin: update the repost-type split (quotation/unattached odds — the
+  # remainder goes to the per-post text pool).
+  def update_odds
+    BlizzardScheduleConfig.instance.update!(
+      quotation_odds_pct:  params[:quotation_odds_pct],
+      unattached_odds_pct: params[:unattached_odds_pct]
+    )
+    flash[:success] = "Repost odds updated."
+  rescue ActiveRecord::RecordInvalid => e
+    flash[:danger] = "Could not update odds: #{e.message}"
+  ensure
+    redirect_to back_path
+  end
+
   def add_note
     timestamp = resolve_timestamp(params[:url]) if params[:url].present?
 

@@ -37,6 +37,12 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       expect(response.body).to include 'Repost cooldown (hours, posts + quotations):'
     end
 
+    it 'shows the odds-split form prefilled with the configured shares' do
+      expect(response.body).to match(/name="quotation_odds_pct"[^>]*value="24"/)
+      expect(response.body).to match(/name="unattached_odds_pct"[^>]*value="2"/)
+      expect(response.body).to include '>74<'
+    end
+
     it 'explains the 74/24/2 text-vs-quotation-vs-unattached split' do
       expect(response.body).to include 'random featured quotation'
       expect(response.body).to include 'href="/admin/quotations"'
@@ -299,6 +305,26 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
              params: { cooldown_hours: -1 }, headers: http_auth_headers
       end
       it { expect(flash[:danger]).to be_present }
+    end
+  end
+
+  describe 'POST odds' do
+    before do
+      post comfy_admin_substack_blizzard_odds_path,
+           params: { quotation_odds_pct: 30, unattached_odds_pct: 5 }, headers: http_auth_headers
+    end
+
+    it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
+    it { expect(BlizzardScheduleConfig.instance.quotation_odds_pct).to eq 30 }
+    it { expect(BlizzardScheduleConfig.instance.unattached_odds_pct).to eq 5 }
+
+    context 'odds summing over 100 are rejected' do
+      before do
+        post comfy_admin_substack_blizzard_odds_path,
+             params: { quotation_odds_pct: 60, unattached_odds_pct: 50 }, headers: http_auth_headers
+      end
+      it { expect(flash[:danger]).to be_present }
+      it { expect(BlizzardScheduleConfig.instance.quotation_odds_pct).to eq 30 }
     end
   end
 

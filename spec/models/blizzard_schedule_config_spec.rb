@@ -16,10 +16,35 @@ RSpec.describe BlizzardScheduleConfig do
   describe 'defaults' do
     it { expect(described_class.instance.cooldown_hours).to eq 12 }
     it { expect(described_class.instance.last_reposted_at).to be_nil }
+    it { expect(described_class.instance.quotation_odds_pct).to eq 24 }
+    it { expect(described_class.instance.unattached_odds_pct).to eq 2 }
   end
 
   describe 'validations' do
     it { is_expected.to validate_numericality_of(:cooldown_hours).only_integer.is_greater_than_or_equal_to(0) }
+    it { is_expected.to validate_numericality_of(:quotation_odds_pct).only_integer.is_greater_than_or_equal_to(0).is_less_than_or_equal_to(100) }
+    it { is_expected.to validate_numericality_of(:unattached_odds_pct).only_integer.is_greater_than_or_equal_to(0).is_less_than_or_equal_to(100) }
+
+    it 'rejects quotation + unattached odds over 100' do
+      config = described_class.instance
+      config.assign_attributes(quotation_odds_pct: 60, unattached_odds_pct: 50)
+      expect(config).to_not be_valid
+    end
+
+    it 'allows quotation + unattached odds summing to exactly 100' do
+      config = described_class.instance
+      config.assign_attributes(quotation_odds_pct: 60, unattached_odds_pct: 40)
+      expect(config).to be_valid
+    end
+  end
+
+  describe '#text_group_odds_pct' do
+    subject(:config) { described_class.instance }
+
+    it 'is the remainder after quotation and unattached odds' do
+      config.assign_attributes(quotation_odds_pct: 24, unattached_odds_pct: 2)
+      expect(config.text_group_odds_pct).to eq 74
+    end
   end
 
   describe '#data_json_text' do
