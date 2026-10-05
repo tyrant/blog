@@ -68,11 +68,24 @@ module Substack
       end
 
       def attribution(quotation)
+
+        # If our random superlative is structured "most whatever", then let's
+        # format it in our attribution as "<em>Most</em> Whatever".
+        possibly_most_x = random_superlative
+        superlative = if possibly_most_x[0..3] == 'most'
+            [
+              text("#{possibly_most_x.split(' ')[0].capitalize} ",
+                   marks: [{ 'type' => 'italic' }]),
+              text("#{possibly_most_x.split(' ')[1].capitalize} ")
+            ]
+          else
+            [text("#{possibly_most_x} ")]
+          end
         { 
           "type" => "paragraph",
           "content" => [
             text("#{random_quantity&.capitalize} of thanks to the "),
-            text("#{random_superlative} "),
+            *superlative,
             author(quotation),
             text(", they're "),
             text(random_compliment,

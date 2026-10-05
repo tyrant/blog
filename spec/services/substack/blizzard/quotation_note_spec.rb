@@ -14,7 +14,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
   before do
     allow(SubstackSyncConfig).to receive(:instance)
       .and_return(instance_double(SubstackSyncConfig,
-                                   subtitle_variables: { 'compliment' => ['cracking'], 'quantity' => ['bags'] }))
+                                   subtitle_variables: { 'superlative' => ['most gnarly'], 'compliment' => ['cracking'], 'quantity' => ['bags'] }))
   end
 
   describe '.build' do
@@ -67,21 +67,23 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
     it { expect(node['type']).to eq 'paragraph' }
     it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to the ') }
-    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'most gnarly ') }
-    it { expect(node['content'][2]).to eq('type' => 'substack_mention',
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Most ', 'marks' => [{ 'type' => 'italic'}]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => 'Gnarly ') }
+    it { expect(node['content'][3]).to eq('type' => 'substack_mention',
                                             'attrs' => { 'id' => 69847396, 'label' => 'eva', 'mentionType' => 'user', 'url' => nil }) }
-    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => ", they're ") }
-    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
-    it { expect(node['content'][5]).to eq('type' => 'text', 'text' => ", do check 'em out and/or send them some love.") }
+    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ", they're ") }
+    it { expect(node['content'][5]).to eq('type' => 'text', 'text' => 'cracking', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
+    it { expect(node['content'][6]).to eq('type' => 'text', 'text' => ", do check 'em out and/or send them some love.") }
 
     describe 'when no quantity is configured' do
-      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'] })) }
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'], 'superlative' => ['most gnarly'] })) }
       it { expect(node['content'][0]['text']).to eq ' of thanks to the ' }
     end
 
     describe 'when the author has no captured user id' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'], 'superlative' => ['most gnarly'] })) }
       subject(:node) { described_class.attribution(quote(author_user_id: nil)) }
-      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => 'Eva',
+      it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'Eva',
                                               'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
     end
   end
