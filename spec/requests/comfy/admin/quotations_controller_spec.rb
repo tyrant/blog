@@ -231,8 +231,8 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       end
 
       it { expect(quotation.reload.post_url).to eq 'https://mikeyclarke.substack.com' }
-      it { expect(quotation.reload.post_title).to be_nil }
-      it { expect(quotation.reload.post_image_url).to be_nil }
+      it { expect(quotation.reload.post_title).to eq 'Sexyverse Advice' }
+      it { expect(quotation.reload.post_image_url).to eq Substack::PostMetadata::FALLBACK_IMAGE_URL }
     end
 
     context 'submitting a blank post url' do

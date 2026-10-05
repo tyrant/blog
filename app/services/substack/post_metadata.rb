@@ -15,13 +15,17 @@ module Substack
 
     # Some quotations aren't about a specific post (e.g. a comment on a note) and
     # use the publication's own base URL as a stand-in post_url — not a resolvable
-    # /p/<slug> post, so skip the lookup rather than erroring.
+    # /p/<slug> post, so skip the lookup rather than erroring, and use the
+    # publication's name + the fallback thumbnail instead. The title must never be
+    # blank: the Reviews pages render it as a heading's text, and Substack silently
+    # discards a whole draft body containing an empty text node.
     GENERIC_POST_URL = "https://mikeyclarke.substack.com"
+    GENERIC_POST_TITLE = "Sexyverse Advice"
 
     Result = Struct.new(:post_title, :post_image_url, :post_id, keyword_init: true)
 
     def execute
-      return Result.new(post_title: nil, post_image_url: nil, post_id: nil) if generic?
+      return Result.new(post_title: GENERIC_POST_TITLE, post_image_url: FALLBACK_IMAGE_URL, post_id: nil) if generic?
 
       @client ||= Substack::Client.new
       post = @client.get_post(@post_url)

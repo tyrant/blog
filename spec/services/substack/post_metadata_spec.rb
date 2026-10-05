@@ -46,8 +46,8 @@ RSpec.describe Substack::PostMetadata do
 
     before { allow(client).to receive(:get_post) }
 
-    it { expect(resolved.post_title).to be_nil }
-    it { expect(resolved.post_image_url).to be_nil }
+    it { expect(resolved.post_title).to eq 'Sexyverse Advice' }
+    it { expect(resolved.post_image_url).to eq described_class::FALLBACK_IMAGE_URL }
     it { expect(resolved.post_id).to be_nil }
 
     it 'does not hit Substack' do
@@ -59,6 +59,6 @@ RSpec.describe Substack::PostMetadata do
   context 'the publication base URL with a trailing slash' do
     let(:url) { 'https://mikeyclarke.substack.com/' }
 
-    it { expect(resolved.post_title).to be_nil }
+    it { expect(resolved.post_title).to eq 'Sexyverse Advice' }
   end
 end
