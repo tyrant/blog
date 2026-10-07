@@ -152,7 +152,9 @@ module Substack
     end
 
     def block_text(block)
-      Array(block["content"]).flat_map { |n| [n["text"]] + Array(n["content"]).map { |x| x["text"] } }.compact.join
+      Array(block["content"]).flat_map do |n| 
+        [n["text"]] + Array(n["content"]).map { |x| x["text"] } 
+      end.compact.join
     end
 
     # The page's banner: the cover image of the page's first review's post, at

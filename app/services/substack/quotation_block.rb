@@ -35,15 +35,28 @@ module Substack
       return nil if quotation.post_embed.blank?
 
       attrs = quotation.post_embed.merge(
-        "nodeId" => SecureRandom.uuid, "size" => "sm", "caption" => "“#{quotation.quotation}”"
+        "nodeId" => SecureRandom.uuid, 
+        "size" => "sm", 
+        "caption" => "“#{quotation.quotation}”"
       )
-      { "type" => "digestPostEmbed", "attrs" => attrs }
+
+      { 
+        "type" => "digestPostEmbed", 
+        "attrs" => attrs 
+      }
     end
 
     # A centred h5 "." spacer beneath a card unit — matches the reference
     # draft's own spacing between one preview+quote pair and the next.
     def trailing_spacer
-      { "type" => "heading", "attrs" => { "textAlign" => "center", "level" => 5 }, "content" => [text(".")] }
+      { 
+        "type" => "heading", 
+        "attrs" => { 
+          "textAlign" => "center", 
+          "level" => 5 
+        }, 
+        "content" => [text(".")] 
+      }
     end
 
     # The card unit's quote + attribution, both always visible regardless of
@@ -56,30 +69,51 @@ module Substack
       attribution_nodes << text(" — ")
       attribution_nodes << text(quotation.author_name, href: quotation.author_url)
 
-      { "type" => "blockquote", "content" => [
-        { "type" => "paragraph", "attrs" => { "textAlign" => "left" },
-          "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])] },
-        { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => attribution_nodes }
-      ] }
+      { 
+        "type" => "blockquote", 
+        "content" => [{ 
+          "type" => "paragraph", 
+          "attrs" => { 
+            "textAlign" => "left" 
+          },
+          "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])] 
+        }, { 
+          "type" => "paragraph", 
+          "attrs" => { "textAlign" => "left" }, 
+          "content" => attribution_nodes 
+        }] 
+      }
     end
 
     def heading(quotation)
-      { "type" => "heading", "attrs" => { "textAlign" => nil, "level" => 4 },
+      {
+        "type" => "heading", 
+        "attrs" => { 
+          "textAlign" => nil, 
+          "level" => 4 
+        },
         "content" => [text(quotation.post_title, href: quotation.post_url)] }
     end
 
     def blockquote(quotation)
-      { "type" => "blockquote", "content" => [
-        { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => quote_line_nodes(quotation) }
-      ] }
+      {
+        "type" => "blockquote", 
+        "content" => [{ 
+          "type" => "paragraph", 
+          "attrs" => { "textAlign" => "left" }, 
+          "content" => quote_line_nodes(quotation) 
+        }] 
+      }
     end
 
     def quote_line_nodes(quotation)
       nodes = [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])]
+
       if quotation.comment_url.present?
         nodes << text(" ")
         nodes << text("🔗", href: quotation.comment_url)
       end
+
       nodes << text(" — ")
       nodes << text(quotation.author_name, href: quotation.author_url)
       nodes
@@ -87,7 +121,11 @@ module Substack
 
     # A centred "." separator paragraph after each quote.
     def spacer
-      { "type" => "paragraph", "attrs" => { "textAlign" => "center" }, "content" => [text(".")] }
+      { 
+        "type" => "paragraph", 
+        "attrs" => { "textAlign" => "center" }, 
+        "content" => [text(".")] 
+      }
     end
 
     # Replace the contiguous run of quotation units in an existing draft body
