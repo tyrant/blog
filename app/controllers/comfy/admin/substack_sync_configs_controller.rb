@@ -65,6 +65,8 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
 
   def load_config
     @config = SubstackSyncConfig.instance
+    # Drop posts already Updated in Substack (checked live) before listing them.
+    SubstackPendingPublish.reconcile! if action_name == "edit"
     @pending_publishes = SubstackPendingPublish.oldest_first
   end
 

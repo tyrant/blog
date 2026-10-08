@@ -53,8 +53,19 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
     let!(:other) { SubstackPendingPublish.create!(draft_id: 43, title: 'Other Post') }
 
     it 'lists pending posts on the settings page' do
+      allow(SubstackPendingPublish).to receive(:reconcile!)
       get edit_comfy_admin_substack_sync_config_path, headers: http_auth_headers
       expect(response.body).to include('Stuck Post', '/publish/post/42', '2 Substack posts')
+    end
+
+    it 'drops posts already Updated in Substack before listing them' do
+      client = instance_double(Substack::Client)
+      allow(Substack::Client).to receive(:new).and_return(client)
+      allow(client).to receive(:get_draft).with(42).and_return('is_published' => true, 'body' => '{}', 'draft_body' => '{}')
+      allow(client).to receive(:get_draft).with(43).and_return('is_published' => true, 'body' => '{}', 'draft_body' => '{"x":1}')
+      get edit_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+      expect(response.body).to include('Other Post', '1 Substack post ')
+      expect(response.body).to_not include 'Stuck Post'
     end
 
     it 'dismisses one' do

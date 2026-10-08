@@ -370,9 +370,25 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       end
     end
 
-    it 'flags a page whose publish is waiting on a manual Update' do
-      SubstackPendingPublish.create!(draft_id: 555, title: 'Reviews page 1')
-      expect(rows[0]).to include 'Needs publishing'
+    context 'with a publish waiting on a manual Update' do
+      let(:client) { instance_double(Substack::Client) }
+      let(:live) { { 'is_published' => true, 'title' => 'T', 'draft_title' => 'T', 'subtitle' => 's', 'draft_subtitle' => 's', 'body' => '{"a":1}' } }
+
+      before do
+        SubstackPendingPublish.create!(draft_id: 555, title: 'Reviews page 1')
+        allow(Substack::Client).to receive(:new).and_return(client)
+      end
+
+      it 'flags the page while its draft still differs from what is live' do
+        allow(client).to receive(:get_draft).with(555).and_return(live.merge('draft_body' => '{"a":2}'))
+        expect(rows[0]).to include 'Needs publishing'
+      end
+
+      it 'clears the flag once Substack shows the draft published' do
+        allow(client).to receive(:get_draft).with(555).and_return(live.merge('draft_body' => '{"a":1}'))
+        expect(rows[0]).to_not include 'Needs publishing'
+        expect(SubstackPendingPublish.count).to eq 0
+      end
     end
   end
 

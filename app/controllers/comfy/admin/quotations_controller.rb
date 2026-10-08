@@ -103,6 +103,8 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     config     = SubstackSyncConfig.instance
     groups     = config.reviews_page_groups
     draft_ids  = config.reviews_page_ids
+    # Clear pages you've since Updated in Substack before labelling them.
+    SubstackPendingPublish.reconcile!(SubstackPendingPublish.where(draft_id: draft_ids.compact))
     pending    = SubstackPendingPublish.where(draft_id: draft_ids.compact).pluck(:draft_id).to_set
 
     @reviews_pages = groups.each_with_index.map do |group, i|

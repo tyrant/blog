@@ -20,8 +20,8 @@
     %strong #{pluralize(@pending_publishes.size, "Substack post")} need publishing by hand
     %div.small.mb-2
       Their draft edits are synced, but Substack now wants a fresh 2FA sign-in before any publish, which the
-      stored cookie can't give. Open each in Substack's editor and click Update (one 2FA code covers the session),
-      then mark it done.
+      stored cookie can't give. Open each in Substack's editor and click Update (one 2FA code covers the session);
+      it drops off this list on the next page load once Substack shows it published.
     %ul.list-unstyled.mb-2
       - @pending_publishes.each do |pending|
         %li.d-flex.align-items-center.mb-1
