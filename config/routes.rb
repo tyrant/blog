@@ -71,6 +71,8 @@ Rails.application.routes.draw do
         post :recapture
         post :sync_all
         post :check_connection
+        post :dismiss_pending_publish
+        post :clear_pending_publishes
       end
 
       resource :bluesky_sync_config,

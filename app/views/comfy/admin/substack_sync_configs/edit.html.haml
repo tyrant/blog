@@ -15,6 +15,23 @@
   = form_with url: check_connection_comfy_admin_substack_sync_config_path, method: :post do
     = submit_tag "Check connection now", class: "btn btn-outline-secondary btn-sm"
 
+- if @pending_publishes.any?
+  .alert.alert-warning.mb-3
+    %strong #{pluralize(@pending_publishes.size, "Substack post")} need publishing by hand
+    %div.small.mb-2
+      Their draft edits are synced, but Substack now wants a fresh 2FA sign-in before any publish, which the
+      stored cookie can't give. Open each in Substack's editor and click Update (one 2FA code covers the session),
+      then mark it done.
+    %ul.list-unstyled.mb-2
+      - @pending_publishes.each do |pending|
+        %li.d-flex.align-items-center.mb-1
+          = link_to pending.title.presence || "Draft #{pending.draft_id}", pending.editor_url, target: "_blank", class: "mr-2"
+          %span.text-muted.small.mr-2 since #{time_ago_in_words(pending.updated_at)} ago
+          = button_to "Done", dismiss_pending_publish_comfy_admin_substack_sync_config_path(id: pending.id),
+                      method: :post, class: "btn btn-outline-secondary btn-sm py-0", form: { class: "d-inline" }
+    = button_to "Clear all", clear_pending_publishes_comfy_admin_substack_sync_config_path,
+                method: :post, class: "btn btn-outline-secondary btn-sm", data: { confirm: "Clear the whole needs-publishing list?" }
+
 = comfy_form_with model: @config, scope: :substack_sync_config, url: comfy_admin_substack_sync_config_path, method: :patch do |form|
 
   = form.text_area :subtitle,

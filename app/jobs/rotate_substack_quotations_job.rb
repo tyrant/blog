@@ -60,7 +60,7 @@ class RotateSubstackQuotationsJob < ApplicationJob
 
     body["content"] = rotated
     client.update_draft(substack_id, draft_body: JSON.generate(body))
-    client.publish_draft(substack_id) if remote["is_published"]
+    SubstackPendingPublish.publish(client, substack_id, title: remote["draft_title"]) if remote["is_published"]
   end
 
   def parse_body(raw)

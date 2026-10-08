@@ -58,8 +58,12 @@ module Substack
 
         # Push edits live once a page is published: page 1's first publish stays
         # manual (mirroring PostSyncer); auto-created pages publish here on their
-        # first sync (send_email:false — no subscriber email is ever sent).
-        @client.publish_draft(id) if drafts[i]["is_published"] || @created_ids.include?(id)
+        # first sync (send_email:false — no subscriber email is ever sent). When
+        # Substack wants a fresh 2FA sign-in, the page is queued for a manual
+        # publish and the rebuild carries on with the rest.
+        if drafts[i]["is_published"] || @created_ids.include?(id)
+          SubstackPendingPublish.publish(@client, id, title: "Reviews page #{i + 1}")
+        end
       end
 
       sync_navigation

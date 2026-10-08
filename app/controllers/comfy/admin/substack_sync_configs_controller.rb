@@ -41,6 +41,19 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
     redirect_to edit_comfy_admin_substack_sync_config_path
   end
 
+  # Drop one post from the "needs publishing" list once it's been Updated by hand
+  # in Substack's editor.
+  def dismiss_pending_publish
+    SubstackPendingPublish.where(id: params[:id]).delete_all
+    redirect_to edit_comfy_admin_substack_sync_config_path
+  end
+
+  def clear_pending_publishes
+    SubstackPendingPublish.delete_all
+    flash[:success] = "Cleared the needs-publishing list."
+    redirect_to edit_comfy_admin_substack_sync_config_path
+  end
+
   # Full re-sync of every Substack-linked post on the prod worker.
   def sync_all
     SyncAllSubstackPostsJob.perform_later
@@ -52,6 +65,7 @@ class Comfy::Admin::SubstackSyncConfigsController < Comfy::Admin::Cms::BaseContr
 
   def load_config
     @config = SubstackSyncConfig.instance
+    @pending_publishes = SubstackPendingPublish.oldest_first
   end
 
   def config_params

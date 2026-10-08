@@ -174,6 +174,20 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:publish_draft).with(778)
     end
 
+    context 'when Substack wants a fresh 2FA sign-in to publish' do
+      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth') }
+
+      it 'still syncs the draft, without failing' do
+        expect { sync }.to_not raise_error
+        expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body))
+      end
+
+      it 'queues the post for a manual publish' do
+        sync
+        expect(SubstackPendingPublish.find_by(draft_id: 778).title).to eq post.title
+      end
+    end
+
     it 'never re-slugs a published post' do
       post.update_column(:slug, 'a-new-slug')
       sync

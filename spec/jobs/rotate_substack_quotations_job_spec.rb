@@ -53,6 +53,20 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
       expect(client).to have_received(:publish_draft).with(900)
     end
 
+    context 'when Substack wants a fresh 2FA sign-in to publish' do
+      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth') }
+
+      it 'queues the post for a manual publish' do
+        described_class.new.perform
+        expect(SubstackPendingPublish.where(draft_id: 900)).to exist
+      end
+
+      it 'still counts as a rotation' do
+        described_class.new.perform
+        expect(SubstackSyncConfig.instance.quotations_rotated_at).to be_present
+      end
+    end
+
     it 'stamps the last-rotated time' do
       described_class.new.perform
       expect(SubstackSyncConfig.instance.quotations_rotated_at).to be_present

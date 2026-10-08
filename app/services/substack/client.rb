@@ -25,6 +25,10 @@ module Substack
       end
     end
     class AuthError < Error; end
+    # Substack wants a fresh (2FA) sign-in before this action — currently any
+    # publish. The cookie is fine; no stored session can satisfy it, so callers
+    # fall back to a manual publish (SubstackPendingPublish).
+    class ReauthRequired < AuthError; end
 
     MAX_RETRIES = 5
     RETRYABLE   = [429, 502, 503, 504].freeze
@@ -296,12 +300,23 @@ module Substack
       detail = "#{req.method} #{req.uri.path} → #{response.code}#{cloudflare?(response) ? " (Cloudflare)" : ""}: " \
                "#{body_excerpt(response.body)}"
 
+      if reauth_required?(response)
+        raise ReauthRequired, "Substack requires a fresh 2FA sign-in for #{req.method} #{req.uri.path} — " \
+                              "publish it manually in Substack's editor"
+      end
+
       if @authenticated
         raise AuthError, "Substack refused #{detail} — the session cookie worked earlier in this run, so likely not the cookie"
       end
 
       record_session_health(recovered: false, message: "Substack rejected the session cookie (#{detail})")
       raise AuthError, "Substack rejected the session cookie (#{detail}) — refresh it"
+    end
+
+    def reauth_required?(response)
+      JSON.parse(response.body.to_s)["type"] == "reauthentication_required"
+    rescue JSON::ParserError, TypeError
+      false
     end
 
     def cloudflare?(response)

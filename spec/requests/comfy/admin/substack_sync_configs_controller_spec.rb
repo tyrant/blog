@@ -48,6 +48,26 @@ RSpec.describe 'Comfy::Admin::SubstackSyncConfigsController', type: :request do
     it { expect(response.body).to include 'Session cookie rejected' }
   end
 
+  describe 'the needs-publishing list' do
+    let!(:pending) { SubstackPendingPublish.create!(draft_id: 42, title: 'Stuck Post') }
+    let!(:other) { SubstackPendingPublish.create!(draft_id: 43, title: 'Other Post') }
+
+    it 'lists pending posts on the settings page' do
+      get edit_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+      expect(response.body).to include('Stuck Post', '/publish/post/42', '2 Substack posts')
+    end
+
+    it 'dismisses one' do
+      post dismiss_pending_publish_comfy_admin_substack_sync_config_path(id: pending.id), headers: http_auth_headers
+      expect(SubstackPendingPublish.pluck(:draft_id)).to eq [43]
+    end
+
+    it 'clears them all' do
+      post clear_pending_publishes_comfy_admin_substack_sync_config_path, headers: http_auth_headers
+      expect(SubstackPendingPublish.count).to eq 0
+    end
+  end
+
   describe 'POST check_connection' do
     context 'a valid cookie' do
       before do

@@ -326,6 +326,15 @@ RSpec.describe Substack::ReviewsPageSyncer do
       sync
       expect(client).to have_received(:publish_draft).with(555)
     end
+
+    context 'when Substack wants a fresh 2FA sign-in to publish' do
+      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth') }
+
+      it 'queues the page for a manual publish instead of failing' do
+        expect { sync }.to_not raise_error
+        expect(SubstackPendingPublish.find_by(draft_id: 555).title).to eq 'Reviews page 1'
+      end
+    end
   end
 
   context 'when the pool spans more than one page' do

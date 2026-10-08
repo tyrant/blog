@@ -338,6 +338,24 @@ RSpec.describe Substack::Client do
       it { expect { client.get_note(1) }.to raise_error(Substack::Client::AuthError, %r{GET /api/v1/reader/comment/1 → 403: nope}) }
     end
 
+    context 'a refusal that wants a fresh 2FA sign-in' do
+      subject(:client) { described_class.new(session_cookie: cookie, publication_host: 'pub.substack.com') }
+
+      before do
+        SubstackSyncConfig.instance.update_columns(session_healthy: true)
+        stub_request(:post, %r{substack\.com}).to_return(
+          status: 403, body: '{"error":"For your security, please sign out and sign back in to do this.","type":"reauthentication_required"}'
+        )
+      end
+
+      it { expect { client.publish_draft(7) }.to raise_error(Substack::Client::ReauthRequired, /fresh 2FA sign-in/) }
+
+      it 'leaves the session marked healthy' do
+        begin; client.publish_draft(7); rescue Substack::Client::ReauthRequired; end
+        expect(SubstackSyncConfig.instance.reload.session_healthy?).to be true
+      end
+    end
+
     context 'auth failure with an HTML body' do
       before do
         stub_request(:get, %r{substack\.com}).to_return(
