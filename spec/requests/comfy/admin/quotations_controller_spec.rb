@@ -283,18 +283,96 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     before { allow(SyncReviewsPageJob).to receive(:perform_later) }
 
     it 'redirects back' do
-      post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
+      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: http_auth_headers
       expect(response).to redirect_to comfy_admin_quotations_path
     end
 
-    it 'enqueues the reviews rebuild' do
+    it 'enqueues a sync of just that page' do
+      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: http_auth_headers
+      expect(SyncReviewsPageJob).to have_received(:perform_later).with(3)
+    end
+
+    it 'enqueues nothing without a page' do
       post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
-      expect(SyncReviewsPageJob).to have_received(:perform_later)
+      expect(SyncReviewsPageJob).to_not have_received(:perform_later)
     end
 
     it 'does not reshuffle — it mirrors the current manual order' do
       expect(SubstackQuotation).to_not receive(:reorder!)
-      post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
+      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: http_auth_headers
+    end
+  end
+
+  describe 'GET index Reviews page rows' do
+    let(:config) { SubstackSyncConfig.instance }
+
+    def quote(n)
+      SubstackQuotation.create!(quotation: "q#{n}", comment_url: "https://x/comment/#{n}", post_url: 'https://x/p/a',
+                                post_title: 'A', author_name: 'Eva', author_url: 'https://substack.com/@eva')
+    end
+
+    let!(:quotes) { (1..3).map { |n| quote(n) } }
+
+    before do
+      config.update!(reviews_page_size: 2, reviews_draft_id: 555, publication_host: 'pub.substack.com',
+                     subtitle_variables_json: '{"superlative": ["most kind"]}')
+    end
+
+    def rows
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      Nokogiri::HTML(response.body).css('table tr').map { |tr| tr.text.squish }
+    end
+
+    it 'offers a Sync button per page, and no whole-pool rebuild' do
+      expect(rows.map { |r| r[/Sync page \d+/] }).to eq ['Sync page 1', 'Sync page 2']
+      expect(response.body).to_not include 'Rebuild Reviews Pages'
+    end
+
+    it 'links each existing page to its Substack editor' do
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      expect(response.body).to include 'https://pub.substack.com/publish/post/555'
+    end
+
+    it 'marks a page with no draft yet as created on first sync' do
+      expect(rows[1]).to include 'Created on first sync'
+    end
+
+    it 'marks never-synced pages' do
+      expect(rows).to all(include('Not synced yet'))
+    end
+
+    context 'after both pages were synced' do
+      before do
+        groups = config.reviews_page_groups
+        groups.each_with_index do |group, i|
+          config.record_reviews_page_fingerprint!(i + 1, SubstackQuotation.reviews_page_fingerprint(group, groups.size))
+        end
+      end
+
+      it 'labels neither' do
+        expect(rows.join).to_not match(/Changed|Not synced yet/)
+      end
+
+      it 'labels only the page whose quotation was edited' do
+        quotes[2].update!(quotation: 'edited')
+        expect(rows.map { |r| r.include?('Changed') }).to eq [false, true]
+      end
+
+      it 'labels both pages after a reorder across them' do
+        SubstackQuotation.reorder!([quotes[2].id, quotes[0].id, quotes[1].id])
+        expect(rows.map { |r| r.include?('Changed') }).to eq [true, true]
+      end
+
+      it 'labels every page when a new quotation adds a page' do
+        quote(4)
+        quote(5)
+        expect(rows.map { |r| r.include?('Changed') }).to eq [true, true, false]
+      end
+    end
+
+    it 'flags a page whose publish is waiting on a manual Update' do
+      SubstackPendingPublish.create!(draft_id: 555, title: 'Reviews page 1')
+      expect(rows[0]).to include 'Needs publishing'
     end
   end
 

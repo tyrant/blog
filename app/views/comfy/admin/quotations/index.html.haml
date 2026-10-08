@@ -40,11 +40,32 @@
   %h5 Reviews pages
   %p.text-muted.small
     Every quotation is mirrored to the dedicated Substack "Reviews" pages, in the order
-    below. They rebuild automatically whenever a quotation is added, edited or deleted;
-    click this button to push a new drag order live. Set the pages' draft id under
+    below, one page per group. Sync a page to push its quotations to its Substack draft;
+    "Changed" marks pages whose quotations were added, edited, deleted or reordered since
+    their last sync. Substack wants a 2FA sign-in to publish, so open the draft and click
+    Update afterwards. Set page 1's draft id under
     = succeed "." do
       = link_to "Substack Sync settings", edit_comfy_admin_substack_sync_config_path
-  = button_to "Rebuild Reviews Pages", comfy_sync_reviews_admin_quotations_path, method: :post, class: "btn btn-outline-secondary btn-sm"
+  %table.table.table-sm.mb-2{ style: "width: auto;" }
+    %tbody
+      - @reviews_pages.each do |page|
+        %tr
+          %td.align-middle.pr-3
+            = button_to "Sync page #{page[:number]}", comfy_sync_reviews_admin_quotations_path(page: page[:number]),
+                        method: :post, class: "btn btn-outline-secondary btn-sm"
+          %td.align-middle.small.text-muted.pr-3= pluralize(page[:size], "quotation")
+          %td.align-middle.small.pr-3
+            - if page[:draft_url]
+              = link_to "Open draft", page[:draft_url], target: "_blank"
+            - else
+              %span.text-muted Created on first sync
+          %td.align-middle
+            - if page[:changed] == :never
+              %span.badge.badge-secondary Not synced yet
+            - elsif page[:changed]
+              %span.badge.badge-warning Changed
+            - if page[:pending]
+              %span.badge.badge-info Needs publishing
 
   = form_with url: comfy_page_size_admin_quotations_path, method: :patch, class: "form-inline mt-2" do
     %label.small.text-muted.mr-2{ for: "reviews_page_size" } Quotations per Reviews page

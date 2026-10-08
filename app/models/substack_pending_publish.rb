@@ -28,6 +28,6 @@ class SubstackPendingPublish < ApplicationRecord
   end
 
   def editor_url
-    "https://#{SubstackSyncConfig.instance.publication_host}/publish/post/#{draft_id}"
+    SubstackSyncConfig.instance.draft_editor_url(draft_id)
   end
 end

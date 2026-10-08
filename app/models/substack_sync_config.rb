@@ -67,6 +67,37 @@ class SubstackSyncConfig < ApplicationRecord
     update!(reviews_extra_draft_ids: Array(reviews_extra_draft_ids) + [id])
   end
 
+  # The featurable quotations split into Reviews pages, in display order — what
+  # each page renders. Always at least one (possibly empty) page.
+  def reviews_page_groups
+    groups = SubstackQuotation.featurable.by_position.to_a.each_slice(reviews_page_size).to_a
+    groups.empty? ? [[]] : groups
+  end
+
+  # Stamp a Reviews page (1-based) as synced with the given fingerprint. One
+  # atomic jsonb_set, so concurrent page syncs never clobber each other's stamps.
+  def record_reviews_page_fingerprint!(page, fingerprint)
+    self.class.where(id: id).update_all([
+      "reviews_page_fingerprints = jsonb_set(reviews_page_fingerprints, ARRAY[?]::text[], to_jsonb(?::text))",
+      page.to_s, fingerprint
+    ])
+    reviews_page_fingerprints[page.to_s] = fingerprint
+  end
+
+  # Whether a Reviews page's content differs from what it was last synced with:
+  # :never when it hasn't been synced since tracking began, true/false otherwise.
+  def reviews_page_changed?(page, group, page_count)
+    stored = reviews_page_fingerprints[page.to_s]
+    return :never if stored.nil?
+
+    stored != SubstackQuotation.reviews_page_fingerprint(group, page_count)
+  end
+
+  # Substack's editor for a draft/post — where a manual Update/Publish happens.
+  def draft_editor_url(draft_id)
+    "https://#{publication_host}/publish/post/#{draft_id}"
+  end
+
   # The subtitle template variables ({ "var" => ["a", "b"] }) parsed from the JSON
   # textarea; empty hash when unset or unparseable (the author keeps it consistent).
   def subtitle_variables

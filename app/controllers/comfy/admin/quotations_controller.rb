@@ -59,10 +59,15 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
-  # Rebuild the Reviews pages now, mirroring the current manual order.
+  # Rebuild one Reviews page now, mirroring the current manual order.
   def sync_reviews
-    SyncReviewsPageJob.perform_later
-    flash[:success] = "Rebuilding the Reviews pages from all quotations on the worker."
+    page = params[:page].to_i
+    if page.positive?
+      SyncReviewsPageJob.perform_later(page)
+      flash[:success] = "Syncing Reviews page #{page} on the worker."
+    else
+      flash[:danger] = "No Reviews page given."
+    end
     redirect_to comfy_admin_quotations_path
   end
 
@@ -76,7 +81,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
   def update_page_size
     config = SubstackSyncConfig.instance
     if config.update(reviews_page_size: params[:reviews_page_size])
-      flash[:success] = "Reviews page size set to #{config.reviews_page_size}. Rebuild to apply."
+      flash[:success] = "Reviews page size set to #{config.reviews_page_size}. Sync every page to apply."
     else
       flash[:danger] = "Could not set page size: #{config.errors.full_messages.to_sentence}."
     end
@@ -88,6 +93,28 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
   def load_quotations
     @page_size = SubstackSyncConfig.instance.reviews_page_size
     @quotations = SubstackQuotation.by_position.to_a
+    load_reviews_pages
+  end
+
+  # One row per Reviews page for the per-page Sync buttons: its draft (absent
+  # until the syncer auto-creates it), whether its quotations changed since it
+  # was last synced, and whether its last publish is waiting on a manual Update.
+  def load_reviews_pages
+    config     = SubstackSyncConfig.instance
+    groups     = config.reviews_page_groups
+    draft_ids  = config.reviews_page_ids
+    pending    = SubstackPendingPublish.where(draft_id: draft_ids.compact).pluck(:draft_id).to_set
+
+    @reviews_pages = groups.each_with_index.map do |group, i|
+      draft_id = draft_ids[i]
+      {
+        number:    i + 1,
+        size:      group.size,
+        draft_url: draft_id && config.draft_editor_url(draft_id),
+        changed:   config.reviews_page_changed?(i + 1, group, groups.size),
+        pending:   pending.include?(draft_id.to_i)
+      }
+    end
   end
 
 end

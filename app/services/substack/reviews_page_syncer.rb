@@ -15,11 +15,16 @@
 # live from SubstackSyncConfig#footer_json — see SUBSCRIBE_CTA_HEADING). Draft
 # writes aren't Cloudflare-blocked from the prod IP, so this runs on the prod
 # worker. No-op when no page-1 draft id is configured.
+#
+# `page:` (1-based) rebuilds just that page; nil rebuilds them all. Either way
+# every page's draft is read (for the nav's URLs), and each page written is
+# stamped with its content fingerprint (SubstackSyncConfig#reviews_page_fingerprints)
+# so the admin can flag pages whose quotations have changed since.
 module Substack
   class ReviewsPageSyncer
     include ServiceInterface
 
-    arguments client: nil, config: nil
+    arguments client: nil, config: nil, page: nil
 
     # Matches TemplateCapturer::CONDITIONALS' heading — the post footer's
     # "Bullshit Emeritus: SUBSCRIBE" pitch, normally gated behind a post tag.
@@ -30,11 +35,10 @@ module Substack
       return if @config.reviews_draft_id.blank?
 
       @client ||= Substack::Client.new(publication_host: @config.publication_host)
-      @created_ids = []
 
-      quotations = SubstackQuotation.featurable.by_position.to_a
-      groups     = quotations.each_slice(@config.reviews_page_size).to_a
-      page_count = [groups.size, 1].max
+      groups     = @config.reviews_page_groups
+      page_count = groups.size
+      return if @page && !@page.between?(1, page_count)
 
       page_ids = ensure_page_ids(page_count)
       drafts   = page_ids.map { |id| @client.get_draft(id) }
@@ -44,7 +48,10 @@ module Substack
       page_intro = intro(drafts.first)
 
       page_ids.each_with_index do |id, i|
-        body = page_document(i, page_count, urls, groups[i] || [], page_intro)
+        next if @page && i + 1 != @page
+
+        group = groups[i] || []
+        body  = page_document(i, page_count, urls, group, page_intro)
 
         Substack::Client.retrying_subtitle_rejection do
           @client.update_draft(
@@ -56,12 +63,16 @@ module Substack
           )
         end
 
-        # Push edits live once a page is published: page 1's first publish stays
-        # manual (mirroring PostSyncer); auto-created pages publish here on their
-        # first sync (send_email:false — no subscriber email is ever sent). When
+        # Stamped after building the page: building can store a quotation's embed
+        # snapshot, which bumps its updated_at.
+        @config.record_reviews_page_fingerprint!(i + 1, SubstackQuotation.reviews_page_fingerprint(group, page_count))
+
+        # Push edits live: page 1's first publish stays manual (mirroring
+        # PostSyncer); auto-created pages 2..X publish on any sync, including
+        # their first (send_email:false — no subscriber email is ever sent). When
         # Substack wants a fresh 2FA sign-in, the page is queued for a manual
         # publish and the rebuild carries on with the rest.
-        if drafts[i]["is_published"] || @created_ids.include?(id)
+        if drafts[i]["is_published"] || i.positive?
           SubstackPendingPublish.publish(@client, id, title: "Reviews page #{i + 1}")
         end
       end
@@ -93,7 +104,7 @@ module Substack
 
     # Create and slug a fresh Reviews page (index is 0-based; page number is
     # index + 1), record its id, and return it. Publishing happens in the main
-    # loop once its body is built (tracked via @created_ids).
+    # loop once its body is built.
     def create_page(index)
       bylines = [{ id: @config.author_id, is_guest: false }]
       created = @client.create_draft(
@@ -106,7 +117,6 @@ module Substack
       id = created.fetch("id")
       @client.update_draft(id, slug: default_slug(index), draft_bylines: bylines)
       @config.add_reviews_page_id!(id)
-      @created_ids << id
 
       id
     end

@@ -25,6 +25,13 @@ class SubstackQuotation < ApplicationRecord
     end
   end
 
+  # A digest of what a Reviews page renders from its quotations: which ones, in
+  # what order, each one's last edit, and the page count (the pagination row).
+  # Any local add/edit/delete/reorder that lands on (or shifts) a page changes it.
+  def self.reviews_page_fingerprint(group, page_count)
+    Digest::SHA256.hexdigest(JSON.generate([page_count, group.map { |q| [q.id, q.updated_at&.utc&.iso8601(6)] }]))
+  end
+
   # Up to `count` random quotations from `scope` (default featurable), distinct
   # by quote text, and excluding any left on the given Substack post (no point
   # pointing a reader at the post they're already on).

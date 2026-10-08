@@ -378,6 +378,63 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(config.reload.reviews_extra_draft_ids).to eq [556]
     end
 
+    it "stamps each page's content fingerprint" do
+      sync
+      expect(config.reload.reviews_page_fingerprints.keys).to contain_exactly('1', '2')
+    end
+
+    it 'leaves both pages unchanged afterwards' do
+      sync
+      groups = config.reload.reviews_page_groups
+      expect([1, 2].map { |n| config.reviews_page_changed?(n, groups[n - 1], 2) }).to eq [false, false]
+    end
+
+    context 'syncing one page' do
+      subject(:sync) { described_class.execute(client: client, config: config, page: 2) }
+
+      before { config.update!(reviews_extra_draft_ids: [556]) }
+
+      it 'writes only that page' do
+        sync
+        expect(bodies.keys).to eq [556]
+        expect(client).to_not have_received(:update_draft).with(555, anything)
+      end
+
+      it 'still links every page in its nav' do
+        sync
+        nav = bodies[556].find { |b| b['type'] == 'paragraph' && b.dig('content', 0, 'text') == 'Reviews page: ' }
+        expect(nav['content'].filter_map { |n| n.dig('marks', 0, 'attrs', 'href') })
+          .to eq ['https://mikeyclarke.substack.com/p/reviews']
+      end
+
+      it 'publishes only that page' do
+        sync
+        expect(client).to have_received(:publish_draft).with(556).once
+        expect(client).to_not have_received(:publish_draft).with(555)
+      end
+
+      it 'stamps only that page' do
+        sync
+        expect(config.reload.reviews_page_fingerprints.keys).to eq ['2']
+      end
+
+      it 'publishes a page 2+ that was never published' do
+        allow(client).to receive(:get_draft).with(556)
+          .and_return('draft_title' => 'Reviews Page 2', 'draft_subtitle' => '', 'is_published' => false, 'slug' => 'reviews-page-2')
+        sync
+        expect(client).to have_received(:publish_draft).with(556)
+      end
+    end
+
+    context 'syncing a page beyond the last' do
+      subject(:sync) { described_class.execute(client: client, config: config, page: 3) }
+
+      it 'does nothing' do
+        sync
+        expect(client).to_not have_received(:update_draft)
+      end
+    end
+
     it 'titles the two pages in order' do
       sync
       expect(client).to have_received(:update_draft).with(555, hash_including(draft_title: 'Sexyverse Advice Reviews Page 1'))
