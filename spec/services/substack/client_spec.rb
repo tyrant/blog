@@ -271,6 +271,24 @@ RSpec.describe Substack::Client do
 
       it { expect(SubstackSyncConfig.instance.reload.session_healthy?).to be true }
     end
+
+    context 'a refusal after the cookie already worked on this client' do
+      before do
+        SubstackSyncConfig.instance.update_columns(session_healthy: true)
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/1').to_return(status: 200, body: '{}')
+        stub_request(:get, 'https://substack.com/api/v1/reader/comment/2').to_return(status: 403, body: 'nope')
+        client.get_note(1)
+      end
+
+      it 'says the cookie is likely fine' do
+        expect { client.get_note(2) }.to raise_error(Substack::Client::AuthError, /likely not the cookie/)
+      end
+
+      it 'leaves the session marked healthy' do
+        begin; client.get_note(2); rescue Substack::Client::AuthError; end
+        expect(SubstackSyncConfig.instance.reload.session_healthy?).to be true
+      end
+    end
   end
 
   describe '#verify_session' do
@@ -317,6 +335,18 @@ RSpec.describe Substack::Client do
     context 'auth failure' do
       before { stub_request(:get, %r{substack\.com}).to_return(status: 403, body: 'nope') }
       it { expect { client.get_note(1) }.to raise_error(Substack::Client::AuthError) }
+      it { expect { client.get_note(1) }.to raise_error(Substack::Client::AuthError, %r{GET /api/v1/reader/comment/1 → 403: nope}) }
+    end
+
+    context 'auth failure with an HTML body' do
+      before do
+        stub_request(:get, %r{substack\.com}).to_return(
+          status: 403, headers: { 'cf-mitigated' => 'challenge' },
+          body: '<html><head><style>p{}</style></head><body><p>Just a moment...</p></body></html>'
+        )
+      end
+
+      it { expect { client.get_note(1) }.to raise_error(Substack::Client::AuthError, /403 \(Cloudflare\): Just a moment\.\.\./) }
     end
 
     context 'other failure' do

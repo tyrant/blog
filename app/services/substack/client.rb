@@ -261,7 +261,7 @@ module Substack
           next
         end
 
-        return handle(response)
+        return handle(response, req)
       end
     end
 
@@ -273,18 +273,45 @@ module Substack
       sleep(seconds)
     end
 
-    def handle(response)
+    def handle(response, req)
       case response.code.to_i
       when 200..299
+        @authenticated = true
         record_session_health(recovered: true)
         response.body.present? ? JSON.parse(response.body) : {}
       when 401, 403
-        record_session_health(recovered: false, message: "Substack rejected the session cookie (#{response.code})")
-        raise AuthError, "Substack rejected the session cookie (#{response.code}) — refresh it"
+        raise_refusal(response, req)
       else
         body = response.body.to_s
         raise Error.new("Substack API #{response.code}: #{body[0, 2000]}", param: error_param(body))
       end
+    end
+
+    # A 401/403. Only a dead cookie when nothing has succeeded on this client yet:
+    # once a request has gone through with the same cookie, a later refusal is
+    # endpoint-specific (e.g. a publish Substack won't allow, or a Cloudflare
+    # block), so it's reported as such and doesn't mark the session unhealthy.
+    # Either way the response body is kept — it's the only clue to the reason.
+    def raise_refusal(response, req)
+      detail = "#{req.method} #{req.uri.path} → #{response.code}#{cloudflare?(response) ? " (Cloudflare)" : ""}: " \
+               "#{body_excerpt(response.body)}"
+
+      if @authenticated
+        raise AuthError, "Substack refused #{detail} — the session cookie worked earlier in this run, so likely not the cookie"
+      end
+
+      record_session_health(recovered: false, message: "Substack rejected the session cookie (#{detail})")
+      raise AuthError, "Substack rejected the session cookie (#{detail}) — refresh it"
+    end
+
+    def cloudflare?(response)
+      response["cf-mitigated"].present? || response.body.to_s.include?("Just a moment...")
+    end
+
+    # The body as one short line of text — tags stripped, so a Cloudflare HTML
+    # page reads as its message rather than markup.
+    def body_excerpt(body)
+      body.to_s.gsub(%r{<(script|style)\b.*?</\1>}m, " ").gsub(/<[^>]+>/, " ").squish.first(500)
     end
 
     # The field Substack's validation rejected, if the body parses as
