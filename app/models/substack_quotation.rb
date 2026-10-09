@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 class SubstackQuotation < ApplicationRecord
-  # Superseded by substack_user; dropped once the backfill is confirmed.
-  self.ignored_columns += %w[author_url author_name author_user_id]
-
   belongs_to :substack_user, optional: true
 
   validates :quotation, :comment_url, presence: true

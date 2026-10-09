@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 class SubstackReply < ApplicationRecord
-  # Superseded by substack_user; dropped once the backfill is confirmed.
-  self.ignored_columns += %w[author_name author_handle author_user_id]
-
   belongs_to :substack_user, optional: true
 
   validates :target_url, :comment_url, :replied_at, presence: true

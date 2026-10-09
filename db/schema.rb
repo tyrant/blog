@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_09_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_10_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -391,8 +391,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_000001) do
     t.string "comment_url", null: false
     t.string "post_url"
     t.string "post_title"
-    t.string "author_url"
-    t.string "author_name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "post_image_url"
@@ -401,7 +399,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_000001) do
     t.integer "position"
     t.boolean "previewable", default: false, null: false
     t.jsonb "notes", default: [], null: false
-    t.bigint "author_user_id"
     t.bigint "substack_user_id"
     t.index ["substack_user_id"], name: "index_substack_quotations_on_substack_user_id"
   end
@@ -409,9 +406,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_000001) do
   create_table "substack_replies", force: :cascade do |t|
     t.string "target_url", null: false
     t.string "comment_url", null: false
-    t.string "author_name"
-    t.string "author_handle"
-    t.bigint "author_user_id"
     t.datetime "replied_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -419,7 +413,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_09_000001) do
     t.text "reply_preview"
     t.string "ancestor_path"
     t.bigint "substack_user_id"
-    t.index ["author_handle"], name: "index_substack_replies_on_author_handle"
     t.index ["comment_url"], name: "index_substack_replies_on_comment_url", unique: true
     t.index ["replied_at"], name: "index_substack_replies_on_replied_at"
     t.index ["substack_user_id"], name: "index_substack_replies_on_substack_user_id"
