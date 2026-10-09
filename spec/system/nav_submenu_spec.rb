@@ -4,7 +4,8 @@ require 'rails_helper'
 
 RSpec.describe 'Nav submenu show/hide', type: :system do
   let!(:site) { create :site, identifier: 'nav-test-site', hostname: 'nav.localhost', path: '/', label: 'Nav Test Site' }
-  let!(:category) { create :category, site: site, label: 'Whimsy', categorized_type: 'Comfy::Blog::Post' }
+  # The Blog submenu lists the public Tags; with none it renders no submenu at all.
+  let!(:tag) { Tag.create!(name: 'Whimsy') }
 
   before do
     page.driver.browser.manage.window.resize_to(1280, 800)

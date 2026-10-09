@@ -80,6 +80,12 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       it { expect(node['content'][0]['text']).to eq ' of thanks to the ' }
     end
 
+    describe 'when no superlative is configured' do
+      before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'quantity' => ['Bags'], 'compliment' => ['cracking'] })) }
+      it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Bags of thanks to the ') }
+      it { expect(node['content'][1]['type']).to eq 'substack_mention' }
+    end
+
     describe 'when the author has no captured user id' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'], 'superlative' => ['most gnarly'] })) }
       subject(:node) { described_class.attribution(quote(author_user_id: nil)) }

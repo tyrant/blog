@@ -70,9 +70,12 @@ module Substack
       def attribution(quotation)
 
         # If our random superlative is structured "most whatever", then let's
-        # format it in our attribution as "<em>Most</em> Whatever".
-        possibly_most_x = random_superlative
-        superlative = if possibly_most_x[0..3] == 'most'
+        # format it in our attribution as "<em>Most</em> Whatever". No
+        # superlatives configured → just "thanks to the <author>".
+        possibly_most_x = random_superlative.to_s
+        superlative = if possibly_most_x.blank?
+            []
+          elsif possibly_most_x[0..3] == 'most'
             [
               text("#{possibly_most_x.split(' ')[0].capitalize} ",
                    marks: [{ 'type' => 'italic' }]),
