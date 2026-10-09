@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe SubstackQuotation do
+  describe 'associations' do
+    it { is_expected.to belong_to(:substack_user).optional }
+  end
+
   describe 'validations' do
     it { expect(described_class.new).to_not be_valid }
     it { expect(described_class.new(quotation: 'q', comment_url: 'u')).to be_valid }
@@ -51,9 +55,9 @@ RSpec.describe SubstackQuotation do
   end
 
   describe '.sample_excluding' do
-    def quote(text, post_url, author: 'https://substack.com/@a')
+    def quote(text, post_url, author: create(:substack_user))
       described_class.create!(quotation: text, comment_url: "https://x/comment/#{text.parameterize}",
-                              post_title: 'P', post_url: post_url, author_name: 'A', author_url: author)
+                              post_title: 'P', post_url: post_url, substack_user: author)
     end
 
     it 'excludes quotations on the given post' do
@@ -72,11 +76,11 @@ RSpec.describe SubstackQuotation do
 
     it 'skips quotations missing a post url' do
       quote('ok', 'https://x/p/1')
-      described_class.create!(quotation: 'nourl', comment_url: 'https://x/comment/nourl', post_url: nil, author_url: nil)
+      described_class.create!(quotation: 'nourl', comment_url: 'https://x/comment/nourl', post_url: nil)
       expect(described_class.sample_excluding(nil, 10).map(&:quotation)).to eq(['ok'])
     end
 
-    it 'includes quotations missing an author url' do
+    it 'includes quotations missing an author' do
       quote('has-post', 'https://x/p/1', author: nil)
       expect(described_class.sample_excluding(nil, 10).map(&:quotation)).to eq(['has-post'])
     end
@@ -107,12 +111,20 @@ RSpec.describe SubstackQuotation do
       })
     end
 
-    it 'fills post and author fields from the comment' do
-      quotation.populate_from_substack!(client: client)
-      expect(quotation).to have_attributes(
-        post_url: 'https://x/p/a', post_title: 'A Post', post_image_url: 'https://cdn/cover.jpg', post_id: 77,
-        author_name: 'Bob', author_url: 'https://substack.com/@bob', author_user_id: 99
+    let(:populated) { quotation.tap { |q| q.populate_from_substack!(client: client) } }
+
+    it 'fills post fields from the comment' do
+      expect(populated).to have_attributes(
+        post_url: 'https://x/p/a', post_title: 'A Post', post_image_url: 'https://cdn/cover.jpg', post_id: 77
       )
+    end
+
+    it { expect(populated.substack_user).to have_attributes(user_id: 99, handle: 'bob', name: 'Bob') }
+
+    context 'when the commenter is already known' do
+      let!(:known) { create :substack_user, user_id: 99, handle: 'bob', name: 'Old Bob' }
+
+      it { expect(populated.substack_user).to eq known }
     end
   end
 

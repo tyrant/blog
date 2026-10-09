@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe SubstackReply do
+  describe 'associations' do
+    it { is_expected.to belong_to(:substack_user).optional }
+  end
+
   describe 'validations' do
     it { expect(described_class.new).to_not be_valid }
 
@@ -20,9 +24,9 @@ RSpec.describe SubstackReply do
     let(:now) { Time.current }
 
     before do
-      described_class.create!(target_url: 't1', comment_url: 'https://x/p/y/comment/1', author_handle: 'alice', replied_at: now - 2.days)
-      described_class.create!(target_url: 't2', comment_url: 'https://x/p/y/comment/2', author_handle: 'alice', replied_at: now)
-      described_class.create!(target_url: 't3', comment_url: 'https://x/p/y/comment/3', author_handle: 'bob', replied_at: now - 1.day)
+      described_class.create!(target_url: 't1', comment_url: 'https://x/p/y/comment/1', substack_user: SubstackUser.identify(handle: 'alice'), replied_at: now - 2.days)
+      described_class.create!(target_url: 't2', comment_url: 'https://x/p/y/comment/2', substack_user: SubstackUser.identify(handle: 'alice'), replied_at: now)
+      described_class.create!(target_url: 't3', comment_url: 'https://x/p/y/comment/3', substack_user: SubstackUser.identify(handle: 'bob'), replied_at: now - 1.day)
     end
 
     it 'groups replies by handle' do
@@ -38,7 +42,7 @@ RSpec.describe SubstackReply do
     end
 
     it 'buckets a missing handle under (unknown)' do
-      described_class.create!(target_url: 't4', comment_url: 'https://x/p/y/comment/4', author_handle: nil, replied_at: now + 1.day)
+      described_class.create!(target_url: 't4', comment_url: 'https://x/p/y/comment/4', replied_at: now + 1.day)
       expect(described_class.by_author.keys.first).to eq('(unknown)')
     end
 
@@ -47,7 +51,7 @@ RSpec.describe SubstackReply do
     end
 
     it 'filters authors by name when a query is given' do
-      described_class.create!(target_url: 't5', comment_url: 'https://x/p/y/comment/5', author_handle: 'carol', author_name: 'Carol Danvers', replied_at: now)
+      described_class.create!(target_url: 't5', comment_url: 'https://x/p/y/comment/5', substack_user: create(:substack_user, handle: 'carol', name: 'Carol Danvers'), replied_at: now)
       expect(described_class.by_author('danvers').keys).to eq(['carol'])
     end
   end
@@ -55,8 +59,8 @@ RSpec.describe SubstackReply do
   describe '.by_author (cross-author threads)' do
     it 'stitches a cross-author thread under the account of its root reply' do
       now = Time.current
-      described_class.create!(target_url: 't', comment_url: 'https://x/p/y/comment/100', author_handle: 'alice', ancestor_path: '', replied_at: now - 1.day)
-      described_class.create!(target_url: 't', comment_url: 'https://x/p/y/comment/300', author_handle: 'bob', ancestor_path: '100.200', replied_at: now)
+      described_class.create!(target_url: 't', comment_url: 'https://x/p/y/comment/100', substack_user: SubstackUser.identify(handle: 'alice'), ancestor_path: '', replied_at: now - 1.day)
+      described_class.create!(target_url: 't', comment_url: 'https://x/p/y/comment/300', substack_user: SubstackUser.identify(handle: 'bob'), ancestor_path: '100.200', replied_at: now)
 
       cards = described_class.by_author
       expect(cards.keys).to eq(['alice'])

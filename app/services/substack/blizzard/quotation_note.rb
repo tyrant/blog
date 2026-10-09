@@ -98,27 +98,20 @@ module Substack
         }
       end
 
-      # A real @mention tags the author's Substack account, so they get notified —
-      # falls back to a plain link for quotations predating author_user_id capture.
+      # Labelled by handle: display names are often shared, so "@Name" search returns namesakes.
       def author(quotation)
-        return text(quotation.author_name, marks: [link(quotation.author_url)]) if quotation.author_user_id.blank?
+        user = quotation.substack_user
+        return text(user&.name, marks: [link(user&.profile_url)]) if user&.user_id.blank?
 
         {
           "type" => "substack_mention",
           "attrs" => {
-            "id" => quotation.author_user_id,
-            "label" => author_handle(quotation) || quotation.author_name,
+            "id" => user.user_id,
+            "label" => user.handle.presence || user.name,
             "mentionType" => "user",
             "url" => nil
           }
         }
-      end
-
-      # The handle (unique) rather than the display name (often shared by several
-      # accounts) — pasting "@handle" into Substack's search finds the right person
-      # on the first try, where "@Display Name" can return a wall of namesakes.
-      def author_handle(quotation)
-        quotation.author_url.to_s[%r{substack\.com/@([^/?#]+)}, 1]
       end
 
       # Substack strips an explicit link mark to the reviews page (a page, not a

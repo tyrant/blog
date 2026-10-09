@@ -261,7 +261,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     let!(:quotation) do
       SubstackQuotation.create!(quotation: 'a memorable blurb', comment_url: 'https://x/comment/1',
                                 post_title: 'Ch 1', post_url: 'https://mikeyclarke.substack.com/p/ch-1',
-                                author_name: 'Eva', author_url: 'https://substack.com/@eva')
+                                substack_user: create(:substack_user, name: 'Eva', handle: 'eva'))
     end
 
     describe 'a random quotation' do

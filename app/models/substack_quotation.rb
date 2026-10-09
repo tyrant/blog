@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class SubstackQuotation < ApplicationRecord
+  # Superseded by substack_user; dropped once the backfill is confirmed.
+  self.ignored_columns += %w[author_url author_name author_user_id]
+
+  belongs_to :substack_user, optional: true
+
   validates :quotation, :comment_url, presence: true
 
   before_create :assign_position
@@ -10,7 +15,7 @@ class SubstackQuotation < ApplicationRecord
   # admin (SubstackQuotation.reorder!); new quotations append to the end.
   scope :by_position, -> { order(:position, :id) }
   # Quotations complete enough to render as a triplet. Author is optional —
-  # QuotationBlock renders the name as plain text when author_url is blank.
+  # QuotationBlock renders the name as plain text when there's no profile link.
   scope :featurable, -> { where.not(post_url: [nil, ""]) }
   # Manually marked (admin checkbox) as reading fine on their own, out of their
   # parent Post's context — eligible for the text-only widget PostSyncer slots
@@ -37,7 +42,7 @@ class SubstackQuotation < ApplicationRecord
   # pointing a reader at the post they're already on).
   def self.sample_excluding(post_url, count, scope: featurable)
     scope = scope.where.not(post_url: post_url) if post_url.present?
-    scope.order(Arel.sql("RANDOM()")).limit(count * 5).to_a
+    scope.includes(:substack_user).order(Arel.sql("RANDOM()")).limit(count * 5).to_a
       .uniq { |quotation| quotation.quotation.to_s.strip.downcase }
       .first(count)
   end
@@ -51,9 +56,8 @@ class SubstackQuotation < ApplicationRecord
       post_title:     resolved.post_title,
       post_image_url: resolved.post_image_url,
       post_id:        resolved.post_id,
-      author_url:     resolved.author_url,
-      author_name:    resolved.author_name,
-      author_user_id: resolved.author_user_id
+      substack_user:  SubstackUser.identify(user_id: resolved.author_user_id, handle: resolved.author_handle,
+                                            name: resolved.author_name)
     )
   end
 

@@ -10,7 +10,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   describe 'GET index' do
     before do
       SubstackQuotation.create!(quotation: 'a gem of a blurb', comment_url: 'https://x/comment/1',
-                                author_name: 'Bob', author_url: 'https://substack.com/@bob',
+                                substack_user: create(:substack_user, name: 'Bob', handle: 'bob'),
                                 post_title: 'A Post', post_url: 'https://x/p/a')
       get comfy_admin_quotations_path, headers: http_auth_headers
     end
@@ -60,7 +60,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   describe 'POST create' do
     let(:resolved) do
       Substack::QuotationResolver::Result.new(post_url: 'https://x/p/a', post_title: 'A Post',
-                                              author_name: 'Bob', author_url: 'https://substack.com/@bob')
+                                              author_name: 'Bob', author_handle: 'bob')
     end
 
     context 'when the comment resolves' do
@@ -73,7 +73,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
 
       it 'stores the resolved post and author' do
         post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
-        expect(SubstackQuotation.last).to have_attributes(quotation: 'blurb', post_title: 'A Post', author_name: 'Bob')
+        expect(SubstackQuotation.last).to have_attributes(quotation: 'blurb', post_title: 'A Post', substack_user: SubstackUser.find_by(name: 'Bob'))
       end
 
       it 'resolves from the comment url' do
@@ -120,7 +120,8 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   end
 
   describe 'GET edit' do
-    let!(:quotation) { SubstackQuotation.create!(quotation: 'old blurb', comment_url: 'https://x/comment/1', author_name: 'Bob') }
+    let!(:quotation) { SubstackQuotation.create!(quotation: 'old blurb', comment_url: 'https://x/comment/1',
+                                                   substack_user: create(:substack_user, name: 'Bob')) }
 
     before { get comfy_edit_admin_quotation_path(quotation), headers: http_auth_headers }
 
@@ -136,7 +137,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   describe 'PATCH update' do
     let!(:quotation) do
       SubstackQuotation.create!(quotation: 'old', comment_url: 'https://x/comment/1',
-                                author_name: 'Bob', post_title: 'Old Post')
+                                substack_user: create(:substack_user, name: 'Bob'), post_title: 'Old Post')
     end
 
     context 'editing only the blurb (same comment url)' do
@@ -178,14 +179,14 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     context 'changing the comment url' do
       let(:resolved) do
         Substack::QuotationResolver::Result.new(post_url: 'https://x/p/b', post_title: 'New Post',
-                                                author_name: 'Eva', author_url: 'https://substack.com/@eva')
+                                                author_name: 'Eva', author_handle: 'eva')
       end
 
       before { allow(Substack::QuotationResolver).to receive(:execute).and_return(resolved) }
 
       it 're-resolves the post and author' do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old' }, headers: http_auth_headers
-        expect(quotation.reload).to have_attributes(comment_url: 'https://x/comment/9', post_title: 'New Post', author_name: 'Eva')
+        expect(quotation.reload).to have_attributes(comment_url: 'https://x/comment/9', post_title: 'New Post', substack_user: SubstackUser.find_by(name: 'Eva'))
       end
 
       it 'overrides manually-entered post fields when the comment changes' do
@@ -308,7 +309,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
 
     def quote(n)
       SubstackQuotation.create!(quotation: "q#{n}", comment_url: "https://x/comment/#{n}", post_url: 'https://x/p/a',
-                                post_title: 'A', author_name: 'Eva', author_url: 'https://substack.com/@eva')
+                                post_title: 'A', substack_user: create(:substack_user, name: 'Eva', handle: 'eva'))
     end
 
     let!(:quotes) { (1..3).map { |n| quote(n) } }

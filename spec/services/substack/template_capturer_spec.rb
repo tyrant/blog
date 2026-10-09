@@ -9,7 +9,7 @@ RSpec.describe Substack::TemplateCapturer do
 
   def triplet
     Substack::QuotationBlock.build(SubstackQuotation.new(quotation: 'x', post_title: 'P', post_url: 'https://pub/p/x',
-                                                         author_name: 'A', author_url: 'https://substack.com/@a'))
+                                                         substack_user: create(:substack_user, name: 'A', handle: 'a')))
   end
 
   let(:blocks) do
@@ -73,7 +73,7 @@ RSpec.describe Substack::TemplateCapturer do
     def new_unit
       Substack::QuotationBlock.unit(SubstackQuotation.new(quotation: 'x', post_title: 'P', post_url: 'https://pub/p/x',
                                                            comment_url: 'https://pub/p/x/comment/1',
-                                                           author_name: 'A', author_url: 'https://substack.com/@a',
+                                                           substack_user: create(:substack_user, name: 'A', handle: 'a'),
                                                            post_embed: { 'canonical_url' => 'https://pub/p/x', 'size' => 'sm' }))
     end
 

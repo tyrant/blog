@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_08_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_09_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -402,6 +402,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_000002) do
     t.boolean "previewable", default: false, null: false
     t.jsonb "notes", default: [], null: false
     t.bigint "author_user_id"
+    t.bigint "substack_user_id"
+    t.index ["substack_user_id"], name: "index_substack_quotations_on_substack_user_id"
   end
 
   create_table "substack_replies", force: :cascade do |t|
@@ -416,9 +418,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_000002) do
     t.text "target_preview"
     t.text "reply_preview"
     t.string "ancestor_path"
+    t.bigint "substack_user_id"
     t.index ["author_handle"], name: "index_substack_replies_on_author_handle"
     t.index ["comment_url"], name: "index_substack_replies_on_comment_url", unique: true
     t.index ["replied_at"], name: "index_substack_replies_on_replied_at"
+    t.index ["substack_user_id"], name: "index_substack_replies_on_substack_user_id"
   end
 
   create_table "substack_sync_configs", force: :cascade do |t|
@@ -441,6 +445,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_000002) do
     t.jsonb "reviews_extra_draft_ids", default: [], null: false
     t.integer "reviews_page_size", default: 20, null: false
     t.jsonb "reviews_page_fingerprints", default: {}, null: false
+  end
+
+  create_table "substack_users", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "handle"
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((handle)::text)", name: "index_substack_users_on_lower_handle", unique: true, where: "(handle IS NOT NULL)"
+    t.index ["user_id"], name: "index_substack_users_on_user_id", unique: true, where: "(user_id IS NOT NULL)"
   end
 
   create_table "tags", force: :cascade do |t|
@@ -481,4 +495,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_08_000002) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "substack_quotations", "substack_users"
+  add_foreign_key "substack_replies", "substack_users"
 end

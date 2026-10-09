@@ -9,7 +9,7 @@ module Substack
 
     arguments :comment_url, client: nil
 
-    Result = Struct.new(:post_url, :post_title, :post_image_url, :post_id, :author_name, :author_url,
+    Result = Struct.new(:post_url, :post_title, :post_image_url, :post_id, :author_name, :author_handle,
                         :author_user_id, keyword_init: true)
 
     def execute
@@ -27,15 +27,9 @@ module Substack
         post_image_url: post["cover_image"],
         post_id:        post["id"],
         author_name:    comment["name"],
-        author_url:     profile_url(comment["handle"]),
+        author_handle:  comment["handle"],
         author_user_id: comment["user_id"]
       )
-    end
-
-    private
-
-    def profile_url(handle)
-      "https://substack.com/@#{handle}" if handle.present?
     end
   end
 end

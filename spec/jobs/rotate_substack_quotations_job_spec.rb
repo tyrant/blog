@@ -9,13 +9,12 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
   let!(:post) { create :post, site: site }
   let!(:categorization) { create :categorization, category: category, categorized: post, data: { 'id' => 900 } }
   let!(:quotation) do
-    SubstackQuotation.create!(quotation: 'blurb', comment_url: 'https://x/comment/1', author_name: 'Eva',
-                              author_url: 'https://substack.com/@eva', post_title: 'P', post_url: 'https://x/p/a')
+    SubstackQuotation.create!(quotation: 'blurb', comment_url: 'https://x/comment/1', substack_user: create(:substack_user, name: 'Eva', handle: 'eva'), post_title: 'P', post_url: 'https://x/p/a')
   end
 
   def draft(published:)
     existing = SubstackQuotation.new(quotation: 'old', post_title: 'P', post_url: 'https://x/p/a',
-                                     author_name: 'A', author_url: 'https://substack.com/@a')
+                                     substack_user: create(:substack_user, name: 'A', handle: 'a'))
     content = [{ 'type' => 'paragraph', 'content' => [] }] + Substack::QuotationBlock.build(existing) + [{ 'type' => 'horizontal_rule' }]
     { 'id' => 900, 'is_published' => published, 'draft_body' => JSON.generate('type' => 'doc', 'content' => content) }
   end

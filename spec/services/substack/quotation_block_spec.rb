@@ -7,7 +7,7 @@ RSpec.describe Substack::QuotationBlock do
     SubstackQuotation.new({ quotation: 'a blurb', post_title: 'Ch 1',
                             post_url: 'https://pub.substack.com/p/ch-1',
                             comment_url: 'https://pub.substack.com/p/ch-1/comment/42',
-                            author_name: 'Eva', author_url: 'https://substack.com/@eva' }.merge(attrs))
+                            substack_user: create(:substack_user, name: 'Eva', handle: 'eva') }.merge(attrs))
   end
 
   describe '.build' do
@@ -45,8 +45,8 @@ RSpec.describe Substack::QuotationBlock do
       expect(nodes.last.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
     end
 
-    it 'renders the author as plain text when there is no author_url' do
-      nodes = described_class.build(quote(author_url: nil))[1]['content'][0]['content']
+    it 'renders the author as plain text when there is no profile handle' do
+      nodes = described_class.build(quote(substack_user: create(:substack_user, name: 'Eva', handle: nil)))[1]['content'][0]['content']
       expect(nodes.last).to eq('type' => 'text', 'text' => 'Eva')
     end
 
@@ -116,8 +116,8 @@ RSpec.describe Substack::QuotationBlock do
       expect(nodes.map { |n| n['text'] }).to eq [' — ', 'Eva']
     end
 
-    it 'renders the author as plain text when there is no author_url' do
-      nodes = described_class.quote_blockquote(quote(author_url: nil))['content'][1]['content']
+    it 'renders the author as plain text when there is no profile handle' do
+      nodes = described_class.quote_blockquote(quote(substack_user: create(:substack_user, name: 'Eva', handle: nil)))['content'][1]['content']
       expect(nodes.last).to eq('type' => 'text', 'text' => 'Eva')
     end
   end

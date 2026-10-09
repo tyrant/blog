@@ -67,7 +67,7 @@ module Substack
       attribution_nodes = []
       attribution_nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
       attribution_nodes << text(" — ")
-      attribution_nodes << text(quotation.author_name, href: quotation.author_url)
+      attribution_nodes << author(quotation)
 
       { 
         "type" => "blockquote", 
@@ -115,8 +115,12 @@ module Substack
       end
 
       nodes << text(" — ")
-      nodes << text(quotation.author_name, href: quotation.author_url)
+      nodes << author(quotation)
       nodes
+    end
+
+    def author(quotation)
+      text(quotation.substack_user&.name, href: quotation.substack_user&.profile_url)
     end
 
     # A centred "." separator paragraph after each quote.

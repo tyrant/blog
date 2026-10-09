@@ -79,8 +79,7 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
   describe 'quotation reposts' do
     let!(:quotation) do
       SubstackQuotation.create!(quotation: 'zing', comment_url: 'https://sub/p/z/comment/1',
-                                post_url: 'https://sub/p/z', post_title: 'Z', author_name: 'Eva',
-                                author_url: 'https://substack.com/@eva')
+                                post_url: 'https://sub/p/z', post_title: 'Z', substack_user: create(:substack_user, name: 'Eva', handle: 'eva'))
     end
 
     describe 'a roll under the odds picks a random quotation' do
@@ -151,8 +150,7 @@ RSpec.describe Substack::Blizzard::WeightedPicker do
     describe 'a roll below the unattached band still picks a quotation' do
       let!(:quotation) do
         SubstackQuotation.create!(quotation: 'zing', comment_url: 'https://sub/p/z/comment/1',
-                                  post_url: 'https://sub/p/z', post_title: 'Z', author_name: 'Eva',
-                                  author_url: 'https://substack.com/@eva')
+                                  post_url: 'https://sub/p/z', post_title: 'Z', substack_user: create(:substack_user, name: 'Eva', handle: 'eva'))
       end
       subject(:pick) { described_class.execute(random: double(rand: 0)) }
 

@@ -16,9 +16,8 @@ class Comfy::Admin::ReplyTrackerController < Comfy::Admin::Cms::BaseController
       SubstackReply.create!(
         target_url:     reply.target_url,
         comment_url:    params[:comment_url],
-        author_name:    reply.author_name,
-        author_handle:  reply.author_handle,
-        author_user_id: reply.author_user_id,
+        substack_user:  SubstackUser.identify(user_id: reply.author_user_id, handle: reply.author_handle,
+                                              name: reply.author_name),
         replied_at:     reply.replied_at || Time.current,
         target_preview: reply.target_preview,
         reply_preview:  reply.reply_preview,

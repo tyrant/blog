@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class SubstackReply < ApplicationRecord
+  # Superseded by substack_user; dropped once the backfill is confirmed.
+  self.ignored_columns += %w[author_name author_handle author_user_id]
+
+  belongs_to :substack_user, optional: true
+
   validates :target_url, :comment_url, :replied_at, presence: true
   validates :comment_url, uniqueness: true
 
@@ -9,10 +14,10 @@ class SubstackReply < ApplicationRecord
   # Replies grouped by the account replied to, each group newest-first, and the
   # accounts themselves ordered by most-recent reply.
   def self.by_author(query = nil)
-    threads = chronological.group_by(&:thread_key)
+    threads = chronological.includes(:substack_user).group_by(&:thread_key)
     if query.present?
       q = query.strip.downcase
-      threads = threads.select { |_key, reps| reps.any? { |r| "#{r.author_handle} #{r.author_name}".downcase.include?(q) } }
+      threads = threads.select { |_key, reps| reps.any? { |r| "#{r.substack_user&.handle} #{r.substack_user&.name}".downcase.include?(q) } }
     end
 
     # Attribute each whole thread to the account of its root reply (the one the
@@ -20,7 +25,7 @@ class SubstackReply < ApplicationRecord
     # one account rather than fragmenting across cards.
     cards = Hash.new { |hash, key| hash[key] = [] }
     threads.each_value do |reps|
-      owner = reps.min_by { |r| [r.ancestor_ids.length, r.replied_at.to_i] }.author_handle.presence || "(unknown)"
+      owner = reps.min_by { |r| [r.ancestor_ids.length, r.replied_at.to_i] }.substack_user&.handle.presence || "(unknown)"
       cards[owner].concat(reps)
     end
     cards.sort_by { |_owner, reps| -reps.map { |r| r.replied_at.to_i }.max }.to_h

@@ -99,26 +99,27 @@ namespace :substack do
     puts "\n#{commit ? 'Committed' : 'Dry run'}. #{quotations.size} imageless, #{resolvable} resolvable, #{updated} updated."
   end
 
-  desc "Backfill author_user_id on quotations missing it, so attribution can @mention them (dry-run unless COMMIT=1)"
+  desc "Backfill the Substack user id on quotations whose author lacks it, so attribution can @mention them (dry-run unless COMMIT=1)"
   task backfill_author_user_ids: :environment do
     commit = ENV["COMMIT"] == "1"
     client = Substack::Client.new
-    quotations = SubstackQuotation.where(author_user_id: nil).to_a
+    quotations = SubstackQuotation.left_joins(:substack_user).where(substack_users: { user_id: nil }).to_a
     resolvable = updated = 0
 
     quotations.each do |quotation|
       resolved = Substack::QuotationResolver.execute(comment_url: quotation.comment_url, client: client)
       if resolved.author_user_id.blank?
-        puts "  ##{quotation.id} no user_id resolved (#{quotation.author_name.inspect})"
+        puts "  ##{quotation.id} no user_id resolved (#{quotation.substack_user&.name.inspect})"
         next
       end
 
       resolvable += 1
       if commit
-        quotation.update!(author_user_id: resolved.author_user_id)
+        quotation.update!(substack_user: SubstackUser.identify(user_id: resolved.author_user_id,
+                                                               handle: resolved.author_handle, name: resolved.author_name))
         updated += 1
       end
-      puts "  ##{quotation.id} #{commit ? 'set' : 'would set'} author_user_id: #{resolved.author_user_id} (#{quotation.author_name})"
+      puts "  ##{quotation.id} #{commit ? 'set' : 'would set'} user id: #{resolved.author_user_id} (#{resolved.author_name})"
     rescue => e
       warn "  skipped ##{quotation.id} (#{quotation.comment_url}): #{e.message}"
     ensure
@@ -191,9 +192,7 @@ namespace :substack do
       r = Substack::ReplyResolver.execute(reply_url: reply.comment_url)
       reply.update!(
         target_url:     r.target_url,
-        author_name:    r.author_name,
-        author_handle:  r.author_handle,
-        author_user_id: r.author_user_id,
+        substack_user:  SubstackUser.identify(user_id: r.author_user_id, handle: r.author_handle, name: r.author_name),
         replied_at:     r.replied_at.presence || reply.replied_at,
         target_preview: r.target_preview,
         reply_preview:  r.reply_preview,

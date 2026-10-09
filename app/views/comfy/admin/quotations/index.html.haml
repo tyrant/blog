@@ -112,7 +112,8 @@
                 %span.badge.badge-info.mr-2{ title: "Eligible for the widget above every Substack post" } Previewable
               %span.text-muted.small
                 By
-                = q.author_url.present? ? link_to(q.author_name.presence || "commenter", q.author_url, target: "_blank") : (q.author_name.presence || "commenter")
+                - author_name = q.substack_user&.name.presence || "commenter"
+                = q.substack_user&.profile_url ? link_to(author_name, q.substack_user.profile_url, target: "_blank") : author_name
               %br
               %span.text-muted.small
                 On

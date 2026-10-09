@@ -70,7 +70,7 @@ class SubstackSyncConfig < ApplicationRecord
   # The featurable quotations split into Reviews pages, in display order — what
   # each page renders. Always at least one (possibly empty) page.
   def reviews_page_groups
-    groups = SubstackQuotation.featurable.by_position.to_a.each_slice(reviews_page_size).to_a
+    groups = SubstackQuotation.featurable.includes(:substack_user).by_position.to_a.each_slice(reviews_page_size).to_a
     groups.empty? ? [[]] : groups
   end
 

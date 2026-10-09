@@ -23,7 +23,7 @@ RSpec.describe Substack::QuotationResolver do
     it { expect(resolved.post_image_url).to eq 'https://substackcdn.com/image/fetch/cover.jpg' }
     it { expect(resolved.post_id).to eq 42 }
     it { expect(resolved.author_name).to eq 'Eva Solen' }
-    it { expect(resolved.author_url).to eq 'https://substack.com/@evasolen' }
+    it { expect(resolved.author_handle).to eq 'evasolen' }
     it { expect(resolved.author_user_id).to eq 123 }
   end
 
@@ -36,7 +36,7 @@ RSpec.describe Substack::QuotationResolver do
       })
     end
 
-    it { expect(resolved.author_url).to be_nil }
+    it { expect(resolved.author_handle).to be_nil }
   end
 
   context 'a URL that is not a comment or note' do

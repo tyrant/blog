@@ -20,7 +20,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation = SubstackQuotation.new(quotation: params[:quotation], comment_url: params[:comment_url])
     quotation.populate_from_substack!
     quotation.save!
-    flash[:success] = "Saved quotation#{quotation.author_name ? " by #{quotation.author_name}" : ""}."
+    flash[:success] = "Saved quotation#{quotation.substack_user&.name ? " by #{quotation.substack_user.name}" : ""}."
   rescue => e
     flash[:danger] = "Could not save quotation: #{e.message}"
   ensure
@@ -92,7 +92,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
   def load_quotations
     @page_size = SubstackSyncConfig.instance.reviews_page_size
-    @quotations = SubstackQuotation.by_position.to_a
+    @quotations = SubstackQuotation.includes(:substack_user).by_position.to_a
     load_reviews_pages
   end
 

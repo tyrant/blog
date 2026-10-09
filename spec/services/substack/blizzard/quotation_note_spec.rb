@@ -7,8 +7,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     SubstackQuotation.new({ quotation: 'a blurb', post_title: 'Ch 1',
                             post_url: 'https://pub.substack.com/p/ch-1',
                             comment_url: 'https://pub.substack.com/p/ch-1/comment/42',
-                            author_name: 'Eva', author_url: 'https://substack.com/@eva',
-                            author_user_id: 69847396 }.merge(attrs))
+                            substack_user: create(:substack_user, name: 'Eva', handle: 'eva', user_id: 69847396) }.merge(attrs))
   end
 
   before do
@@ -88,7 +87,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
 
     describe 'when the author has no captured user id' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'], 'superlative' => ['most gnarly'] })) }
-      subject(:node) { described_class.attribution(quote(author_user_id: nil)) }
+      subject(:node) { described_class.attribution(quote(substack_user: create(:substack_user, name: 'Eva', handle: 'eva', user_id: nil))) }
       it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'Eva',
                                               'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
     end
@@ -99,24 +98,18 @@ RSpec.describe Substack::Blizzard::QuotationNote do
                                                         'attrs' => { 'id' => 69847396, 'label' => 'eva', 'mentionType' => 'user', 'url' => nil }) }
 
     it 'uses the unique handle, not the display name shared by many accounts' do
-      author = described_class.author(quote(author_name: 'Patrick Mill', author_url: 'https://substack.com/@audiohubstudios'))
+      author = described_class.author(quote(substack_user: create(:substack_user, name: 'Patrick Mill', handle: 'audiohubstudios')))
       expect(author['attrs']['label']).to eq 'audiohubstudios'
     end
 
     describe 'when the author has no captured user id' do
-      it { expect(described_class.author(quote(author_user_id: nil))).to eq('type' => 'text', 'text' => 'Eva',
+      it { expect(described_class.author(quote(substack_user: create(:substack_user, name: 'Eva', handle: 'eva', user_id: nil)))).to eq('type' => 'text', 'text' => 'Eva',
                                                                                'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://substack.com/@eva' } }]) }
     end
 
-    describe "when the author's url doesn't carry a parseable handle" do
-      it { expect(described_class.author(quote(author_url: nil))['attrs']['label']).to eq 'Eva' }
+    describe 'when the author has no handle' do
+      it { expect(described_class.author(quote(substack_user: create(:substack_user, name: 'Eva', handle: nil)))['attrs']['label']).to eq 'Eva' }
     end
-  end
-
-  describe '.author_handle' do
-    it { expect(described_class.author_handle(quote)).to eq 'eva' }
-    it { expect(described_class.author_handle(quote(author_url: 'https://substack.com/@eva/note/c-1'))).to eq 'eva' }
-    it { expect(described_class.author_handle(quote(author_url: nil))).to be_nil }
   end
 
   describe '.more_reviews' do

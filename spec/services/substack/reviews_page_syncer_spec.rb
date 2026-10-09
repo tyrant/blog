@@ -8,8 +8,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
   def quote(attrs = {})
     SubstackQuotation.create!({ quotation: 'a blurb', comment_url: 'https://sub/p/a/comment/1',
-                                post_url: 'https://sub/p/a', post_title: 'A', author_name: 'Eva',
-                                author_url: 'https://substack.com/@eva' }.merge(attrs))
+                                post_url: 'https://sub/p/a', post_title: 'A', substack_user: create(:substack_user, name: 'Eva', handle: 'eva') }.merge(attrs))
   end
 
   def body_doc
@@ -61,13 +60,13 @@ RSpec.describe Substack::ReviewsPageSyncer do
     end
 
     it 'skips quotations missing a post url' do
-      quote(quotation: 'incomplete', post_url: nil, author_url: nil)
+      quote(quotation: 'incomplete', post_url: nil, substack_user: nil)
       sync
       expect(body_doc['content'].count { |b| b['type'] == 'blockquote' }).to eq 1
     end
 
-    it 'includes quotations missing an author url, as a plain-text author name' do
-      quote(quotation: 'no-author', author_url: nil)
+    it 'includes quotations missing a profile handle, as a plain-text author name' do
+      quote(quotation: 'no-author', substack_user: create(:substack_user, name: 'Eva', handle: nil))
       sync
       quotes = body_doc['content'].select { |b| b['type'] == 'blockquote' }
       node = quotes.find { |b| b['content'][0]['content'][0]['text'] == '“no-author”' }
@@ -146,8 +145,7 @@ RSpec.describe Substack::ReviewsPageSyncer do
       context 'when the existing review region is the current card + attribution shape' do
         let(:card_quotation) do
           SubstackQuotation.new(quotation: 'x', post_title: 'P', post_url: 'https://pub/p/x',
-                                comment_url: 'https://pub/p/x/comment/1', author_name: 'A',
-                                author_url: 'https://substack.com/@a', post_embed: { 'canonical_url' => 'https://pub/p/x' })
+                                comment_url: 'https://pub/p/x/comment/1', substack_user: create(:substack_user, name: 'A', handle: 'a'), post_embed: { 'canonical_url' => 'https://pub/p/x' })
         end
         let(:existing) { { 'type' => 'doc', 'content' => [intro] + Substack::QuotationBlock.unit(card_quotation) } }
 

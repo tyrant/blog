@@ -18,7 +18,7 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
   describe 'GET index' do
     before do
       SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/1',
-                            author_name: 'Cory', author_handle: 'coryalthoff', replied_at: Time.current)
+                            substack_user: create(:substack_user, name: 'Cory', handle: 'coryalthoff'), replied_at: Time.current)
       get comfy_admin_reply_tracker_path, headers: http_auth_headers
     end
 
@@ -29,8 +29,8 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
 
   describe 'GET index with a username search' do
     before do
-      SubstackReply.create!(target_url: 't1', comment_url: 'https://x/p/y/comment/1', author_handle: 'coryalthoff', replied_at: Time.current)
-      SubstackReply.create!(target_url: 't2', comment_url: 'https://x/p/y/comment/2', author_handle: 'someoneelse', replied_at: Time.current)
+      SubstackReply.create!(target_url: 't1', comment_url: 'https://x/p/y/comment/1', substack_user: create(:substack_user, handle: 'coryalthoff'), replied_at: Time.current)
+      SubstackReply.create!(target_url: 't2', comment_url: 'https://x/p/y/comment/2', substack_user: create(:substack_user, handle: 'someoneelse'), replied_at: Time.current)
       get comfy_admin_reply_tracker_path(q: 'cory'), headers: http_auth_headers
     end
 
@@ -49,8 +49,13 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
 
       it 'stores the resolved target, author and previews' do
         post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
-        expect(SubstackReply.last).to have_attributes(target_url: 'https://x/p/y', author_handle: 'coryalthoff',
+        expect(SubstackReply.last).to have_attributes(target_url: 'https://x/p/y',
                                                       target_preview: 'A Post Title', reply_preview: 'My reply text')
+      end
+
+      it 'links the replied-to account' do
+        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        expect(SubstackReply.last.substack_user).to have_attributes(user_id: 99, handle: 'coryalthoff', name: 'Cory')
       end
 
       it 'resolves from the reply url' do
@@ -98,7 +103,7 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
   describe 'DELETE destroy' do
     let!(:reply) do
       SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/1',
-                            author_handle: 'coryalthoff', replied_at: Time.current)
+                            substack_user: create(:substack_user, handle: 'coryalthoff'), replied_at: Time.current)
     end
 
     it 'deletes the reply' do

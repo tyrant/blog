@@ -22,7 +22,7 @@ RSpec.describe Substack::TemplateResolver do
     before do
       Array.new(2) do |i|
         SubstackQuotation.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}",
-                                  post_title: 'P', post_url: 'https://x/p', author_name: 'A', author_url: 'https://substack.com/@a')
+                                  post_title: 'P', post_url: 'https://x/p', substack_user: create(:substack_user, name: 'A', handle: 'a'))
       end
     end
 
@@ -61,7 +61,7 @@ RSpec.describe Substack::TemplateResolver do
       Array.new(3) do |i|
         SubstackQuotation.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}",
                                   post_title: 'P', post_url: 'https://x/p',
-                                  author_name: 'A', author_url: 'https://substack.com/@a')
+                                  substack_user: create(:substack_user, name: 'A', handle: 'a'))
       end
     end
 
@@ -83,7 +83,7 @@ RSpec.describe Substack::TemplateResolver do
 
     it 'uses injected quotations when given' do
       injected = [SubstackQuotation.new(quotation: 'inj', post_title: 'P', post_url: 'https://x/p',
-                                        author_name: 'A', author_url: 'https://substack.com/@a')]
+                                        substack_user: create(:substack_user, name: 'A', handle: 'a'))]
       result = described_class.resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1 } }], post: post, quotations: injected)
       expect(result[1]['content'][0]['content'][0]['text']).to eq '“inj”'
     end
@@ -94,9 +94,9 @@ RSpec.describe Substack::TemplateResolver do
       category = create :category, label: 'Substack', site: site
       create :categorization, category: category, categorized: post, url: 'https://pub/p/self'
       SubstackQuotation.create!(quotation: 'self', comment_url: 'https://x/comment/self', post_title: 'S',
-                                post_url: 'https://pub/p/self', author_name: 'A', author_url: 'https://substack.com/@a')
+                                post_url: 'https://pub/p/self', substack_user: create(:substack_user, name: 'A', handle: 'a'))
       SubstackQuotation.create!(quotation: 'other', comment_url: 'https://x/comment/other', post_title: 'O',
-                                post_url: 'https://pub/p/other', author_name: 'B', author_url: 'https://substack.com/@b')
+                                post_url: 'https://pub/p/other', substack_user: create(:substack_user, name: 'B', handle: 'b'))
     end
 
     it 'renders only quotations from other posts' do
