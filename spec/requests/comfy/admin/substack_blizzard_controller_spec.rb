@@ -435,10 +435,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     context 'when the pick is a quotation' do
-      let(:quotation) do
-        SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1',
-                                  substack_user: create(:substack_user, name: 'Eva', pronouns: 'she/her'))
-      end
+      let(:eva) { create :substack_user, name: 'Eva', handle: 'eva', pronouns: 'she/her' }
+      let(:quotation) { SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', substack_user: eva) }
 
       before do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
@@ -447,7 +445,10 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
       end
 
-      it { expect(response.body).to include 'Quotation by Eva (she/her)' }
+      it { expect(response.body).to include 'Quotation by Eva' }
+      it { expect(response.body).to include '(she/her)' }
+      it { expect(response.body).to include %(href="#{edit_comfy_admin_substack_user_path(eva)}">Comfy</a>) }
+      it { expect(response.body).to include %(href="https://substack.com/@eva">Substack</a>) }
     end
   end
 
