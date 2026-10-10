@@ -8,13 +8,13 @@
     - elsif next_repost["uid"].present?
       Unattached note
     - else
-      - author = SubstackQuotation.find_by(id: next_repost["quotation_id"])&.substack_user
+      - quotation = SubstackQuotation.find_by(id: next_repost["quotation_id"])
+      - author = quotation&.substack_user
+      = quotation ? link_to("Quotation", comfy_edit_admin_quotation_path(quotation)) : "Quotation"
       - if author
-        = "Quotation by #{author.name.presence || "@#{author.handle}"}"
+        = "by #{author.name.presence || "@#{author.handle}"}"
         = render "comfy/admin/substack_users/links", user: author
         = "(#{author.pronouns})"
-      - else
-        Quotation
   = render "copy_and_record_form", entry: next_repost, categorization_id: next_repost["categorization_id"],
     uid: next_repost["uid"], quotation_id: next_repost["quotation_id"], days: days, page: page, q: q,
     regenerate_url: comfy_admin_substack_blizzard_next_repost_suggestion_path

@@ -445,7 +445,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
       end
 
-      it { expect(response.body).to include 'Quotation by Eva' }
+      it { expect(response.body).to include %(href="#{comfy_edit_admin_quotation_path(quotation)}">Quotation</a>) }
+      it { expect(response.body).to include 'by Eva' }
       it { expect(response.body).to include '(she/her)' }
       it { expect(response.body).to include %(href="#{edit_comfy_admin_substack_user_path(eva)}">Comfy</a>) }
       it { expect(response.body).to include %(href="https://substack.com/@eva">Substack</a>) }
