@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_10_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_10_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -446,6 +446,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_10_000001) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "pronouns", default: "they/them", null: false
     t.index "lower((handle)::text)", name: "index_substack_users_on_lower_handle", unique: true, where: "(handle IS NOT NULL)"
     t.index ["user_id"], name: "index_substack_users_on_user_id", unique: true, where: "(user_id IS NOT NULL)"
   end

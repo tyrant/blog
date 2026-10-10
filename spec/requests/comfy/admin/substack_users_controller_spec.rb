@@ -16,6 +16,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
       it { expect(response).to have_http_status :success }
       it { expect(response.body).to include 'Eva Solen' }
       it { expect(response.body).to include 'https://substack.com/@evasolen' }
+      it { expect(response.body).to include '<td>they/them</td>' }
     end
 
     context 'searching' do
@@ -66,6 +67,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'a lovely blurb' }
+    it { expect(response.body).to match(/value="they\/them"[^>]*name="substack_user\[pronouns\]"/) }
   end
 
   describe 'PATCH update' do
@@ -74,6 +76,16 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     it 'renames the user' do
       patch comfy_admin_substack_user_path(user), params: { substack_user: { name: 'Eva Solen' } }, headers: http_auth_headers
       expect(user.reload.name).to eq 'Eva Solen'
+    end
+
+    it 'changes their pronouns' do
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { pronouns: 'she/her' } }, headers: http_auth_headers
+      expect(user.reload.pronouns).to eq 'she/her'
+    end
+
+    it 're-renders on blank pronouns' do
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { pronouns: ' ' } }, headers: http_auth_headers
+      expect(response.body).to include "Pronouns can&#39;t be blank"
     end
 
     it 're-renders on a taken handle' do

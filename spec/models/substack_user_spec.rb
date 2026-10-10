@@ -11,6 +11,7 @@ RSpec.describe SubstackUser do
   describe 'validations' do
     subject { create :substack_user }
 
+    it { is_expected.to validate_presence_of(:pronouns) }
     it { is_expected.to validate_uniqueness_of(:user_id).allow_nil }
     it { is_expected.to validate_uniqueness_of(:handle).case_insensitive.allow_nil }
     it { expect(described_class.new).to_not be_valid }
@@ -21,6 +22,8 @@ RSpec.describe SubstackUser do
     it { expect(described_class.new(handle: ' @eva ').handle).to eq 'eva' }
     it { expect(described_class.new(handle: '').handle).to be_nil }
     it { expect(described_class.new(name: '  ').name).to be_nil }
+    it { expect(described_class.new(pronouns: ' she/her ').pronouns).to eq 'she/her' }
+    it { expect(described_class.new.pronouns).to eq 'they/them' }
   end
 
   describe 'callbacks' do

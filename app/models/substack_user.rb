@@ -7,7 +7,9 @@ class SubstackUser < ApplicationRecord
 
   normalizes :handle, with: ->(handle) { handle.strip.delete_prefix("@").presence }
   normalizes :name, with: ->(name) { name.strip.presence }
+  normalizes :pronouns, with: ->(pronouns) { pronouns.strip }
 
+  validates :pronouns, presence: true
   validates :user_id, uniqueness: true, allow_nil: true
   validates :handle, uniqueness: { case_sensitive: false }, allow_nil: true
   validate :identifiable

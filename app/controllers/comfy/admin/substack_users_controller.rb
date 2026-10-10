@@ -50,7 +50,7 @@ class Comfy::Admin::SubstackUsersController < Comfy::Admin::Cms::BaseController
   end
 
   def substack_user_params
-    params.require(:substack_user).permit(:user_id, :handle, :name)
+    params.require(:substack_user).permit(:user_id, :handle, :name, :pronouns)
   end
 
 end

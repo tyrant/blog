@@ -3,6 +3,9 @@
     = form.label :name
     = form.text_field :name, class: "form-control", autofocus: true
   .form-group
+    = form.label :pronouns
+    = form.text_field :pronouns, class: "form-control"
+  .form-group
     = form.label :handle
     = form.text_field :handle, class: "form-control", placeholder: "without the @"
     %small.form-text.text-muted Links to substack.com/@handle. Renaming flags this user's Reviews pages as Changed.

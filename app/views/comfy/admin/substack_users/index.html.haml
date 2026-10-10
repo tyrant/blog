@@ -16,6 +16,7 @@
     %thead
       %tr
         %th Name
+        %th Pronouns
         %th Handle
         %th User id
         %th Quotations
@@ -25,6 +26,7 @@
       - @substack_users.each do |user|
         %tr
           %td= link_to user.name.presence || "(no name)", edit_comfy_admin_substack_user_path(user)
+          %td= user.pronouns
           %td
             - if user.profile_url
               = link_to "@#{user.handle}", user.profile_url, target: "_blank"
