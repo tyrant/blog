@@ -5,6 +5,13 @@ class SubstackUser < ApplicationRecord
   has_many :quotations, class_name: "SubstackQuotation", dependent: :nullify
   has_many :replies, class_name: "SubstackReply", dependent: :nullify
 
+  normalizes :handle, with: ->(handle) { handle.strip.delete_prefix("@").presence }
+  normalizes :name, with: ->(name) { name.strip.presence }
+
+  validates :user_id, uniqueness: true, allow_nil: true
+  validates :handle, uniqueness: { case_sensitive: false }, allow_nil: true
+  validate :identifiable
+
   # Reviews page fingerprints use quotation updated_at, so a rename must flag those pages.
   after_update :touch_quotations, if: -> { saved_change_to_name? || saved_change_to_handle? }
 
@@ -46,6 +53,23 @@ class SubstackUser < ApplicationRecord
     where("lower(handle) = ?", handle.to_s.downcase)
   end
 
+  def self.alphabetical
+    order(Arel.sql("lower(coalesce(name, handle, '')), id"))
+  end
+
+  def self.search(query)
+    return all if query.blank?
+
+    term = "%#{sanitize_sql_like(query.strip.delete_prefix('@'))}%"
+    where("name ILIKE :term OR handle ILIKE :term OR user_id::text = :exact", term: term, exact: query.strip)
+  end
+
+  def self.with_link_counts
+    select("substack_users.*",
+           "(SELECT COUNT(*) FROM substack_quotations WHERE substack_user_id = substack_users.id) AS quotations_count",
+           "(SELECT COUNT(*) FROM substack_replies WHERE substack_user_id = substack_users.id) AS replies_count")
+  end
+
   def profile_url
     "https://substack.com/@#{handle}" if handle.present?
   end
@@ -57,6 +81,10 @@ class SubstackUser < ApplicationRecord
   end
 
   private
+
+  def identifiable
+    errors.add(:base, "Needs a user id, handle or name") if user_id.blank? && handle.blank? && name.blank?
+  end
 
   def touch_quotations
     quotations.touch_all

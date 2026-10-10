@@ -8,6 +8,21 @@ RSpec.describe SubstackUser do
     it { is_expected.to have_many(:replies).class_name('SubstackReply').dependent(:nullify) }
   end
 
+  describe 'validations' do
+    subject { create :substack_user }
+
+    it { is_expected.to validate_uniqueness_of(:user_id).allow_nil }
+    it { is_expected.to validate_uniqueness_of(:handle).case_insensitive.allow_nil }
+    it { expect(described_class.new).to_not be_valid }
+    it { expect(described_class.new(name: 'Anon')).to be_valid }
+  end
+
+  describe 'normalization' do
+    it { expect(described_class.new(handle: ' @eva ').handle).to eq 'eva' }
+    it { expect(described_class.new(handle: '').handle).to be_nil }
+    it { expect(described_class.new(name: '  ').name).to be_nil }
+  end
+
   describe 'callbacks' do
     let(:user) { create :substack_user, name: 'Eva' }
     let!(:quotation) { SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', substack_user: user) }
@@ -117,5 +132,36 @@ RSpec.describe SubstackUser do
       it { expect(user.handle).to eq 'eva' }
       it { expect(previous_owner.reload.handle).to be_nil }
     end
+  end
+
+  describe '.alphabetical' do
+    let!(:zed) { create :substack_user, name: 'zed' }
+    let!(:amy) { create :substack_user, name: 'Amy' }
+
+    it { expect(described_class.alphabetical.to_a).to eq [amy, zed] }
+  end
+
+  describe '.search' do
+    let!(:eva) { create :substack_user, name: 'Eva Solen', handle: 'evasolen', user_id: 42 }
+    let!(:bob) { create :substack_user, name: 'Bob', handle: 'bob' }
+
+    it { expect(described_class.search('solen').to_a).to eq [eva] }
+    it { expect(described_class.search('@EVA').to_a).to eq [eva] }
+    it { expect(described_class.search('42').to_a).to eq [eva] }
+    it { expect(described_class.search('').count).to eq 2 }
+  end
+
+  describe '.with_link_counts' do
+    let!(:user) { create :substack_user }
+
+    before do
+      SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', substack_user: user)
+      SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/2', replied_at: Time.current, substack_user: user)
+    end
+
+    subject(:counted) { described_class.with_link_counts.find(user.id) }
+
+    it { expect(counted.quotations_count).to eq 1 }
+    it { expect(counted.replies_count).to eq 1 }
   end
 end

@@ -1,0 +1,14 @@
+= form_with model: @substack_user, url: (@substack_user.persisted? ? comfy_admin_substack_user_path(@substack_user) : comfy_admin_substack_users_path), method: (@substack_user.persisted? ? :patch : :post) do |form|
+  .form-group
+    = form.label :name
+    = form.text_field :name, class: "form-control", autofocus: true
+  .form-group
+    = form.label :handle
+    = form.text_field :handle, class: "form-control", placeholder: "without the @"
+    %small.form-text.text-muted Links to substack.com/@handle. Renaming flags this user's Reviews pages as Changed.
+  .form-group
+    = form.label :user_id, "User id"
+    = form.number_field :user_id, class: "form-control"
+    %small.form-text.text-muted Substack's numeric account id; Blizzard needs it to @mention them.
+  = form.submit(@substack_user.persisted? ? "Save" : "Create", class: "btn btn-primary")
+  = link_to "Cancel", comfy_admin_substack_users_path, class: "btn btn-link"

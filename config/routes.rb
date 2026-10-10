@@ -99,6 +99,7 @@ Rails.application.routes.draw do
       delete "admin/quotations/:id",      to: "quotations#destroy", as: :admin_quotation
 
       resources :tags, as: :admin_tags, path: "admin/tags", except: %i[show]
+      resources :substack_users, as: :admin_substack_users, path: "admin/substack-users", except: %i[show]
 
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick

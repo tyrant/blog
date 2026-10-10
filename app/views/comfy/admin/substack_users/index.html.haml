@@ -1,0 +1,41 @@
+.page-header.d-flex.justify-content-between.align-items-center
+  %h2 Substack Users
+  = link_to "New Substack user", new_comfy_admin_substack_user_path, class: "btn btn-primary"
+
+= form_with url: comfy_admin_substack_users_path, method: :get, class: "form-inline mb-3" do
+  = text_field_tag :q, params[:q], placeholder: "search name, handle or user id", class: "form-control mr-2", style: "width: 18rem;"
+  = submit_tag "Search", class: "btn btn-secondary btn-sm"
+  - if params[:q].present?
+    = link_to "clear", comfy_admin_substack_users_path, class: "btn btn-link btn-sm"
+
+- if @substack_users.empty?
+  %p.text-muted= params[:q].present? ? "No Substack users match “#{params[:q]}”." : "No Substack users yet."
+- else
+  = comfy_paginate @substack_users
+  %table.table.table-sm
+    %thead
+      %tr
+        %th Name
+        %th Handle
+        %th User id
+        %th Quotations
+        %th Replies
+        %th
+    %tbody
+      - @substack_users.each do |user|
+        %tr
+          %td= link_to user.name.presence || "(no name)", edit_comfy_admin_substack_user_path(user)
+          %td
+            - if user.profile_url
+              = link_to "@#{user.handle}", user.profile_url, target: "_blank"
+            - else
+              %span.text-muted.small none
+          %td= user.user_id || content_tag(:span, "unknown", class: "text-muted small")
+          %td= user.quotations_count
+          %td= user.replies_count
+          %td.text-right
+            = link_to edit_comfy_admin_substack_user_path(user), class: "text-secondary mr-2", title: "Edit" do
+              %i.fas.fa-pencil-alt
+            = link_to comfy_admin_substack_user_path(user), method: :delete, data: { confirm: "Delete “#{user.name.presence || user.handle}”? Their quotations and replies are kept, just unlinked." }, class: "text-danger", title: "Delete" do
+              %i.fas.fa-times
+  = comfy_paginate @substack_users

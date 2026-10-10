@@ -1,0 +1,24 @@
+.page-header
+  %h2 Edit Substack user
+
+= render "form"
+
+- quotations = @substack_user.quotations.by_position
+- replies = @substack_user.replies.chronological
+%section.mt-5
+  %h5= pluralize(quotations.size, "quotation")
+  - if quotations.any?
+    %ul.small
+      - quotations.each do |quotation|
+        %li
+          = link_to truncate(quotation.quotation, length: 100), comfy_edit_admin_quotation_path(quotation)
+          %span.text-muted= " · #{quotation.post_title}" if quotation.post_title.present?
+
+%section.mt-4
+  %h5= pluralize(replies.size, "reply")
+  - if replies.any?
+    %ul.small
+      - replies.each do |reply|
+        %li
+          = link_to truncate(reply.reply_preview.presence || reply.comment_url, length: 100), reply.comment_url, target: "_blank"
+          %span.text-muted= " · #{l(reply.replied_at.to_date)}"
