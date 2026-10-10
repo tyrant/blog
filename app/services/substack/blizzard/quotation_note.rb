@@ -13,6 +13,11 @@ module Substack
       module_function
 
       REVIEWS_URL = "https://mikeyclarke.substack.com/p/reviews"
+      PRONOUN_WORDING = {
+        "she/her" => { "they_are" => "she's", "send_love" => "check her out and/or send her some love." },
+        "he/him" => { "they_are" => "he's", "send_love" => "check him out and/or send him some love." }
+      }.freeze
+      NEUTRAL_WORDING = { "they_are" => "they're", "send_love" => "check 'em out and/or send them some love." }.freeze
 
       def build(quotation)
         { 
@@ -90,12 +95,16 @@ module Substack
             text("#{random_quantity&.capitalize} of thanks to the "),
             *superlative,
             author(quotation),
-            text(", they're "),
+            text(", #{pronoun_wording(quotation)["they_are"]} "),
             text(random_compliment,
                  marks: [{ 'type' => 'bold' }, { 'type' => 'italic' }]),
-            text(", do check 'em out and/or send them some love.")
+            text(", do #{pronoun_wording(quotation)["send_love"]}")
           ]
         }
+      end
+
+      def pronoun_wording(quotation)
+        PRONOUN_WORDING.fetch(quotation.substack_user&.pronouns.to_s.downcase, NEUTRAL_WORDING)
       end
 
       # Labelled by handle: display names are often shared, so "@Name" search returns namesakes.

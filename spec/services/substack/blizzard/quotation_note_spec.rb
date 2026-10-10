@@ -85,6 +85,12 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       it { expect(node['content'][1]['type']).to eq 'substack_mention' }
     end
 
+    describe 'when the author is she/her' do
+      subject(:node) { described_class.attribution(quote(substack_user: create(:substack_user, name: 'Eva', pronouns: 'she/her'))) }
+      it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ", she's ") }
+      it { expect(node['content'][6]).to eq('type' => 'text', 'text' => ', do check her out and/or send her some love.') }
+    end
+
     describe 'when the author has no captured user id' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'], 'superlative' => ['most gnarly'] })) }
       subject(:node) { described_class.attribution(quote(substack_user: create(:substack_user, name: 'Eva', handle: 'eva', user_id: nil))) }
@@ -110,6 +116,16 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     describe 'when the author has no handle' do
       it { expect(described_class.author(quote(substack_user: create(:substack_user, name: 'Eva', handle: nil)))['attrs']['label']).to eq 'Eva' }
     end
+  end
+
+  describe '.pronoun_wording' do
+    def wording_for(pronouns) = described_class.pronoun_wording(quote(substack_user: create(:substack_user, pronouns: pronouns)))
+
+    it { expect(wording_for('they/them')).to eq('they_are' => "they're", 'send_love' => "check 'em out and/or send them some love.") }
+    it { expect(wording_for('she/her')).to eq('they_are' => "she's", 'send_love' => 'check her out and/or send her some love.') }
+    it { expect(wording_for('He/Him')).to eq('they_are' => "he's", 'send_love' => 'check him out and/or send him some love.') }
+    it { expect(wording_for('xe/xem')).to eq described_class::NEUTRAL_WORDING }
+    it { expect(described_class.pronoun_wording(quote(substack_user: nil))).to eq described_class::NEUTRAL_WORDING }
   end
 
   describe '.more_reviews' do
