@@ -433,6 +433,22 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       expect(response.body).to include 'Nothing eligible to suggest right now.'
     end
+
+    context 'when the pick is a quotation' do
+      let(:quotation) do
+        SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1',
+                                  substack_user: create(:substack_user, name: 'Eva', pronouns: 'she/her'))
+      end
+
+      before do
+        allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
+          { 'quotation_id' => quotation.id, 'text' => 'quoted pick', 'body_json' => { 'type' => 'doc' } }
+        )
+        get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
+      end
+
+      it { expect(response.body).to include 'Quotation by Eva (she/her)' }
+    end
   end
 
   describe 'POST add_note (manual paste-back)' do
