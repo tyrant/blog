@@ -18,13 +18,32 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
   describe 'GET index' do
     before do
       SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/1',
-                            substack_user: create(:substack_user, name: 'Cory', handle: 'coryalthoff'), replied_at: Time.current)
+                            substack_user: cory, replied_at: Time.current)
       get comfy_admin_reply_tracker_path, headers: http_auth_headers
     end
+
+    let(:cory) { create :substack_user, name: 'Cory', handle: 'coryalthoff' }
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'Reply Tracker' }
     it { expect(response.body).to include 'coryalthoff' }
+    it { expect(response.body).to include %(href="#{edit_comfy_admin_substack_user_path(cory)}">Comfy</a>) }
+    it { expect(response.body).to include %(href="https://substack.com/@coryalthoff">Substack</a>) }
+  end
+
+  describe 'GET index with a reply to someone else in the thread' do
+    before do
+      SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/p/y/comment/100',
+                            substack_user: create(:substack_user, handle: 'coryalthoff'), replied_at: 1.hour.ago)
+      SubstackReply.create!(target_url: 'https://x/p/y/comment/150', comment_url: 'https://x/p/y/comment/200', ancestor_path: '100',
+                            substack_user: eva, replied_at: Time.current)
+      get comfy_admin_reply_tracker_path, headers: http_auth_headers
+    end
+
+    let(:eva) { create :substack_user, handle: 'eva' }
+
+    it { expect(response.body).to include %(href="#{edit_comfy_admin_substack_user_path(eva)}">Comfy</a>) }
+    it { expect(response.body).to include %(href="https://substack.com/@eva">Substack</a>) }
   end
 
   describe 'GET index with a username search' do

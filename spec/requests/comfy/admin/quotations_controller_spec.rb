@@ -10,14 +10,18 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   describe 'GET index' do
     before do
       SubstackQuotation.create!(quotation: 'a gem of a blurb', comment_url: 'https://x/comment/1',
-                                substack_user: create(:substack_user, name: 'Bob', handle: 'bob'),
-                                post_title: 'A Post', post_url: 'https://x/p/a')
+                                substack_user: bob, post_title: 'A Post', post_url: 'https://x/p/a')
       get comfy_admin_quotations_path, headers: http_auth_headers
     end
+
+    let(:bob) { create :substack_user, name: 'Bob', handle: 'bob' }
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'a gem of a blurb' }
     it { expect(response.body).to include 'Bob' }
+    it { expect(response.body).to include %(href="#{edit_comfy_admin_substack_user_path(bob)}">Comfy</a>) }
+    it { expect(response.body).to include %(href="https://substack.com/@bob">Substack</a>) }
+    it { expect(response.body).to_not include %(href="https://substack.com/@bob">Bob</a>) }
 
     it 'renders the group divider CSS at the configured page size' do
       SubstackSyncConfig.instance.update!(reviews_page_size: 12)

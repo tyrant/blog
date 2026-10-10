@@ -113,7 +113,8 @@
               %span.text-muted.small
                 By
                 - author_name = q.substack_user&.name.presence || "commenter"
-                = q.substack_user&.profile_url ? link_to(author_name, q.substack_user.profile_url, target: "_blank") : author_name
+                = author_name
+                = render "comfy/admin/substack_users/links", user: q.substack_user
               %br
               %span.text-muted.small
                 On

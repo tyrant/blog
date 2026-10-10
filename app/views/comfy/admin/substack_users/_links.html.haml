@@ -1,0 +1,4 @@
+- if user
+  = link_to "Comfy", edit_comfy_admin_substack_user_path(user), class: "ml-1"
+  - if user.profile_url
+    = link_to "Substack", user.profile_url, target: "_blank", class: "ml-1"

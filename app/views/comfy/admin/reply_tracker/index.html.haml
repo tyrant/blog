@@ -23,9 +23,12 @@
       .card.mb-3
         .card-body
           %h6.mb-2
-            - owner_name = replies.find { |r| r.substack_user&.handle == handle }&.substack_user&.name
-            = owner_name.presence || handle
-            %span.text-muted.small= " · #{handle == "(unknown)" ? handle : "@#{handle}"} · #{pluralize(replies.size, 'reply')}"
+            - owner = replies.find { |r| r.substack_user&.handle == handle }&.substack_user
+            = owner&.name.presence || handle
+            %span.text-muted.small
+              = " · #{handle == "(unknown)" ? handle : "@#{handle}"}"
+              = render "comfy/admin/substack_users/links", user: owner
+              = " · #{pluralize(replies.size, 'reply')}"
           %ul.list-unstyled.small.mb-0
             - SubstackReply.threaded(replies).each do |reply, depth|
               %li.mb-1.d-flex.justify-content-between.align-items-start{ style: ("margin-left: #{depth * 1.5}rem; border-left: 2px solid #eee; padding-left: .5rem" if depth.positive?) }
@@ -35,7 +38,10 @@
                   %span.text-muted= l(reply.replied_at, format: :short)
                   = " · "
                   - if reply.substack_user&.handle.present? && reply.substack_user.handle != handle
-                    %span.text-muted= "@#{reply.substack_user.handle} · "
+                    %span.text-muted
+                      = "@#{reply.substack_user.handle}"
+                      = render "comfy/admin/substack_users/links", user: reply.substack_user
+                      = " · "
                   = link_to truncate(reply.target_preview.presence || "target", length: 50), reply.target_url, target: "_blank"
                   →
                   = link_to truncate(reply.reply_preview.presence || "your reply", length: 50), reply.comment_url, target: "_blank"
