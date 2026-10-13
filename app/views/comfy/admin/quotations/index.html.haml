@@ -6,6 +6,7 @@
   %h5= editing ? "Edit quotation" : "Add a quotation"
   %p.text-muted.small Paste a Substack comment URL and a blurb from it — the post and commenter are looked up automatically.
   = form_with url: (editing ? comfy_admin_quotation_path(@quotation) : comfy_admin_quotations_path), method: (editing ? :patch : :post) do
+    = hidden_field_tag :page, @quotations.current_page
     .form-group
       = text_field_tag :comment_url, @quotation.comment_url, class: "form-control", placeholder: "https://…/comment/… or a note URL"
     .form-group
@@ -34,7 +35,7 @@
         %label.form-check-label{ for: "previewable" } Previewable — reads fine on its own; eligible for the widget above every Substack post
     = submit_tag(editing ? "Update quotation" : "Save quotation", class: "btn btn-primary")
     - if editing
-      = link_to "Cancel", comfy_admin_quotations_path, class: "btn btn-link"
+      = link_to "Cancel", comfy_admin_quotations_path(page: @quotations.current_page), class: "btn btn-link"
 
 %section.mb-4
   %h5 Reviews pages
@@ -74,18 +75,18 @@
     = submit_tag "Save", class: "btn btn-outline-secondary btn-sm"
 
 %section
-  %h5= "#{pluralize(@quotations.size, 'quotation')} collected"
+  %h5= "#{pluralize(@quotations.total_count, 'quotation')} collected"
   - if @quotations.empty?
     %p.text-muted No quotations yet.
   - else
     %p.text-muted.small
       Drag the handle to reorder — this is the order the Reviews pages use. Dividers mark
-      the groups of 20 that become each Substack Reviews page.
+      the groups of #{@page_size} that become each Substack Reviews page. To move a quotation
+      to another page, drop it on "Previous page" (it becomes that page's last) or "Next page"
+      (it becomes that page's first).
     :css
-      #quotation-sortable { counter-reset: reviewspage 1; }
-      #quotation-sortable > li:nth-child(#{@page_size}n):not(:last-child)::after {
-        counter-increment: reviewspage;
-        content: "Reviews page " counter(reviewspage);
+      #quotation-sortable > li[data-reviews-break]::after {
+        content: attr(data-reviews-break);
         display: block;
         text-align: center;
         font-size: 0.72rem;
@@ -97,13 +98,36 @@
         padding-top: 0.6rem;
       }
       #quotation-sortable.dragging > li::after { display: none; }
-    %ul.list-unstyled#quotation-sortable{ data: { reorder_url: comfy_reorder_admin_quotations_path } }
+      .quotation-drop-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.25rem;
+        color: #adb5bd;
+        text-align: center;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.9rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+      }
+      .quotation-drop-zone > span { pointer-events: none; }
+      body.quotation-dragging .quotation-drop-zone { border-color: #007bff; color: #007bff; }
+      .quotation-drop-zone.drop-hover { background-color: #e7f1ff; }
+    - offset = (@quotations.current_page - 1) * @quotations.limit_value
+    = comfy_paginate @quotations
+    - unless @quotations.first_page?
+      %div.quotation-drop-zone{ data: { drop_to: offset - 1 } }
+        %span ↑ Previous page — drop here to make it page #{@quotations.current_page - 1}'s last
+    %ul.list-unstyled#quotation-sortable{ data: { reorder_url: comfy_reorder_admin_quotations_path, offset: offset,
+                                                  total: @quotations.total_count, reviews_page_size: @page_size } }
       - @quotations.each_with_index do |q, i|
-        %li.mb-3{ data: { id: q.id } }
+        - number = offset + i + 1
+        - reviews_break = "Reviews page #{number / @page_size + 1}" if (number % @page_size).zero? && number < @quotations.total_count
+        %li.mb-3{ data: { id: q.id, reviews_break: reviews_break } }
           .d-flex.align-items-start
             %span.dragger.text-muted.mr-2{ style: "cursor: move; padding-top: 0.2rem;", title: "Drag to reorder" }
               %i.fas.fa-grip-vertical
-            %span.order-number.badge.badge-light.mr-2{ style: "padding-top: 0.35rem;" }= i + 1
+            %span.order-number.badge.badge-light.mr-2{ style: "padding-top: 0.35rem;" }= number
             - if q.post_image_url.present?
               = image_tag q.post_image_url, class: "mr-2 rounded", style: "height: 3rem; width: 3rem; object-fit: cover; object-position: center; flex-shrink: 0;"
             .flex-grow-1
@@ -130,7 +154,11 @@
                 entry: { "text" => q.quotation, "body_json" => Substack::Blizzard::QuotationNote.build(q) },
                 categorization_id: nil, uid: nil, quotation_id: q.id, days: nil, page: nil, q: nil, regenerate_url: nil
             .text-nowrap.ml-2
-              = link_to comfy_edit_admin_quotation_path(q), class: "text-secondary mr-2", title: "Edit" do
+              = link_to comfy_edit_admin_quotation_path(q, page: @quotations.current_page), class: "text-secondary mr-2", title: "Edit" do
                 %i.fas.fa-pencil-alt
-              = link_to comfy_admin_quotation_path(q), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger", title: "Delete" do
+              = link_to comfy_admin_quotation_path(q, page: @quotations.current_page), method: :delete, data: { confirm: "Delete this quotation?" }, class: "text-danger", title: "Delete" do
                 %i.fas.fa-times
+    - unless @quotations.last_page?
+      %div.quotation-drop-zone{ data: { drop_to: offset + @quotations.limit_value } }
+        %span ↓ Next page — drop here to make it page #{@quotations.current_page + 1}'s first
+    = comfy_paginate @quotations

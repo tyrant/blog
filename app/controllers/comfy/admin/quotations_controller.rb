@@ -2,13 +2,20 @@
 
 class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
+  # Quotations per admin list page — independent of the Substack Reviews page size.
+  PER_PAGE = 20
+
   def index
     @quotation = SubstackQuotation.new
     load_quotations
+    # A delete can empty the last page; land on the new last page instead.
+    redirect_to comfy_admin_quotations_path(page: @quotations.total_pages) if @quotations.out_of_range? && @quotations.total_pages.positive?
   end
 
   def edit
     @quotation = SubstackQuotation.find(params[:id])
+    # Linked from elsewhere (e.g. the Blizzard) without a page: open the quotation's own.
+    params[:page] ||= list_page_for(@quotation)
     load_quotations
     render :index
   rescue ActiveRecord::RecordNotFound
@@ -21,10 +28,12 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     quotation.populate_from_substack!
     quotation.save!
     flash[:success] = "Saved quotation#{quotation.substack_user&.name ? " by #{quotation.substack_user.name}" : ""}."
+    # New quotations append to the end — show the page it landed on.
+    params[:page] = list_page_for(quotation)
   rescue => e
     flash[:danger] = "Could not save quotation: #{e.message}"
   ensure
-    redirect_to comfy_admin_quotations_path
+    redirect_to_list_page
   end
 
   def update
@@ -47,7 +56,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
   rescue => e
     flash[:danger] = "Could not update quotation: #{e.message}"
   ensure
-    redirect_to comfy_admin_quotations_path
+    redirect_to_list_page
   end
 
   def destroy
@@ -56,7 +65,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
   rescue ActiveRecord::RecordNotFound
     flash[:danger] = "Quotation not found."
   ensure
-    redirect_to comfy_admin_quotations_path
+    redirect_to_list_page
   end
 
   # Rebuild one Reviews page now, mirroring the current manual order.
@@ -71,10 +80,13 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
-  # Persist a new manual order from the drag-to-reorder list.
+  # Move one quotation to a new 0-based index in the whole manual order — from a
+  # drag within a list page, or onto its Prev/Next drop zone.
   def reorder
-    SubstackQuotation.reorder!(Array(params[:order]))
+    SubstackQuotation.move!(params.require(:id), params.require(:to))
     head :ok
+  rescue ActiveRecord::RecordNotFound
+    head :not_found
   end
 
   # Set the number of quotations per Substack Reviews page.
@@ -91,9 +103,18 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
   private
 
   def load_quotations
-    @page_size = SubstackSyncConfig.instance.reviews_page_size
-    @quotations = SubstackQuotation.includes(:substack_user).by_position.to_a
+    @page_size  = SubstackSyncConfig.instance.reviews_page_size
+    @quotations = comfy_paginate(SubstackQuotation.includes(:substack_user).by_position, per_page: PER_PAGE)
     load_reviews_pages
+  end
+
+  # The 1-based list page a quotation sits on.
+  def list_page_for(quotation)
+    quotation.order_index.to_i / PER_PAGE + 1
+  end
+
+  def redirect_to_list_page
+    redirect_to comfy_admin_quotations_path(page: params[:page].presence)
   end
 
   # One row per Reviews page for the per-page Sync buttons: its draft (absent

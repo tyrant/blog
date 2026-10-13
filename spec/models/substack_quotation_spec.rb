@@ -46,6 +46,44 @@ RSpec.describe SubstackQuotation do
     end
   end
 
+  describe '.move!' do
+    let!(:records) { Array.new(4) { |i| described_class.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}") } }
+
+    it 'moves a quotation down, shifting the ones in between up' do
+      described_class.move!(records[0].id, 2)
+      expect(described_class.by_position.to_a).to eq [records[1], records[2], records[0], records[3]]
+    end
+
+    it 'moves a quotation up, shifting the ones in between down' do
+      described_class.move!(records[3].id, 1)
+      expect(described_class.by_position.to_a).to eq [records[0], records[3], records[1], records[2]]
+    end
+
+    it 'clamps an index past the end' do
+      described_class.move!(records[0].id, 99)
+      expect(described_class.by_position.last).to eq records[0]
+    end
+
+    it 'closes gaps in the positions' do
+      records[3].update!(position: 50)
+      described_class.move!(records[0].id, 1)
+      expect(described_class.by_position.pluck(:position)).to eq [0, 1, 2, 3]
+    end
+
+    it 'raises for an unknown quotation' do
+      expect { described_class.move!(0, 0) }.to raise_error ActiveRecord::RecordNotFound
+    end
+  end
+
+  describe '#order_index' do
+    let!(:records) { Array.new(3) { |i| described_class.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}") } }
+
+    it 'is the 0-based index in the manual order' do
+      described_class.move!(records[2].id, 0)
+      expect(records[0].reload.order_index).to eq 1
+    end
+  end
+
   describe '.previewable' do
     it 'returns only quotations flagged previewable' do
       flagged = described_class.create!(quotation: 'a', comment_url: 'https://x/comment/a', previewable: true)

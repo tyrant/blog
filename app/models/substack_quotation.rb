@@ -9,7 +9,7 @@ class SubstackQuotation < ApplicationRecord
 
   scope :chronological, -> { order(created_at: :desc) }
   # The display order on the Reviews pages — set manually by drag-to-reorder in the
-  # admin (SubstackQuotation.reorder!); new quotations append to the end.
+  # admin (SubstackQuotation.move!); new quotations append to the end.
   scope :by_position, -> { order(:position, :id) }
   # Quotations complete enough to render as a triplet. Author is optional —
   # QuotationBlock renders the name as plain text when there's no profile link.
@@ -25,6 +25,27 @@ class SubstackQuotation < ApplicationRecord
     transaction do
       ordered_ids.each_with_index { |id, index| where(id: id).update_all(position: index) }
     end
+  end
+
+  # Move one quotation to `to_index` (0-based, across the whole manual order),
+  # shifting every quotation in between by one. Used by the paginated admin list,
+  # which only ever sees one page — so it sends a single move, not a full order.
+  # Positions end up contiguous from 0; only rows whose position changes are written.
+  def self.move!(id, to_index)
+    transaction do
+      ids = by_position.lock.pluck(:id)
+      moved = ids.delete(id.to_i) or raise ActiveRecord::RecordNotFound, "Quotation #{id} not found"
+      ids.insert(to_index.to_i.clamp(0, ids.size), moved)
+      current = where(id: ids).pluck(:id, :position).to_h
+      ids.each_with_index do |quotation_id, index|
+        where(id: quotation_id).update_all(position: index) unless current[quotation_id] == index
+      end
+    end
+  end
+
+  # The 0-based index of this quotation in the whole manual order.
+  def order_index
+    self.class.by_position.pluck(:id).index(id)
   end
 
   # A digest of what a Reviews page renders from its quotations: which ones, in

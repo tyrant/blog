@@ -23,10 +23,11 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it { expect(response.body).to include %(href="https://substack.com/@bob">Substack</a>) }
     it { expect(response.body).to_not include %(href="https://substack.com/@bob">Bob</a>) }
 
-    it 'renders the group divider CSS at the configured page size' do
-      SubstackSyncConfig.instance.update!(reviews_page_size: 12)
+    it 'marks the end of each Reviews-page group at the configured page size' do
+      SubstackSyncConfig.instance.update!(reviews_page_size: 1)
+      SubstackQuotation.create!(quotation: 'second', comment_url: 'https://x/comment/2')
       get comfy_admin_quotations_path, headers: http_auth_headers
-      expect(response.body).to include 'nth-child(12n)'
+      expect(Nokogiri::HTML(response.body).css('#quotation-sortable li').map { |li| li['data-reviews-break'] }).to eq ['Reviews page 2', nil]
     end
 
     it 'shows the page-size input prefilled with the configured size' do
@@ -85,9 +86,9 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
         expect(Substack::QuotationResolver).to have_received(:execute).with(comment_url: 'https://x/comment/5', client: nil)
       end
 
-      it 'redirects back' do
+      it 'redirects to the list page the new quotation landed on' do
         post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
-        expect(response).to redirect_to comfy_admin_quotations_path
+        expect(response).to redirect_to comfy_admin_quotations_path(page: 1)
       end
 
       it 'rejects a blank quotation' do
@@ -401,14 +402,82 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     let!(:a) { SubstackQuotation.create!(quotation: 'a', comment_url: 'https://x/comment/1') }
     let!(:b) { SubstackQuotation.create!(quotation: 'b', comment_url: 'https://x/comment/2') }
 
-    it 'persists the given order' do
-      put comfy_reorder_admin_quotations_path, params: { order: [b.id, a.id] }, headers: http_auth_headers
+    it 'moves the quotation to the given index' do
+      put comfy_reorder_admin_quotations_path, params: { id: b.id, to: 0 }, headers: http_auth_headers
       expect(SubstackQuotation.by_position.to_a).to eq [b, a]
     end
 
     it 'responds ok' do
-      put comfy_reorder_admin_quotations_path, params: { order: [b.id, a.id] }, headers: http_auth_headers
+      put comfy_reorder_admin_quotations_path, params: { id: b.id, to: 0 }, headers: http_auth_headers
       expect(response).to have_http_status(:ok)
+    end
+
+    it 'responds not found for an unknown quotation' do
+      put comfy_reorder_admin_quotations_path, params: { id: 0, to: 0 }, headers: http_auth_headers
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe 'pagination' do
+    let!(:quotes) do
+      Array.new(45) { |i| SubstackQuotation.create!(quotation: "quote #{i + 1}", comment_url: "https://x/comment/#{i + 1}") }
+    end
+
+    def items
+      Nokogiri::HTML(response.body).css('#quotation-sortable li')
+    end
+
+    def zones
+      Nokogiri::HTML(response.body).css('.quotation-drop-zone').map { |zone| zone['data-drop-to'].to_i }
+    end
+
+    context 'on the first page' do
+      before { get comfy_admin_quotations_path, headers: http_auth_headers }
+
+      it { expect(items.size).to eq 20 }
+      it { expect(response.body).to include '45 quotations collected' }
+      it { expect(zones).to eq [20] }
+    end
+
+    context 'on a middle page' do
+      before { get comfy_admin_quotations_path(page: 2), headers: http_auth_headers }
+
+      it { expect(items.first.text).to include 'quote 21' }
+      it { expect(items.first.at_css('.order-number').text).to eq '21' }
+      it { expect(zones).to eq [19, 40] }
+      it { expect(Nokogiri::HTML(response.body).at_css('#quotation-sortable')['data-offset']).to eq '20' }
+    end
+
+    context 'on the last page' do
+      before { get comfy_admin_quotations_path(page: 3), headers: http_auth_headers }
+
+      it { expect(items.size).to eq 5 }
+      it { expect(zones).to eq [39] }
+    end
+
+    it 'redirects past the last page to the last page' do
+      get comfy_admin_quotations_path(page: 9), headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_quotations_path(page: 3)
+    end
+
+    it 'opens an edited quotation on its own page' do
+      get comfy_edit_admin_quotation_path(quotes[30]), headers: http_auth_headers
+      expect(items.first.text).to include 'quote 21'
+    end
+
+    it 'returns to the given page after a delete' do
+      delete comfy_admin_quotation_path(quotes[30], page: 2), headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_quotations_path(page: 2)
+    end
+
+    it 'drops a quotation onto the next page as its first' do
+      put comfy_reorder_admin_quotations_path, params: { id: quotes[5].id, to: 20 }, headers: http_auth_headers
+      expect(SubstackQuotation.by_position.pluck(:quotation)[19..20]).to eq ['quote 21', 'quote 6']
+    end
+
+    it 'drops a quotation onto the previous page as its last' do
+      put comfy_reorder_admin_quotations_path, params: { id: quotes[25].id, to: 19 }, headers: http_auth_headers
+      expect(SubstackQuotation.by_position.pluck(:quotation)[19..20]).to eq ['quote 26', 'quote 20']
     end
   end
 
