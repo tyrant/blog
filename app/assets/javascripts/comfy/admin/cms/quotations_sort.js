@@ -1,16 +1,9 @@
-// Drag-to-reorder for the paginated Substack Quotations admin list. Each drop
-// PUTs a single move — { id, to }, `to` being the quotation's new 0-based index in
-// the whole order — to /admin/quotations/reorder. Dropping on the "Previous page" /
-// "Next page" zones moves it to the bottom of the previous page / top of the next,
-// then reloads so the page shows its reshuffled neighbours. No-op without the list.
-//
-// The zones aren't Sortable lists: dropping the card into one would pull it out of
-// the list, shifting the zone away from the cursor so Sortable snaps it back. They
-// only track whether a drag is over them, and onEnd sends their move instead.
+// Drop zones aren't Sortable lists: dropping into one shifts the layout and Sortable snaps the card back.
 window.CMS.quotationsSort = {
   init: function() {
     this.list = document.getElementById('quotation-sortable');
-    if (!this.list || typeof Sortable === 'undefined') return;
+    // A filtered search slice can't be reordered.
+    if (!this.list || !this.list.getAttribute('data-reorder-url') || typeof Sortable === 'undefined') return;
 
     var self = this;
     var list = this.list;
@@ -91,8 +84,6 @@ window.CMS.quotationsSort = {
     });
   },
 
-  // Renumber the order badges and move the "Reviews page N" dividers to the
-  // items that now end each Reviews-page group.
   renumber: function() {
     var number = this.offset();
     var total = parseInt(this.list.getAttribute('data-total'), 10);

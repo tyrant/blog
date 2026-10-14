@@ -75,6 +75,46 @@ RSpec.describe SubstackQuotation do
     end
   end
 
+  describe '.search' do
+    let(:eva) { create :substack_user, name: 'Eva Example', handle: 'evahandle' }
+    let!(:by_text) { described_class.create!(quotation: 'a marvellous romp', comment_url: 'https://x/comment/1') }
+    let!(:by_title) { described_class.create!(quotation: 'x', comment_url: 'https://x/comment/2', post_title: 'Shite Advice') }
+    let!(:by_author) { described_class.create!(quotation: 'y', comment_url: 'https://x/comment/3', substack_user: eva) }
+
+    it 'matches the quotation text, case-insensitively' do
+      expect(described_class.search('MARVELLOUS').to_a).to eq [by_text]
+    end
+
+    it 'matches the post title' do
+      expect(described_class.search('shite').to_a).to eq [by_title]
+    end
+
+    it 'matches the author name' do
+      expect(described_class.search('eva ex').to_a).to eq [by_author]
+    end
+
+    it 'matches the author handle' do
+      expect(described_class.search('evahandle').to_a).to eq [by_author]
+    end
+
+    it 'requires every word to match somewhere' do
+      expect(described_class.search('romp advice').to_a).to eq []
+    end
+
+    it 'matches words across different fields' do
+      by_title.update!(substack_user: eva)
+      expect(described_class.search('advice eva').to_a).to eq [by_title]
+    end
+
+    it 'treats LIKE wildcards literally' do
+      expect(described_class.search('%').to_a).to eq []
+    end
+
+    it 'returns everything for a blank term' do
+      expect(described_class.search('  ').count).to eq 3
+    end
+  end
+
   describe '#order_index' do
     let!(:records) { Array.new(3) { |i| described_class.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}") } }
 

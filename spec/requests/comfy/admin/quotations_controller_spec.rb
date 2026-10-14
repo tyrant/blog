@@ -537,6 +537,50 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
   end
 
+  describe 'search' do
+    let!(:quotes) do
+      Array.new(25) { |i| SubstackQuotation.create!(quotation: "quote #{i + 1}", comment_url: "https://x/comment/#{i + 1}") }
+    end
+    let!(:needle) { SubstackQuotation.create!(quotation: 'a needle in the stack', comment_url: 'https://x/comment/99') }
+
+    def items
+      Nokogiri::HTML(response.body).css('#quotation-sortable li')
+    end
+
+    context 'with a matching term' do
+      before { get comfy_admin_quotations_path(q: 'needle'), headers: http_auth_headers }
+
+      it { expect(items.size).to eq 1 }
+      it { expect(response.body).to include '1 quotation matching “needle”' }
+      it { expect(items.first.at_css('.order-number').text).to eq '26' }
+      it { expect(items.first.at_css('.dragger')).to be_nil }
+      it { expect(response.body).to_not include 'quotation-drop-zone"' }
+      it { expect(Nokogiri::HTML(response.body).at_css('#quotation-sortable')['data-reorder-url']).to be_nil }
+      it { expect(Nokogiri::HTML(response.body).at_css('input[name="q"]')['value']).to eq 'needle' }
+    end
+
+    it 'says when nothing matches' do
+      get comfy_admin_quotations_path(q: 'zebra'), headers: http_auth_headers
+      expect(response.body).to include 'No quotations match.'
+    end
+
+    it 'paginates the results, keeping the term in the page links' do
+      get comfy_admin_quotations_path(q: 'quote'), headers: http_auth_headers
+      expect(response.body).to include 'q=quote'
+    end
+
+    it 'returns to the search after a delete' do
+      delete comfy_admin_quotation_path(quotes[0], page: 1, q: 'quote'), headers: http_auth_headers
+      expect(response).to redirect_to comfy_admin_quotations_path(page: 1, q: 'quote')
+    end
+
+    it 'places the search form between the Reviews pages and the list' do
+      get comfy_admin_quotations_path, headers: http_auth_headers
+      headings = Nokogiri::HTML(response.body).css('h5').map(&:text)
+      expect(headings.index('Search quotations')).to eq headings.index('Reviews pages') + 1
+    end
+  end
+
   describe 'without authentication' do
     before { get comfy_admin_quotations_path }
 

@@ -9,7 +9,7 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     @quotation = SubstackQuotation.new
     load_quotations
     # A delete can empty the last page; land on the new last page instead.
-    redirect_to comfy_admin_quotations_path(page: @quotations.total_pages) if @quotations.out_of_range? && @quotations.total_pages.positive?
+    redirect_to comfy_admin_quotations_path(page: @quotations.total_pages, q: @search.presence) if @quotations.out_of_range? && @quotations.total_pages.positive?
   end
 
   def edit
@@ -80,8 +80,6 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
-  # Move one quotation to a new 0-based index in the whole manual order — from a
-  # drag within a list page, or onto its Prev/Next drop zone.
   def reorder
     SubstackQuotation.move!(params.require(:id), params.require(:to))
     head :ok
@@ -104,17 +102,19 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
   def load_quotations
     @page_size  = SubstackSyncConfig.instance.reviews_page_size
-    @quotations = comfy_paginate(SubstackQuotation.includes(:substack_user).by_position, per_page: PER_PAGE)
+    @search     = params[:q].to_s.strip
+    @quotations = comfy_paginate(SubstackQuotation.search(@search).includes(:substack_user).by_position, per_page: PER_PAGE)
+    # Search results show each quotation's place in the full order.
+    @order_numbers = SubstackQuotation.by_position.pluck(:id).each_with_index.to_h { |id, index| [id, index + 1] } if @search.present?
     load_reviews_pages
   end
 
-  # The 1-based list page a quotation sits on.
   def list_page_for(quotation)
     quotation.order_index.to_i / PER_PAGE + 1
   end
 
   def redirect_to_list_page
-    redirect_to comfy_admin_quotations_path(page: params[:page].presence)
+    redirect_to comfy_admin_quotations_path(page: params[:page].presence, q: params[:q].presence)
   end
 
   # One row per Reviews page for the per-page Sync buttons: its draft (absent

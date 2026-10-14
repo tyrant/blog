@@ -19,6 +19,21 @@ class SubstackQuotation < ApplicationRecord
   # above every Substack post. Off by default: most blurbs need that context.
   scope :previewable, -> { where(previewable: true) }
 
+  # Every word must match at least one column.
+  SEARCH_COLUMNS = %w[substack_quotations.quotation substack_quotations.post_title
+                      substack_users.name substack_users.handle].freeze
+
+  def self.search(term)
+    words = term.to_s.split
+    return all if words.empty?
+
+    any_column = SEARCH_COLUMNS.map { |column| "#{column} ILIKE ?" }.join(" OR ")
+    words.inject(left_joins(:substack_user)) do |scope, word|
+      pattern = "%#{sanitize_sql_like(word)}%"
+      scope.where("(#{any_column})", *Array.new(SEARCH_COLUMNS.size, pattern))
+    end
+  end
+
   # Persist a manual Reviews-page order from the admin drag-to-reorder list —
   # `ordered_ids` is the quotation ids in their new top-to-bottom order.
   def self.reorder!(ordered_ids)
@@ -27,10 +42,7 @@ class SubstackQuotation < ApplicationRecord
     end
   end
 
-  # Move one quotation to `to_index` (0-based, across the whole manual order),
-  # shifting every quotation in between by one. Used by the paginated admin list,
-  # which only ever sees one page — so it sends a single move, not a full order.
-  # Positions end up contiguous from 0; only rows whose position changes are written.
+  # The paginated admin list only sees one page, so it sends a single move rather than a full order.
   def self.move!(id, to_index)
     transaction do
       ids = by_position.lock.pluck(:id)
@@ -43,7 +55,6 @@ class SubstackQuotation < ApplicationRecord
     end
   end
 
-  # The 0-based index of this quotation in the whole manual order.
   def order_index
     self.class.by_position.pluck(:id).index(id)
   end
