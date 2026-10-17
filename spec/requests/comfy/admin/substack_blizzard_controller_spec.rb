@@ -98,8 +98,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
       it { expect(response.body).to include 'Text group for:' }
       it { expect(response.body).to include 'picked text' }
-      it { expect(response.body).to include 'Add manually' }
-      it { expect(response.body).to include 'Re-seed rich text' }
+      it { expect(response.body).to include 'Record &amp; re-seed' }
+      it { expect(response.body).to_not include 'Add manually' }
       it { expect(response.body).to include 'Regenerate' }
     end
 
@@ -112,8 +112,8 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
 
       it { expect(response.body).to include 'Unattached note' }
-      it { expect(response.body).to include 'Add manually' }
-      it { expect(response.body).to include 'Re-seed rich text' }
+      it { expect(response.body).to include 'Record &amp; re-seed' }
+      it { expect(response.body).to_not include 'Add manually' }
     end
 
     context 'next repost suggestion — a quotation pick' do
@@ -351,25 +351,48 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
   end
 
-  describe 'POST reseed' do
+  describe 'POST record_and_reseed' do
     let(:rich_body) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'reseeded' }] }] } }
+    let(:note_url) { 'https://substack.com/@mikeyclarke/note/c-999' }
 
     before do
       SubstackSyncConfig.instance.update!(session_cookie: 'sess')
       stub_request(:get, 'https://substack.com/api/v1/reader/comment/999')
-        .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body } }.to_json)
-      post comfy_admin_substack_blizzard_reseed_path,
-           params: { categorization_id: categorization.id, uid: 'u0',
-                     note_url: 'https://substack.com/@mikeyclarke/note/c-999', days: 14, page: 2 },
+        .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body, 'date' => '2026-10-01T07:00:00Z' } }.to_json)
+      post comfy_admin_substack_blizzard_record_and_reseed_path,
+           params: { categorization_id: categorization.id, uid: 'u0', url: note_url, days: 14, page: 2 },
            headers: http_auth_headers
     end
 
     it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14, page: 2) }
+    it { expect(flash[:success]).to be_present }
     it { expect(categorization.reload.data['blizzard'][0]['text']).to start_with 'reseeded' }
+    it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
+    it { expect(categorization.reload.data['blizzard'][0]['notes'].last).to include('url' => note_url, 'timestamp' => '2026-10-01T07:00:00Z') }
+    it { expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_present }
 
-    context 'fetch fails' do
-      let(:rich_body) { {} }
+    context 'a url that is not a Note URL' do
+      let(:note_url) { 'https://example.com/not-a-note' }
+
+      it { expect(flash[:danger]).to include 'Not a Substack note URL' }
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
+      it { expect(categorization.reload.data['blizzard'][0]['text']).to eq 'stale group text' }
+      it { expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_nil }
+    end
+
+    context 'a blank url' do
+      let(:note_url) { '' }
+
       it { expect(flash[:danger]).to be_present }
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
+    end
+
+    context 'the re-seed fails after the url validates' do
+      let(:rich_body) { {} }
+
+      it { expect(flash[:warning]).to include 'could not re-seed' }
+      it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 2 }
+      it { expect(categorization.reload.data['blizzard'][0]['text']).to eq 'stale group text' }
     end
 
     context 'an unattached entry (no categorization_id)' do
@@ -377,27 +400,27 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         BlizzardScheduleConfig.instance.update!(
           data: { 'blizzard' => [{ 'uid' => 'un1', 'text' => 'unattached text', 'body_json' => {}, 'notes' => [] }] }
         )
-        post comfy_admin_substack_blizzard_reseed_path,
-             params: { categorization_id: '', uid: 'un1',
-                       note_url: 'https://substack.com/@mikeyclarke/note/c-999', days: 14 },
+        post comfy_admin_substack_blizzard_record_and_reseed_path,
+             params: { categorization_id: '', uid: 'un1', url: note_url, days: 14 },
              headers: http_auth_headers
       end
 
       it { expect(flash[:success]).to be_present }
       it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['text']).to start_with 'reseeded' }
+      it { expect(BlizzardScheduleConfig.instance.data['blizzard'][0]['notes'].size).to eq 1 }
     end
   end
 
-  describe 'POST reseed, json format (async from the Next repost suggestion widget)' do
+  describe 'POST record_and_reseed, json format (async from the Next repost suggestion widget)' do
     let(:rich_body) { { 'type' => 'doc', 'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'reseeded' }] }] } }
+    let(:note_url) { 'https://substack.com/@mikeyclarke/note/c-999' }
 
     before do
       SubstackSyncConfig.instance.update!(session_cookie: 'sess')
       stub_request(:get, 'https://substack.com/api/v1/reader/comment/999')
         .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body } }.to_json)
-      post comfy_admin_substack_blizzard_reseed_path(format: :json),
-           params: { categorization_id: categorization.id, uid: 'u0',
-                     note_url: 'https://substack.com/@mikeyclarke/note/c-999' },
+      post comfy_admin_substack_blizzard_record_and_reseed_path(format: :json),
+           params: { categorization_id: categorization.id, uid: 'u0', url: note_url },
            headers: http_auth_headers
     end
 
@@ -406,12 +429,19 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     it { expect(response.parsed_body['text']).to start_with 'reseeded' }
     it { expect(response.parsed_body['html']).to include '<p>reseeded</p>' }
 
-    context 'fetch fails' do
-      let(:rich_body) { {} }
+    context 'a url that is not a Note URL' do
+      let(:note_url) { 'https://example.com/not-a-note' }
 
       it { expect(response).to have_http_status :unprocessable_entity }
-      it { expect(response.parsed_body['success']).to be false }
-      it { expect(response.parsed_body['error']).to be_present }
+      it { expect(response.parsed_body['error']).to eq 'Not a Substack note URL' }
+    end
+
+    context 'the re-seed fails after the url validates' do
+      let(:rich_body) { {} }
+
+      it { expect(response).to have_http_status :success }
+      it { expect(response.parsed_body['warning']).to be_present }
+      it { expect(response.parsed_body).to_not have_key 'html' }
     end
   end
 

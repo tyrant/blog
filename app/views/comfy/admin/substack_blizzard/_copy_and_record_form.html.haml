@@ -8,24 +8,15 @@
       %button.btn.btn-sm.btn-outline-secondary.w-100.regenerate-suggestion{ type: "button", data: { url: regenerate_url } }
         Regenerate
 - if categorization_id.present? || uid.present?
-  %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
-  = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do
+  %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then paste its URL — records the repost and re-seeds this group's stored text with the note's rich content:
+  = form_with url: comfy_admin_substack_blizzard_record_and_reseed_path, method: :post, class: "form-inline" do
     = hidden_field_tag :categorization_id, categorization_id
     = hidden_field_tag :uid, uid
     = hidden_field_tag :days, days
     = hidden_field_tag :page, page
     = hidden_field_tag :q, q
-    = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1"
-    = submit_tag "Add manually", class: "btn btn-outline-secondary btn-sm"
-  %p.text-muted.small.mb-1.mt-2 Or replace this group's stored text with the rich content of a real note:
-  = form_with url: comfy_admin_substack_blizzard_reseed_path, method: :post, class: "form-inline" do
-    = hidden_field_tag :categorization_id, categorization_id
-    = hidden_field_tag :uid, uid
-    = hidden_field_tag :days, days
-    = hidden_field_tag :page, page
-    = hidden_field_tag :q, q
-    = text_field_tag :note_url, nil, placeholder: "rich note URL to re-seed body_json", class: "form-control form-control-sm mr-1", style: "width: 24rem;"
-    = submit_tag "Re-seed rich text", class: "btn btn-outline-info btn-sm"
+    = text_field_tag :url, nil, placeholder: "new note URL", class: "form-control form-control-sm mr-1", style: "width: 24rem;"
+    = submit_tag "Record & re-seed", class: "btn btn-outline-secondary btn-sm"
 - elsif quotation_id.present?
   %p.text-muted.small.mb-1 Post this text as a new Note on Substack, then record it:
   = form_with url: comfy_admin_substack_blizzard_add_note_path, method: :post, class: "form-inline" do

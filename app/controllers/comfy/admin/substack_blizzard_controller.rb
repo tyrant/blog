@@ -184,26 +184,51 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
     end
   end
 
-  # Re-seed an entry's body_json from a real (rich) Note — a server-side read,
-  # which is allowed from the prod IP.
-  def reseed
+  # The Next-repost form's single submit: records the Note URL as a repost of the
+  # entry (as #add_note does) and re-seeds the entry's body_json from that same
+  # Note's rich content — a server-side read, which is allowed from the prod IP.
+  # A URL that isn't a Note URL is rejected outright, with nothing recorded; a
+  # re-seed that fails after recording (stale cookie, unreadable body) is
+  # reported as a warning, since the repost itself still stands.
+  def record_and_reseed
+    url = params[:url].to_s.strip
+    raise ArgumentError, "Not a Substack note URL" if Substack::NoteParser.comment_id_from_url(url).nil?
+
     target = params[:categorization_id].present? ? Comfy::Cms::Categorization.find(params[:categorization_id]) : BlizzardScheduleConfig.instance
-    entry = Substack::Blizzard::Reseeder.execute(
-      categorization: target,
-      uid:            params[:uid],
-      note_url:       params[:note_url]
+    raise ArgumentError, "No blizzard entry #{params[:uid]}" unless Array(target.data["blizzard"]).any? { |e| e["uid"] == params[:uid] }
+
+    Substack::Blizzard::RepostRecorder.execute(
+      categorization_id: params[:categorization_id].presence,
+      uid:               params[:uid],
+      url:               url,
+      timestamp:         resolve_timestamp(url)
     )
+    BlizzardScheduleConfig.instance.update!(last_reposted_at: Time.current)
+
+    begin
+      entry = Substack::Blizzard::Reseeder.execute(categorization: target.reload, uid: params[:uid], note_url: url)
+    rescue => e
+      reseed_error = e.message
+    end
+
     respond_to do |format|
       format.html do
-        flash[:success] = "Re-seeded rich text from that note (#{entry['text'].to_s.length} chars)."
+        if reseed_error
+          flash[:warning] = "Recorded that repost, but could not re-seed: #{reseed_error}"
+        else
+          flash[:success] = "Recorded that repost and re-seeded rich text from it (#{entry['text'].to_s.length} chars)."
+        end
         redirect_to back_path
       end
-      format.json { render json: { success: true, text: entry["text"], html: Substack::NoteParser.to_html(entry["body_json"]) } }
+      format.json do
+        render json: reseed_error ? { success: true, warning: "Recorded, but could not re-seed: #{reseed_error}" } :
+          { success: true, text: entry["text"], html: Substack::NoteParser.to_html(entry["body_json"]) }
+      end
     end
   rescue => e
     respond_to do |format|
       format.html do
-        flash[:danger] = "Could not re-seed: #{e.message}"
+        flash[:danger] = "Could not record: #{e.message}"
         redirect_to back_path
       end
       format.json { render json: { success: false, error: e.message }, status: :unprocessable_entity }

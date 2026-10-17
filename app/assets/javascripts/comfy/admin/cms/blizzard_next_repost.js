@@ -62,12 +62,15 @@
       const htmlEl = container && container.querySelector('.blizzard-html');
       if (textEl) textEl.textContent = data.text;
       if (htmlEl) htmlEl.innerHTML = data.html;
-      status.textContent = 'Re-seeded!';
+      status.textContent = 'Recorded & re-seeded!';
+    } else if (data.warning) {
+      status.textContent = data.warning;
+      status.classList.add('text-danger');
     } else {
       status.textContent = 'Recorded!';
     }
     form.reset();
-    setTimeout(() => { status.textContent = ''; }, 2500);
+    if (!data.warning) setTimeout(() => { status.textContent = ''; }, 2500);
   }
 
   function statusEl(form) {
