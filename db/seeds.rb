@@ -32,7 +32,7 @@ layout = Comfy::Cms::Layout.create!(
 )
 
 # Topical categories (Whimsy/NSFW/Shite Advice) are now Tags, not Categories.
-cats = ['Medium', 'Substack', 'Twitter', 'LinkedIn', 'FB'].each do |label|
+cats = ['Medium', 'Substack', 'Patreon', 'Twitter', 'LinkedIn', 'FB'].each do |label|
   Comfy::Cms::Category.create!(
     site: site,
     categorized_type: 'Comfy::Blog::Post',
