@@ -171,7 +171,7 @@ module Bluesky
     end
 
     def description_for(post)
-      text = Nokogiri::HTML(post.content_cache.to_s).text.squish
+      text = Nokogiri::HTML(post.public_content_html).text.squish
       text.length > 300 ? "#{text[0, 299]}…" : text
     end
 

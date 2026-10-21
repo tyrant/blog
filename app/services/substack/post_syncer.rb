@@ -45,7 +45,7 @@ module Substack
           @client.update_draft(substack_id,
             draft_title: post.title.to_s, draft_subtitle: @config.subtitle_for(post),
             draft_body: JSON.generate(doc), draft_bylines: bylines,
-            audience: post.substack_audience, should_send_email: false)
+            audience: post.effective_substack_audience, should_send_email: false)
         end
         if remote["is_published"]
           # Push edits to an already-published post live immediately (the email
@@ -65,7 +65,7 @@ module Substack
         # published). First publish stays a deliberate, manual step.
         created = Substack::Client.retrying_subtitle_rejection do
           @client.create_draft(title: post.title.to_s, subtitle: @config.subtitle_for(post), body_doc: doc,
-            bylines: bylines, audience: post.substack_audience)
+            bylines: bylines, audience: post.effective_substack_audience)
         end
         # Give the new post the Comfy post's slug (new drafts only — never
         # re-slug an existing published post). Substack ignores slug on create,

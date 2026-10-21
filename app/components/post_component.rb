@@ -60,7 +60,7 @@ class PostComponent < ViewComponent::Base
   def post_content
     @cached_post_content ||= begin 
         html_content = @post
-          .content_cache
+          .public_content_html
           .gsub('</h2>', "</h2>\r\n")
           .gsub('</p>', "</p>\r\n")
         Nokogiri::HTML(html_content).text.truncate(240, separator: ' ', omission: ' ...')

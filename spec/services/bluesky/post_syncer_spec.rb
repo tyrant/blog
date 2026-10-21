@@ -60,6 +60,13 @@ RSpec.describe Bluesky::PostSyncer do
         .with(hash_including('embed' => hash_including('external' => hash_including('description' => 'Body text'))))
     end
 
+    it 'leaves paywalled content out of the card description' do
+      post.update_column(:content_cache, '<p>Body text</p><hr class="paywall"><p>Paid text</p>')
+      sync
+      expect(client).to have_received(:create_post)
+        .with(hash_including('embed' => hash_including('external' => hash_including('description' => 'Body text'))))
+    end
+
     it 'records a Bluesky categorization holding the returned uri' do
       sync
       expect(bluesky_categorization.data['uri']).to eq 'at://did:plc:me/app.bsky.feed.post/rk9'

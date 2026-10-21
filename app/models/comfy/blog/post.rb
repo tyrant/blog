@@ -73,6 +73,37 @@ class Comfy::Blog::Post < ActiveRecord::Base
     url if url.include?("/p/")
   end
 
+  # An <hr class="paywall"> in the body marks where paid-only content starts:
+  # Substack gets a paywall node there, and the Comfy site stops rendering.
+  PAYWALL_SELECTOR = "hr.paywall"
+
+  def paywalled?
+    Nokogiri::HTML.fragment(content_cache.to_s).at_css(PAYWALL_SELECTOR).present?
+  end
+
+  # The body above the paywall marker (the whole body when there isn't one).
+  def public_content_html
+    fragment = Nokogiri::HTML.fragment(content_cache.to_s)
+    marker = fragment.at_css(PAYWALL_SELECTOR)
+    return content_cache.to_s unless marker
+
+    # The marker may sit inside a wrapper, so drop everything after it at every
+    # level up to the fragment root, not just its own siblings.
+    node = marker
+    while node && node != fragment
+      node.next_sibling.remove while node.next_sibling
+      node = node.parent
+    end
+    marker.remove
+    fragment.to_html
+  end
+
+  # A paywall only works on a paid post — Substack's own editor flips a free
+  # post to paid when one is inserted — so a Free selection is upgraded.
+  def effective_substack_audience
+    paywalled? && substack_audience == "everyone" ? "only_paid" : substack_audience
+  end
+
   # Public cross-link to this post's Medium mirror (all are public URLs).
   def medium_url
     socials_url_for(platform: "medium").presence

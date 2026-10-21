@@ -54,6 +54,36 @@ RSpec.describe 'Comfy::Blog::PostsController', type: :request do
       it { expect(response.body).to include 'https://mikey-clarke.medium.com/x' }
     end
 
+    context 'with a paywall' do
+      before do
+        published_post.update_column(:content_cache, '<p>Free part</p><hr class="paywall"><p>Paid part</p>')
+        create :categorization, category: create(:category, label: 'Substack', site: site),
+                                categorized: published_post, url: 'https://mikeyclarke.substack.com/p/hi'
+        get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}"
+      end
+
+      it { expect(response.body).to include 'Free part' }
+      it { expect(response.body).to_not include 'Paid part' }
+      it { expect(response.body).to include 'The rest of this post is for paid subscribers.' }
+      it { expect(response.body).to include 'Keep reading on Substack' }
+    end
+
+    context 'with a paywall but no published Substack post' do
+      before do
+        published_post.update_column(:content_cache, '<p>Free part</p><hr class="paywall"><p>Paid part</p>')
+        get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}"
+      end
+
+      it { expect(response.body).to include 'The rest of this post is for paid subscribers.' }
+      it { expect(response.body).to_not include 'Keep reading on Substack' }
+    end
+
+    context 'without a paywall' do
+      before { get "/blog/#{published_post.year}/#{published_post.month}/#{published_post.slug}" }
+
+      it { expect(response.body).to_not include 'The rest of this post is for paid subscribers.' }
+    end
+
     context 'for unpublished post' do
       it {
         expect { get "/blog/#{unpublished_post.year}/#{unpublished_post.month}/#{unpublished_post.slug}" }

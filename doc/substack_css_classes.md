@@ -18,6 +18,7 @@ element noted below. Related flow doc: [substack_post_sync.md](substack_post_syn
 | `img-full`       | `<img>`   | `imageSize: "full"`, `resizeWidth: nil`            | **full-bleed** below `lg`    |
 | `caption`        | `<p>`     | folds the paragraph into the preceding image's `caption` | plain paragraph        |
 | `callout-block`  | `<p>`     | becomes a Substack `calloutBlock`                  | plain paragraph              |
+| `paywall`        | `<hr>`    | becomes Substack's `paywall` divider; forces a Free post to Paid | **everything below it is hidden** |
 
 Nothing else is special-cased. An `<img>` with no size class, or a class
 Substack doesn't recognise (e.g. `img-wide`), falls back to `imageSize:
@@ -102,3 +103,20 @@ callout paragraphs (same handling as blockquotes); each carries
 
 An empty callout (no inline content) is dropped. On the Comfy site it renders as
 a plain paragraph.
+
+## Paywall — `paywall`
+
+`<hr class="paywall">` marks where paid-only content starts, like Substack's
+editor → More → Paywall ("Paid content below this line"). Use at most one, at
+the top level of the body.
+
+- **Substack:** the `<hr>` becomes a `{"type": "paywall"}` node instead of a
+  `horizontal_rule`. The synced footer template comes after the body, so it is
+  below the line too. A paywall only works on a paid post, so
+  `Post#effective_substack_audience` sends `only_paid` when the audience select
+  says Free (`everyone`); Paid and Founding are left alone.
+- **Comfy site:** `Post#public_content_html` is the body above the marker. The
+  post page renders only that, followed by a "for paid subscribers" box linking
+  to the published Substack post (`Post#substack_url`; no link while it's
+  still a draft). Listing excerpts and the Bluesky teaser use it too, so the
+  paid part never leaks into a preview.

@@ -314,4 +314,17 @@ RSpec.describe Substack::HtmlToProseMirror do
       it { expect(content.map { |n| n['type'] }).to eq %w[paragraph] }
     end
   end
+
+  describe 'horizontal rules' do
+    context 'with a plain <hr>' do
+      let(:html) { '<p>a</p><hr><p>b</p>' }
+      it { expect(content.map { |block| block['type'] }).to eq %w[paragraph horizontal_rule paragraph] }
+    end
+
+    context 'with a paywall <hr>' do
+      let(:html) { '<p>a</p><hr class="paywall"><p>b</p>' }
+      it { expect(content.map { |block| block['type'] }).to eq %w[paragraph paywall paragraph] }
+    end
+  end
+
 end

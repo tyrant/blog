@@ -214,6 +214,65 @@ RSpec.describe Comfy::Blog::Post, type: :model do
 
   end
 
+  describe '#paywalled?' do
+    subject { post.paywalled? }
+
+    context 'without a paywall marker' do
+      before { post.update_column(:content_cache, '<p>Free</p><hr><p>Still free</p>') }
+      it { is_expected.to be false }
+    end
+
+    context 'with a paywall marker' do
+      before { post.update_column(:content_cache, '<p>Free</p><hr class="paywall"><p>Paid</p>') }
+      it { is_expected.to be true }
+    end
+  end
+
+  describe '#public_content_html' do
+    subject { post.public_content_html }
+
+    context 'without a paywall marker' do
+      before { post.update_column(:content_cache, '<p>Free</p><hr><p>Still free</p>') }
+      it { is_expected.to eq '<p>Free</p><hr><p>Still free</p>' }
+    end
+
+    context 'with a top-level paywall marker' do
+      before { post.update_column(:content_cache, '<p>Free</p><hr class="paywall"><p>Paid</p><p>More paid</p>') }
+      it { is_expected.to eq '<p>Free</p>' }
+    end
+
+    context 'with the marker inside a wrapper' do
+      before { post.update_column(:content_cache, '<div><p>Free</p><hr class="paywall"><p>Paid</p></div><p>More paid</p>') }
+      it { is_expected.to eq '<div><p>Free</p></div>' }
+    end
+
+    context 'with no content' do
+      before { post.update_column(:content_cache, '') }
+      it { is_expected.to eq '' }
+    end
+  end
+
+  describe '#effective_substack_audience' do
+    subject { post.effective_substack_audience }
+
+    context 'for a free post without a paywall' do
+      before { post.update_column(:content_cache, '<p>Free</p>') }
+      it { is_expected.to eq 'everyone' }
+    end
+
+    context 'for a free post with a paywall' do
+      before { post.update_column(:content_cache, '<p>Free</p><hr class="paywall"><p>Paid</p>') }
+      it { is_expected.to eq 'only_paid' }
+    end
+
+    context 'for a founding post with a paywall' do
+      before do
+        post.update_columns(content_cache: '<p>Free</p><hr class="paywall"><p>Paid</p>', substack_audience: 'founding')
+      end
+      it { is_expected.to eq 'founding' }
+    end
+  end
+
   describe '#substack_url' do
     subject { post.substack_url }
 

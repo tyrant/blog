@@ -85,6 +85,11 @@ RSpec.describe PostComponent, type: :component do
     it { expect(content.length).to be <= 120 }
     it { expect(content).to be_a(String) }
     it { expect(content).not_to include('<', '>') }
+
+    context 'with a paywall' do
+      before { post.update_column(:content_cache, '<p>Free part</p><hr class="paywall"><p>Paid part</p>') }
+      it { expect(content).to_not include 'Paid part' }
+    end
   end
 
   describe 'image handling' do

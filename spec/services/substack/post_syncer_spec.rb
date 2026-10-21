@@ -84,6 +84,12 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:create_draft).with(hash_including(audience: 'everyone'))
     end
 
+    it 'creates a paid draft when a free post has a paywall' do
+      post.update_column(:content_cache, '<p>Free</p><hr class="paywall"><p>Paid</p>')
+      sync
+      expect(client).to have_received(:create_draft).with(hash_including(audience: 'only_paid'))
+    end
+
     it 'creates a paid draft when the post is marked paid' do
       post.update_column(:substack_audience, 'only_paid')
       sync
@@ -221,6 +227,12 @@ RSpec.describe Substack::PostSyncer do
     it 'updates the draft' do
       sync
       expect(client).to have_received(:update_draft).with(900, hash_including(:draft_body))
+    end
+
+    it 'upgrades a paywalled free post to paid on update' do
+      post.update_column(:content_cache, '<p>Free</p><hr class="paywall"><p>Paid</p>')
+      sync
+      expect(client).to have_received(:update_draft).with(900, hash_including(audience: 'only_paid'))
     end
 
     it 'mirrors the post audience on update' do

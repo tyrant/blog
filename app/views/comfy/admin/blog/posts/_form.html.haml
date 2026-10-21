@@ -13,7 +13,7 @@
 
 = render "comfy/admin/cms/categories/form", form: form
 
-= form.select :substack_audience, Comfy::Blog::Post::SUBSTACK_AUDIENCES.invert.to_a, { bootstrap: { help: "Who the mirrored Substack post is for. Applied on the next sync." } }, { class: "form-control", style: "max-width: 20rem;" }
+= form.select :substack_audience, Comfy::Blog::Post::SUBSTACK_AUDIENCES.invert.to_a, { bootstrap: { help: "Who the mirrored Substack post is for. Applied on the next sync. A post with a paywall marker (<hr class=\"paywall\">) syncs as Paid even when Free is selected." } }, { class: "form-control", style: "max-width: 20rem;" }
 
 - if (all_tags = Tag.alphabetical).present?
   .form-group.row.tags-widget

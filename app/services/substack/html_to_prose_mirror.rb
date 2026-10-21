@@ -83,7 +83,7 @@ module Substack
       when "blockquote"                    then [blockquote(node)]
       when "ul"                            then [list(node, "bullet_list", { "tight" => false })]
       when "ol"                            then [list(node, "ordered_list", { "order" => 1, "tight" => false })]
-      when "hr"                            then [{ "type" => "horizontal_rule" }]
+      when "hr"                            then [horizontal_rule(node)]
       when "img"                           then [captioned_image(node)].compact
       when "iframe"                        then [youtube_node(node["src"])].compact
       else blocks(node.children)
@@ -180,6 +180,11 @@ module Substack
     def youtube_start(url)
       match = url.to_s.match(/[?&](?:t|start)=(\d+)/)
       match && match[1].to_i
+    end
+
+    # <hr class="paywall"> is Substack's "Paid content below this line" divider.
+    def horizontal_rule(node)
+      { "type" => node["class"].to_s.split.include?("paywall") ? "paywall" : "horizontal_rule" }
     end
 
     def heading(node)
