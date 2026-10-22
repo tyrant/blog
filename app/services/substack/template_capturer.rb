@@ -2,9 +2,11 @@
 
 # Captures the whole below-body post template from a reference Substack draft
 # into SubstackSyncConfig#footer_json, so PostSyncer can resolve it per post.
-# The template is every block from the "Original:" link onward (the body is
-# above it); on the way in, the dynamic parts become directives:
-#   the Original heading            → syncOriginalLink
+# The template is every block from the platform-links section onward (the
+# body is above it; see TemplateBoundary); on the way in, the dynamic parts
+# become directives:
+#   the "My website · Facebook · …" row → syncPlatformLinks {textAlign, level}
+#   a legacy "Original:" heading        → syncOriginalLink
 #   the run of quotation triplets    → syncQuotations {count}
 #   configured conditional sections  → syncIf {tag}
 # Only footer_json is written — the subtitle fields are left untouched.
@@ -25,7 +27,7 @@ module Substack
       content = Array(JSON.parse(draft["draft_body"].to_s)["content"])
 
       template = below_body(content)
-      template[0] = { "type" => "syncOriginalLink" }
+      substitute_links_row!(template)
       substitute_quotations!(template)
       wrap_conditionals!(template)
 
@@ -36,10 +38,21 @@ module Substack
     private
 
     def below_body(content)
-      index = content.index { |block| block["type"] == "heading" && block_text(block).strip.start_with?("Original:") }
-      raise "No Original: link found in draft #{@draft_id}" unless index
+      index = Substack::TemplateBoundary.index(content)
+      raise "No \"#{Substack::TemplateBoundary::LINKS_ROW_LEAD}\" links heading (or legacy Original: link) found in draft #{@draft_id}" unless index
 
       content[index..].dup
+    end
+
+    # The links row is rebuilt per post from its categorizations; keep only its
+    # heading attrs (alignment, level). Legacy templates anchor on "Original:".
+    def substitute_links_row!(template)
+      row = template.index { |block| Substack::TemplateBoundary.links_row?(block) }
+      if row
+        template[row] = { "type" => "syncPlatformLinks", "attrs" => template[row]["attrs"].to_h.slice("textAlign", "level") }
+      else
+        template[0] = { "type" => "syncOriginalLink" }
+      end
     end
 
     def substitute_quotations!(template)

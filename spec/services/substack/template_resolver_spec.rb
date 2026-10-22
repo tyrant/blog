@@ -45,6 +45,45 @@ RSpec.describe Substack::TemplateResolver do
     end
   end
 
+  describe 'syncPlatformLinks' do
+    subject(:heading) { resolve([{ 'type' => 'syncPlatformLinks', 'attrs' => { 'textAlign' => 'center', 'level' => 4 } }]).first }
+
+    let(:texts) { heading['content'].map { |n| n['text'] } }
+    let(:hrefs) { heading['content'].filter_map { |n| n.dig('marks', 0, 'attrs', 'href') } }
+
+    def categorize(label, url)
+      category = create :category, site: site, label: label, categorized_type: 'Comfy::Blog::Post'
+      create :categorization, category: category, categorized: post, url: url
+    end
+
+    before do
+      categorize('Quora', 'https://quora/x')
+      categorize('FB', 'https://fb/x')
+      categorize('Medium', '')
+      categorize('Substack', 'https://substack/x')
+    end
+
+    it 'is a centred h4' do
+      expect(heading['attrs']).to eq('textAlign' => 'center', 'level' => 4)
+    end
+
+    it 'leads with My website, then the present platforms in order, separated by middots' do
+      expect(texts).to eq ['My website', ' · ', 'Facebook', ' · ', 'Quora']
+    end
+
+    it 'links My website to the canonical post url and each platform to its categorization url' do
+      expect(hrefs).to eq [post.url.to_s.sub(%r{\A//}, 'https://'), 'https://fb/x', 'https://quora/x']
+    end
+
+    context 'when the post has no platform categorizations' do
+      before { post.categorizations.delete_all }
+
+      it 'is just My website' do
+        expect(texts).to eq ['My website']
+      end
+    end
+  end
+
   describe 'syncOriginalLink' do
     subject(:heading) { resolve([{ 'type' => 'syncOriginalLink' }]).first }
 

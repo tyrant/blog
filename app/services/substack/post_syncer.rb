@@ -29,7 +29,7 @@ module Substack
       # slug); the mirror owns that block, canonically rebuilt from post.url.
       doc["content"].reject! { |block| original_link_block?(block) }
       insert_random_quotation!(doc["content"], post)
-      # Everything below the body is the stored template (Original link, footer
+      # Everything below the body is the stored template (platform links, footer
       # boilerplate, random quotations, tag-conditional sections), resolved per
       # post — directives expand here and never reach Substack.
       doc["content"].concat(TemplateResolver.resolve(@config.footer_json, post: post))

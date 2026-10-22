@@ -102,7 +102,48 @@ RSpec.describe Substack::TemplateCapturer do
     expect(footer.last['type']).to eq 'subscribeWidget'
   end
 
-  context 'when the draft has no Original link' do
+  context 'when the draft has the platform-links section instead of an Original link' do
+    def centred_heading(text, level)
+      { 'type' => 'heading', 'attrs' => { 'textAlign' => 'center', 'level' => level }, 'content' => [{ 'type' => 'text', 'text' => text }] }
+    end
+
+    def link(text)
+      { 'type' => 'text', 'text' => text, 'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => "https://#{text}" } }] }
+    end
+
+    let(:links_row) do
+      { 'type' => 'heading', 'attrs' => { 'textAlign' => 'center', 'level' => 4 },
+        'content' => [link('My website'), { 'type' => 'text', 'text' => ' · ' }, link('Facebook')] }
+    end
+
+    let(:blocks) do
+      [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'the body' }] },
+       centred_heading('.', 6), centred_heading('This post ALSO moonwalks resplendent twixt', 5), links_row,
+       { 'type' => 'button' }] + triplet + triplet + [{ 'type' => 'subscribeWidget' }]
+    end
+
+    it 'captures from the lead-in headings above the links row' do
+      capture
+      expect(footer.first(2).map { |b| b['content'].first['text'] }).to eq ['.', 'This post ALSO moonwalks resplendent twixt']
+    end
+
+    it 'replaces the links row with a syncPlatformLinks directive keeping its heading attrs' do
+      capture
+      expect(footer[2]).to eq('type' => 'syncPlatformLinks', 'attrs' => { 'textAlign' => 'center', 'level' => 4 })
+    end
+
+    it 'emits no syncOriginalLink' do
+      capture
+      expect(footer.none? { |b| b['type'] == 'syncOriginalLink' }).to be true
+    end
+
+    it 'still collapses the quotation run into a randomised syncQuotations directive' do
+      capture
+      expect(footer.find { |b| b['type'] == 'syncQuotations' }['attrs']['count']).to eq 2
+    end
+  end
+
+  context 'when the draft has neither a links row nor an Original link' do
     let(:blocks) { [{ 'type' => 'paragraph' }] }
 
     it { expect { capture }.to raise_error(/Original/) }

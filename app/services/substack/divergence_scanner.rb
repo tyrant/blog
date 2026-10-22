@@ -79,9 +79,9 @@ module Substack
                   substack_body_blocks: substack_body.size, flags: flags)
     end
 
-    # A draft's body is everything above the mirror-managed "Original:" link.
+    # A draft's body is everything above the mirror-managed template.
     def body_of(content)
-      index = content.index { |b| b["type"] == "heading" && block_text(b).strip.start_with?("Original:") }
+      index = Substack::TemplateBoundary.index(content)
       index ? content[0...index] : content
     end
 
