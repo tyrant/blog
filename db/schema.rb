@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_25_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -416,6 +416,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
     t.index ["comment_url"], name: "index_substack_replies_on_comment_url", unique: true
     t.index ["replied_at"], name: "index_substack_replies_on_replied_at"
     t.index ["substack_user_id"], name: "index_substack_replies_on_substack_user_id"
+  end
+
+  create_table "substack_subscriptions", force: :cascade do |t|
+    t.bigint "subscription_id", null: false
+    t.bigint "publication_id", null: false
+    t.string "publication_name"
+    t.string "publication_subdomain"
+    t.string "publication_custom_domain"
+    t.bigint "author_id"
+    t.string "author_handle"
+    t.string "author_name"
+    t.string "membership_state"
+    t.datetime "subscribed_at"
+    t.boolean "follows_me"
+    t.boolean "subscribes_to_me"
+    t.integer "author_follower_count"
+    t.datetime "checked_at"
+    t.string "check_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_substack_subscriptions_on_author_id"
+    t.index ["subscription_id"], name: "index_substack_subscriptions_on_subscription_id", unique: true
   end
 
   create_table "substack_sync_configs", force: :cascade do |t|

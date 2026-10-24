@@ -29,6 +29,7 @@ module Substack
     # publish. The cookie is fine; no stored session can satisfy it, so callers
     # fall back to a manual publish (SubstackPendingPublish).
     class ReauthRequired < AuthError; end
+    class NotFound < Error; end
 
     MAX_RETRIES = 5
     RETRYABLE   = [429, 502, 503, 504].freeze
@@ -43,6 +44,28 @@ module Substack
 
     def get_note(comment_id)
       request(Net::HTTP::Get.new(uri("/api/v1/reader/comment/#{comment_id}")))
+    end
+
+    # The logged-in user's own subscriptions; nextCursor is nil on the last page.
+    def subscriptions_page(cursor = nil)
+      path = "/api/v1/subscriptions/page_v2"
+      path += "?cursor=#{cursor}" if cursor
+      request(Net::HTTP::Get.new(uri(path)))
+    end
+
+    # Profiles are only found by "<id>-<handle>"; the id alone 404s.
+    def public_profile(user_id, handle)
+      request(Net::HTTP::Get.new(uri("/api/v1/user/#{user_id}-#{handle}/public_profile")))
+    end
+
+    # A user's current handle, from the redirect substack.com/profile/<id> → /@<handle>.
+    def handle_for(user_id)
+      target = uri("/profile/#{user_id}")
+      req = Net::HTTP::Head.new(target)
+      req["User-Agent"] = USER_AGENT
+      res = Net::HTTP.start(target.host, target.port, use_ssl: true,
+                            open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT) { |http| http.request(req) }
+      res["Location"].to_s[%r{/@([^/?#]+)}, 1]
     end
 
     # SubstackSyncConfig#subtitle_for renders a random combination from a
@@ -285,6 +308,8 @@ module Substack
         response.body.present? ? JSON.parse(response.body) : {}
       when 401, 403
         raise_refusal(response, req)
+      when 404
+        raise NotFound, "Substack API 404: #{req.method} #{req.uri.path}: #{response.body.to_s[0, 500]}"
       else
         body = response.body.to_s
         raise Error.new("Substack API #{response.code}: #{body[0, 2000]}", param: error_param(body))

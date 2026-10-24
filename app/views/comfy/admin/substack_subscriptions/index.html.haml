@@ -1,0 +1,64 @@
+.page-header.d-flex.justify-content-between.align-items-center
+  %h2 Subscription Cleanup
+  .d-flex
+    = button_to "Import & check", comfy_import_admin_substack_subscriptions_path, method: :post, class: "btn btn-primary btn-sm mr-2", form: { data: { turbo_confirm: "Re-import your Substack subscriptions, then check any new ones? This runs in the background." } }, data: { confirm: "Re-import your Substack subscriptions, then check any new ones? This runs in the background." }
+    = button_to "Re-check all", comfy_recheck_admin_substack_subscriptions_path, method: :post, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo_confirm: "Re-check every subscription? About a second each — over an hour for thousands." } }, data: { confirm: "Re-check every subscription? About a second each — over an hour for thousands." }
+
+%p.text-muted
+  #{number_with_delimiter(@counts[:total])} of 5,000 subscriptions ·
+  #{number_with_delimiter(@counts[:checked])} checked ·
+  #{number_with_delimiter(@counts[:candidates])} not following back with no interaction ·
+  #{number_with_delimiter(@counts[:errors])} failed
+- if @progress
+  %p.text-info
+    Checking: #{number_with_delimiter(@progress.completed)} of #{number_with_delimiter(@progress.total)} (#{@progress.percent}%) — reload to update.
+
+= form_with url: comfy_admin_substack_subscriptions_path, method: :get, class: "form-inline mb-3" do
+  = select_tag :show, options_for_select(SubstackSubscription::FILTERS.invert, @filter), class: "form-control mr-2"
+  = text_field_tag :q, params[:q], placeholder: "search publication or author", class: "form-control mr-2", style: "width: 16rem;"
+  = label_tag :order, "Order by", class: "mr-2"
+  = select_tag :order, options_for_select([["Subscribed", "subscribed_at"], ["Publication", "publication"], ["Author", "author"], ["Followers", "followers"]], params[:order]), class: "form-control mr-2"
+  = select_tag :direction, options_for_select([["Desc", "desc"], ["Asc", "asc"]], params[:direction]), class: "form-control mr-2"
+  = submit_tag "Show", class: "btn btn-secondary btn-sm"
+
+- if @subscriptions.empty?
+  %p.text-muted= @counts[:total].zero? ? "No subscriptions imported yet — click “Import & check”." : "Nothing matches."
+- else
+  = comfy_paginate @subscriptions
+  %table.table.table-sm
+    %thead
+      %tr
+        %th Publication
+        %th Author
+        %th Subscribed
+        %th Follows back
+        %th Subscribes back
+        %th Quotations
+        %th Replies
+        %th Followers
+        %th Checked
+    %tbody
+      - @subscriptions.each do |subscription|
+        %tr
+          %td
+            = link_to subscription.publication_name.presence || subscription.publication_subdomain, subscription.publication_url, target: "_blank"
+            - if subscription.paid?
+              %span.badge.badge-warning paid
+          %td
+            - if subscription.profile_url
+              = link_to "@#{subscription.author_handle}", subscription.profile_url, target: "_blank"
+              %span.text-muted.small= subscription.author_name
+            - else
+              %span.text-muted.small unknown
+          %td= subscription.subscribed_at&.to_date&.to_fs(:long)
+          %td= subscription.follows_me.nil? ? "" : (subscription.follows_me ? "yes" : "no")
+          %td= subscription.subscribes_to_me.nil? ? "" : (subscription.subscribes_to_me ? "yes" : "no")
+          %td= subscription.quotations_count
+          %td= subscription.replies_count
+          %td= subscription.author_follower_count && number_with_delimiter(subscription.author_follower_count)
+          %td
+            - if subscription.check_error
+              %span.text-danger.small{ title: subscription.check_error } failed
+            - elsif subscription.checked_at
+              %span.small= time_ago_in_words(subscription.checked_at) + " ago"
+  = comfy_paginate @subscriptions

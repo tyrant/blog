@@ -62,6 +62,42 @@ RSpec.describe Substack::Client do
     it { expect(client.create_attachment('https://x.com/p/y')).to eq 'att-9' }
   end
 
+  describe '#subscriptions_page' do
+    let!(:first) do
+      stub_request(:get, 'https://substack.com/api/v1/subscriptions/page_v2')
+        .to_return(status: 200, body: { 'subscriptions' => [], 'nextCursor' => 12 }.to_json)
+    end
+    let!(:later) do
+      stub_request(:get, 'https://substack.com/api/v1/subscriptions/page_v2?cursor=12')
+        .to_return(status: 200, body: { 'subscriptions' => [], 'nextCursor' => nil }.to_json)
+    end
+
+    it { expect(client.subscriptions_page['nextCursor']).to eq 12 }
+    it { expect(client.subscriptions_page(12)['nextCursor']).to be_nil }
+  end
+
+  describe '#public_profile' do
+    before do
+      stub_request(:get, 'https://substack.com/api/v1/user/42-eva/public_profile')
+        .to_return(status: 200, body: { 'handle' => 'eva', 'followsViewer' => true }.to_json)
+      stub_request(:get, 'https://substack.com/api/v1/user/42-nope/public_profile')
+        .to_return(status: 404, body: { 'error' => 'Not found' }.to_json)
+    end
+
+    it { expect(client.public_profile(42, 'eva')['followsViewer']).to be true }
+    it { expect { client.public_profile(42, 'nope') }.to raise_error Substack::Client::NotFound }
+  end
+
+  describe '#handle_for' do
+    before do
+      stub_request(:head, 'https://substack.com/profile/42').to_return(status: 301, headers: { 'Location' => 'https://substack.com/@eva' })
+      stub_request(:head, 'https://substack.com/profile/43').to_return(status: 404)
+    end
+
+    it { expect(client.handle_for(42)).to eq 'eva' }
+    it { expect(client.handle_for(43)).to be_nil }
+  end
+
   describe '#delete_note' do
     before { stub_request(:delete, 'https://substack.com/api/v1/comment/123').to_return(status: 200, body: '') }
 

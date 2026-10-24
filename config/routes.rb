@@ -100,6 +100,9 @@ Rails.application.routes.draw do
 
       resources :tags, as: :admin_tags, path: "admin/tags", except: %i[show]
       resources :substack_users, as: :admin_substack_users, path: "admin/substack-users", except: %i[show]
+      get  "admin/subscription-cleanup",         to: "substack_subscriptions#index",   as: :admin_substack_subscriptions
+      post "admin/subscription-cleanup/import",  to: "substack_subscriptions#import",  as: :import_admin_substack_subscriptions
+      post "admin/subscription-cleanup/recheck", to: "substack_subscriptions#recheck", as: :recheck_admin_substack_subscriptions
 
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick
