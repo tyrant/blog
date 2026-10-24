@@ -55,8 +55,27 @@ class SubstackUser < ApplicationRecord
     where("lower(handle) = ?", handle.to_s.downcase)
   end
 
+  ALPHABETICAL_SQL = "lower(coalesce(name, handle, ''))"
+
+  # The count columns are with_link_counts aliases, so sorting on them needs that scope too.
+  SORT_COLUMNS = {
+    "name"        => ALPHABETICAL_SQL,
+    "pronouns"    => "lower(pronouns)",
+    "handle"      => "lower(handle)",
+    "user_id"     => "user_id",
+    "quotations"  => "quotations_count",
+    "replies"     => "replies_count"
+  }.freeze
+
   def self.alphabetical
-    order(Arel.sql("lower(coalesce(name, handle, '')), id"))
+    order(Arel.sql("#{ALPHABETICAL_SQL}, id"))
+  end
+
+  # Unknown columns fall back to name, anything but "desc" to ascending; blanks always sort last.
+  def self.sorted_by(column, direction)
+    expression = SORT_COLUMNS.fetch(column.to_s, ALPHABETICAL_SQL)
+    direction  = direction.to_s.casecmp?("desc") ? "DESC" : "ASC"
+    order(Arel.sql("#{expression} #{direction} NULLS LAST, #{ALPHABETICAL_SQL}, id"))
   end
 
   def self.search(query)

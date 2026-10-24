@@ -5,7 +5,7 @@ class Comfy::Admin::SubstackUsersController < Comfy::Admin::Cms::BaseController
   before_action :load_substack_user, only: %i[edit update destroy]
 
   def index
-    @substack_users = comfy_paginate(SubstackUser.search(params[:q]).with_link_counts.alphabetical, per_page: 20)
+    @substack_users = comfy_paginate(SubstackUser.search(params[:q]).with_link_counts.sorted_by(params[:order], params[:direction]), per_page: 20)
   end
 
   def new

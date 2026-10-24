@@ -29,6 +29,16 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
       it { expect(response.body).to_not include '@bob' }
     end
 
+    context 'ordering' do
+      before do
+        create :substack_user, name: 'Adam', handle: 'adam'
+        get comfy_admin_substack_users_path(order: 'name', direction: 'desc'), headers: http_auth_headers
+      end
+
+      it { expect(response.body.index('Eva Solen')).to be < response.body.index('Adam') }
+      it { expect(response.body).to include '<option selected="selected" value="desc">Desc</option>' }
+    end
+
     context 'more than one page' do
       before do
         21.times { |i| create :substack_user, name: "Reader #{format('%02d', i)}" }

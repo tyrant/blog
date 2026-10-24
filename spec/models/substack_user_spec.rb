@@ -144,6 +144,31 @@ RSpec.describe SubstackUser do
     it { expect(described_class.alphabetical.to_a).to eq [amy, zed] }
   end
 
+  describe '.sorted_by' do
+    let!(:amy) { create :substack_user, name: 'Amy', handle: 'zz_amy', user_id: 9, pronouns: 'she/her' }
+    let!(:zed) { create :substack_user, name: 'zed', handle: nil, user_id: 1, pronouns: 'he/him' }
+    let!(:bea) { create :substack_user, name: 'Bea', handle: 'bea', user_id: nil }
+
+    before do
+      2.times { |i| SubstackQuotation.create!(quotation: 'q', comment_url: "https://x/comment/#{i}", substack_user: bea) }
+      SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/9', replied_at: Time.current, substack_user: zed)
+    end
+
+    def sorted(column, direction)
+      described_class.with_link_counts.sorted_by(column, direction).to_a
+    end
+
+    it { expect(sorted('name', 'asc')).to eq [amy, bea, zed] }
+    it { expect(sorted('name', 'desc')).to eq [zed, bea, amy] }
+    it { expect(sorted('pronouns', 'asc')).to eq [zed, amy, bea] }
+    it { expect(sorted('handle', 'asc')).to eq [bea, amy, zed] }
+    it { expect(sorted('handle', 'desc')).to eq [amy, bea, zed] }
+    it { expect(sorted('user_id', 'asc')).to eq [zed, amy, bea] }
+    it { expect(sorted('quotations', 'desc')).to eq [bea, amy, zed] }
+    it { expect(sorted('replies', 'desc')).to eq [zed, amy, bea] }
+    it { expect(sorted('bogus', 'sideways')).to eq [amy, bea, zed] }
+  end
+
   describe '.search' do
     let!(:eva) { create :substack_user, name: 'Eva Solen', handle: 'evasolen', user_id: 42 }
     let!(:bob) { create :substack_user, name: 'Bob', handle: 'bob' }

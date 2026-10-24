@@ -4,9 +4,12 @@
 
 = form_with url: comfy_admin_substack_users_path, method: :get, class: "form-inline mb-3" do
   = text_field_tag :q, params[:q], placeholder: "search name, handle or user id", class: "form-control mr-2", style: "width: 18rem;"
+  = label_tag :order, "Order by", class: "mr-2"
+  = select_tag :order, options_for_select([["Name", "name"], ["Pronouns", "pronouns"], ["Handle", "handle"], ["User id", "user_id"], ["Quotations", "quotations"], ["Replies", "replies"]], params[:order]), class: "form-control mr-2"
+  = select_tag :direction, options_for_select([["Asc", "asc"], ["Desc", "desc"]], params[:direction]), class: "form-control mr-2"
   = submit_tag "Search", class: "btn btn-secondary btn-sm"
   - if params[:q].present?
-    = link_to "clear", comfy_admin_substack_users_path, class: "btn btn-link btn-sm"
+    = link_to "clear", comfy_admin_substack_users_path(order: params[:order], direction: params[:direction]), class: "btn btn-link btn-sm"
 
 - if @substack_users.empty?
   %p.text-muted= params[:q].present? ? "No Substack users match “#{params[:q]}”." : "No Substack users yet."
