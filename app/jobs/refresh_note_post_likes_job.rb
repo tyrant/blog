@@ -4,7 +4,7 @@
 # Substack note's ❤ reaction_count (stored per note) and each post's own
 # reaction_count (stored on the post), across all Substack categorizations, plus
 # the unattached-notes pool (BlizzardScheduleConfig#data). Sequential with gentle
-# pacing to stay under Substack's rate limit. Runs daily on the prod worker (reads
+# pacing to stay under Substack's rate limit. Runs weekly on the prod worker (reads
 # are allowed from the prod IP). Idempotent per LikesRefresher. See
 # doc/refresh_note_post_likes_job.md.
 class RefreshNotePostLikesJob < ApplicationJob

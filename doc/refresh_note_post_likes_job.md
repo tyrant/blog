@@ -23,7 +23,7 @@ These feed `Substack::Blizzard::RepostOdds`, where an entry's repost weight is
 - **Prod worker only.** Substack *reads* are allowed from the datacenter IP (only note
   *creation* is Cloudflare-blocked), so the job runs on the prod SolidQueue worker. See
   [solid_queue.md](solid_queue.md).
-- **Daily at 4am** (NZ), via `config/recurring.yml` (recurring key `refresh_note_post_likes`).
+- **Weekly, Sundays at 4am** (NZ), via `config/recurring.yml` (recurring key `refresh_note_post_likes`).
 - **On demand** from the admin: the **"Refresh all Note/Post likes"** button on
   `/admin/substack-blizzard` → `SubstackBlizzardController#refresh_likes` →
   `RefreshNotePostLikesJob.perform_later`.
