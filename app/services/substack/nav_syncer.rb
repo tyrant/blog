@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-# Reconciles the Substack publication's nav bar with the Reviews pages: one
-# "Reviews Page N" item per page in SubstackSyncConfig#reviews_page_ids, in order.
+# Reconciles the Substack publication's nav bar with the Reviews pages, in
+# SubstackSyncConfig#reviews_page_ids order. Up to SHOW_ALL_MAX pages get an item
+# each; beyond that only the first and last EDGE_COUNT do, with ellipses bridging
+# the gap: "Reviews Page 1", "2", "3...", "...18", "19", "20".
 # Reads the current nav (from the homepage preload) and matches items to pages by
 # post_id (a page's draft id is its post id once published), then:
 #   - creates an item for any page missing one,
-#   - prunes stale Reviews items (ours by title/slug, but no longer a current page),
+#   - prunes stale Reviews items (no longer a current page, or a page now elided),
 #   - reorders so the Reviews items follow reviews_page_ids order.
 # Only ever touches Reviews items — other custom nav items are left in place (and
 # kept ahead of the Reviews block on reorder). Runs after ReviewsPageSyncer.
@@ -17,6 +19,8 @@ module Substack
     arguments client: nil, config: nil
 
     REVIEWS_TITLE = /\AReviews Page \d+\z/
+    EDGE_COUNT    = 3
+    SHOW_ALL_MAX  = EDGE_COUNT * 2
     REVIEWS_SLUG  = /\Areviews(-page-\d+)?\z/
 
     def execute
@@ -27,42 +31,67 @@ module Substack
       @client ||= Substack::Client.new(publication_host: @config.publication_host)
       items = @client.navigation_bar_items
 
-      created = ensure_items(items, page_ids)
+      shown = shown_indexes(page_ids.size)
+      created = ensure_items(items, page_ids, shown)
       items = @client.navigation_bar_items if created.any? # refetch for the new ids
 
-      prune_stale(items, page_ids)
-      reorder(items, page_ids)
+      prune_stale(items, page_ids, shown)
+      reorder(items, page_ids.values_at(*shown))
       created
     end
 
     private
 
+    # Indexes of the pages that get a nav item: all of them when few, else the
+    # first and last EDGE_COUNT.
+    def shown_indexes(count)
+      return (0...count).to_a if count <= SHOW_ALL_MAX
+
+      (0...EDGE_COUNT).to_a + ((count - EDGE_COUNT)...count).to_a
+    end
+
     # Create an item for each page that lacks one, and relabel any whose title has
     # drifted (delete + recreate — there's no title-update endpoint). Returns the
     # post ids (re)created. Page 1 keeps the full "Reviews Page 1"; the rest are bare
     # numbers ("2", "3", …) to keep the nav bar compact.
-    def ensure_items(items, page_ids)
+    def ensure_items(items, page_ids, shown)
       by_post = items.each_with_object({}) { |item, memo| pid = item["post_id"]&.to_i; memo[pid] = item if pid }
-      page_ids.each_with_index.filter_map do |post_id, index|
+      shown.filter_map do |index|
+        post_id = page_ids[index]
+        title = title_for(index, page_ids.size)
         current = by_post[post_id]
-        next if current && current["link_title"] == title_for(index)
+        next if current && current["link_title"] == title
 
         @client.delete_nav_item(current["id"]) if current
-        @client.create_nav_item(link_title: title_for(index), link_url: page_url(index))
+        @client.create_nav_item(link_title: title, link_url: page_url(index))
         post_id
       end
     end
 
-    def title_for(index)
-      index.zero? ? "Reviews Page 1" : (index + 1).to_s
+    # When pages are elided, the items either side of the gap carry the ellipsis.
+    def title_for(index, count)
+      return "Reviews Page 1" if index.zero?
+
+      number = (index + 1).to_s
+      return number if count <= SHOW_ALL_MAX
+
+      case index
+      when EDGE_COUNT - 1     then "#{number}..."
+      when count - EDGE_COUNT then "...#{number}"
+      else number
+      end
     end
 
-    # Delete Reviews items whose post no longer corresponds to a current page (e.g.
-    # a removed/recreated page). Conservative: only items we recognise as ours that
-    # carry a post_id not in the wanted set — never other custom items.
-    def prune_stale(items, page_ids)
-      wanted = page_ids.to_set
-      stale = items.select { |item| reviews_item?(item) && item["post_id"] && !wanted.include?(item["post_id"].to_i) }
+    # Delete Reviews items not in the shown set: a removed/recreated page, or a page
+    # now elided from the middle. Conservative: only items we recognise as ours (by
+    # title/slug, or pointing at a current page) — never other custom items.
+    def prune_stale(items, page_ids, shown)
+      wanted = page_ids.values_at(*shown).to_set
+      pages = page_ids.to_set
+      stale = items.select do |item|
+        pid = item["post_id"]&.to_i
+        pid && !wanted.include?(pid) && (pages.include?(pid) || reviews_item?(item))
+      end
       stale.each { |item| @client.delete_nav_item(item["id"]) }
       items.reject! { |item| stale.include?(item) }
     end

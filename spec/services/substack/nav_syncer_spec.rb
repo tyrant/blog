@@ -140,6 +140,52 @@ RSpec.describe Substack::NavSyncer do
     end
   end
 
+  describe 'eliding the middle pages' do
+    let(:ids) { (1..20).map { |n| n * 1000 } }
+
+    before do
+      config.update!(reviews_draft_id: ids.first, reviews_extra_draft_ids: ids.drop(1))
+      allow(client).to receive(:navigation_bar_items).and_return([])
+    end
+
+    it 'creates items for only the first and last three, with ellipses bridging the gap' do
+      sync
+      titles = []
+      expect(client).to have_received(:create_nav_item).exactly(6).times do |link_title:, **|
+        titles << link_title
+      end
+      expect(titles).to eq ['Reviews Page 1', '2', '3...', '...18', '19', '20']
+    end
+
+    it 'points the ellipsis items at their own pages' do
+      sync
+      expect(client).to have_received(:create_nav_item)
+        .with(link_title: '3...', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-3')
+      expect(client).to have_received(:create_nav_item)
+        .with(link_title: '...18', link_url: 'https://mikeyclarke.substack.com/p/reviews-page-18')
+    end
+
+    it 'prunes existing items for elided pages, even with an unrecognised title' do
+      allow(client).to receive(:navigation_bar_items).and_return([
+        item('a', 1000, title: 'Reviews Page 1', slug: 'reviews'),
+        item('m', 10_000, title: '10'),
+        item('r', 18_000, title: '18', slug: 'reviews-page-18')
+      ])
+      sync
+      expect(client).to have_received(:delete_nav_item).with('m')
+      expect(client).to have_received(:delete_nav_item).with('r') # relabelled "...18"
+      expect(client).to_not have_received(:delete_nav_item).with('a')
+    end
+
+    it 'shows every page without ellipses at six pages or fewer' do
+      config.update!(reviews_extra_draft_ids: ids[1, 5])
+      sync
+      expect(client).to have_received(:create_nav_item).exactly(6).times
+      expect(client).to have_received(:create_nav_item).with(hash_including(link_title: '3'))
+      expect(client).to have_received(:create_nav_item).with(hash_including(link_title: '4'))
+    end
+  end
+
   context 'when the current nav cannot be read' do
     before { allow(client).to receive(:navigation_bar_items).and_raise(Substack::Client::Error, 'blocked') }
 
