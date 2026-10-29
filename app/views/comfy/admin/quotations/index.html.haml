@@ -9,7 +9,7 @@
     = hidden_field_tag :page, @quotations.current_page
     = hidden_field_tag :q, @search if @search.present?
     .form-group
-      = text_field_tag :comment_url, @quotation.comment_url, class: "form-control", placeholder: "https://…/comment/… or a note URL"
+      = text_field_tag :comment_url, @quotation.comment_url, class: "form-control", placeholder: "https://…/comment/…, a note URL, or a Substack page URL"
     .form-group
       = text_area_tag :quotation, @quotation.quotation, class: "form-control", rows: 3, placeholder: "the blurb to quote"
     - if editing

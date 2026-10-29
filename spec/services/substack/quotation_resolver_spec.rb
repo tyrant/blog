@@ -39,10 +39,36 @@ RSpec.describe Substack::QuotationResolver do
     it { expect(resolved.author_handle).to be_nil }
   end
 
-  context 'a URL that is not a comment or note' do
-    it do
-      expect { described_class.execute(comment_url: 'https://example.com/whatever', client: client) }
-        .to raise_error(ArgumentError, /comment or note/)
+  context 'a Substack page URL with no comment or note' do
+    subject(:resolved) { described_class.execute(comment_url: url, client: client) }
+
+    let(:url) { 'https://greblksnew.substack.com/recommendations' }
+
+    before { allow(client).to receive(:get_note) }
+
+    it 'stands in for the publication without a lookup' do
+      expect(resolved.post_url).to eq Substack::PostMetadata::GENERIC_POST_URL
+      expect(resolved.post_title).to eq Substack::PostMetadata::GENERIC_POST_TITLE
+      expect(resolved.post_image_url).to eq Substack::PostMetadata::FALLBACK_IMAGE_URL
+      expect(client).to_not have_received(:get_note)
+    end
+
+    it { expect(resolved.author_name).to be_nil }
+
+    context 'the publication base URL' do
+      let(:url) { 'https://mikeyclarke.substack.com' }
+
+      it { expect(resolved.post_url).to eq Substack::PostMetadata::GENERIC_POST_URL }
+    end
+  end
+
+  context 'a URL that is not a comment, note or Substack page' do
+    %w[https://example.com/whatever http://greblksnew.substack.com/recommendations
+       https://notsubstack.com/recommendations not-a-url].each do |url|
+      it "rejects #{url}" do
+        expect { described_class.execute(comment_url: url, client: client) }
+          .to raise_error(ArgumentError, /comment, note or page/)
+      end
     end
   end
 end
