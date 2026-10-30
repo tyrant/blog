@@ -112,13 +112,17 @@ HEADLESS=false bundle exec rspec spec/system
 cap production deploy
 
 # Rails console on production (user runs SSH commands themselves — see Deployment / Ops)
-ssh noob@168.144.167.177 "cd ~/blog/current && RAILS_ENV=production bundle exec rails c"
+ssh -t noob@168.144.167.177 "cd ~/blog/current && RBENV_ROOT=/home/noob/.rbenv RBENV_VERSION=4.0.5 RAILS_ENV=production /home/noob/.rbenv/bin/rbenv exec bundle exec rails c"
+
+# One-off production script (same rbenv prefix, `rails runner` instead of `rails c`)
+ssh noob@168.144.167.177 "cd ~/blog/current && RBENV_ROOT=/home/noob/.rbenv RBENV_VERSION=4.0.5 RAILS_ENV=production /home/noob/.rbenv/bin/rbenv exec bundle exec rails runner '<ruby>'"
 ```
 
 ## Deployment / Ops
 
 - Auto-deploying is fine anytime — run `bundle exec cap production deploy` yourself as needed.
 - After deploying, verify the commit was actually pushed (`git status`, `git log origin/mistress`) before reporting the deploy as successful — Capistrano ships the pushed commit, not local HEAD.
+- Non-interactive `ssh host "…"` doesn't load rbenv, so a bare `bundle` fails with "command not found" — prefix prod commands with `RBENV_ROOT=/home/noob/.rbenv RBENV_VERSION=4.0.5 /home/noob/.rbenv/bin/rbenv exec` (the Ruby version is `:rbenv_ruby` in `config/deploy.rb`).
 - Do NOT run direct SSH commands on the production server yourself (installing libraries/packages, arbitrary server ops, remote consoles) — the user reserves those. Prepare the exact command and hand it off to run.
 
 ## Environment / Shell Notes
