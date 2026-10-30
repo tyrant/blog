@@ -15,6 +15,7 @@ RSpec.describe 'Comfy::Admin::TagsController', type: :request do
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'writing' }
+    it { expect(response.body).to include '<title>Comfy: Tags</title>' }
   end
 
   describe 'POST create' do

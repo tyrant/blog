@@ -1,4 +1,5 @@
+- body = render 'layouts/comfy/admin/cms/body'
 !!!
 %html{lang: I18n.locale}
-  = render 'layouts/comfy/admin/cms/head'
-  = render 'layouts/comfy/admin/cms/body'
+  = render 'layouts/comfy/admin/cms/head', page_title: comfy_admin_page_title(body)
+  = body

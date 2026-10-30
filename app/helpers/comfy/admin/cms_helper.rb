@@ -12,6 +12,14 @@ module Comfy
         bootstrap_form_with(**form_options, &block)
       end
 
+      # "Comfy: <heading>" from the rendered page's .page-header heading, so each
+      # admin tab is identifiable. Nil (falling back to cms_title) without one.
+      def comfy_admin_page_title(body_html)
+        heading = Nokogiri::HTML5.fragment(body_html).at_css(".page-header h1, .page-header h2")
+        text = heading&.text.to_s.squish
+        "Comfy: #{text}" if text.present?
+      end
+
       def comfy_admin_partial(path, params = {})
         render path, params
       rescue ActionView::MissingTemplate
