@@ -44,21 +44,62 @@ RSpec.describe Substack::QuotationResolver do
 
     let(:url) { 'https://greblksnew.substack.com/recommendations' }
 
-    before { allow(client).to receive(:get_note) }
+    before do
+      allow(client).to receive(:get_note)
+      allow(client).to receive(:publication_author).with('greblksnew.substack.com')
+        .and_return(user_id: 193407428, name: 'Greblåks New', handle: 'greblaksnew')
+    end
 
-    it 'stands in for the publication without a lookup' do
+    it 'stands in for the publication without a post lookup' do
       expect(resolved.post_url).to eq Substack::PostMetadata::GENERIC_POST_URL
       expect(resolved.post_title).to eq Substack::PostMetadata::GENERIC_POST_TITLE
       expect(resolved.post_image_url).to eq Substack::PostMetadata::FALLBACK_IMAGE_URL
       expect(client).to_not have_received(:get_note)
     end
 
-    it { expect(resolved.author_name).to be_nil }
+    it "takes the author from the publication's owner, not the subdomain" do
+      expect([resolved.author_user_id, resolved.author_name, resolved.author_handle])
+        .to eq [193407428, 'Greblåks New', 'greblaksnew']
+    end
+
+    it 'leaves the author blank when the lookup fails' do
+      allow(client).to receive(:publication_author).and_raise(Substack::Client::Error, 'Substack homepage 503')
+      expect(resolved.post_url).to eq Substack::PostMetadata::GENERIC_POST_URL
+      expect(resolved.author_name).to be_nil
+    end
 
     context 'the publication base URL' do
       let(:url) { 'https://mikeyclarke.substack.com' }
 
+      before { SubstackSyncConfig.instance.update!(publication_host: 'mikeyclarke.substack.com') }
+
       it { expect(resolved.post_url).to eq Substack::PostMetadata::GENERIC_POST_URL }
+
+      it 'never credits our own publication owner' do
+        allow(client).to receive(:publication_author)
+        expect(resolved.author_name).to be_nil
+        expect(client).to_not have_received(:publication_author)
+      end
+    end
+
+    context 'a substack.com profile URL' do
+      let(:url) { 'https://substack.com/@davewise' }
+
+      before do
+        allow(client).to receive(:public_profile_by_handle).with('davewise')
+          .and_return('id' => 27371188, 'name' => 'Dave Wise (Neoteric Wood Art)', 'handle' => 'davewise')
+      end
+
+      it 'takes the author from the profile' do
+        expect([resolved.author_user_id, resolved.author_name, resolved.author_handle])
+          .to eq [27371188, 'Dave Wise (Neoteric Wood Art)', 'davewise']
+      end
+    end
+
+    context 'a substack.com URL with no profile in it' do
+      let(:url) { 'https://substack.com/home' }
+
+      it { expect(resolved.author_name).to be_nil }
     end
   end
 

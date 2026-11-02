@@ -4,9 +4,11 @@
 # was made on (url + title) and the commenter (name + profile url). Lets the
 # Quotations admin take just the comment URL and the blurb, filling the rest.
 # A quotation with no comment or note to point at (e.g. a blurb on someone's
-# /recommendations page) may instead use any substack.com page URL: there's
-# nothing to look up, so it stands in for the publication itself, like
-# PostMetadata's GENERIC_POST_URL, with no author.
+# /recommendations page) may instead use any substack.com page URL: its post
+# stands in for the publication itself, like PostMetadata's GENERIC_POST_URL, and
+# its author is the page's owner — the publication's (from its homepage) for
+# <sub>.substack.com (except our own), or the profile's for substack.com/@<handle>. Best-effort:
+# an author lookup that fails leaves the author blank rather than blocking a save.
 module Substack
   class QuotationResolver
     include ServiceInterface
@@ -43,9 +45,28 @@ module Substack
     private
 
     def generic_result
+      author = page_author || {}
       Result.new(post_url:       PostMetadata::GENERIC_POST_URL,
                  post_title:     PostMetadata::GENERIC_POST_TITLE,
-                 post_image_url: PostMetadata::FALLBACK_IMAGE_URL)
+                 post_image_url: PostMetadata::FALLBACK_IMAGE_URL,
+                 author_name:    author[:name],
+                 author_handle:  author[:handle],
+                 author_user_id: author[:user_id])
+    end
+
+    def page_author
+      uri = URI.parse(@comment_url.to_s.strip)
+      if uri.host.casecmp?("substack.com")
+        handle = uri.path[%r{\A/@([^/]+)}, 1] or return nil
+        profile = @client.public_profile_by_handle(handle)
+        { user_id: profile["id"], name: profile["name"], handle: profile["handle"] }
+      elsif !uri.host.casecmp?(SubstackSyncConfig.instance.publication_host.to_s)
+        # Our own publication's pages hold others' blurbs; its owner is never the author.
+        @client.publication_author(uri.host)
+      end
+    rescue Substack::Client::Error, JSON::ParserError, SocketError, Net::OpenTimeout, Net::ReadTimeout => e
+      Rails.logger.warn("[QuotationResolver] no author for #{@comment_url}: #{e.message}")
+      nil
     end
 
     def substack_page?

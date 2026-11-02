@@ -58,6 +58,21 @@ module Substack
       request(Net::HTTP::Get.new(uri("/api/v1/user/#{user_id}-#{handle}/public_profile")))
     end
 
+    # By handle alone (as in substack.com/@<handle>) works too.
+    def public_profile_by_handle(handle)
+      request(Net::HTTP::Get.new(uri("/api/v1/user/#{handle}/public_profile")))
+    end
+
+    # The owner of the publication at `host`, from its (public) homepage preload —
+    # there's no unauthenticated publication endpoint. Returns
+    # { user_id:, name:, handle: }, or nil when the preload doesn't carry them.
+    def publication_author(host)
+      html = get_html(URI("https://#{host}/")).gsub('\\"', '"')
+      user_id = html[/"author_id":(\d+)/, 1] or return nil
+      string = ->(key) { (raw = html[/"#{key}":"((?:[^"\\]|\\.)*)"/, 1]) && JSON.parse(%("#{raw}")) }
+      { user_id: user_id.to_i, name: string.("author_name"), handle: string.("author_handle") }
+    end
+
     # A user's current handle, from the redirect substack.com/profile/<id> → /@<handle>.
     def handle_for(user_id)
       target = uri("/profile/#{user_id}")

@@ -88,6 +88,45 @@ RSpec.describe Substack::Client do
     it { expect { client.public_profile(42, 'nope') }.to raise_error Substack::Client::NotFound }
   end
 
+  describe '#public_profile_by_handle' do
+    before do
+      stub_request(:get, 'https://substack.com/api/v1/user/davewise/public_profile')
+        .to_return(status: 200, body: { 'id' => 27371188, 'handle' => 'davewise' }.to_json)
+    end
+
+    it { expect(client.public_profile_by_handle('davewise')['id']).to eq 27371188 }
+  end
+
+  describe '#publication_author' do
+    def homepage(body)
+      stub_request(:get, 'https://greblksnew.substack.com/').to_return(status: 200, body: body)
+    end
+
+    it 'reads the owner from the homepage preload' do
+      homepage('<script>{"about_us_author_ids":"","author_id":193407428,"x":1,' \
+               '"author_name":"Greblåks New","author_handle":"greblaksnew"}</script>')
+      expect(client.publication_author('greblksnew.substack.com'))
+        .to eq(user_id: 193407428, name: 'Greblåks New', handle: 'greblaksnew')
+    end
+
+    it 'reads an escaped preload, unescaping the name' do
+      homepage('JSON.parse("{\\"author_id\\":441411746,\\"author_name\\":\\"The O\\u0027Kay\\",' \
+               '\\"author_handle\\":\\"angelca007\\"}")')
+      expect(client.publication_author('greblksnew.substack.com'))
+        .to eq(user_id: 441411746, name: "The O'Kay", handle: 'angelca007')
+    end
+
+    it 'is nil when the preload has no author' do
+      homepage('<html>Just a moment...</html>')
+      expect(client.publication_author('greblksnew.substack.com')).to be_nil
+    end
+
+    it 'raises on a failed homepage fetch' do
+      stub_request(:get, 'https://greblksnew.substack.com/').to_return(status: 503)
+      expect { client.publication_author('greblksnew.substack.com') }.to raise_error Substack::Client::Error
+    end
+  end
+
   describe '#handle_for' do
     before do
       stub_request(:head, 'https://substack.com/profile/42').to_return(status: 301, headers: { 'Location' => 'https://substack.com/@eva' })
