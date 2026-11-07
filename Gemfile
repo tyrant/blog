@@ -92,3 +92,5 @@ gem 'kaminari'
 
 # Use Redis for Action Cable
 gem 'redis', '>= 4.0.1'
+
+gem "webauthn", "~> 3.5"

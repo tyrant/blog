@@ -1,4 +1,6 @@
 class PostsController < Comfy::Blog::PostsController
+  include AdminSession
+
   helper_method :admin_authenticated?
 
   def index
@@ -77,6 +79,6 @@ class PostsController < Comfy::Blog::PostsController
   private
 
   def admin_authenticated?
-    session[:comfy_admin_authenticated] == true
+    session[:comfy_admin_authenticated] == true || admin_signed_in?
   end
 end

@@ -1,0 +1,52 @@
+.page-header
+  %h2 Passkeys
+
+%p.text-muted
+  These passkeys can sign in to the admin. A sign-in lasts
+  #{AdminSession::SESSION_TTL.inspect} on that browser.
+  - if @passkeys.empty?
+    %strong Until you add one, the admin still uses the old username/password prompt.
+
+%section.mb-4
+  %h5 Add a passkey
+  .form-inline
+    = text_field_tag :nickname, nil, id: "passkey_nickname", class: "form-control mr-2",
+                     placeholder: "Name, e.g. MacBook Touch ID", style: "width: 20rem;"
+    %button.btn.btn-primary{type: "button",
+      data: { passkey_action: "register",
+              options_url: comfy_admin_passkey_options_path,
+              verify_url: comfy_admin_passkeys_path,
+              nickname_input: "#passkey_nickname" }}
+      Add passkey
+  %p.small.mt-2{data: { passkey_status: true }, role: "status"}
+
+%section.mb-4
+  %h5 Registered
+  - if @passkeys.empty?
+    %p.text-muted None yet.
+  - else
+    %table.table.table-sm
+      %thead
+        %tr
+          %th Name
+          %th Added
+          %th Last used
+          %th
+      %tbody
+        - @passkeys.each do |passkey|
+          %tr
+            %td= passkey.nickname
+            %td= l(passkey.created_at, format: :short)
+            %td= passkey.last_used_at ? "#{time_ago_in_words(passkey.last_used_at)} ago" : "—"
+            %td.text-right
+              - warning = @passkeys.one? ? " It's the only one: the admin will fall back to the username/password prompt." : ""
+              - confirm = "Remove “#{passkey.nickname}”?#{warning}"
+              = button_to "Remove", comfy_admin_passkey_path(passkey), method: :delete,
+                          class: "btn btn-outline-danger btn-sm",
+                          form: { data: { turbo_confirm: confirm } }, data: { confirm: confirm }
+
+%section
+  = button_to "Sign out", comfy_admin_sign_out_path, method: :delete, class: "btn btn-outline-secondary btn-sm"
+
+- content_for :javascript do
+  = javascript_include_tag "admin_passkeys", defer: true

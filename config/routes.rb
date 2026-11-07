@@ -64,6 +64,17 @@ Rails.application.routes.draw do
 
   scope module: :comfy, as: :comfy do
     scope module: :admin do
+      # Passkey sign-in (see AdminSession / AdminAuthentication).
+      get    "admin/sign-in",         to: "sessions#new",     as: :admin_sign_in
+      post   "admin/sign-in/options", to: "sessions#options", as: :admin_sign_in_options
+      post   "admin/sign-in",         to: "sessions#create"
+      delete "admin/sign-out",        to: "sessions#destroy", as: :admin_sign_out
+
+      get    "admin/passkeys",         to: "passkeys#index",   as: :admin_passkeys
+      post   "admin/passkeys/options", to: "passkeys#options", as: :admin_passkey_options
+      post   "admin/passkeys",         to: "passkeys#create"
+      delete "admin/passkeys/:id",     to: "passkeys#destroy", as: :admin_passkey
+
       resource :substack_sync_config,
                as: :admin_substack_sync_config,
                path: "admin/substack-sync",

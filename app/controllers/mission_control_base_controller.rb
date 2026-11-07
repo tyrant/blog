@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-# Gates the Mission Control Jobs dashboard behind the same HTTP basic auth as the
-# rest of /admin (the Comfy admin credentials).
+# Gates the Mission Control Jobs dashboard behind the same auth as the rest of
+# /admin (passkey session, dev bypass, or the HTTP Basic bootstrap).
 class MissionControlBaseController < ActionController::Base
-  http_basic_authenticate_with(
-    name:     Rails.application.credentials.comfy[:username],
-    password: Rails.application.credentials.comfy[:password]
-  )
+  include ComfortableMexicanSofa::AccessControl::AdminAuthentication
+
+  before_action :authenticate
 end

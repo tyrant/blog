@@ -104,6 +104,18 @@ Comfy, and an extension, [ComfyBlog](https://github.com/comfy/comfy-blog), have 
 
 So until late 2025, these had kept this app at Rails 6.x. This quite spectacularly hamstrung other upgrades like fleeing squeeing from Webpack (see below). Ultimately I bit the bullet and forked both Comfy and ComfyBlog; got both my local forks up to Rails 8 standards; got this app itself upgraded to Rails 8; chunked through quite a big backlog of nonessential-yet-fab upgrades; and finally just refactored both Comfy and ComfyBlog into this app as if they'd always been part of the core app itself. Done. I've got no plans to ever use Comfy elsewhere, so I don't mind spurning modularity and embracing monolith-arity.
 
+### Admin sign-in (passkeys)
+
+`/admin` (and Mission Control at `/admin/jobs`) signs in with a **passkey**: Touch ID, a phone, or a password manager. No password. A sign-in lasts 60 days per browser (`AdminSession::SESSION_TTL`).
+
+- **Local dev** needs no sign-in at all, for requests from this machine. Set `ADMIN_AUTH_IN_DEV=1` to try the real flow locally.
+- **Register / remove passkeys** at `/admin/passkeys` ("Passkeys" in the nav). Passkeys are tied to the site's domain (from `ROOT_URL`), so prod and dev each need their own.
+- **Bootstrap:** until at least one passkey exists, the old HTTP Basic prompt (the Comfy credentials) still works, so you can get in to register the first one. Once a passkey exists, HTTP Basic is refused.
+- **Locked out?** In a prod Rails console, `AdminPasskey.destroy_all` puts you back on HTTP Basic; then register a new passkey.
+- **Revoke a browser's session:** remove the passkey it signed in with. Rotating `secret_key_base` revokes every session.
+
+Code: `ComfortableMexicanSofa::AccessControl::AdminAuthentication` (the gate), `AdminSession` (cookie + dev bypass), `Comfy::Admin::SessionsController` / `PasskeysController`, `app/javascript/admin_passkeys.js`. Uses the `webauthn` gem.
+
 
 ## Asset Pipeline and client-side shenanigans
 

@@ -1,0 +1,8 @@
+%h2.mb-3 Admin sign-in
+%p.text-muted Use the passkey you registered for this site (Touch ID, phone or password manager).
+%button.btn.btn-primary{type: "button", autofocus: true,
+  data: { passkey_action: "sign-in",
+          options_url: comfy_admin_sign_in_options_path,
+          verify_url: comfy_admin_sign_in_path }}
+  Sign in with a passkey
+%p.small.mt-3.mb-0{data: { passkey_status: true }, role: "status"}

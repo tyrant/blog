@@ -6,7 +6,8 @@ const watch = process.argv.includes('--watch');
 require('esbuild').context({
   entryPoints: [
     'app/javascript/application.ts',
-    'app/javascript/comfy_admin.js'
+    'app/javascript/comfy_admin.js',
+    'app/javascript/admin_passkeys.js'
   ],
   bundle: true,
   outdir: 'app/assets/builds',
