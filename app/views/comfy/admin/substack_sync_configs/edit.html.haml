@@ -12,6 +12,8 @@
       - if @config.session_error.present?
         %div.small= @config.session_error
       %div.small Detected #{time_ago_in_words(@config.session_checked_at)} ago. All Substack sync halts until the cookie is refreshed.
+  %pre.small.bg-light.border.rounded.p-2.mb-2
+    %code SubstackSyncConfig.instance.update!(session_cookie: "PASTE_SUBSTACK_SID_VALUE_HERE")
   = form_with url: check_connection_comfy_admin_substack_sync_config_path, method: :post do
     = submit_tag "Check connection now", class: "btn btn-outline-secondary btn-sm"
 
@@ -42,7 +44,7 @@
     = form.text_area :subtitle_variables_json,
                      label: "Subtitle template variables — JSON: { \"var\": [\"choice\", …] }; each {{ var }} renders a random choice",
                      style: "font-family: monospace; min-height: 10rem;",
-                     data: { 'cms-cm-mode': 'application/json' }
+                     data: { 'cms-cm-mode': 'application/json', 'cms-cm-fold-root': true }
 
   .form-group.mb-3
     %label.form-text.text-muted Preview
