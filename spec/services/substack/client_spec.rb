@@ -144,14 +144,15 @@ RSpec.describe Substack::Client do
   end
 
   describe '#unsubscribe' do
-    it 'DELETEs /api/v1/free on the publication’s subdomain' do
-      stub = stub_request(:delete, 'https://evawrites.substack.com/api/v1/free').to_return(status: 200, body: '')
-      client.unsubscribe('evawrites')
+    it 'DELETEs /api/v1/free on the publication’s subdomain with its publication_id' do
+      stub = stub_request(:delete, 'https://evawrites.substack.com/api/v1/free')
+        .with(body: { publication_id: 7001 }.to_json).to_return(status: 200, body: '')
+      client.unsubscribe('evawrites', 7001)
       expect(stub).to have_been_requested
     end
 
     it 'refuses anything that is not a bare subdomain' do
-      expect { client.unsubscribe('evil.com/x?') }.to raise_error(ArgumentError)
+      expect { client.unsubscribe('evil.com/x?', 7001) }.to raise_error(ArgumentError)
     end
   end
 

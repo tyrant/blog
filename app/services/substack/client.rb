@@ -54,10 +54,13 @@ module Substack
     end
 
     # Leaves a publication as a reader: DELETE /api/v1/free on its own
-    # subdomain. Unofficial and undocumented — Unsubscriber confirms the result
-    # with #publication_subscription rather than trusting the 2xx.
-    def unsubscribe(subdomain)
-      request(Net::HTTP::Delete.new(reader_uri(subdomain, "/api/v1/free")))
+    # subdomain, with { publication_id } in the body (400s without it).
+    # Unofficial and undocumented — Unsubscriber confirms the result with
+    # #publication_subscription rather than trusting the 2xx.
+    def unsubscribe(subdomain, publication_id)
+      req = Net::HTTP::Delete.new(reader_uri(subdomain, "/api/v1/free"))
+      req.body = { publication_id: publication_id }.to_json
+      request(req)
     end
 
     # The cookie holder's own subscription to one publication (is_subscribed,

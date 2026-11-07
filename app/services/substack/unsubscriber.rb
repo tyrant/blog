@@ -21,7 +21,7 @@ module Substack
       raise Error, "Paid subscription — cancel it in Substack" if @subscription.paid?
       raise Error, "No Substack subdomain recorded" if @subscription.publication_subdomain.blank?
 
-      @client.unsubscribe(@subscription.publication_subdomain)
+      @client.unsubscribe(@subscription.publication_subdomain, @subscription.publication_id)
       raise Error, "Substack still lists you as subscribed" if still_subscribed?
 
       @subscription.destroy!

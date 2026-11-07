@@ -13,7 +13,7 @@ RSpec.describe Substack::Unsubscriber do
 
     it 'unsubscribes on the publication’s subdomain and drops the row' do
       unsubscribe
-      expect(client).to have_received(:unsubscribe).with('evawrites')
+      expect(client).to have_received(:unsubscribe).with('evawrites', subscription.publication_id)
       expect(SubstackSubscription.exists?(subscription.id)).to be false
     end
   end

@@ -129,6 +129,18 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
       end
     end
 
+    context 'when Substack rejects the request' do
+      before do
+        allow(client).to receive(:unsubscribe).and_raise(Substack::Client::Error, 'Substack API 400: {"param":"publication_id"}')
+        post comfy_unsubscribe_admin_substack_subscription_path(subscription), headers: admin_headers.merge('Accept' => 'text/vnd.turbo-stream.html')
+      end
+
+      it 'shows the reason escaped once, so the hover reads as plain text' do
+        expect(response.body).to include '{&quot;param&quot;:&quot;publication_id&quot;}'
+        expect(response.body).to_not include '&amp;quot;'
+      end
+    end
+
     context 'as a plain form post' do
       before { post comfy_unsubscribe_admin_substack_subscription_path(subscription), headers: admin_headers }
 
