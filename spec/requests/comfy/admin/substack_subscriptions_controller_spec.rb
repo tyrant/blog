@@ -12,7 +12,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
     let!(:follower) { create :substack_subscription, :checked, publication_name: 'Friendly Bob', follows_me: true }
 
     context 'by default' do
-      before { get comfy_admin_substack_subscriptions_path, headers: http_auth_headers }
+      before { get comfy_admin_substack_subscriptions_path, headers: admin_headers }
 
       it { expect(response).to have_http_status :success }
       it { expect(response.body).to include 'Quiet Eva' }
@@ -22,13 +22,13 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
     end
 
     context 'showing all' do
-      before { get comfy_admin_substack_subscriptions_path(show: 'all'), headers: http_auth_headers }
+      before { get comfy_admin_substack_subscriptions_path(show: 'all'), headers: admin_headers }
 
       it { expect(response.body).to include 'Friendly Bob' }
     end
 
     context 'searching' do
-      before { get comfy_admin_substack_subscriptions_path(show: 'all', q: 'bob'), headers: http_auth_headers }
+      before { get comfy_admin_substack_subscriptions_path(show: 'all', q: 'bob'), headers: admin_headers }
 
       it { expect(response.body).to_not include 'Quiet Eva' }
     end
@@ -36,7 +36,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
     context 'while a check is running' do
       before do
         JobProgress.begin!('check_substack_subscriptions', label: 'Check', total: 10)
-        get comfy_admin_substack_subscriptions_path, headers: http_auth_headers
+        get comfy_admin_substack_subscriptions_path, headers: admin_headers
       end
 
       it { expect(response.body).to include 'Checking: 0 of 10' }
@@ -45,7 +45,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
     context 'with nothing imported' do
       before do
         SubstackSubscription.delete_all
-        get comfy_admin_substack_subscriptions_path, headers: http_auth_headers
+        get comfy_admin_substack_subscriptions_path, headers: admin_headers
       end
 
       it { expect(response.body).to include 'No subscriptions imported yet' }
@@ -54,7 +54,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
     context 'more than one page' do
       before do
         50.times { create :substack_subscription, :checked, publication_name: 'Filler' }
-        get comfy_admin_substack_subscriptions_path, headers: http_auth_headers
+        get comfy_admin_substack_subscriptions_path, headers: admin_headers
       end
 
       it { expect(response).to have_http_status :success }
@@ -63,7 +63,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
 
   describe 'POST import' do
     it 'enqueues an import' do
-      expect { post comfy_import_admin_substack_subscriptions_path, headers: http_auth_headers }
+      expect { post comfy_import_admin_substack_subscriptions_path, headers: admin_headers }
         .to have_enqueued_job ImportSubstackSubscriptionsJob
     end
 
@@ -71,7 +71,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
       before { JobProgress.begin!('check_substack_subscriptions', label: 'Check', total: 10) }
 
       it 'refuses' do
-        expect { post comfy_import_admin_substack_subscriptions_path, headers: http_auth_headers }
+        expect { post comfy_import_admin_substack_subscriptions_path, headers: admin_headers }
           .to_not have_enqueued_job ImportSubstackSubscriptionsJob
       end
     end
@@ -79,7 +79,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
 
   describe 'POST recheck' do
     it 'enqueues a full re-check' do
-      expect { post comfy_recheck_admin_substack_subscriptions_path, headers: http_auth_headers }
+      expect { post comfy_recheck_admin_substack_subscriptions_path, headers: admin_headers }
         .to have_enqueued_job(CheckSubstackSubscriptionsJob).with(recheck: true)
     end
 
@@ -87,7 +87,7 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
       before { JobProgress.begin!('check_substack_subscriptions', label: 'Check', total: 10).update_columns(updated_at: 1.hour.ago) }
 
       it 'starts anyway' do
-        expect { post comfy_recheck_admin_substack_subscriptions_path, headers: http_auth_headers }
+        expect { post comfy_recheck_admin_substack_subscriptions_path, headers: admin_headers }
           .to have_enqueued_job CheckSubstackSubscriptionsJob
       end
     end
@@ -96,6 +96,6 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
   describe 'without authentication' do
     before { get comfy_admin_substack_subscriptions_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

@@ -17,7 +17,7 @@ RSpec.describe Substack::Blizzard::RepostTicker do
       'template_url' => 'https://substack.com/profile/4619740-mikey-clarke/note/c-111' }
   end
 
-  subject(:result) { described_class.execute(base_url: base_url, username: 'u', password: 'p', commit: commit) }
+  subject(:result) { described_class.execute(base_url: base_url, token: 't', commit: commit) }
 
   before do
     SubstackSyncConfig.instance.update!(session_cookie: 'sess')
@@ -52,6 +52,12 @@ RSpec.describe Substack::Blizzard::RepostTicker do
     before { stub_request(:post, "#{base_url}/admin/substack-blizzard/repost/tick.json").to_return(status: 200, body: '{}') }
 
     it { expect(result.posted).to be_empty }
+
+    it 'authenticates to prod with the Bearer token' do
+      result
+      expect(a_request(:post, "#{base_url}/admin/substack-blizzard/repost/tick.json")
+        .with(headers: { 'Authorization' => 'Bearer t' })).to have_been_made
+    end
 
     it 'creates no note' do
       result

@@ -4,8 +4,8 @@
 %p.text-muted
   These passkeys can sign in to the admin. A sign-in lasts
   #{AdminSession::SESSION_TTL.inspect} on that browser.
-  - if @passkeys.empty?
-    %strong Until you add one, the admin still uses the old username/password prompt.
+  Locked out? In a production Rails console:
+  %code puts AdminRecovery.url
 
 %section.mb-4
   %h5 Add a passkey
@@ -39,7 +39,7 @@
             %td= l(passkey.created_at, format: :short)
             %td= passkey.last_used_at ? "#{time_ago_in_words(passkey.last_used_at)} ago" : "—"
             %td.text-right
-              - warning = @passkeys.one? ? " It's the only one: the admin will fall back to the username/password prompt." : ""
+              - warning = @passkeys.one? ? " It's the only one: signing in again will need a console recovery link." : ""
               - confirm = "Remove “#{passkey.nickname}”?#{warning}"
               = button_to "Remove", comfy_admin_passkey_path(passkey), method: :delete,
                           class: "btn btn-outline-danger btn-sm",

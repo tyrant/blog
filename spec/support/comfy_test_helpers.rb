@@ -24,8 +24,6 @@ module ComfyTestHelpers
       config.public_cms_path      = nil
       config.page_to_json_options = { methods: [:content], except: [:content_cache] }
     end
-    ComfortableMexicanSofa::AccessControl::AdminAuthentication.username = "username"
-    ComfortableMexicanSofa::AccessControl::AdminAuthentication.password = "password"
   end
 
   def reset_blog_config
@@ -45,13 +43,23 @@ module ComfyTestHelpers
     end
   end
 
-  def http_auth_headers
-    {
-      "HTTP_AUTHORIZATION" => ActionController::HttpAuthentication::Basic.encode_credentials(
-        ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
-        ComfortableMexicanSofa::AccessControl::AdminAuthentication.password
-      )
-    }
+  # Request specs: signs this example's session in as admin (via a recovery
+  # link, the same path a locked-out admin uses) the first time it's called,
+  # and returns the headers for an admin request. Used as
+  # `get path, headers: admin_headers`, so examples that never call it stay
+  # signed out.
+  def admin_headers
+    unless @admin_signed_in
+      get comfy_admin_recover_path(token: AdminRecovery.token)
+      @admin_signed_in = true
+    end
+    {}
+  end
+
+  # System specs: sign the browser in as admin, on the same host the specs then
+  # visit (so the session cookie applies).
+  def sign_in_admin_in_browser
+    visit "http://#{Capybara.server_host}:#{Capybara.server_port}#{comfy_admin_recover_path(token: AdminRecovery.token)}"
   end
 end
 

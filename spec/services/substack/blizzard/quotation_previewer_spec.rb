@@ -16,7 +16,7 @@ RSpec.describe Substack::Blizzard::QuotationPreviewer do
       ] } }
   end
 
-  subject(:result) { described_class.execute(base_url: base_url, username: 'u', password: 'p', id: id) }
+  subject(:result) { described_class.execute(base_url: base_url, token: 't', id: id) }
 
   before do
     SubstackSyncConfig.instance.update!(session_cookie: 'sess')
@@ -56,6 +56,12 @@ RSpec.describe Substack::Blizzard::QuotationPreviewer do
     before { stub_request(:get, "#{base_url}/admin/substack-blizzard/quotation/preview.json").to_return(status: 200, body: '{}') }
 
     it { expect(result).to be_nil }
+
+    it 'authenticates to prod with the Bearer token' do
+      result
+      expect(a_request(:get, "#{base_url}/admin/substack-blizzard/quotation/preview.json")
+        .with(headers: { 'Authorization' => 'Bearer t' })).to have_been_made
+    end
 
     it 'posts no note' do
       result

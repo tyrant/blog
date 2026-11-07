@@ -8,7 +8,7 @@ RSpec.describe 'Comfy::Admin::SolidQueueController', type: :request do
   before { reset_cms_config }
 
   describe 'GET show' do
-    before { get comfy_admin_solid_queue_path, headers: http_auth_headers }
+    before { get comfy_admin_solid_queue_path, headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
 
@@ -28,6 +28,6 @@ RSpec.describe 'Comfy::Admin::SolidQueueController', type: :request do
   describe 'without authentication' do
     before { get comfy_admin_solid_queue_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

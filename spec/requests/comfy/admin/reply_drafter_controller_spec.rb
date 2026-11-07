@@ -8,7 +8,7 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
   before { reset_cms_config }
 
   describe 'GET show' do
-    before { get comfy_admin_reply_drafter_path, headers: http_auth_headers }
+    before { get comfy_admin_reply_drafter_path, headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'Reply Drafter' }
@@ -23,7 +23,7 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
         allow(Substack::ReplyGenerator).to receive(:execute).and_return(replies)
         post comfy_admin_reply_drafter_generate_path,
              params: { url: 'https://x/p/y', instructions: 'Be dry.', count: '3', split: 'disagree', length: '1', model: 'claude-opus-4-8' },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(response).to have_http_status :success }
@@ -44,7 +44,7 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
     context 'when generation raises' do
       before do
         allow(Substack::ReplyGenerator).to receive(:execute).and_raise('boom')
-        post comfy_admin_reply_drafter_generate_path, params: { url: 'https://x/p/y' }, headers: http_auth_headers
+        post comfy_admin_reply_drafter_generate_path, params: { url: 'https://x/p/y' }, headers: admin_headers
       end
 
       it { expect(response).to have_http_status :unprocessable_content }
@@ -55,6 +55,6 @@ RSpec.describe 'Comfy::Admin::ReplyDrafterController', type: :request do
   describe 'without authentication' do
     before { get comfy_admin_reply_drafter_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

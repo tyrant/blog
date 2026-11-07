@@ -7,8 +7,6 @@ RSpec.describe 'Blog post autosave', type: :system do
   let!(:layout) { create :layout, site: site }
   let!(:blog_post) { create :post, site: site, layout: layout }
 
-  let(:username) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.username }
-  let(:password) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.password }
 
   before do
     page.driver.browser.manage.window.resize_to(1280, 800)
@@ -17,7 +15,8 @@ RSpec.describe 'Blog post autosave', type: :system do
   describe 'autosave indicator' do
     context 'on edit page' do
       before do
-        visit "http://#{username}:#{password}@#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/#{blog_post.id}/edit"
+        sign_in_admin_in_browser
+        visit "http://#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/#{blog_post.id}/edit"
       end
 
       it { expect(page).to have_selector('form[action*="/blog-posts/"]') }
@@ -36,7 +35,8 @@ RSpec.describe 'Blog post autosave', type: :system do
 
     context 'on new post page' do
       before do
-        visit "http://#{username}:#{password}@#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/new"
+        sign_in_admin_in_browser
+        visit "http://#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/new"
       end
 
       it { expect(page).not_to have_css('.autosave-indicator') }

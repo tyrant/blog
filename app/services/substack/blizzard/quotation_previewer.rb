@@ -12,7 +12,7 @@ module Substack
     class QuotationPreviewer
       include ServiceInterface
 
-      arguments :base_url, :username, :password, id: nil, substack: nil
+      arguments :base_url, :token, id: nil, substack: nil
 
       def execute
         @substack ||= Substack::Client.new
@@ -41,7 +41,7 @@ module Substack
       end
 
       def request(req)
-        req.basic_auth(@username, @password)
+        req["Authorization"] = "Bearer #{@token}"
         res = Net::HTTP.start(req.uri.host, req.uri.port, use_ssl: req.uri.scheme == "https") do |http|
           http.request(req)
         end

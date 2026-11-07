@@ -5,4 +5,8 @@
           options_url: comfy_admin_sign_in_options_path,
           verify_url: comfy_admin_sign_in_path }}
   Sign in with a passkey
-%p.small.mt-3.mb-0{data: { passkey_status: true }, role: "status"}
+%p.small.mt-3{data: { passkey_status: true }, role: "status"}
+%p.small.text-muted.mt-4.mb-0
+  Locked out? In a production Rails console, run
+  %code puts AdminRecovery.url
+  and open the link within 15 minutes.

@@ -6,16 +6,19 @@
 #
 # A passkey sign-in sets a long-lived encrypted cookie naming the passkey used.
 # Deleting that passkey (or rotating secret_key_base) revokes the cookie.
+# A console recovery link (AdminRecovery) instead opens a 15-minute window in
+# the Rails session, ended early by registering a passkey or signing out.
 module AdminSession
   extend ActiveSupport::Concern
 
   SESSION_COOKIE = :admin_passkey_session
   SESSION_TTL    = 60.days
+  RECOVERY_KEY   = :admin_recovery_until
 
   private
 
   def admin_signed_in?
-    admin_dev_bypass? || current_admin_passkey.present?
+    admin_dev_bypass? || current_admin_passkey.present? || admin_recovery_active?
   end
 
   # Local dev needs no sign-in: only this machine can reach it. Set
@@ -34,6 +37,14 @@ module AdminSession
       end
   end
 
+  def admin_recovery_active?
+    session[RECOVERY_KEY].to_i > Time.current.to_i
+  end
+
+  def start_admin_recovery!
+    session[RECOVERY_KEY] = AdminRecovery::TTL.from_now.to_i
+  end
+
   def sign_in_admin!(passkey)
     cookies.encrypted[SESSION_COOKIE] = {
       value:     { "id" => passkey.id, "at" => Time.current.to_i },
@@ -42,12 +53,13 @@ module AdminSession
       secure:    Rails.env.production?,
       same_site: :lax
     }
+    session.delete(RECOVERY_KEY)
     @current_admin_passkey = passkey
   end
 
   def sign_out_admin!
     cookies.delete(SESSION_COOKIE)
-    session.delete(:comfy_admin_authenticated)
+    session.delete(RECOVERY_KEY)
     @current_admin_passkey = nil
   end
 end

@@ -8,7 +8,7 @@ class Comfy::Admin::SessionsController < ActionController::Base
   CHALLENGE_KEY = :admin_passkey_sign_in_challenge
 
   protect_from_forgery with: :exception
-  rate_limit to: 30, within: 5.minutes, only: %i[options create]
+  rate_limit to: 30, within: 5.minutes, only: %i[options create recover]
 
   layout "admin_sign_in"
 
@@ -38,6 +38,18 @@ class Comfy::Admin::SessionsController < ActionController::Base
   rescue StandardError => e
     Rails.logger.warn("[admin passkey] sign-in rejected: #{e.class}: #{e.message}")
     render json: { error: "That passkey wasn't accepted." }, status: :unprocessable_content
+  end
+
+  # Console-issued break-glass link (see AdminRecovery).
+  def recover
+    if AdminRecovery.valid?(params[:token])
+      start_admin_recovery!
+      flash[:warning] = "Recovery sign-in: it lasts #{AdminRecovery::TTL.inspect}. Add a passkey now."
+      redirect_to comfy_admin_passkeys_path
+    else
+      flash[:danger] = "That recovery link is invalid, expired, or already used."
+      redirect_to comfy_admin_sign_in_path
+    end
   end
 
   def destroy

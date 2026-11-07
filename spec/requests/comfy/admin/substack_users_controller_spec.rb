@@ -11,7 +11,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     let!(:eva) { create :substack_user, name: 'Eva Solen', handle: 'evasolen' }
 
     context 'unfiltered' do
-      before { get comfy_admin_substack_users_path, headers: http_auth_headers }
+      before { get comfy_admin_substack_users_path, headers: admin_headers }
 
       it { expect(response).to have_http_status :success }
       it { expect(response.body).to include 'Eva Solen' }
@@ -22,7 +22,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     context 'searching' do
       before do
         create :substack_user, name: 'Bob', handle: 'bob'
-        get comfy_admin_substack_users_path(q: 'solen'), headers: http_auth_headers
+        get comfy_admin_substack_users_path(q: 'solen'), headers: admin_headers
       end
 
       it { expect(response.body).to include 'Eva Solen' }
@@ -32,7 +32,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     context 'ordering' do
       before do
         create :substack_user, name: 'Adam', handle: 'adam'
-        get comfy_admin_substack_users_path(order: 'name', direction: 'desc'), headers: http_auth_headers
+        get comfy_admin_substack_users_path(order: 'name', direction: 'desc'), headers: admin_headers
       end
 
       it { expect(response.body.index('Eva Solen')).to be < response.body.index('Adam') }
@@ -42,7 +42,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     context 'more than one page' do
       before do
         21.times { |i| create :substack_user, name: "Reader #{format('%02d', i)}" }
-        get comfy_admin_substack_users_path, headers: http_auth_headers
+        get comfy_admin_substack_users_path, headers: admin_headers
       end
 
       it { expect(response.body).to_not include 'Reader 20' }
@@ -50,19 +50,19 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
   end
 
   describe 'GET new' do
-    before { get new_comfy_admin_substack_user_path, headers: http_auth_headers }
+    before { get new_comfy_admin_substack_user_path, headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
   end
 
   describe 'POST create' do
     it 'creates a user' do
-      expect { post comfy_admin_substack_users_path, params: { substack_user: { name: 'Eva', handle: '@eva', user_id: '7' } }, headers: http_auth_headers }
+      expect { post comfy_admin_substack_users_path, params: { substack_user: { name: 'Eva', handle: '@eva', user_id: '7' } }, headers: admin_headers }
         .to change(SubstackUser, :count).by(1)
     end
 
     it 're-renders when nothing identifies the user' do
-      post comfy_admin_substack_users_path, params: { substack_user: { name: '', handle: '', user_id: '' } }, headers: http_auth_headers
+      post comfy_admin_substack_users_path, params: { substack_user: { name: '', handle: '', user_id: '' } }, headers: admin_headers
       expect(response.body).to include 'Needs a user id, handle or name'
     end
   end
@@ -72,7 +72,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
 
     before do
       SubstackQuotation.create!(quotation: 'a lovely blurb', comment_url: 'https://x/comment/1', substack_user: user)
-      get edit_comfy_admin_substack_user_path(user), headers: http_auth_headers
+      get edit_comfy_admin_substack_user_path(user), headers: admin_headers
     end
 
     it { expect(response).to have_http_status :success }
@@ -84,23 +84,23 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     let!(:user) { create :substack_user, name: 'Eva' }
 
     it 'renames the user' do
-      patch comfy_admin_substack_user_path(user), params: { substack_user: { name: 'Eva Solen' } }, headers: http_auth_headers
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { name: 'Eva Solen' } }, headers: admin_headers
       expect(user.reload.name).to eq 'Eva Solen'
     end
 
     it 'changes their pronouns' do
-      patch comfy_admin_substack_user_path(user), params: { substack_user: { pronouns: 'she/her' } }, headers: http_auth_headers
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { pronouns: 'she/her' } }, headers: admin_headers
       expect(user.reload.pronouns).to eq 'she/her'
     end
 
     it 're-renders on blank pronouns' do
-      patch comfy_admin_substack_user_path(user), params: { substack_user: { pronouns: ' ' } }, headers: http_auth_headers
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { pronouns: ' ' } }, headers: admin_headers
       expect(response.body).to include "Pronouns can&#39;t be blank"
     end
 
     it 're-renders on a taken handle' do
       create :substack_user, handle: 'bob'
-      patch comfy_admin_substack_user_path(user), params: { substack_user: { handle: 'BOB' } }, headers: http_auth_headers
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { handle: 'BOB' } }, headers: admin_headers
       expect(response.body).to include 'Handle has already been taken'
     end
   end
@@ -110,11 +110,11 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     let!(:quotation) { SubstackQuotation.create!(quotation: 'q', comment_url: 'https://x/comment/1', substack_user: user) }
 
     it 'deletes the user' do
-      expect { delete comfy_admin_substack_user_path(user), headers: http_auth_headers }.to change(SubstackUser, :count).by(-1)
+      expect { delete comfy_admin_substack_user_path(user), headers: admin_headers }.to change(SubstackUser, :count).by(-1)
     end
 
     it 'keeps their quotations, unlinked' do
-      delete comfy_admin_substack_user_path(user), headers: http_auth_headers
+      delete comfy_admin_substack_user_path(user), headers: admin_headers
       expect(quotation.reload.substack_user).to be_nil
     end
   end
@@ -122,6 +122,6 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
   describe 'without authentication' do
     before { get comfy_admin_substack_users_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

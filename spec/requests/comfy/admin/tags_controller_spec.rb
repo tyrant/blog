@@ -10,7 +10,7 @@ RSpec.describe 'Comfy::Admin::TagsController', type: :request do
   describe 'GET index' do
     before do
       Tag.create!(name: 'writing', substack_tag_id: 'uuid-1')
-      get comfy_admin_tags_path, headers: http_auth_headers
+      get comfy_admin_tags_path, headers: admin_headers
     end
 
     it { expect(response).to have_http_status :success }
@@ -20,12 +20,12 @@ RSpec.describe 'Comfy::Admin::TagsController', type: :request do
 
   describe 'POST create' do
     it 'creates a tag' do
-      expect { post comfy_admin_tags_path, params: { tag: { name: 'comedy' } }, headers: http_auth_headers }
+      expect { post comfy_admin_tags_path, params: { tag: { name: 'comedy' } }, headers: admin_headers }
         .to change(Tag, :count).by(1)
     end
 
     it 're-renders on a blank name' do
-      post comfy_admin_tags_path, params: { tag: { name: '' } }, headers: http_auth_headers
+      post comfy_admin_tags_path, params: { tag: { name: '' } }, headers: admin_headers
       expect(response).to have_http_status :success
     end
   end
@@ -34,7 +34,7 @@ RSpec.describe 'Comfy::Admin::TagsController', type: :request do
     let!(:tag) { Tag.create!(name: 'comdey') }
 
     it 'renames the tag' do
-      patch comfy_admin_tag_path(tag), params: { tag: { name: 'comedy' } }, headers: http_auth_headers
+      patch comfy_admin_tag_path(tag), params: { tag: { name: 'comedy' } }, headers: admin_headers
       expect(tag.reload.name).to eq 'comedy'
     end
   end
@@ -49,11 +49,11 @@ RSpec.describe 'Comfy::Admin::TagsController', type: :request do
     end
 
     it 'deletes the tag' do
-      expect { delete comfy_admin_tag_path(tag), headers: http_auth_headers }.to change(Tag, :count).by(-1)
+      expect { delete comfy_admin_tag_path(tag), headers: admin_headers }.to change(Tag, :count).by(-1)
     end
 
     it 'does not bulk-unassign the tag on Substack' do
-      delete comfy_admin_tag_path(tag), headers: http_auth_headers
+      delete comfy_admin_tag_path(tag), headers: admin_headers
       expect(Substack::TagMirror).to_not have_received(:unassign)
     end
   end
@@ -61,6 +61,6 @@ RSpec.describe 'Comfy::Admin::TagsController', type: :request do
   describe 'without authentication' do
     before { get comfy_admin_tags_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

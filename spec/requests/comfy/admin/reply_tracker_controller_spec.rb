@@ -19,7 +19,7 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
     before do
       SubstackReply.create!(target_url: 'https://x/p/y', comment_url: 'https://x/comment/1',
                             substack_user: cory, replied_at: Time.current)
-      get comfy_admin_reply_tracker_path, headers: http_auth_headers
+      get comfy_admin_reply_tracker_path, headers: admin_headers
     end
 
     let(:cory) { create :substack_user, name: 'Cory', handle: 'coryalthoff' }
@@ -37,7 +37,7 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
                             substack_user: create(:substack_user, handle: 'coryalthoff'), replied_at: 1.hour.ago)
       SubstackReply.create!(target_url: 'https://x/p/y/comment/150', comment_url: 'https://x/p/y/comment/200', ancestor_path: '100',
                             substack_user: eva, replied_at: Time.current)
-      get comfy_admin_reply_tracker_path, headers: http_auth_headers
+      get comfy_admin_reply_tracker_path, headers: admin_headers
     end
 
     let(:eva) { create :substack_user, handle: 'eva' }
@@ -50,7 +50,7 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
     before do
       SubstackReply.create!(target_url: 't1', comment_url: 'https://x/p/y/comment/1', substack_user: create(:substack_user, handle: 'coryalthoff'), replied_at: Time.current)
       SubstackReply.create!(target_url: 't2', comment_url: 'https://x/p/y/comment/2', substack_user: create(:substack_user, handle: 'someoneelse'), replied_at: Time.current)
-      get comfy_admin_reply_tracker_path(q: 'cory'), headers: http_auth_headers
+      get comfy_admin_reply_tracker_path(q: 'cory'), headers: admin_headers
     end
 
     it { expect(response.body).to include 'coryalthoff' }
@@ -62,28 +62,28 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
       before { allow(Substack::ReplyResolver).to receive(:execute).and_return(resolved) }
 
       it 'logs a reply record' do
-        expect { post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers }
+        expect { post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers }
           .to change(SubstackReply, :count).by(1)
       end
 
       it 'stores the resolved target, author and previews' do
-        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers
         expect(SubstackReply.last).to have_attributes(target_url: 'https://x/p/y',
                                                       target_preview: 'A Post Title', reply_preview: 'My reply text')
       end
 
       it 'links the replied-to account' do
-        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers
         expect(SubstackReply.last.substack_user).to have_attributes(user_id: 99, handle: 'coryalthoff', name: 'Cory')
       end
 
       it 'resolves from the reply url' do
-        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers
         expect(Substack::ReplyResolver).to have_received(:execute).with(reply_url: 'https://x/comment/1')
       end
 
       it 'redirects back to the tracker' do
-        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers
         expect(response).to redirect_to(comfy_admin_reply_tracker_path)
       end
     end
@@ -92,7 +92,7 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
       before do
         SubstackReply.create!(target_url: 't', comment_url: 'https://x/comment/1', replied_at: Time.current)
         allow(Substack::ReplyResolver).to receive(:execute)
-        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers
       end
 
       it 'does not create a duplicate' do
@@ -108,12 +108,12 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
       before { allow(Substack::ReplyResolver).to receive(:execute).and_raise('bad url') }
 
       it 'creates no record' do
-        expect { post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers }
+        expect { post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers }
           .to_not change(SubstackReply, :count)
       end
 
       it 'redirects back' do
-        post comfy_admin_reply_tracker_log_path, params: params, headers: http_auth_headers
+        post comfy_admin_reply_tracker_log_path, params: params, headers: admin_headers
         expect(response).to redirect_to comfy_admin_reply_tracker_path
       end
     end
@@ -126,12 +126,12 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
     end
 
     it 'deletes the reply' do
-      expect { delete comfy_admin_reply_tracker_delete_path(reply), headers: http_auth_headers }
+      expect { delete comfy_admin_reply_tracker_delete_path(reply), headers: admin_headers }
         .to change(SubstackReply, :count).by(-1)
     end
 
     it 'redirects back to the tracker' do
-      delete comfy_admin_reply_tracker_delete_path(reply), headers: http_auth_headers
+      delete comfy_admin_reply_tracker_delete_path(reply), headers: admin_headers
       expect(response).to redirect_to comfy_admin_reply_tracker_path
     end
   end
@@ -139,6 +139,6 @@ RSpec.describe 'Comfy::Admin::ReplyTrackerController', type: :request do
   describe 'without authentication' do
     before { get comfy_admin_reply_tracker_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

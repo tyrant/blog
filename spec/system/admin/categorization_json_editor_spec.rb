@@ -12,12 +12,11 @@ RSpec.describe 'Categorization JSON editor', type: :system do
            data: { 'blizzard' => [{ 'text' => 't', 'body_json' => { 'type' => 'doc', 'content' => [] }, 'notes' => [] }] }
   end
 
-  let(:username) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.username }
-  let(:password) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.password }
 
   before do
     page.driver.browser.manage.window.resize_to(1280, 800)
-    visit "http://#{username}:#{password}@#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/#{blog_post.id}/edit"
+    sign_in_admin_in_browser
+    visit "http://#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/#{blog_post.id}/edit"
   end
 
   it 'renders the #data field as a CodeMirror editor' do

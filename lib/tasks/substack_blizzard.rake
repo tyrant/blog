@@ -84,7 +84,7 @@ namespace :substack do
     #   rails substack:blizzard:tick_dry_run
     #   rails substack:blizzard:tick
     # Env: BLIZZARD_PROD_URL (default https://mikeyclarke.co.nz),
-    #      BLIZZARD_ADMIN_USER / BLIZZARD_ADMIN_PASS (default: app admin creds).
+    #      BLIZZARD_API_TOKEN (default: credentials blizzard.api_token; must match prod's).
     desc "Preview the next weighted repost (no Note created)"
     task tick_dry_run: :environment do
       BlizzardRepostTick.run(commit: false)
@@ -114,8 +114,7 @@ module BlizzardQuotationPreview
     substack = Substack::Client.new
     note = Substack::Blizzard::QuotationPreviewer.execute(
       base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
-      username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
-      password: ENV["BLIZZARD_ADMIN_PASS"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.password,
+      token:    BlizzardApiToken.value,
       id:       ENV["QUOTATION_ID"],
       substack: substack
     )
@@ -141,8 +140,7 @@ module BlizzardRepostTick
     was_healthy = SubstackSyncConfig.instance.session_healthy?
     result = Substack::Blizzard::RepostTicker.execute(
       base_url: ENV.fetch("BLIZZARD_PROD_URL", "https://mikeyclarke.co.nz"),
-      username: ENV["BLIZZARD_ADMIN_USER"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.username,
-      password: ENV["BLIZZARD_ADMIN_PASS"] || ComfortableMexicanSofa::AccessControl::AdminAuthentication.password,
+      token:    BlizzardApiToken.value,
       commit:   commit
     )
 

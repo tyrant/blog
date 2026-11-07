@@ -4,10 +4,18 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
 
   DEFAULT_DAYS = 14
 
-  # JSON API consumed by the local repost task (basic-auth is the auth).
-  skip_before_action :verify_authenticity_token,
-                     only: %i[add_note repost_tick repost_confirm], raise: false,
-                     if: -> { request.format.json? }
+  # JSON API consumed by the local Blizzard rake tasks, which authenticate with a
+  # Bearer token (BlizzardApiToken) instead of an admin browser session. Without
+  # a valid token these fall through to the normal admin sign-in gate.
+  #
+  # One combined `if:` on purpose: Rails ORs `only:` and `if:` on a skip, which
+  # would skip auth for these actions without a token, and for every action
+  # with one.
+  API_ACTIONS = %w[repost_tick repost_preview quotation_preview repost_confirm].freeze
+
+  skip_before_action :authenticate, if: :blizzard_api_request?
+  skip_before_action :verify_authenticity_token, raise: false, if: :blizzard_api_request?
+  skip_before_action :verify_authenticity_token, only: :add_note, raise: false, if: -> { request.format.json? }
 
   def index
     @days = clamp_days(params[:days])
@@ -268,6 +276,11 @@ class Comfy::Admin::SubstackBlizzardController < Comfy::Admin::Cms::BaseControll
       entries: snapshots.map(&:entries),
       notes:   snapshots.map(&:notes)
     }
+  end
+
+  def blizzard_api_request?
+    API_ACTIONS.include?(action_name) &&
+      BlizzardApiToken.valid?(request.authorization.to_s[/\ABearer (.+)\z/, 1])
   end
 
 end

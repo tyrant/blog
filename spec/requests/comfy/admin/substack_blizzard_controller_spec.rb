@@ -19,8 +19,13 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
   before { reset_cms_config }
 
+  # The local Blizzard rake tasks authenticate with a Bearer token, not a session.
+  let(:api_token) { 'test-blizzard-token' }
+  let(:api_headers) { { 'Authorization' => "Bearer #{api_token}" } }
+  before { allow(BlizzardApiToken).to receive(:value).and_return(api_token) }
+
   describe 'GET index' do
-    before { get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers }
+    before { get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'stale group text' }
@@ -82,7 +87,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'next repost suggestion — nothing due' do
       before do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(nil)
-        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+        get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers
       end
 
       it { expect(response.body).to include 'Nothing eligible to suggest right now.' }
@@ -93,7 +98,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
           { 'categorization_id' => categorization.id, 'uid' => 'u0', 'text' => 'picked text', 'body_json' => { 'type' => 'doc' } }
         )
-        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+        get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers
       end
 
       it { expect(response.body).to include 'Text group for:' }
@@ -108,7 +113,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
           { 'categorization_id' => nil, 'uid' => 'un1', 'text' => 'unattached pick', 'body_json' => { 'type' => 'doc' } }
         )
-        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+        get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers
       end
 
       it { expect(response.body).to include 'Unattached note' }
@@ -123,7 +128,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
           { 'categorization_id' => nil, 'uid' => nil, 'quotation_id' => quotation.id, 'text' => 'a quote', 'body_json' => { 'type' => 'doc' } }
         )
-        get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers
+        get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers
       end
 
       it { expect(response.body).to include 'Quotation' }
@@ -138,7 +143,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     context 'with recorded stat snapshots' do
       let!(:snapshot) { BlizzardStatSnapshot.create!(captured_at: 1.hour.ago, posts: 5, entries: 3, notes: 9) }
-      before { get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers }
 
       it 'offers a Graph button opening the chart modal' do
         expect(response.body).to include "data-target='#blizzard-graph-modal'"
@@ -149,14 +154,14 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     context 'chart labels are in Wellington time, not UTC' do
       let!(:snapshot) { BlizzardStatSnapshot.create!(captured_at: Time.utc(2026, 7, 9, 2, 48), posts: 1, entries: 1, notes: 1) }
-      before { get comfy_admin_substack_blizzard_path(days: 14), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_path(days: 14), headers: admin_headers }
 
       it { expect(response.body).to include '9 Jul 14:48' }  # 02:48 UTC + 12
       it { expect(response.body).to_not include '9 Jul 02:48' }
     end
 
     context 'days=0 is accepted' do
-      before { get comfy_admin_substack_blizzard_path(days: 0), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_path(days: 0), headers: admin_headers }
       it { expect(response).to have_http_status :success }
       it { expect(response.body).to include 'stale group text' }
     end
@@ -165,12 +170,12 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       let!(:blog_post) { create :post, site: site, layout: layout, title: 'Findable Post' }
 
       context 'matching title' do
-        before { get comfy_admin_substack_blizzard_path(days: 14, q: 'findable'), headers: http_auth_headers }
+        before { get comfy_admin_substack_blizzard_path(days: 14, q: 'findable'), headers: admin_headers }
         it { expect(response.body).to include 'stale group text' }
       end
 
       context 'non-matching title' do
-        before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: http_auth_headers }
+        before { get comfy_admin_substack_blizzard_path(days: 14, q: 'nope'), headers: admin_headers }
         # The group is filtered out of the due list; it still appears in the
         # (filter-independent) forecast payload, so assert on the due list itself.
         it { expect(response.body).to include 'No text groups have' }
@@ -199,19 +204,19 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       end
 
       context 'page 1' do
-        before { get comfy_admin_substack_blizzard_path(days: 14, page: 1), headers: http_auth_headers }
+        before { get comfy_admin_substack_blizzard_path(days: 14, page: 1), headers: admin_headers }
         it { expect(response.body).to include 'blizz group 0<' }
         it { expect(response.body).to_not include 'blizz group 20<' }
       end
 
       context 'page 2' do
-        before { get comfy_admin_substack_blizzard_path(days: 14, page: 2), headers: http_auth_headers }
+        before { get comfy_admin_substack_blizzard_path(days: 14, page: 2), headers: admin_headers }
         it { expect(response.body).to include 'blizz group 20<' }
       end
     end
 
     context 'days is clamped to 1..60' do
-      before { get comfy_admin_substack_blizzard_path(days: 999), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_path(days: 999), headers: admin_headers }
       it { expect(response.body).to include 'older than (days)' }
     end
   end
@@ -220,7 +225,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     let(:new_url) { 'https://substack.com/profile/4619740-mikey-clarke/note/c-333' }
 
     describe 'POST repost/tick.json' do
-      before { post comfy_admin_substack_blizzard_repost_tick_path(format: :json), headers: http_auth_headers }
+      before { post comfy_admin_substack_blizzard_repost_tick_path(format: :json), headers: api_headers }
 
       it { expect(response).to have_http_status :success }
       it { expect(response.parsed_body['uid']).to eq 'u0' }
@@ -232,7 +237,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     describe 'GET repost/preview.json (dry run, no claiming)' do
-      before { get comfy_admin_substack_blizzard_repost_preview_path(format: :json), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_repost_preview_path(format: :json), headers: api_headers }
 
       it { expect(response.parsed_body['uid']).to eq 'u0' }
       it { expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_nil }
@@ -242,7 +247,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_repost_confirm_path(format: :json),
              params: { categorization_id: categorization.id, uid: 'u0', url: new_url, timestamp: '2026-07-04T00:00:00Z' },
-             headers: http_auth_headers
+             headers: api_headers
       end
 
       it { expect(response.parsed_body['ok']).to be true }
@@ -251,8 +256,32 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       it 'is idempotent — a repeat confirm does not double-append' do
         post comfy_admin_substack_blizzard_repost_confirm_path(format: :json),
              params: { categorization_id: categorization.id, uid: 'u0', url: new_url, timestamp: '2026-07-04T00:00:00Z' },
-             headers: http_auth_headers
+             headers: api_headers
         expect(categorization.reload.data['blizzard'][0]['notes'].count { |n| n['url'] == new_url }).to eq 1
+      end
+    end
+
+    describe 'token auth' do
+      it 'rejects a wrong token' do
+        post comfy_admin_substack_blizzard_repost_tick_path(format: :json), headers: { 'Authorization' => 'Bearer nope' }
+        expect(response).to have_http_status :unauthorized
+        expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_nil
+      end
+
+      it 'rejects a missing token' do
+        get comfy_admin_substack_blizzard_repost_preview_path(format: :json)
+        expect(response).to have_http_status :unauthorized
+      end
+
+      it 'rejects every token when none is configured' do
+        allow(BlizzardApiToken).to receive(:value).and_return('')
+        get comfy_admin_substack_blizzard_repost_preview_path(format: :json), headers: { 'Authorization' => 'Bearer ' }
+        expect(response).to have_http_status :unauthorized
+      end
+
+      it 'does not open the rest of the admin' do
+        get comfy_admin_substack_blizzard_path, headers: api_headers
+        expect(response).to redirect_to comfy_admin_sign_in_path
       end
     end
   end
@@ -265,7 +294,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     describe 'a random quotation' do
-      before { get comfy_admin_substack_blizzard_quotation_preview_path(format: :json), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_quotation_preview_path(format: :json), headers: api_headers }
 
       it { expect(response).to have_http_status :success }
       it { expect(response.parsed_body['text']).to eq 'a memorable blurb' }
@@ -275,7 +304,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     describe 'a specific quotation by id' do
       let!(:other) { SubstackQuotation.create!(quotation: 'a different blurb', comment_url: 'https://x/comment/2') }
-      before { get comfy_admin_substack_blizzard_quotation_preview_path(id: other.id, format: :json), headers: http_auth_headers }
+      before { get comfy_admin_substack_blizzard_quotation_preview_path(id: other.id, format: :json), headers: api_headers }
 
       it { expect(response.parsed_body['text']).to eq 'a different blurb' }
     end
@@ -283,7 +312,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     describe 'no quotations exist' do
       before do
         SubstackQuotation.delete_all
-        get comfy_admin_substack_blizzard_quotation_preview_path(format: :json), headers: http_auth_headers
+        get comfy_admin_substack_blizzard_quotation_preview_path(format: :json), headers: api_headers
       end
 
       it { expect(response.parsed_body).to eq({}) }
@@ -293,7 +322,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST settings' do
     before do
       post comfy_admin_substack_blizzard_settings_path,
-           params: { cooldown_hours: 8 }, headers: http_auth_headers
+           params: { cooldown_hours: 8 }, headers: admin_headers
     end
 
     it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
@@ -302,7 +331,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'invalid cooldown is rejected' do
       before do
         post comfy_admin_substack_blizzard_settings_path,
-             params: { cooldown_hours: -1 }, headers: http_auth_headers
+             params: { cooldown_hours: -1 }, headers: admin_headers
       end
       it { expect(flash[:danger]).to be_present }
     end
@@ -311,7 +340,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST odds' do
     before do
       post comfy_admin_substack_blizzard_odds_path,
-           params: { quotation_odds_pct: 30, unattached_odds_pct: 5 }, headers: http_auth_headers
+           params: { quotation_odds_pct: 30, unattached_odds_pct: 5 }, headers: admin_headers
     end
 
     it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
@@ -321,7 +350,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'odds summing over 100 are rejected' do
       before do
         post comfy_admin_substack_blizzard_odds_path,
-             params: { quotation_odds_pct: 60, unattached_odds_pct: 50 }, headers: http_auth_headers
+             params: { quotation_odds_pct: 60, unattached_odds_pct: 50 }, headers: admin_headers
       end
       it { expect(flash[:danger]).to be_present }
       it { expect(BlizzardScheduleConfig.instance.quotation_odds_pct).to eq 30 }
@@ -333,7 +362,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       post comfy_admin_substack_blizzard_add_note_path(format: :json),
            params: { categorization_id: categorization.id, uid: 'u0',
                      url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', timestamp: '2026-06-22T00:00:00Z' },
-           headers: http_auth_headers
+           headers: admin_headers
     end
 
     it { expect(response).to have_http_status :success }
@@ -344,7 +373,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path(format: :json),
              params: { categorization_id: categorization.id, uid: 'u0', url: '', timestamp: '2026-06-22T00:00:00Z' },
-             headers: http_auth_headers
+             headers: admin_headers
       end
       it { expect(response).to have_http_status :unprocessable_entity }
       it { expect(JSON.parse(response.body)['success']).to be false }
@@ -361,7 +390,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body, 'date' => '2026-10-01T07:00:00Z' } }.to_json)
       post comfy_admin_substack_blizzard_record_and_reseed_path,
            params: { categorization_id: categorization.id, uid: 'u0', url: note_url, days: 14, page: 2 },
-           headers: http_auth_headers
+           headers: admin_headers
     end
 
     it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14, page: 2) }
@@ -402,7 +431,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         )
         post comfy_admin_substack_blizzard_record_and_reseed_path,
              params: { categorization_id: '', uid: 'un1', url: note_url, days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(flash[:success]).to be_present }
@@ -421,7 +450,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         .to_return(status: 200, body: { 'comment' => { 'body_json' => rich_body } }.to_json)
       post comfy_admin_substack_blizzard_record_and_reseed_path(format: :json),
            params: { categorization_id: categorization.id, uid: 'u0', url: note_url },
-           headers: http_auth_headers
+           headers: admin_headers
     end
 
     it { expect(response).to have_http_status :success }
@@ -450,7 +479,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
         { 'categorization_id' => categorization.id, 'uid' => 'u0', 'text' => 'regenerated pick', 'body_json' => { 'type' => 'doc' } }
       )
-      get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
+      get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: admin_headers
 
       expect(response.body).to include 'regenerated pick'
       expect(response.body).to include 'Regenerate'
@@ -459,7 +488,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
     it 'shows the nothing-eligible message when there is no pick' do
       allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(nil)
-      get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
+      get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: admin_headers
 
       expect(response.body).to include 'Nothing eligible to suggest right now.'
     end
@@ -472,7 +501,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         allow(Substack::Blizzard::WeightedPicker).to receive(:execute).and_return(
           { 'quotation_id' => quotation.id, 'text' => 'quoted pick', 'body_json' => { 'type' => 'doc' } }
         )
-        get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: http_auth_headers
+        get comfy_admin_substack_blizzard_next_repost_suggestion_path, headers: admin_headers
       end
 
       it { expect(response.body).to include %(href="#{comfy_edit_admin_quotation_path(quotation)}">Quotation</a>) }
@@ -491,7 +520,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
@@ -505,7 +534,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0', url: '', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(BlizzardScheduleConfig.instance.last_reposted_at).to be_nil }
@@ -516,7 +545,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14, page: 3 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14, page: 3) }
@@ -530,7 +559,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2025-06-21T07:00:00Z' }
@@ -545,7 +574,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-222', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2026-07-04T12:00:00Z' }
@@ -557,7 +586,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0', url: 'https://example.com/not-a-note', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(categorization.reload.data['blizzard'][0]['notes'].last['timestamp']).to eq '2026-07-04T12:00:00Z' }
@@ -567,7 +596,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: categorization.id, uid: 'u0', url: '', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
       it { expect(categorization.reload.data['blizzard'][0]['notes'].size).to eq 1 }
       it { expect(flash[:danger]).to be_present }
@@ -581,7 +610,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { categorization_id: '', uid: 'un1',
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-333', days: 14 },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(response).to redirect_to comfy_admin_substack_blizzard_path(days: 14) }
@@ -597,7 +626,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { quotation_id: quotation.id,
                        url: 'https://substack.com/profile/4619740-mikey-clarke/note/c-444' },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(flash[:success]).to be_present }
@@ -610,7 +639,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     before do
       JobProgress.begin!('backfill_all', label: 'Backfill all posts’ notes', total: 10).update!(completed: 4)
       JobProgress.begin!('refresh_note_post_likes', label: 'Refresh', total: 5).finish!
-      get comfy_admin_substack_blizzard_job_progress_path(format: :json), headers: http_auth_headers
+      get comfy_admin_substack_blizzard_job_progress_path(format: :json), headers: admin_headers
     end
 
     it { expect(response).to have_http_status :success }
@@ -627,7 +656,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST backfill_all' do
     before do
       allow(BackfillAllJob).to receive(:perform_later)
-      post comfy_admin_substack_blizzard_backfill_all_path, headers: http_auth_headers
+      post comfy_admin_substack_blizzard_backfill_all_path, headers: admin_headers
     end
 
     it { expect(BackfillAllJob).to have_received(:perform_later) }
@@ -638,7 +667,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST refresh_likes' do
     before do
       allow(RefreshNotePostLikesJob).to receive(:perform_later)
-      post comfy_admin_substack_blizzard_refresh_likes_path, headers: http_auth_headers
+      post comfy_admin_substack_blizzard_refresh_likes_path, headers: admin_headers
     end
 
     it { expect(RefreshNotePostLikesJob).to have_received(:perform_later) }
@@ -650,7 +679,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'for a post with a Substack categorization' do
       before do
         allow(BackfillPostJob).to receive(:perform_later)
-        post comfy_admin_substack_blizzard_backfill_post_path, params: { post_id: blog_post.id }, headers: http_auth_headers
+        post comfy_admin_substack_blizzard_backfill_post_path, params: { post_id: blog_post.id }, headers: admin_headers
       end
 
       it { expect(BackfillPostJob).to have_received(:perform_later).with(categorization.id) }
@@ -661,7 +690,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
       let!(:bare_post) { create :post, site: site, layout: layout, title: 'No notes here' }
       before do
         allow(BackfillPostJob).to receive(:perform_later)
-        post comfy_admin_substack_blizzard_backfill_post_path, params: { post_id: bare_post.id }, headers: http_auth_headers
+        post comfy_admin_substack_blizzard_backfill_post_path, params: { post_id: bare_post.id }, headers: admin_headers
       end
 
       it { expect(BackfillPostJob).to_not have_received(:perform_later) }
@@ -672,7 +701,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
   describe 'POST backfill_unattached' do
     before do
       allow(BackfillUnattachedNotesJob).to receive(:perform_later)
-      post comfy_admin_substack_blizzard_backfill_unattached_path, headers: http_auth_headers
+      post comfy_admin_substack_blizzard_backfill_unattached_path, headers: admin_headers
     end
 
     it { expect(BackfillUnattachedNotesJob).to have_received(:perform_later) }
@@ -684,7 +713,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     context 'valid JSON' do
       before do
         post comfy_admin_substack_blizzard_notes_json_path,
-             params: { data_json_text: '{"notes":["https://x/note/c-1"]}' }, headers: http_auth_headers
+             params: { data_json_text: '{"notes":["https://x/note/c-1"]}' }, headers: admin_headers
       end
 
       it { expect(BlizzardScheduleConfig.instance.data).to eq('notes' => ['https://x/note/c-1']) }
@@ -693,7 +722,7 @@ RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
     end
 
     context 'invalid JSON' do
-      before { post comfy_admin_substack_blizzard_notes_json_path, params: { data_json_text: 'not json' }, headers: http_auth_headers }
+      before { post comfy_admin_substack_blizzard_notes_json_path, params: { data_json_text: 'not json' }, headers: admin_headers }
 
       it { expect(flash[:danger]).to be_present }
     end

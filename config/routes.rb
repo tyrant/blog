@@ -69,6 +69,7 @@ Rails.application.routes.draw do
       post   "admin/sign-in/options", to: "sessions#options", as: :admin_sign_in_options
       post   "admin/sign-in",         to: "sessions#create"
       delete "admin/sign-out",        to: "sessions#destroy", as: :admin_sign_out
+      get    "admin/recover",         to: "sessions#recover", as: :admin_recover
 
       get    "admin/passkeys",         to: "passkeys#index",   as: :admin_passkeys
       post   "admin/passkeys/options", to: "passkeys#options", as: :admin_passkey_options

@@ -8,7 +8,7 @@ RSpec.describe 'Comfy::Admin::BlueskySyncConfigsController', type: :request do
   before { reset_cms_config }
 
   describe 'GET edit' do
-    before { get edit_comfy_admin_bluesky_sync_config_path, headers: http_auth_headers }
+    before { get edit_comfy_admin_bluesky_sync_config_path, headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'Bluesky Sync Settings' }
@@ -19,7 +19,7 @@ RSpec.describe 'Comfy::Admin::BlueskySyncConfigsController', type: :request do
       before do
         patch comfy_admin_bluesky_sync_config_path,
           params: { bluesky_sync_config: { handle: 'me.bsky.social', app_password: 'abcd-efgh', lead: 'New post' } },
-          headers: http_auth_headers
+          headers: admin_headers
       end
 
       it { expect(response).to redirect_to edit_comfy_admin_bluesky_sync_config_path }
@@ -33,7 +33,7 @@ RSpec.describe 'Comfy::Admin::BlueskySyncConfigsController', type: :request do
         BlueskySyncConfig.instance.update!(handle: 'me.bsky.social', app_password: 'saved-pw')
         patch comfy_admin_bluesky_sync_config_path,
           params: { bluesky_sync_config: { handle: 'me.bsky.social', app_password: '', lead: 'Edited' } },
-          headers: http_auth_headers
+          headers: admin_headers
       end
 
       it { expect(BlueskySyncConfig.instance.app_password).to eq 'saved-pw' }
@@ -44,7 +44,7 @@ RSpec.describe 'Comfy::Admin::BlueskySyncConfigsController', type: :request do
       before do
         patch comfy_admin_bluesky_sync_config_path,
           params: { bluesky_sync_config: { handle: '', app_password: '' } },
-          headers: http_auth_headers
+          headers: admin_headers
       end
 
       it { expect(response).to have_http_status :success }
@@ -55,6 +55,6 @@ RSpec.describe 'Comfy::Admin::BlueskySyncConfigsController', type: :request do
   describe 'without authentication' do
     before { get edit_comfy_admin_bluesky_sync_config_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

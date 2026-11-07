@@ -110,11 +110,11 @@ So until late 2025, these had kept this app at Rails 6.x. This quite spectacular
 
 - **Local dev** needs no sign-in at all, for requests from this machine. Set `ADMIN_AUTH_IN_DEV=1` to try the real flow locally.
 - **Register / remove passkeys** at `/admin/passkeys` ("Passkeys" in the nav). Passkeys are tied to the site's domain (from `ROOT_URL`), so prod and dev each need their own.
-- **Bootstrap:** until at least one passkey exists, the old HTTP Basic prompt (the Comfy credentials) still works, so you can get in to register the first one. Once a passkey exists, HTTP Basic is refused.
-- **Locked out?** In a prod Rails console, `AdminPasskey.destroy_all` puts you back on HTTP Basic; then register a new passkey.
+- **Locked out?** In a prod Rails console, `puts AdminRecovery.url` prints a sign-in link. It works for 15 minutes, and stops working as soon as a passkey is added or removed. Open it, then register a new passkey. (The sign-in page shows this command too.) There is no password fallback.
 - **Revoke a browser's session:** remove the passkey it signed in with. Rotating `secret_key_base` revokes every session.
+- **Blizzard rake tasks** (`substack:blizzard:tick`, `preview_quotation`) run on your Mac and call prod's Blizzard JSON endpoints with a Bearer token: `blizzard.api_token` in the production and development credentials (same value; `BLIZZARD_API_TOKEN` overrides). The token opens only those four endpoints (`BlizzardApiToken`, `SubstackBlizzardController::API_ACTIONS`).
 
-Code: `ComfortableMexicanSofa::AccessControl::AdminAuthentication` (the gate), `AdminSession` (cookie + dev bypass), `Comfy::Admin::SessionsController` / `PasskeysController`, `app/javascript/admin_passkeys.js`. Uses the `webauthn` gem.
+Code: `ComfortableMexicanSofa::AccessControl::AdminAuthentication` (the gate), `AdminSession` (cookie, recovery window, dev bypass), `AdminRecovery`, `Comfy::Admin::SessionsController` / `PasskeysController`, `app/javascript/admin_passkeys.js`. Uses the `webauthn` gem.
 
 
 ## Asset Pipeline and client-side shenanigans

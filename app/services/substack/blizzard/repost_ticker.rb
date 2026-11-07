@@ -13,7 +13,7 @@ module Substack
     class RepostTicker
       include ServiceInterface
 
-      arguments :base_url, :username, :password, commit: true, substack: nil
+      arguments :base_url, :token, commit: true, substack: nil
 
       Result = Struct.new(:posted, :skipped, :failed, keyword_init: true)
 
@@ -88,7 +88,7 @@ module Substack
       end
 
       def request(req)
-        req.basic_auth(@username, @password)
+        req["Authorization"] = "Bearer #{@token}"
         res = Net::HTTP.start(req.uri.host, req.uri.port, use_ssl: req.uri.scheme == "https") do |http|
           http.request(req)
         end

@@ -9,7 +9,7 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
 
   describe 'GET /admin/sites' do
     context 'with authentication' do
-      before { get comfy_admin_cms_sites_path, headers: http_auth_headers }
+      before { get comfy_admin_cms_sites_path, headers: admin_headers }
 
       it { expect(response).to have_http_status :success }
     end
@@ -17,12 +17,12 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
     context 'without authentication' do
       before { get comfy_admin_cms_sites_path }
 
-      it { expect(response).to have_http_status :unauthorized }
+      it { expect(response).to redirect_to comfy_admin_sign_in_path }
     end
   end
 
   describe 'GET /admin/sites/new' do
-    before { get new_comfy_admin_cms_site_path, headers: http_auth_headers }
+    before { get new_comfy_admin_cms_site_path, headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
   end
@@ -31,20 +31,20 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
     let(:valid_params) { { site: { label: 'New Site', identifier: 'new-site', hostname: 'new-site.host' } } }
 
     it { 
-      expect { post comfy_admin_cms_sites_path, params: valid_params, headers: http_auth_headers }
+      expect { post comfy_admin_cms_sites_path, params: valid_params, headers: admin_headers }
         .to change { Comfy::Cms::Site.count }
         .by 1
     }
 
     context 'after creation' do
-      before { post comfy_admin_cms_sites_path, params: valid_params, headers: http_auth_headers }
+      before { post comfy_admin_cms_sites_path, params: valid_params, headers: admin_headers }
 
       it { expect(response).to have_http_status :redirect }
     end
   end
 
   describe 'GET /admin/sites/:id/edit' do
-    before { get edit_comfy_admin_cms_site_path(site), headers: http_auth_headers }
+    before { get edit_comfy_admin_cms_site_path(site), headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
   end
@@ -53,7 +53,7 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
     let(:update_params) { { site: { label: 'Updated Site' } } }
 
     before {
-      patch comfy_admin_cms_site_path(site), params: update_params, headers: http_auth_headers
+      patch comfy_admin_cms_site_path(site), params: update_params, headers: admin_headers
     }
 
     it { expect(site.reload.label).to eq 'Updated Site' }
@@ -61,7 +61,7 @@ RSpec.describe 'Comfy::Admin::Cms::SitesController', type: :request do
 
   describe 'DELETE /admin/sites/:id' do
     it { 
-      expect { delete comfy_admin_cms_site_path(site), headers: http_auth_headers }
+      expect { delete comfy_admin_cms_site_path(site), headers: admin_headers }
         .to change { Comfy::Cms::Site.count }
         .by -1
     }

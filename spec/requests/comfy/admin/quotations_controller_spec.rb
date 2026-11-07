@@ -11,7 +11,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     before do
       SubstackQuotation.create!(quotation: 'a gem of a blurb', comment_url: 'https://x/comment/1',
                                 substack_user: bob, post_title: 'A Post', post_url: 'https://x/p/a')
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
     end
 
     let(:bob) { create :substack_user, name: 'Bob', handle: 'bob' }
@@ -26,19 +26,19 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it 'marks the end of each Reviews-page group at the configured page size' do
       SubstackSyncConfig.instance.update!(reviews_page_size: 1)
       SubstackQuotation.create!(quotation: 'second', comment_url: 'https://x/comment/2')
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       expect(Nokogiri::HTML(response.body).css('#quotation-sortable li').map { |li| li['data-reviews-break'] }).to eq ['Reviews page 2', nil]
     end
 
     it 'shows the page-size input prefilled with the configured size' do
       SubstackSyncConfig.instance.update!(reviews_page_size: 12)
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       expect(response.body).to match(/name="reviews_page_size"[^>]*value="12"/)
     end
 
     it 'badges a previewable quotation' do
       SubstackQuotation.create!(quotation: 'flagged one', comment_url: 'https://x/comment/2', previewable: true)
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       expect(response.body).to include 'Previewable'
     end
 
@@ -51,7 +51,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it 'shows a thumbnail when post_image_url is present' do
       SubstackQuotation.create!(quotation: 'with an image', comment_url: 'https://x/comment/3',
                                 post_image_url: 'https://x/cover.jpg')
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       expect(response.body).to include 'src="https://x/cover.jpg"'
     end
 
@@ -72,39 +72,39 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before { allow(Substack::QuotationResolver).to receive(:execute).and_return(resolved) }
 
       it 'creates a record' do
-        expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers }
+        expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: admin_headers }
           .to change(SubstackQuotation, :count).by(1)
       end
 
       it 'stores the resolved post and author' do
-        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: admin_headers
         expect(SubstackQuotation.last).to have_attributes(quotation: 'blurb', post_title: 'A Post', substack_user: SubstackUser.find_by(name: 'Bob'))
       end
 
       it 'resolves from the comment url' do
-        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: admin_headers
         expect(Substack::QuotationResolver).to have_received(:execute).with(comment_url: 'https://x/comment/5', client: nil)
       end
 
       it 'redirects to the list page the new quotation landed on' do
-        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: admin_headers
         expect(response).to redirect_to comfy_admin_quotations_path(page: 1)
       end
 
       it 'rejects a blank quotation' do
-        expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: '' }, headers: http_auth_headers }
+        expect { post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: '' }, headers: admin_headers }
           .to_not change(SubstackQuotation, :count)
       end
 
       it 'does not auto-rebuild the reviews page (manual Rebuild button only)' do
         allow(SyncReviewsPageJob).to receive(:perform_later)
-        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: admin_headers
         expect(SyncReviewsPageJob).to_not have_received(:perform_later)
       end
 
       it 'appends the new quotation at the end of the manual order' do
         SubstackQuotation.create!(quotation: 'existing', comment_url: 'https://x/comment/1').update!(position: 7)
-        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: http_auth_headers
+        post comfy_admin_quotations_path, params: { comment_url: 'https://x/comment/5', quotation: 'blurb' }, headers: admin_headers
         expect(SubstackQuotation.find_by(quotation: 'blurb').position).to eq 8
       end
     end
@@ -113,12 +113,12 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before { allow(Substack::QuotationResolver).to receive(:execute).and_raise('bad url') }
 
       it 'creates no record' do
-        expect { post comfy_admin_quotations_path, params: { comment_url: 'bad', quotation: 'blurb' }, headers: http_auth_headers }
+        expect { post comfy_admin_quotations_path, params: { comment_url: 'bad', quotation: 'blurb' }, headers: admin_headers }
           .to_not change(SubstackQuotation, :count)
       end
 
       it 'redirects back' do
-        post comfy_admin_quotations_path, params: { comment_url: 'bad', quotation: 'blurb' }, headers: http_auth_headers
+        post comfy_admin_quotations_path, params: { comment_url: 'bad', quotation: 'blurb' }, headers: admin_headers
         expect(response).to redirect_to comfy_admin_quotations_path
       end
     end
@@ -128,7 +128,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     let!(:quotation) { SubstackQuotation.create!(quotation: 'old blurb', comment_url: 'https://x/comment/1',
                                                    substack_user: create(:substack_user, name: 'Bob')) }
 
-    before { get comfy_edit_admin_quotation_path(quotation), headers: http_auth_headers }
+    before { get comfy_edit_admin_quotation_path(quotation), headers: admin_headers }
 
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'old blurb' }
@@ -149,34 +149,34 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before { allow(Substack::QuotationResolver).to receive(:execute) }
 
       it 'updates the text' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: admin_headers
         expect(quotation.reload.quotation).to eq 'new blurb'
       end
 
       it 'does not re-hit Substack' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: admin_headers
         expect(Substack::QuotationResolver).to_not have_received(:execute)
       end
 
       it 'keeps the existing metadata' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: admin_headers
         expect(quotation.reload.post_title).to eq 'Old Post'
       end
 
       it 'does not auto-rebuild the reviews page (manual Rebuild button only)' do
         allow(SyncReviewsPageJob).to receive(:perform_later)
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb' }, headers: admin_headers
         expect(SyncReviewsPageJob).to_not have_received(:perform_later)
       end
 
       it 'flags the quotation previewable when the checkbox is ticked' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', previewable: '1' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', previewable: '1' }, headers: admin_headers
         expect(quotation.reload.previewable).to be true
       end
 
       it 'unflags previewable when the checkbox is left unticked' do
         quotation.update!(previewable: true)
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old' }, headers: admin_headers
         expect(quotation.reload.previewable).to be false
       end
     end
@@ -190,12 +190,12 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before { allow(Substack::QuotationResolver).to receive(:execute).and_return(resolved) }
 
       it 're-resolves the post and author' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old' }, headers: admin_headers
         expect(quotation.reload).to have_attributes(comment_url: 'https://x/comment/9', post_title: 'New Post', substack_user: SubstackUser.find_by(name: 'Eva'))
       end
 
       it 'overrides manually-entered post fields when the comment changes' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old', post_title: 'Manual Post' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old', post_title: 'Manual Post' }, headers: admin_headers
         expect(quotation.reload.post_title).to eq 'New Post'
       end
     end
@@ -209,23 +209,23 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before { allow(Substack::PostMetadata).to receive(:execute).and_return(metadata) }
 
       it 'stores the post url as submitted' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: admin_headers
         expect(quotation.reload.post_url).to eq 'https://manual/p/z'
       end
 
       it 'fills the title and image from that post' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: admin_headers
         expect(quotation.reload).to have_attributes(post_title: 'Fetched Post',
                                                      post_image_url: 'https://cdn/cover.jpg', post_id: 55)
       end
 
       it 'looks the metadata up from the submitted url' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z' }, headers: admin_headers
         expect(Substack::PostMetadata).to have_received(:execute).with(post_url: 'https://manual/p/z', client: nil)
       end
 
       it 'ignores a hand-posted title' do
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Typed Title' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://manual/p/z', post_title: 'Typed Title' }, headers: admin_headers
         expect(quotation.reload.post_title).to eq 'Fetched Post'
       end
     end
@@ -233,7 +233,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     context 'submitting the publication base URL (no specific post)' do
       before do
         quotation.update!(post_url: 'https://x/p/a', post_title: 'Old Post', post_image_url: 'https://cdn/cover.jpg', post_id: 77)
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://mikeyclarke.substack.com' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: 'https://mikeyclarke.substack.com' }, headers: admin_headers
       end
 
       it { expect(quotation.reload.post_url).to eq 'https://mikeyclarke.substack.com' }
@@ -245,7 +245,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before do
         quotation.update!(post_url: 'https://x/p/a', post_image_url: 'https://cdn/cover.jpg', post_id: 77)
         allow(Substack::PostMetadata).to receive(:execute)
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: '' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', post_url: '' }, headers: admin_headers
       end
 
       it { expect(quotation.reload.post_title).to be_nil }
@@ -256,7 +256,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     context 'when the post lookup fails' do
       before do
         allow(Substack::PostMetadata).to receive(:execute).and_raise(Substack::Client::Error, 'boom')
-        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb', post_url: 'https://manual/p/z' }, headers: http_auth_headers
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'new blurb', post_url: 'https://manual/p/z' }, headers: admin_headers
       end
 
       it { expect(quotation.reload.quotation).to eq 'old' }
@@ -265,7 +265,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
 
     it 'redirects back' do
       allow(Substack::QuotationResolver).to receive(:execute)
-      patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'x' }, headers: http_auth_headers
+      patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'x' }, headers: admin_headers
       expect(response).to redirect_to comfy_admin_quotations_path
     end
   end
@@ -274,13 +274,13 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     let!(:quotation) { SubstackQuotation.create!(quotation: 'x', comment_url: 'https://x/comment/1') }
 
     it 'deletes the quotation' do
-      expect { delete comfy_admin_quotation_path(quotation), headers: http_auth_headers }
+      expect { delete comfy_admin_quotation_path(quotation), headers: admin_headers }
         .to change(SubstackQuotation, :count).by(-1)
     end
 
     it 'does not auto-rebuild the reviews page (manual Rebuild button only)' do
       allow(SyncReviewsPageJob).to receive(:perform_later)
-      delete comfy_admin_quotation_path(quotation), headers: http_auth_headers
+      delete comfy_admin_quotation_path(quotation), headers: admin_headers
       expect(SyncReviewsPageJob).to_not have_received(:perform_later)
     end
   end
@@ -289,23 +289,23 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     before { allow(SyncReviewsPageJob).to receive(:perform_later) }
 
     it 'redirects back' do
-      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: http_auth_headers
+      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: admin_headers
       expect(response).to redirect_to comfy_admin_quotations_path
     end
 
     it 'enqueues a sync of just that page' do
-      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: http_auth_headers
+      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: admin_headers
       expect(SyncReviewsPageJob).to have_received(:perform_later).with(3)
     end
 
     it 'enqueues nothing without a page' do
-      post comfy_sync_reviews_admin_quotations_path, headers: http_auth_headers
+      post comfy_sync_reviews_admin_quotations_path, headers: admin_headers
       expect(SyncReviewsPageJob).to_not have_received(:perform_later)
     end
 
     it 'does not reshuffle — it mirrors the current manual order' do
       expect(SubstackQuotation).to_not receive(:reorder!)
-      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: http_auth_headers
+      post comfy_sync_reviews_admin_quotations_path(page: 3), headers: admin_headers
     end
   end
 
@@ -325,7 +325,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     def rows
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       Nokogiri::HTML(response.body).css('table tr').map { |tr| tr.text.squish }
     end
 
@@ -335,7 +335,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     it 'links each existing page to its Substack editor' do
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       expect(response.body).to include 'https://pub.substack.com/publish/post/555'
     end
 
@@ -403,17 +403,17 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     let!(:b) { SubstackQuotation.create!(quotation: 'b', comment_url: 'https://x/comment/2') }
 
     it 'moves the quotation to the given index' do
-      put comfy_reorder_admin_quotations_path, params: { id: b.id, to: 0 }, headers: http_auth_headers
+      put comfy_reorder_admin_quotations_path, params: { id: b.id, to: 0 }, headers: admin_headers
       expect(SubstackQuotation.by_position.to_a).to eq [b, a]
     end
 
     it 'responds ok' do
-      put comfy_reorder_admin_quotations_path, params: { id: b.id, to: 0 }, headers: http_auth_headers
+      put comfy_reorder_admin_quotations_path, params: { id: b.id, to: 0 }, headers: admin_headers
       expect(response).to have_http_status(:ok)
     end
 
     it 'responds not found for an unknown quotation' do
-      put comfy_reorder_admin_quotations_path, params: { id: 0, to: 0 }, headers: http_auth_headers
+      put comfy_reorder_admin_quotations_path, params: { id: 0, to: 0 }, headers: admin_headers
       expect(response).to have_http_status(:not_found)
     end
   end
@@ -432,7 +432,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     context 'on the first page' do
-      before { get comfy_admin_quotations_path, headers: http_auth_headers }
+      before { get comfy_admin_quotations_path, headers: admin_headers }
 
       it { expect(items.size).to eq 20 }
       it { expect(response.body).to include '45 quotations collected' }
@@ -440,7 +440,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     context 'on a middle page' do
-      before { get comfy_admin_quotations_path(page: 2), headers: http_auth_headers }
+      before { get comfy_admin_quotations_path(page: 2), headers: admin_headers }
 
       it { expect(items.first.text).to include 'quote 21' }
       it { expect(items.first.at_css('.order-number').text).to eq '21' }
@@ -449,53 +449,53 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     context 'on the last page' do
-      before { get comfy_admin_quotations_path(page: 3), headers: http_auth_headers }
+      before { get comfy_admin_quotations_path(page: 3), headers: admin_headers }
 
       it { expect(items.size).to eq 5 }
       it { expect(zones).to eq [39] }
     end
 
     it 'redirects past the last page to the last page' do
-      get comfy_admin_quotations_path(page: 9), headers: http_auth_headers
+      get comfy_admin_quotations_path(page: 9), headers: admin_headers
       expect(response).to redirect_to comfy_admin_quotations_path(page: 3)
     end
 
     it 'opens an edited quotation on its own page' do
-      get comfy_edit_admin_quotation_path(quotes[30]), headers: http_auth_headers
+      get comfy_edit_admin_quotation_path(quotes[30]), headers: admin_headers
       expect(items.first.text).to include 'quote 21'
     end
 
     it 'returns to the given page after a delete' do
-      delete comfy_admin_quotation_path(quotes[30], page: 2), headers: http_auth_headers
+      delete comfy_admin_quotation_path(quotes[30], page: 2), headers: admin_headers
       expect(response).to redirect_to comfy_admin_quotations_path(page: 2)
     end
 
     it 'drops a quotation onto the next page as its first' do
-      put comfy_reorder_admin_quotations_path, params: { id: quotes[5].id, to: 20 }, headers: http_auth_headers
+      put comfy_reorder_admin_quotations_path, params: { id: quotes[5].id, to: 20 }, headers: admin_headers
       expect(SubstackQuotation.by_position.pluck(:quotation)[19..20]).to eq ['quote 21', 'quote 6']
     end
 
     it 'drops a quotation onto the previous page as its last' do
-      put comfy_reorder_admin_quotations_path, params: { id: quotes[25].id, to: 19 }, headers: http_auth_headers
+      put comfy_reorder_admin_quotations_path, params: { id: quotes[25].id, to: 19 }, headers: admin_headers
       expect(SubstackQuotation.by_position.pluck(:quotation)[19..20]).to eq ['quote 26', 'quote 20']
     end
   end
 
   describe 'PATCH update_page_size' do
     it 'updates the configured reviews page size' do
-      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 12 }, headers: http_auth_headers
+      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 12 }, headers: admin_headers
       expect(SubstackSyncConfig.instance.reviews_page_size).to eq 12
     end
 
     it 'redirects back with a success flash' do
-      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 12 }, headers: http_auth_headers
+      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 12 }, headers: admin_headers
       expect(response).to redirect_to comfy_admin_quotations_path
       expect(flash[:success]).to be_present
     end
 
     it 'rejects a zero page size' do
       SubstackSyncConfig.instance.update!(reviews_page_size: 20)
-      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 0 }, headers: http_auth_headers
+      patch comfy_page_size_admin_quotations_path, params: { reviews_page_size: 0 }, headers: admin_headers
       expect(SubstackSyncConfig.instance.reload.reviews_page_size).to eq 20
       expect(flash[:danger]).to be_present
     end
@@ -508,7 +508,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       context 'with a tracked repost' do
         before do
           quotation.update!(notes: [{ 'url' => 'https://substack.com/@m/note/c-1', 'timestamp' => '2026-06-19T00:00:00Z', 'likes' => 0 }])
-          get comfy_admin_quotations_path, headers: http_auth_headers
+          get comfy_admin_quotations_path, headers: admin_headers
         end
 
         it { expect(response.body).to include '1 repost' }
@@ -516,7 +516,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       end
 
       it 'offers a rich copy source and an Add-manually form per quotation' do
-        get comfy_admin_quotations_path, headers: http_auth_headers
+        get comfy_admin_quotations_path, headers: admin_headers
         expect(response.body).to include 'copy-blizzard-text'
         expect(response.body).to include %(name="quotation_id" id="quotation_id" value="#{quotation.id}")
       end
@@ -530,7 +530,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       before do
         post comfy_admin_substack_blizzard_add_note_path,
              params: { quotation_id: quotation.id, url: 'https://substack.com/@m/note/c-2' },
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(quotation.reload.notes.size).to eq 1 }
@@ -548,7 +548,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     context 'with a matching term' do
-      before { get comfy_admin_quotations_path(q: 'needle'), headers: http_auth_headers }
+      before { get comfy_admin_quotations_path(q: 'needle'), headers: admin_headers }
 
       it { expect(items.size).to eq 1 }
       it { expect(response.body).to include '1 quotation matching “needle”' }
@@ -560,22 +560,22 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
 
     it 'says when nothing matches' do
-      get comfy_admin_quotations_path(q: 'zebra'), headers: http_auth_headers
+      get comfy_admin_quotations_path(q: 'zebra'), headers: admin_headers
       expect(response.body).to include 'No quotations match.'
     end
 
     it 'paginates the results, keeping the term in the page links' do
-      get comfy_admin_quotations_path(q: 'quote'), headers: http_auth_headers
+      get comfy_admin_quotations_path(q: 'quote'), headers: admin_headers
       expect(response.body).to include 'q=quote'
     end
 
     it 'returns to the search after a delete' do
-      delete comfy_admin_quotation_path(quotes[0], page: 1, q: 'quote'), headers: http_auth_headers
+      delete comfy_admin_quotation_path(quotes[0], page: 1, q: 'quote'), headers: admin_headers
       expect(response).to redirect_to comfy_admin_quotations_path(page: 1, q: 'quote')
     end
 
     it 'places the search form between the Reviews pages and the list' do
-      get comfy_admin_quotations_path, headers: http_auth_headers
+      get comfy_admin_quotations_path, headers: admin_headers
       headings = Nokogiri::HTML(response.body).css('h5').map(&:text)
       expect(headings.index('Search quotations')).to eq headings.index('Reviews pages') + 1
     end
@@ -584,6 +584,6 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   describe 'without authentication' do
     before { get comfy_admin_quotations_path }
 
-    it { expect(response).to have_http_status :unauthorized }
+    it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
 end

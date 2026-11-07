@@ -8,12 +8,11 @@ RSpec.describe 'Tags Select2', type: :system do
   let!(:blog_post) { create :post, site: site, layout: layout }
   let!(:tag) { Tag.create!(name: 'writing') }
 
-  let(:username) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.username }
-  let(:password) { ComfortableMexicanSofa::AccessControl::AdminAuthentication.password }
 
   before do
     page.driver.browser.manage.window.resize_to(1280, 800)
-    visit "http://#{username}:#{password}@#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/#{blog_post.id}/edit"
+    sign_in_admin_in_browser
+    visit "http://#{Capybara.server_host}:#{Capybara.server_port}/admin/sites/#{site.id}/blog-posts/#{blog_post.id}/edit"
   end
 
   it 'enhances the tags multi-select with Select2' do

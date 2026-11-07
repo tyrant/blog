@@ -15,7 +15,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
   describe 'GET /admin/sites/:site_id/blog-posts' do
     context 'with authentication' do
       before { 
-        get comfy_admin_blog_posts_path(site_id: site.id), headers: http_auth_headers
+        get comfy_admin_blog_posts_path(site_id: site.id), headers: admin_headers
       }
 
       it { expect(response).to have_http_status :success }
@@ -26,14 +26,14 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     context 'without authentication' do
       before { get comfy_admin_blog_posts_path(site_id: site.id) }
 
-      it { expect(response).to have_http_status :unauthorized }
+      it { expect(response).to redirect_to comfy_admin_sign_in_path }
     end
 
     context 'with a title search' do
       let!(:match)    { create :post, site: site, layout: layout, custom_title: 'Molten Salt Ambrosia' }
       let!(:no_match) { create :post, site: site, layout: layout, custom_title: 'Unrelated Nonsense' }
 
-      before { get comfy_admin_blog_posts_path(site_id: site.id, q: 'molten'), headers: http_auth_headers }
+      before { get comfy_admin_blog_posts_path(site_id: site.id, q: 'molten'), headers: admin_headers }
 
       it { expect(response.body).to include 'Molten Salt Ambrosia' }
       it { expect(response.body).to_not include 'Unrelated Nonsense' }
@@ -42,7 +42,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
   describe 'GET /admin/sites/:site_id/blog-posts/new' do
     before {
-      get new_comfy_admin_blog_post_path(site_id: site.id), headers: http_auth_headers
+      get new_comfy_admin_blog_post_path(site_id: site.id), headers: admin_headers
     }
 
     it { expect(response).to have_http_status :success }
@@ -52,7 +52,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     let(:valid_params) { { post: { title: 'New Blog Post', slug: 'new-blog-post', layout_id: layout.id, is_published: true } } }
 
     it {
-      expect { post comfy_admin_blog_posts_path(site_id: site.id), params: valid_params, headers: http_auth_headers }
+      expect { post comfy_admin_blog_posts_path(site_id: site.id), params: valid_params, headers: admin_headers }
         .to change { Comfy::Blog::Post.count }
         .by 1
     }
@@ -61,7 +61,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       let(:params_without_is_published) { { post: { title: 'Draft Post', slug: 'draft-post', layout_id: layout.id } } }
 
       before {
-        post comfy_admin_blog_posts_path(site_id: site.id), params: params_without_is_published, headers: http_auth_headers
+        post comfy_admin_blog_posts_path(site_id: site.id), params: params_without_is_published, headers: admin_headers
       }
 
       it { expect(Comfy::Blog::Post.find_by(slug: 'draft-post').is_published).to be false }
@@ -70,7 +70,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
   describe 'GET /admin/sites/:site_id/blog-posts/:id/edit' do
     before {
-      get edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: http_auth_headers
+      get edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: admin_headers
     }
 
     it { expect(response).to have_http_status :success }
@@ -91,7 +91,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
     context 'when viewing the middle post' do
       before {
-        get edit_comfy_admin_blog_post_path(site_id: site.id, id: middle_post.id), headers: http_auth_headers
+        get edit_comfy_admin_blog_post_path(site_id: site.id, id: middle_post.id), headers: admin_headers
       }
 
       it { expect(response.body).to include('Newer Post') }
@@ -100,7 +100,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
     context 'when viewing the newest post' do
       before {
-        get edit_comfy_admin_blog_post_path(site_id: site.id, id: newer_post.id), headers: http_auth_headers
+        get edit_comfy_admin_blog_post_path(site_id: site.id, id: newer_post.id), headers: admin_headers
       }
 
       it { expect(response.body).to include('Middle Post') }
@@ -109,7 +109,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
     context 'when viewing the oldest post' do
       before {
-        get edit_comfy_admin_blog_post_path(site_id: site.id, id: older_post.id), headers: http_auth_headers
+        get edit_comfy_admin_blog_post_path(site_id: site.id, id: older_post.id), headers: admin_headers
       }
 
       it { expect(response.body).to include('Middle Post') }
@@ -121,7 +121,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     let(:update_params) { { post: { title: 'Updated Post Title' } } }
 
     before { 
-      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), params: update_params, headers: http_auth_headers
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), params: update_params, headers: admin_headers
     }
 
     it { expect(blog_post.reload.title).to eq 'Updated Post Title' }
@@ -130,7 +130,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id (substack audience)' do
     it 'persists the selected audience' do
       patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-            params: { post: { substack_audience: 'only_paid' } }, headers: http_auth_headers
+            params: { post: { substack_audience: 'only_paid' } }, headers: admin_headers
       expect(blog_post.reload.substack_audience).to eq 'only_paid'
     end
   end
@@ -143,20 +143,20 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
     it 'assigns the selected tags' do
       patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-            params: { post: { tag_ids: ['', writing.id.to_s, advice.id.to_s] } }, headers: http_auth_headers
+            params: { post: { tag_ids: ['', writing.id.to_s, advice.id.to_s] } }, headers: admin_headers
       expect(blog_post.reload.tags).to contain_exactly(writing, advice)
     end
 
     it 'removes deselected tags' do
       blog_post.tags = [writing, advice]
       patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-            params: { post: { tag_ids: ['', writing.id.to_s] } }, headers: http_auth_headers
+            params: { post: { tag_ids: ['', writing.id.to_s] } }, headers: admin_headers
       expect(blog_post.reload.tags).to contain_exactly(writing)
     end
 
     it 'mirrors a newly-assigned tag to Substack' do
       patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-            params: { post: { tag_ids: ['', writing.id.to_s] } }, headers: http_auth_headers
+            params: { post: { tag_ids: ['', writing.id.to_s] } }, headers: admin_headers
       expect(Substack::TagMirror).to have_received(:assign)
     end
 
@@ -164,7 +164,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       blog_post.tags = [writing]
       patch "#{comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id)}.json",
             params: { post: { title: 'Autosaved', tag_ids: [''] } },
-            headers: http_auth_headers.merge('Accept' => 'application/json')
+            headers: admin_headers.merge('Accept' => 'application/json')
       expect(blog_post.reload.tags).to contain_exactly(writing)
     end
   end
@@ -177,7 +177,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     end
 
     before {
-      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), params: update_params, headers: http_auth_headers
+      patch comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), params: update_params, headers: admin_headers
     }
 
     it { expect(blog_post.categorizations.first.url).to eq 'https://medium.com/x' }
@@ -190,7 +190,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       create :categorization, category: category, categorized: blog_post,
              url: 'https://medium.com/fresh', data: { 'blizzard' => [{ 'text' => 'fresh' }] }
     end
-    let(:json_headers) { http_auth_headers.merge('Accept' => 'application/json') }
+    let(:json_headers) { admin_headers.merge('Accept' => 'application/json') }
     # Mimics a stale tab re-submitting the at-load category panel during autosave.
     let(:stale_params) do
       { post: { title: 'Autosaved', category_ids: ['', category.id.to_s],
@@ -213,7 +213,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
     let!(:categorization) { create :categorization, category: category, categorized: blog_post, url: 'https://medium.com/y' }
 
     before {
-      get edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: http_auth_headers
+      get edit_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: admin_headers
     }
 
     it { expect(response.body).to include 'https://medium.com/y' }
@@ -223,7 +223,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
   describe 'PATCH /admin/sites/:site_id/blog-posts/:id.json (autosave)' do
     let(:update_params) { { post: { title: 'Autosaved Title' } } }
-    let(:json_headers) { http_auth_headers.merge('Accept' => 'application/json') }
+    let(:json_headers) { admin_headers.merge('Accept' => 'application/json') }
 
     context 'with valid params' do
       before {
@@ -256,7 +256,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
 
   describe 'DELETE /admin/sites/:site_id/blog-posts/:id' do
     it {
-      expect { delete comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: http_auth_headers }
+      expect { delete comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id), headers: admin_headers }
         .to change { Comfy::Blog::Post.count }
         .by -1
     }
@@ -267,7 +267,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       before do
         allow(SubstackPostSyncJob).to receive(:perform_later)
         post sync_to_substack_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(response).to have_http_status :success }
@@ -293,7 +293,7 @@ RSpec.describe 'Comfy::Admin::Blog::PostsController', type: :request do
       before do
         allow(BlueskyPostSyncJob).to receive(:perform_later)
         post sync_to_bluesky_comfy_admin_blog_post_path(site_id: site.id, id: blog_post.id),
-             headers: http_auth_headers
+             headers: admin_headers
       end
 
       it { expect(response).to have_http_status :success }

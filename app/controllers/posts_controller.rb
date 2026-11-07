@@ -79,6 +79,6 @@ class PostsController < Comfy::Blog::PostsController
   private
 
   def admin_authenticated?
-    session[:comfy_admin_authenticated] == true || admin_signed_in?
+    admin_signed_in?
   end
 end
