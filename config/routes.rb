@@ -115,6 +115,7 @@ Rails.application.routes.draw do
       get  "admin/subscription-cleanup",         to: "substack_subscriptions#index",   as: :admin_substack_subscriptions
       post "admin/subscription-cleanup/import",  to: "substack_subscriptions#import",  as: :import_admin_substack_subscriptions
       post "admin/subscription-cleanup/recheck", to: "substack_subscriptions#recheck", as: :recheck_admin_substack_subscriptions
+      post "admin/subscription-cleanup/:id/unsubscribe", to: "substack_subscriptions#unsubscribe", as: :unsubscribe_admin_substack_subscription
 
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick

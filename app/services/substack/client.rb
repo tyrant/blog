@@ -53,6 +53,19 @@ module Substack
       request(Net::HTTP::Get.new(uri(path)))
     end
 
+    # Leaves a publication as a reader: DELETE /api/v1/free on its own
+    # subdomain. Unofficial and undocumented — Unsubscriber confirms the result
+    # with #publication_subscription rather than trusting the 2xx.
+    def unsubscribe(subdomain)
+      request(Net::HTTP::Delete.new(reader_uri(subdomain, "/api/v1/free")))
+    end
+
+    # The cookie holder's own subscription to one publication (is_subscribed,
+    # is_free_subscribed, membership_state, …).
+    def publication_subscription(subdomain)
+      request(Net::HTTP::Get.new(reader_uri(subdomain, "/api/v1/subscription")))
+    end
+
     # Profiles are only found by "<id>-<handle>"; the id alone 404s.
     def public_profile(user_id, handle)
       request(Net::HTTP::Get.new(uri("/api/v1/user/#{user_id}-#{handle}/public_profile")))
@@ -276,6 +289,14 @@ module Substack
       raise Error, "No Substack publication host configured" if @publication_host.blank?
 
       URI("https://#{@publication_host}#{path}")
+    end
+
+    # <subdomain>.substack.com, where the substack.sid cookie is valid (unlike a
+    # custom domain). The subdomain is checked so it can't redirect the host.
+    def reader_uri(subdomain, path)
+      raise ArgumentError, "Not a Substack subdomain: #{subdomain.inspect}" unless subdomain.to_s.match?(/\A[a-z0-9-]+\z/i)
+
+      URI("https://#{subdomain}.substack.com#{path}")
     end
 
     def uri(path)

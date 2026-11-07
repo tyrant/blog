@@ -98,4 +98,61 @@ RSpec.describe 'Comfy::Admin::SubstackSubscriptionsController', type: :request d
 
     it { expect(response).to redirect_to comfy_admin_sign_in_path }
   end
+
+  describe 'POST unsubscribe' do
+    let!(:subscription) { create :substack_subscription, :checked, publication_name: 'Quiet Eva', publication_subdomain: 'evawrites' }
+    let(:client) { instance_double(Substack::Client, unsubscribe: {}) }
+    let(:still_subscribed) { false }
+
+    before do
+      allow(Substack::Client).to receive(:new).and_return(client)
+      allow(client).to receive(:publication_subscription).and_return('is_subscribed' => still_subscribed)
+    end
+
+    context 'from the Unsubscribe button (Turbo Stream)' do
+      before { post comfy_unsubscribe_admin_substack_subscription_path(subscription), headers: admin_headers.merge('Accept' => 'text/vnd.turbo-stream.html') }
+
+      it 'removes just that row' do
+        expect(response.media_type).to eq 'text/vnd.turbo-stream.html'
+        expect(response.body).to include %(action="remove" target="substack_subscription_#{subscription.id}")
+        expect(SubstackSubscription.exists?(subscription.id)).to be false
+      end
+
+      context 'when Substack still lists it' do
+        let(:still_subscribed) { true }
+
+        it 'marks the row failed, with the reason, and keeps it' do
+          expect(response.body).to include %(target="unsubscribe_substack_subscription_#{subscription.id}")
+          expect(response.body).to include 'still lists you as subscribed'
+          expect(SubstackSubscription.exists?(subscription.id)).to be true
+        end
+      end
+    end
+
+    context 'as a plain form post' do
+      before { post comfy_unsubscribe_admin_substack_subscription_path(subscription), headers: admin_headers }
+
+      it { expect(response).to redirect_to comfy_admin_substack_subscriptions_path }
+      it { expect(flash[:success]).to include 'Quiet Eva' }
+    end
+
+    context 'without authentication' do
+      before { post comfy_unsubscribe_admin_substack_subscription_path(subscription) }
+
+      it 'does not touch Substack' do
+        expect(response).to have_http_status :unauthorized
+        expect(client).not_to have_received(:unsubscribe)
+      end
+    end
+  end
+
+  describe 'GET index Unsubscribe buttons' do
+    let!(:free) { create :substack_subscription, :checked }
+    let!(:paid) { create :substack_subscription, :checked, membership_state: 'subscribed' }
+
+    before { get comfy_admin_substack_subscriptions_path(show: 'all'), headers: admin_headers }
+
+    it { expect(response.body).to include comfy_unsubscribe_admin_substack_subscription_path(free) }
+    it { expect(response.body).to_not include comfy_unsubscribe_admin_substack_subscription_path(paid) }
+  end
 end

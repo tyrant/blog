@@ -37,9 +37,10 @@
         %th Replies
         %th Followers
         %th Checked
+        %th
     %tbody
       - @subscriptions.each do |subscription|
-        %tr
+        %tr{ id: dom_id(subscription) }
           %td
             = link_to subscription.publication_name.presence || subscription.publication_subdomain, subscription.publication_url, target: "_blank"
             - if subscription.paid?
@@ -61,4 +62,10 @@
               %span.text-danger.small{ title: subscription.check_error } failed
             - elsif subscription.checked_at
               %span.small= time_ago_in_words(subscription.checked_at) + " ago"
+          %td{ id: dom_id(subscription, :unsubscribe) }
+            - if subscription.paid?
+              %span.text-muted.small{ title: "Paid: cancel it in Substack" } paid
+            - else
+              -# The admin body has data-turbo="false"; re-enabled here so the reply is a Turbo Stream removing just this row.
+              = button_to "Unsubscribe", comfy_unsubscribe_admin_substack_subscription_path(subscription), method: :post, class: "btn btn-outline-danger btn-sm", form: { data: { turbo: true } }, data: { turbo_submits_with: "…" }
   = comfy_paginate @subscriptions
