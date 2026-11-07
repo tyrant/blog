@@ -356,15 +356,15 @@ RSpec.describe Substack::PostSyncer do
         sync
         expect(client).to have_received(:create_draft) do |args|
           types = args[:body_doc]['content'].map { |b| b['type'] }
-          expect(types.first(2)).to eq %w[blockquote captionedImage]
+          expect(types.first(2)).to eq %w[calloutBlock captionedImage]
         end
       end
 
-      it 'renders the quote, comment link, and author link on one left-aligned line with no embed card' do
+      it 'renders the quote, comment link, and author link as one line in a Callout Block with no embed card' do
         sync
         expect(client).to have_received(:create_draft) do |args|
           widget = args[:body_doc]['content'][0]
-          expect(widget['content'][0]['attrs']['textAlign']).to eq 'left'
+          expect(widget['type']).to eq 'calloutBlock'
           texts = widget['content'][0]['content'].map { |n| n['text'] }
           expect(texts).to eq ['“q”', ' ', '🔗', ' — ', 'A']
         end
@@ -386,7 +386,7 @@ RSpec.describe Substack::PostSyncer do
 
       it 'inserts the widget at the very top' do
         sync
-        expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].first['type']).to eq 'blockquote' }
+        expect(client).to have_received(:create_draft) { |args| expect(args[:body_doc]['content'].first['type']).to eq 'calloutBlock' }
       end
     end
 
@@ -394,7 +394,7 @@ RSpec.describe Substack::PostSyncer do
       it 'does not insert a widget' do
         sync
         expect(client).to have_received(:create_draft) do |args|
-          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'blockquote' }).to be true
+          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'calloutBlock' }).to be true
         end
       end
     end
@@ -408,7 +408,7 @@ RSpec.describe Substack::PostSyncer do
       it 'does not insert a widget' do
         sync
         expect(client).to have_received(:create_draft) do |args|
-          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'blockquote' }).to be true
+          expect(args[:body_doc]['content'].none? { |b| b['type'] == 'calloutBlock' }).to be true
         end
       end
     end

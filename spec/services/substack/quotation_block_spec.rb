@@ -122,6 +122,22 @@ RSpec.describe Substack::QuotationBlock do
     end
   end
 
+  describe '.callout' do
+    subject(:callout) { described_class.callout(quote) }
+
+    it 'is a Callout Block holding one paragraph' do
+      expect(callout['type']).to eq 'calloutBlock'
+      expect(callout['content'].map { |b| b['type'] }).to eq %w[paragraph]
+    end
+
+    it 'carries the italic quote, comment link and linked author on that one line' do
+      nodes = callout['content'][0]['content']
+      expect(nodes.map { |n| n['text'] }).to eq ['“a blurb”', ' ', '🔗', ' — ', 'Eva']
+      expect(nodes[0]['marks'].map { |m| m['type'] }).to include 'em'
+      expect(nodes.last.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    end
+  end
+
   describe '.triplet_at?' do
     let(:content) { [{ 'type' => 'paragraph' }] + described_class.build(quote) }
 

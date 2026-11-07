@@ -109,6 +109,20 @@ module Substack
       }
     end
 
+    # The single top-of-post aside: Substack's native Callout Block holding the
+    # same one-line quote + 🔗 + attribution (same shape HtmlToProseMirror emits
+    # for <p class="callout-block">).
+    def callout(quotation)
+      {
+        "type" => "calloutBlock",
+        "content" => [{
+          "type" => "paragraph",
+          "attrs" => { "textAlign" => nil },
+          "content" => quote_line_nodes(quotation)
+        }]
+      }
+    end
+
     def quote_line_nodes(quotation)
       nodes = [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])]
 

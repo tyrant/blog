@@ -80,7 +80,7 @@ module Substack
     private
 
     # Slots one extra random Review/Quotation at the very top of the post,
-    # ahead of its own leading image — a blockquoted single line, no
+    # ahead of its own leading image — a single line in a Callout Block, no
     # post-embed card, so it reads as a distinct aside from the footer's
     # card-led syncQuotations run. Drawn only from quotations marked
     # "previewable" (reads fine out of its parent post's context) — a manual
@@ -89,7 +89,7 @@ module Substack
       quotation = SubstackQuotation.sample_excluding(own_substack_url(post), 1, scope: SubstackQuotation.previewable).first
       return unless quotation
 
-      content.insert(0, QuotationBlock.blockquote(quotation))
+      content.insert(0, QuotationBlock.callout(quotation))
     end
 
     def own_substack_url(post)
