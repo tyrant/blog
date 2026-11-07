@@ -120,6 +120,12 @@ RSpec.describe Substack::TemplateResolver do
       expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote heading]
     end
 
+    it 'drops the trailing spacer when the directive says spacer: false' do
+      SubstackQuotation.update_all(post_embed: { 'size' => 'sm', 'id' => 9 })
+      result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1, 'spacer' => false } }])
+      expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote]
+    end
+
     it 'uses injected quotations when given' do
       injected = [SubstackQuotation.new(quotation: 'inj', post_title: 'P', post_url: 'https://x/p',
                                         substack_user: create(:substack_user, name: 'A', handle: 'a'))]

@@ -26,8 +26,9 @@ module Substack
 
     arguments client: nil, config: nil, page: nil
 
-    # Matches TemplateCapturer::CONDITIONALS' heading — the post footer's
-    # "Bullshit Emeritus: SUBSCRIBE" pitch, normally gated behind a post tag.
+    # Marks the post footer's subscribe pitch: an older layout's "Bullshit
+    # Emeritus: SUBSCRIBE" heading, or the current layout's audience-specific
+    # blocks whose text opens with "Bullshit Emeritus".
     SUBSCRIBE_CTA_HEADING = "Bullshit Emeritus"
 
     def execute
@@ -137,14 +138,40 @@ module Substack
     # The "Bullshit Emeritus: SUBSCRIBE" pitch and everything below it, pulled
     # live from the post footer template (SubstackSyncConfig#footer_json) so
     # Reviews pages stay in step with it automatically rather than duplicating
-    # it here. TemplateCapturer normally wraps the heading-through-subscribeWidget
-    # run in a syncIf gated on a post tag, stopping the wrap right before the
-    # subscribeWidget — so the button and whatever follows it (e.g. the closing
-    # "Like it, Restack it…" paragraph) are siblings *after* the syncIf, not
-    # inside it, and have to be reattached here. Unwrapped since a Reviews page
-    # has no post to check a tag against. [] when the section isn't present yet.
+    # it here.
+    #
+    # Current layout: the pitch is the audience-specific dynamicContent blocks
+    # whose text opens "Bullshit Emeritus", and the footer now ends with the
+    # "This post also moonwalks…" platform-links section, which needs a post
+    # to resolve — so the CTA stops right before it.
+    #
+    # Older templates open the pitch with a "Bullshit Emeritus" heading, which
+    # TemplateCapturer may have wrapped (heading through to just before the
+    # subscribeWidget) in a tag-gated syncIf; the button and what follows are
+    # siblings *after* the syncIf and are reattached here. Unwrapped since a
+    # Reviews page has no post to check a tag against. [] when the section
+    # isn't present yet.
     def subscribe_cta_blocks
-      find_cta_blocks(@config.footer_json) || []
+      until_links_section(find_cta_blocks(@config.footer_json) || [])
+    end
+
+    LINKS_DIRECTIVES = %w[syncPlatformLinks syncOriginalLink].freeze
+
+    # Cut at the platform-links directive, pulled back over the divider and
+    # unlinked lead-in headings ("This post also moonwalks…") just above it.
+    def until_links_section(blocks)
+      stop = blocks.index { |block| LINKS_DIRECTIVES.include?(block["type"]) }
+      return blocks unless stop
+
+      stop -= 1 while stop.positive? && links_lead_in?(blocks[stop - 1])
+      blocks[0...stop]
+    end
+
+    def links_lead_in?(block)
+      return true if block["type"] == "horizontal_rule"
+
+      block["type"] == "heading" && !cta_heading?(block) &&
+        Array(block["content"]).none? { |node| Array(node["marks"]).any? { |mark| mark["type"] == "link" } }
     end
 
     def find_cta_blocks(blocks)
@@ -161,8 +188,23 @@ module Substack
       nil
     end
 
+    # Where the subscribe pitch starts: an older layout's "Bullshit Emeritus"
+    # heading, or the current layout's first audience-specific block whose text
+    # opens with it.
     def cta_heading?(block)
-      block.is_a?(Hash) && block["type"] == "heading" && block_text(block).include?(SUBSCRIBE_CTA_HEADING)
+      return false unless block.is_a?(Hash)
+
+      case block["type"]
+      when "heading"        then block_text(block).include?(SUBSCRIBE_CTA_HEADING)
+      when "dynamicContent" then deep_text(block).include?(SUBSCRIBE_CTA_HEADING)
+      else false
+      end
+    end
+
+    def deep_text(node)
+      return "" unless node.is_a?(Hash)
+
+      node["text"].to_s + Array(node["content"]).map { |child| deep_text(child) }.join
     end
 
     def block_text(block)

@@ -6,7 +6,8 @@ module Substack
   # these directive nodes expand at sync time (and never reach Substack):
   #   {"type": "syncPlatformLinks", "attrs": {…heading attrs}} → "My website · Facebook · …" heading
   #   {"type": "syncOriginalLink"}                          → the legacy "Original: <url>" heading
-  #   {"type": "syncQuotations", "attrs": {"count": 3}}     → N random quotation triplets
+  #   {"type": "syncQuotations", "attrs": {"count": 3}}     → N random quotation units
+  #     (+ "spacer": false → card units without their trailing "." spacer)
   #   {"type": "syncIf", "attrs": {"tag": "…"}, "content":[…]} → its blocks, only if the post is so tagged
   # Literal text nodes also get their "N-and-counting" quotation tally refreshed
   # to the live SubstackQuotation.featurable.count on every resolve.
@@ -41,7 +42,7 @@ module Substack
       case block["type"]
       when "syncPlatformLinks" then [platform_links_heading(block["attrs"])]
       when "syncOriginalLink" then [original_link_heading]
-      when "syncQuotations"   then quotation_blocks(block.dig("attrs", "count") || 3)
+      when "syncQuotations"   then quotation_blocks(block.dig("attrs", "count") || 3, spacer: block.dig("attrs", "spacer") != false)
       when "syncIf"           then resolve_conditional(block)
       else [substitute_quotation_count(block)]
       end
@@ -68,8 +69,8 @@ module Substack
       @post.tags.exists?(name: block.dig("attrs", "tag")) ? resolve(block["content"]) : []
     end
 
-    def quotation_blocks(count)
-      random_quotations(count).flat_map { |quotation| Substack::QuotationBlock.unit(quotation) }
+    def quotation_blocks(count, spacer: true)
+      random_quotations(count).flat_map { |quotation| Substack::QuotationBlock.unit(quotation, spacer: spacer) }
     end
 
     def random_quotations(count)

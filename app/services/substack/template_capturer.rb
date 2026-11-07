@@ -2,9 +2,9 @@
 
 # Captures the whole below-body post template from a reference Substack draft
 # into SubstackSyncConfig#footer_json, so PostSyncer can resolve it per post.
-# The template is every block from the platform-links section onward (the
-# body is above it; see TemplateBoundary); on the way in, the dynamic parts
-# become directives:
+# The template is every block from the divider above "😘 THANK YOU 😘" to the
+# end of the draft (the body is above it; see TemplateBoundary for that and the
+# older layouts); on the way in, the dynamic parts become directives:
 #   the "My website · Facebook · …" row → syncPlatformLinks {textAlign, level}
 #   a legacy "Original:" heading        → syncOriginalLink
 #   the run of quotation triplets    → syncQuotations {count}
@@ -18,8 +18,9 @@ module Substack
 
     # Sections wrapped in a tag conditional: a heading whose text includes the
     # phrase, through to (not including) the next subscribe block, gated on the
-    # tag. Extend this list to add more conditional sections.
-    CONDITIONALS = [{ heading: "Bullshit Emeritus", tag: "Shite Advice" }].freeze
+    # tag, e.g. { heading: "Bullshit Emeritus", tag: "Shite Advice" }. Empty:
+    # the Bullshit Emeritus subscribe pitch now appears on every post.
+    CONDITIONALS = [].freeze
 
     def execute
       @client ||= Substack::Client.new
@@ -39,18 +40,22 @@ module Substack
 
     def below_body(content)
       index = Substack::TemplateBoundary.index(content)
-      raise "No \"#{Substack::TemplateBoundary::LINKS_ROW_LEAD}\" links heading (or legacy Original: link) found in draft #{@draft_id}" unless index
+      unless index
+        raise "No \"#{Substack::TemplateBoundary::THANK_YOU_HEADING}\" heading (or older \"#{Substack::TemplateBoundary::LINKS_ROW_LEAD}\" " \
+              "links heading / Original: link) found in draft #{@draft_id}"
+      end
 
       content[index..].dup
     end
 
-    # The links row is rebuilt per post from its categorizations; keep only its
-    # heading attrs (alignment, level). Legacy templates anchor on "Original:".
+    # The links row (now the template's last section) is rebuilt per post from
+    # its categorizations; keep only its heading attrs (alignment, level).
+    # Legacy templates that open with an "Original:" heading get that rebuilt.
     def substitute_links_row!(template)
       row = template.index { |block| Substack::TemplateBoundary.links_row?(block) }
       if row
         template[row] = { "type" => "syncPlatformLinks", "attrs" => template[row]["attrs"].to_h.slice("textAlign", "level") }
-      else
+      elsif Substack::TemplateBoundary.legacy_original?(template[0])
         template[0] = { "type" => "syncOriginalLink" }
       end
     end
@@ -60,7 +65,10 @@ module Substack
       return unless start
 
       count, stop = Substack::QuotationBlock.walk_units(template, start)
-      template[start...stop] = [{ "type" => "syncQuotations", "attrs" => { "count" => count } }]
+      attrs = { "count" => count }
+      # The current layout's review(s) have no "." spacer after them; keep it that way.
+      attrs["spacer"] = false unless Substack::QuotationBlock.spaced_run?(template, start)
+      template[start...stop] = [{ "type" => "syncQuotations", "attrs" => attrs }]
     end
 
     def wrap_conditionals!(template)

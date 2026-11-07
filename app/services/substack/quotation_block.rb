@@ -15,11 +15,14 @@ module Substack
   module QuotationBlock
     module_function
 
-    def unit(quotation)
+    # spacer: false drops the trailing "." spacer from a card unit — the
+    # current reference layout shows its review(s) as bare card + blockquote
+    # pairs. The heading fallback always keeps its spacer (part of its shape).
+    def unit(quotation, spacer: true)
       lead = card(quotation)
-      return [lead, quote_blockquote(quotation), trailing_spacer] if lead
+      return [lead, quote_blockquote(quotation), (trailing_spacer if spacer)].compact if lead
 
-      [heading(quotation), blockquote(quotation), spacer]
+      [heading(quotation), blockquote(quotation), self.spacer]
     end
 
     # The heading-only unit (no embed card) — kept for the heading fallback and
@@ -141,8 +144,15 @@ module Substack
       return content unless start
 
       count, stop = walk_units(content, start)
-      fresh = quotations.first(count).flat_map { |quotation| unit(quotation) }
+      spaced = spaced_run?(content, start)
+      fresh = quotations.first(count).flat_map { |quotation| unit(quotation, spacer: spaced) }
       content[0...start] + fresh + content[stop..]
+    end
+
+    # Whether the run starting at index uses "." spacers after its card units
+    # (older layouts) — false for the current bare card + blockquote pairs.
+    def spaced_run?(content, index)
+      !card_without_spacer?(content, index)
     end
 
     # Walks a contiguous run of quotation units starting at index, returning
@@ -161,6 +171,7 @@ module Substack
     # block length of the unit found there (2 or 3), or nil if none matches.
     def unit_length_at(content, index)
       return 3 if card_with_trailing_spacer?(content, index)
+      return 2 if card_without_spacer?(content, index)
       return 2 if quotation_lead?(content[index]) && attribution_paragraph?(content[index + 1])
       return 3 if quotation_lead?(content[index]) && blockquote_em?(content[index + 1]) && paragraph?(content[index + 2])
 
@@ -174,6 +185,18 @@ module Substack
       post_embed_card?(content[index]) &&
         attributed_blockquote?(content[index + 1]) &&
         period_heading?(content[index + 2])
+    end
+
+    # The current reference layout: a post-embed card and its attributed
+    # blockquote with no "." spacer after them (e.g. straight into a button).
+    def card_without_spacer?(content, index)
+      post_embed_card?(content[index]) &&
+        attributed_blockquote?(content[index + 1]) &&
+        !period_heading?(content[index + 2]) && !period_paragraph?(content[index + 2])
+    end
+
+    def period_paragraph?(block)
+      paragraph?(block) && Array(block["content"]).any? { |node| node["text"].to_s.strip == "." }
     end
 
     def period_heading?(block)

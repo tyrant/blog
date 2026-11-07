@@ -223,6 +223,48 @@ RSpec.describe Substack::ReviewsPageSyncer do
           expect(body_doc['content'].count { |b| b == cta_heading }).to eq 1
         end
       end
+
+      context 'when the footer template has the current layout: audience blocks, links section last' do
+        def dynamic(audiences, text)
+          { 'type' => 'dynamicContent', 'attrs' => { 'audiences' => audiences },
+            'content' => [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => text }] }] }
+        end
+
+        let(:emeritus) do
+          [dynamic(%w[paid_sub founding_sub], 'Bullshit Emeritus: hawt stuff'),
+           dynamic(%w[non_sub], 'Bullshit Emeritus: crave more? Subscribe!'),
+           dynamic(%w[free_sub], 'Bullshit Emeritus: you’re hip')]
+        end
+        let(:current_cta) { emeritus + [subscribe_widget, dynamic(%w[free_sub non_sub], 'Holy balls, a treat'), closing_paragraph] }
+        let(:moonwalks) do
+          { 'type' => 'heading', 'attrs' => { 'textAlign' => 'center', 'level' => 5 },
+            'content' => [{ 'type' => 'text', 'text' => 'This post also moonwalks resplendent twixt' }] }
+        end
+
+        before do
+          config.update!(footer_json: [{ 'type' => 'horizontal_rule' }, { 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'THANK YOU' }] },
+                                       { 'type' => 'horizontal_rule' }] +
+                                      current_cta +
+                                      [{ 'type' => 'horizontal_rule' }, moonwalks,
+                                       { 'type' => 'syncPlatformLinks', 'attrs' => { 'textAlign' => 'center', 'level' => 4 } }])
+        end
+
+        it 'appends the audience blocks through the closing paragraph, stopping before the links section' do
+          sync
+          expect(body_doc['content'].last(current_cta.size)).to eq current_cta
+          expect(body_doc['content']).to_not include(moonwalks)
+          expect(body_doc['content']).to_not include(hash_including('type' => 'syncPlatformLinks'))
+        end
+
+        it 'does not duplicate the CTA when the page already carries it from a previous sync' do
+          previous = { 'type' => 'doc', 'content' => Substack::QuotationBlock.build(first) + current_cta }
+          allow(client).to receive(:get_draft).with(555)
+            .and_return('draft_title' => 'Reviews', 'draft_subtitle' => '', 'is_published' => false,
+                        'draft_body' => JSON.generate(previous))
+          sync
+          expect(body_doc['content'].count { |b| b == emeritus.first }).to eq 1
+        end
+      end
     end
 
     describe 'a draft_subtitle rejection' do

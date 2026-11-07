@@ -2,23 +2,49 @@
 
 module Substack
   # Locates where the mirror-managed below-body template starts in a Substack
-  # draft's content (everything above it is the post body). The anchor is the
-  # platform-links heading — a heading whose first link reads "My website" —
-  # pulled back over the unlinked, centre-aligned headings directly above it
-  # (its "This post ALSO moonwalks…" intro and "." spacer; synced body headings
-  # never carry a textAlign). Drafts synced before the links row still mark the
-  # boundary with an "Original:" heading, which is matched as a fallback.
+  # draft's content (everything above it is the post body).
+  #
+  # Current layout: the template starts at the divider (horizontal rule)
+  # directly above the "😘 THANK YOU 😘" heading, and runs to the end — the
+  # "This post also moonwalks resplendent twixt" platform-links section is now
+  # its last part.
+  #
+  # Older layouts are still recognised, so drafts not yet re-synced split
+  # correctly: the template used to start at the platform-links heading (a
+  # heading whose first link reads "My website"), pulled back over the
+  # unlinked, centre-aligned headings directly above it (its "This post ALSO
+  # moonwalks…" intro and "." spacer; synced body headings never carry a
+  # textAlign), and before that at an "Original:" heading. Whichever marker
+  # comes first in the draft wins.
   module TemplateBoundary
     module_function
 
-    LINKS_ROW_LEAD = "My website"
+    THANK_YOU_HEADING = "THANK YOU"
+    LINKS_ROW_LEAD    = "My website"
 
     def index(content)
+      [thank_you_index(content), links_section_index(content), legacy_original_index(content)].compact.min
+    end
+
+    # The divider above the THANK YOU heading (or the heading itself, if no
+    # divider sits directly above it).
+    def thank_you_index(content)
+      heading = content.index { |block| heading?(block) && text_of(block).include?(THANK_YOU_HEADING) }
+      return unless heading
+
+      heading.positive? && divider?(content[heading - 1]) ? heading - 1 : heading
+    end
+
+    def links_section_index(content)
       anchor = content.index { |block| links_row?(block) }
-      return content.index { |block| legacy_original?(block) } unless anchor
+      return unless anchor
 
       anchor -= 1 while anchor.positive? && lead_in_heading?(content[anchor - 1])
       anchor
+    end
+
+    def legacy_original_index(content)
+      content.index { |block| legacy_original?(block) }
     end
 
     def links_row?(block)
@@ -39,6 +65,10 @@ module Substack
 
     def heading?(block)
       block.is_a?(Hash) && block["type"] == "heading"
+    end
+
+    def divider?(block)
+      block.is_a?(Hash) && block["type"] == "horizontal_rule"
     end
 
     def link_mark?(node)

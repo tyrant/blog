@@ -149,6 +149,19 @@ RSpec.describe Substack::QuotationBlock do
       expect(described_class.walk_units(content, 1)).to eq [2, 7]
     end
 
+    it 'counts spacer-less card units (the current layout) up to the next block' do
+      content = described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: false) +
+        described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: false) +
+        [{ 'type' => 'button' }]
+      expect(described_class.walk_units(content, 0)).to eq [2, 4]
+    end
+
+    it 'does not swallow a following paragraph as a spacer-less unit’s spacer' do
+      content = described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: false) +
+        [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Enjoy oodles more kudos' }] }]
+      expect(described_class.walk_units(content, 0)).to eq [1, 2]
+    end
+
     it 'counts a mixed run of legacy and card-shape units' do
       content = described_class.build(quote) + described_class.unit(quote(post_embed: { 'size' => 'sm' }))
       expect(described_class.walk_units(content, 0)).to eq [2, 6]
@@ -187,6 +200,16 @@ RSpec.describe Substack::QuotationBlock do
       result = described_class.rotate(card_content, fresh_with_embed)
       expect(result[1]['attrs']['caption']).to eq '“new”'
       expect(result.size).to eq 4
+    end
+
+    it 'keeps a spacer-less run spacer-less' do
+      card_content = [{ 'type' => 'paragraph' }] +
+        described_class.unit(quote(quotation: 'old', post_embed: { 'size' => 'sm' }), spacer: false) +
+        [{ 'type' => 'button' }]
+      fresh_with_embed = [quote(quotation: 'new', post_embed: { 'size' => 'sm' })]
+      result = described_class.rotate(card_content, fresh_with_embed)
+      expect(result.map { |b| b['type'] }).to eq %w[paragraph digestPostEmbed blockquote button]
+      expect(result[1]['attrs']['caption']).to eq '“new”'
     end
   end
 end
