@@ -4,6 +4,9 @@ require 'rails_helper'
 
 RSpec.describe 'Comfy::Admin::SubstackBlizzardController', type: :request do
 
+  # The Blizzard thank-you wording draws two distinct compliments; configured as in prod.
+  before { SubstackSyncConfig.instance.update!(subtitle_variables_json: { compliment: %w[spiffy cracking] }.to_json) }
+
   let!(:site) { create :site }
   let!(:layout) { create :layout, site: site }
   let!(:blog_post) { create :post, site: site, layout: layout }

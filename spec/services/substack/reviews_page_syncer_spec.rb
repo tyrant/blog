@@ -6,6 +6,9 @@ RSpec.describe Substack::ReviewsPageSyncer do
   let(:config) { SubstackSyncConfig.instance }
   let(:client) { instance_double(Substack::Client) }
 
+  # The Blizzard thank-you wording draws two distinct compliments; configured as in prod.
+  before { SubstackSyncConfig.instance.update!(subtitle_variables_json: { compliment: %w[spiffy cracking] }.to_json) }
+
   def quote(attrs = {})
     SubstackQuotation.create!({ quotation: 'a blurb', comment_url: 'https://sub/p/a/comment/1',
                                 post_url: 'https://sub/p/a', post_title: 'A', substack_user: create(:substack_user, name: 'Eva', handle: 'eva') }.merge(attrs))
@@ -68,9 +71,9 @@ RSpec.describe Substack::ReviewsPageSyncer do
     it 'includes quotations missing a profile handle, as a plain-text author name' do
       quote(quotation: 'no-author', substack_user: create(:substack_user, name: 'Eva', handle: nil))
       sync
-      quotes = body_doc['content'].select { |b| b['type'] == 'blockquote' }
-      node = quotes.find { |b| b['content'][0]['content'][0]['text'] == '“no-author”' }
-      expect(node['content'][0]['content'].last).to eq('type' => 'text', 'text' => 'Eva')
+      content = body_doc['content']
+      quote_index = content.index { |b| b['type'] == 'blockquote' && b['content'][0]['content'][0]['text'] == '“no-author”' }
+      expect(content[quote_index + 1]['content']).to include('type' => 'text', 'text' => 'Eva')
     end
 
     it 'falls back to a plain post-title heading when no embed can be built' do
@@ -90,11 +93,19 @@ RSpec.describe Substack::ReviewsPageSyncer do
         expect(card['attrs']).to include('id' => 192565792, 'title' => 'A', 'size' => 'sm', 'caption' => '“first”')
       end
 
-      it 'closes the card and quote with a centred h5 "." spacer, not a linked post-title heading' do
+      it 'closes the card, quote and signature with a centred h5 "." spacer, not a linked post-title heading' do
         sync
         types = body_doc['content'].map { |b| b['type'] }
-        expect(types.first(3)).to eq %w[digestPostEmbed blockquote heading]
-        expect(body_doc['content'][2]['content'].first['text']).to eq '.'
+        expect(types.first(4)).to eq %w[digestPostEmbed blockquote paragraph heading]
+        expect(body_doc['content'][3]['content'].first['text']).to eq '.'
+      end
+
+      it 'block-quotes only the quote, with the 🔗 — thank-you signature beneath it' do
+        sync
+        quote, signature = body_doc['content'][1], body_doc['content'][2]
+        expect(quote['content'].map { |p| p['content'].map { |n| n['text'] }.join }).to eq ['“first”']
+        expect(signature['content'].first(2).map { |n| n['text'] }).to eq ['🔗', ' — ']
+        expect(signature['content'].map { |n| n['text'] }.join).to include 'of thanks to the'
       end
 
       it 'gives each card a unique nodeId' do

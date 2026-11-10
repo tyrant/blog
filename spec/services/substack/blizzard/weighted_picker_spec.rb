@@ -4,6 +4,9 @@ require 'rails_helper'
 
 RSpec.describe Substack::Blizzard::WeightedPicker do
 
+  # The Blizzard thank-you wording draws two distinct compliments; configured as in prod.
+  before { SubstackSyncConfig.instance.update!(subtitle_variables_json: { compliment: %w[spiffy cracking] }.to_json) }
+
   let!(:site) { create :site }
   let!(:post) { create :post, site: site }
   let!(:category) { create :category, site: site, label: 'Substack' }

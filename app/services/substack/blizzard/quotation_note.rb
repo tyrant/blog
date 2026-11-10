@@ -39,7 +39,7 @@ module Substack
           "content" => [
             text("Sexyverse Advice: another ",
                  marks: [{ "type" => "bold" }]),
-            text(random_compliment&.upcase,
+            text(random_compliment[0]&.upcase,
                  marks: [{ "type" => "bold" }, { "type" => "italic" }]),
             text(" review",
                  marks: [{ "type" => "bold" }])
@@ -73,34 +73,33 @@ module Substack
       end
 
       def attribution(quotation)
+        { "type" => "paragraph", "content" => attribution_nodes(quotation) }
+      end
 
-        # If our random superlative is structured "most whatever", then let's
-        # format it in our attribution as "<em>Most</em> Whatever". No
-        # superlatives configured → just "thanks to the <author>".
-        possibly_most_x = random_superlative.to_s
-        superlative = if possibly_most_x.blank?
-            []
-          elsif possibly_most_x[0..3] == 'most'
-            [
-              text("#{possibly_most_x.split(' ')[0].capitalize} ",
-                   marks: [{ 'type' => 'italic' }]),
-              text("#{possibly_most_x.split(' ')[1].capitalize} ")
-            ]
-          else
-            [text("#{possibly_most_x} ")]
-          end
-        { 
-          "type" => "paragraph",
-          "content" => [
-            text("#{random_quantity&.capitalize} of thanks to the "),
-            *superlative,
-            author(quotation),
-            text(", #{pronoun_wording(quotation)["they_are"]} "),
-            text(random_compliment,
-                 marks: [{ 'type' => 'bold' }, { 'type' => 'italic' }]),
-            text(", do #{pronoun_wording(quotation)["send_love"]}")
+      # "Bags of thanks to the *Most* Spiffy <author>, she's ***cracking***, do
+      # check her out and/or send her some love." — two distinct random
+      # compliments, so at least two must be configured. Shared with the Reviews
+      # pages' signature (QuotationBlock.review_signature), which passes the post
+      # schema's mark names and a linked-name author in place of the Note
+      # schema's and the @mention.
+      def attribution_nodes(quotation, bold: "bold", italic: "italic", author_node: author(quotation))
+        compliments = random_compliment(n: 2)
+        most_complimented = [
+            text("Most ",
+                  marks: [{ 'type' => italic }]),
+            text("#{compliments[0].capitalize} ")
           ]
-        }
+        wording = pronoun_wording(quotation)
+
+        [
+          text("#{random_quantity&.capitalize} of thanks to the "),
+          *most_complimented,
+          author_node,
+          text(", #{wording["they_are"]} "),
+          text(compliments[1],
+               marks: [{ 'type' => bold }, { 'type' => italic }]),
+          text(", do #{wording["send_love"]}")
+        ]
       end
 
       def pronoun_wording(quotation)
@@ -159,16 +158,12 @@ module Substack
         }
       end
 
-      def random_compliment
-        Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample
+      def random_compliment(n: 1)
+        Array(SubstackSyncConfig.instance.subtitle_variables["compliment"]).sample(n)
       end
 
       def random_quantity
         Array(SubstackSyncConfig.instance.subtitle_variables["quantity"]).sample
-      end
-
-      def random_superlative
-        Array(SubstackSyncConfig.instance.subtitle_variables["superlative"]).sample
       end
     end
   end

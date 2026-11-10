@@ -7,6 +7,9 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
 
   before { reset_cms_config }
 
+  # The Blizzard thank-you wording draws two distinct compliments; configured as in prod.
+  before { SubstackSyncConfig.instance.update!(subtitle_variables_json: { compliment: %w[spiffy cracking] }.to_json) }
+
   describe 'GET index' do
     before do
       SubstackQuotation.create!(quotation: 'a gem of a blurb', comment_url: 'https://x/comment/1',
@@ -321,7 +324,7 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
 
     before do
       config.update!(reviews_page_size: 2, reviews_draft_id: 555, publication_host: 'pub.substack.com',
-                     subtitle_variables_json: '{"superlative": ["most kind"]}')
+                     subtitle_variables_json: '{"compliment": ["kind", "spiffy"]}')
     end
 
     def rows

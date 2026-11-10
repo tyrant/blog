@@ -45,8 +45,8 @@ RSpec.describe Substack::SubtitleTemplate do
       expect(described_class.render('{{ x }}', nil)).to eq '{{ x }}'
     end
 
-    it 'upper-cases the compliment variable value' do
-      expect(described_class.render('{{ compliment }}', { 'compliment' => ['lovely'] })).to eq 'LOVELY'
+    it 'leaves the compliment variable value as written' do
+      expect(described_class.render('{{ compliment }}', { 'compliment' => ['lovely'] })).to eq 'lovely'
     end
 
     it 'does not upper-case other variables' do

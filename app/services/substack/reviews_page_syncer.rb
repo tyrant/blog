@@ -10,7 +10,8 @@
 # Each page renders as: a top pagination nav (1 · 2 · … · X, current bold, others
 # linked — omitted when there's only one page), page 1's manually-authored intro,
 # the review units (native digestPostEmbed card — or a post-title heading fallback
-# — then the quote + 🔗 + author), the same nav at the bottom, then the post
+# — then the block-quoted quote and, beneath it, a "🔗 — <thank-you to the
+# author>" signature worded like the Blizzard notes), the same nav at the bottom, then the post
 # footer template's subscribe CTA ("Bullshit Emeritus: SUBSCRIBE" onward, pulled
 # live from SubstackSyncConfig#footer_json — see SUBSCRIBE_CTA_HEADING). Draft
 # writes aren't Cloudflare-blocked from the prod IP, so this runs on the prod
@@ -333,12 +334,13 @@ module Substack
       { "content" => [] }
     end
 
-    # The shared quotation unit (post-embed card + quote + author), after ensuring
-    # the quotation's embed snapshot is populated.
+    # The Reviews-page quotation unit (post-embed card, block-quoted quote,
+    # 🔗 — thank-you signature, spacer), after ensuring the quotation's embed
+    # snapshot is populated.
     def review_unit(quotation)
       ensure_embed(quotation)
 
-      QuotationBlock.unit(quotation)
+      QuotationBlock.review_unit(quotation)
     end
 
     # Populate the quotation's digestPostEmbed snapshot the first time it's synced,

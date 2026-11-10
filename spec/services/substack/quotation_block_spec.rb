@@ -82,6 +82,43 @@ RSpec.describe Substack::QuotationBlock do
     end
   end
 
+  describe '.review_unit' do
+    before do
+      allow(SubstackSyncConfig).to receive(:instance).and_return(
+        instance_double(SubstackSyncConfig, subtitle_variables: { 'quantity' => ['bags'] })
+      )
+      allow(Substack::Blizzard::QuotationNote).to receive(:random_compliment).with(n: 2).and_return(%w[gnarly cracking])
+    end
+
+    let(:unit) { described_class.review_unit(quote(post_embed: { 'size' => 'sm' }, substack_user: create(:substack_user, name: 'Eva', handle: 'eva', pronouns: 'she/her'))) }
+    let(:signature) { unit[2]['content'] }
+
+    it { expect(unit.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote paragraph heading] }
+
+    it 'block-quotes only the italic quote' do
+      expect(unit[1]['content'].size).to eq 1
+      expect(unit[1]['content'][0]['content']).to eq [{ 'type' => 'text', 'text' => '“a blurb”', 'marks' => [{ 'type' => 'em' }] }]
+    end
+
+    it 'signs it "🔗 — <Blizzard-style thanks>" in post marks, with a linked author name' do
+      expect(signature.map { |n| n['text'] }.join)
+        .to eq "🔗 — Bags of thanks to the Most Gnarly Eva, she's cracking, do check her out and/or send her some love."
+      expect(signature[0].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
+      expect(signature.find { |n| n['text'] == 'Most ' }['marks']).to eq [{ 'type' => 'em' }]
+      expect(signature.find { |n| n['text'] == 'cracking' }['marks']).to eq [{ 'type' => 'strong' }, { 'type' => 'em' }]
+      expect(signature.find { |n| n['text'] == 'Eva' }.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    end
+
+    it 'leads with the post-title heading when there is no embed snapshot' do
+      expect(described_class.review_unit(quote).map { |b| b['type'] }).to eq %w[heading blockquote paragraph heading]
+    end
+
+    it 'omits the 🔗 when there is no comment_url' do
+      nodes = described_class.review_unit(quote(comment_url: nil))[2]['content']
+      expect(nodes.first['text']).to eq ' — '
+    end
+  end
+
   describe '.card' do
     it { expect(described_class.card(quote)).to be_nil }
 

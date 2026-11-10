@@ -25,6 +25,38 @@ module Substack
       [heading(quotation), blockquote(quotation), self.spacer]
     end
 
+    # A Reviews-page unit: the post-embed card (or post-title heading
+    # fallback), a blockquote holding only the quote, the signature as its own
+    # paragraph beneath it, then the centred h5 "." spacer. Unlike #unit (the
+    # post footer's shape, which rotation/capture detect), the attribution sits
+    # outside the blockquote.
+    def review_unit(quotation)
+      [card(quotation) || heading(quotation), quote_only_blockquote(quotation), review_signature(quotation), trailing_spacer]
+    end
+
+    def quote_only_blockquote(quotation)
+      {
+        "type" => "blockquote",
+        "content" => [{
+          "type" => "paragraph",
+          "attrs" => { "textAlign" => "left" },
+          "content" => [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])]
+        }]
+      }
+    end
+
+    # "🔗 — Bags of thanks to the *Most* Gnarly Eva, she's ***cracking***, do
+    # check her out…": the 🔗 links the original comment; the rest is the
+    # Blizzard notes' attribution wording, in post marks with a linked name.
+    def review_signature(quotation)
+      nodes = []
+      nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
+      nodes << text(" — ")
+      nodes.concat(Blizzard::QuotationNote.attribution_nodes(quotation, bold: "strong", italic: "em", author_node: author(quotation)))
+
+      { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => nodes }
+    end
+
     # The heading-only unit (no embed card) — kept for the heading fallback and
     # for callers/tests that want the plain triplet.
     def build(quotation)
