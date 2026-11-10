@@ -4,7 +4,7 @@
 // server-side Substack::SubtitleTemplate. Returns { output } on success or
 // { error } if the variables JSON is unparseable.
 // Variables whose rendered value is upper-cased (mirrors Substack::SubtitleTemplate).
-const UPPERCASE_KEYS = ['compliment'];
+const UPPERCASE_KEYS = [];
 
 export function renderSubtitleTemplate(template, variablesJson) {
   let variables = {};

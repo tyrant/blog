@@ -9,7 +9,7 @@ module Substack
   module SubtitleTemplate
     TOKEN = /\{\{\s*(\w+)\s*\}\}/
     # Variables whose rendered value is upper-cased.
-    UPPERCASE_KEYS = %w[compliment].freeze
+    UPPERCASE_KEYS = %w[].freeze
 
     def self.render(template, variables)
       variables = {} unless variables.is_a?(Hash)
