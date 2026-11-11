@@ -15,7 +15,7 @@ class Comfy::Admin::ReplyDrafterController < Comfy::Admin::Cms::BaseController
       length: params[:length], model: params[:model].presence
     )
 
-    replies = Substack::ReplyGenerator.execute(
+    result = Substack::ReplyGenerator.execute(
       url:          params[:url],
       instructions: params[:instructions],
       count:        count,
@@ -23,7 +23,7 @@ class Comfy::Admin::ReplyDrafterController < Comfy::Admin::Cms::BaseController
       length:       params[:length],
       model:        params[:model]
     )
-    render json: { replies: replies }
+    render json: result.to_h
   rescue => e
     render json: { error: e.message }, status: :unprocessable_content
   end

@@ -87,6 +87,8 @@ gem 'jquery-rails'
 gem 'haml-rails'
 
 gem 'nokogiri'
+# Pinned to a release at least two weeks old when added.
+gem 'anthropic', '2.3.0'
 gem 'whenever'
 gem 'kaminari'
 
