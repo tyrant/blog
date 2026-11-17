@@ -10,7 +10,7 @@ module Substack
     arguments url: nil, post: nil, instructions: nil, count: 6, split: "balanced", length: 2, model: nil,
               substack: nil, anthropic: nil
 
-    DEFAULT_MODEL = "claude-sonnet-5"
+    DEFAULT_MODEL = "claude-sonnet-5-5"
     MAX_RETRIES   = 2
     MAX_TOKENS    = 16_000
     BODY_LIMIT    = 6000
