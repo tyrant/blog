@@ -1,0 +1,6 @@
+%strong= stats.score
+%span.text-muted
+  = " · #{pluralize(stats.pieces, 'piece')} over #{pluralize(stats.active_months, 'month')}"
+  = " · 💬 #{stats.comments} ❤ #{stats.likes} ⟳ #{stats.restacks} ↩ #{stats.replies}"
+  - if stats.last_engaged_at
+    = " · last #{stats.last_engaged_at.in_time_zone.to_date.to_fs(:long)}"

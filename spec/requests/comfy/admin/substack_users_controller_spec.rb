@@ -17,6 +17,8 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
       it { expect(response.body).to include 'Eva Solen' }
       it { expect(response.body).to include 'https://substack.com/@evasolen' }
       it { expect(response.body).to include '<td>they/them</td>' }
+      it { expect(response.body).to include '<th>Favourite?</th>' }
+      it { expect(response.body).to include '<td>no</td>' }
     end
 
     context 'searching' do
@@ -78,6 +80,7 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     it { expect(response).to have_http_status :success }
     it { expect(response.body).to include 'a lovely blurb' }
     it { expect(response.body).to match(/value="they\/them"[^>]*name="substack_user\[pronouns\]"/) }
+    it { expect(response.body).to include 'name="substack_user[favourite]"' }
   end
 
   describe 'PATCH update' do
@@ -86,6 +89,11 @@ RSpec.describe 'Comfy::Admin::SubstackUsersController', type: :request do
     it 'renames the user' do
       patch comfy_admin_substack_user_path(user), params: { substack_user: { name: 'Eva Solen' } }, headers: admin_headers
       expect(user.reload.name).to eq 'Eva Solen'
+    end
+
+    it 'marks them a favourite' do
+      patch comfy_admin_substack_user_path(user), params: { substack_user: { favourite: '1' } }, headers: admin_headers
+      expect(user.reload).to be_favourite
     end
 
     it 'changes their pronouns' do

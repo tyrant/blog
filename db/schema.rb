@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_17_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_18_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -389,6 +389,36 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_17_000001) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "substack_engagements", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "handle"
+    t.string "name"
+    t.string "content_key", null: false
+    t.string "kind", null: false
+    t.datetime "occurred_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "content_key", "kind"], name: "index_substack_engagements_on_user_id_and_content_key_and_kind", unique: true
+  end
+
+  create_table "substack_favourite_items", force: :cascade do |t|
+    t.bigint "substack_user_id", null: false
+    t.string "entity_key", null: false
+    t.string "kind", null: false
+    t.string "url", null: false
+    t.string "title"
+    t.text "excerpt"
+    t.datetime "published_at", null: false
+    t.boolean "liked", default: false, null: false
+    t.boolean "restacked", default: false, null: false
+    t.datetime "dismissed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_key"], name: "index_substack_favourite_items_on_entity_key", unique: true
+    t.index ["published_at"], name: "index_substack_favourite_items_on_published_at"
+    t.index ["substack_user_id"], name: "index_substack_favourite_items_on_substack_user_id"
+  end
+
   create_table "substack_pending_publishes", force: :cascade do |t|
     t.bigint "draft_id", null: false
     t.string "title"
@@ -480,7 +510,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_17_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "pronouns", default: "they/them", null: false
+    t.boolean "favourite", default: false, null: false
     t.index "lower((handle)::text)", name: "index_substack_users_on_lower_handle", unique: true, where: "(handle IS NOT NULL)"
+    t.index ["favourite"], name: "index_substack_users_on_favourite", where: "favourite"
     t.index ["user_id"], name: "index_substack_users_on_user_id", unique: true, where: "(user_id IS NOT NULL)"
   end
 
@@ -522,6 +554,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_17_000001) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "substack_favourite_items", "substack_users"
   add_foreign_key "substack_quotations", "substack_users"
   add_foreign_key "substack_replies", "substack_users"
 end

@@ -165,6 +165,49 @@ RSpec.describe Substack::Client do
     it { expect(client.publication_subscription('evawrites')).to eq('is_subscribed' => false) }
   end
 
+  describe 'engagement reads' do
+    subject(:client) { described_class.new(session_cookie: cookie, publication_host: 'pub.substack.com') }
+
+    def stub_json(url, body)
+      stub_request(:get, url).to_return(status: 200, body: body.to_json)
+    end
+
+    it 'pages the archive by cursor, 12 at a time' do
+      stub_json('https://pub.substack.com/api/v1/archive?sort=new&limit=12', 'posts' => [], 'nextCursor' => 'a b')
+      stub_json('https://pub.substack.com/api/v1/archive?sort=new&limit=12&cursor=a+b', 'posts' => [{ 'id' => 1 }])
+      expect(client.archive_page['nextCursor']).to eq 'a b'
+      expect(client.archive_page('a b')['posts']).to eq [{ 'id' => 1 }]
+    end
+
+    it 'reads all of a post’s comments from the publication' do
+      stub_json('https://pub.substack.com/api/v1/post/7/comments?all_comments=true&sort=oldest_first', 'comments' => [])
+      expect(client.post_comments(7)).to eq('comments' => [])
+    end
+
+    it 'reads likers and restackers of posts and Notes' do
+      stub_json('https://substack.com/api/v1/post/7/reactors', [{ 'id' => 1 }])
+      stub_json('https://substack.com/api/v1/post/7/restackers', [{ 'id' => 2 }])
+      stub_json('https://substack.com/api/v1/comment/8/reactors', [{ 'id' => 3 }])
+      stub_json('https://substack.com/api/v1/comment/8/restackers', [{ 'id' => 4 }])
+      expect([client.post_reactors(7), client.post_restackers(7), client.note_reactors(8), client.note_restackers(8)].flatten.map { |r| r['id'] }).to eq [1, 2, 3, 4]
+    end
+
+    it 'pages Note replies and profile feeds by cursor' do
+      stub_json('https://substack.com/api/v1/reader/comment/8/replies', 'commentBranches' => [])
+      stub_json('https://substack.com/api/v1/reader/comment/8/replies?cursor=x', 'commentBranches' => [1])
+      stub_json('https://substack.com/api/v1/reader/feed/profile/9', 'items' => [])
+      stub_json('https://substack.com/api/v1/reader/feed/profile/9?cursor=y', 'items' => [1])
+      expect(client.note_replies(8)).to eq('commentBranches' => [])
+      expect(client.note_replies(8, 'x')).to eq('commentBranches' => [1])
+      expect(client.profile_feed(9)).to eq('items' => [])
+      expect(client.profile_feed(9, 'y')).to eq('items' => [1])
+    end
+
+    it 'refuses non-numeric ids' do
+      expect { client.profile_feed('9/../x') }.to raise_error(ArgumentError)
+    end
+  end
+
   describe 'drafts' do
     subject(:client) { described_class.new(session_cookie: cookie, publication_host: host) }
 

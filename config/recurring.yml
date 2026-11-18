@@ -22,3 +22,9 @@ production:
   rotate_substack_quotations:
     class: RotateSubstackQuotationsJob
     schedule: every day at 6am
+  refresh_substack_favourites:
+    class: RefreshSubstackFavouritesJob
+    schedule: every day at 7am
+  scan_substack_engagement:
+    class: ScanSubstackEngagementJob
+    schedule: every saturday at 4am

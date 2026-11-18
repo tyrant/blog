@@ -69,6 +69,27 @@ RSpec.describe SubstackUser do
     it { expect(described_class.exists?(other.id)).to be false }
   end
 
+  describe '#absorb! of a favourite with feed items' do
+    let(:user) { create :substack_user }
+    let(:other) { create :substack_user, favourite: true }
+    let!(:item) do
+      SubstackFavouriteItem.create!(substack_user: other, entity_key: 'c-1', kind: 'note', url: 'https://substack.com/@x/note/c-1', published_at: Time.current)
+    end
+
+    before { user.absorb!(other) }
+
+    it { expect(user.reload).to be_favourite }
+    it { expect(item.reload.substack_user).to eq user }
+  end
+
+  describe '.favourites' do
+    let!(:fan) { create :substack_user, favourite: true }
+
+    before { create :substack_user }
+
+    it { expect(described_class.favourites).to eq [fan] }
+  end
+
   describe '.identify' do
     it { expect(described_class.identify).to be_nil }
 

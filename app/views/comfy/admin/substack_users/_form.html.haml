@@ -13,5 +13,9 @@
     = form.label :user_id, "User id"
     = form.number_field :user_id, class: "form-control"
     %small.form-text.text-muted Substack's numeric account id; Blizzard needs it to @mention them.
+  .form-group.form-check
+    = form.check_box :favourite, class: "form-check-input"
+    = form.label :favourite, "Favourite", class: "form-check-label"
+    %small.form-text.text-muted Lists their recent posts and Notes on Substack Favourites, for replying to.
   = form.submit(@substack_user.persisted? ? "Save" : "Create", class: "btn btn-primary")
   = link_to "Cancel", comfy_admin_substack_users_path, class: "btn btn-link"

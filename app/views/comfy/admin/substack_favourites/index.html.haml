@@ -1,0 +1,122 @@
+.page-header.d-flex.justify-content-between.align-items-center
+  %h2 Substack Favourites
+  = button_to "Refresh feed", comfy_refresh_admin_substack_favourites_path, method: :post, class: "btn btn-primary btn-sm", disabled: @refreshing.present?
+
+%p.text-muted.small
+  - if @refreshing
+    Refreshing: #{@refreshing.completed} of #{@refreshing.total} favourites (#{@refreshing.percent}%) — reload to update.
+  - elsif @last_refresh
+    Feed last refreshed #{time_ago_in_words(@last_refresh.updated_at)} ago.
+  - else
+    Feed not refreshed yet.
+  Lists each favourite’s own posts and Notes from the last #{Substack::FavouritesRefresher::MAX_AGE.inspect}; also refreshed daily.
+
+%section.mb-5
+  %h4 Feed
+  - if @items.empty?
+    %p.text-muted Nothing to reply to — add favourites below, then Refresh.
+  - else
+    = paginate @items, theme: "comfy", param_name: :feed_page
+    %table.table.table-sm
+      %thead
+        %tr
+          %th When
+          %th Who
+          %th What
+          %th
+          %th
+      %tbody
+        - @items.each do |item|
+          %tr{ id: dom_id(item) }
+            %td.text-nowrap.small{ title: l(item.published_at) }= "#{time_ago_in_words(item.published_at)} ago"
+            %td.text-nowrap= link_to item.substack_user.name.presence || "@#{item.substack_user.handle}", edit_comfy_admin_substack_user_path(item.substack_user)
+            %td
+              %span.badge{ class: item.post? ? "badge-primary" : "badge-secondary" }= item.kind
+              = link_to item.post? ? item.title.presence || item.url : item.excerpt.presence || item.url, item.url, target: "_blank"
+              - if item.post? && item.excerpt.present?
+                %div.small.text-muted= item.excerpt
+            %td.text-nowrap.small
+              - if @replied_ids.include?(item.id)
+                %span.badge.badge-success replied
+              - if item.liked?
+                %span.text-danger{ title: "liked" } ❤
+              - if item.restacked?
+                %span.text-success{ title: "restacked" } ⟳
+            %td.text-right
+              = button_to "Done", comfy_dismiss_admin_substack_favourite_item_path(item), method: :post, class: "btn btn-outline-secondary btn-sm", form: { data: { turbo: true } }, data: { turbo_submits_with: "…" }
+    = paginate @items, theme: "comfy", param_name: :feed_page
+
+%section.mb-5
+  %h4 Favourites (#{@favourites.total_count})
+  = form_with url: comfy_create_admin_substack_favourite_path, method: :post, class: "form-inline mb-3" do
+    = text_field_tag :favourite, nil, placeholder: "@handle or Substack profile URL", class: "form-control mr-2", style: "width: 22rem;", required: true
+    = submit_tag "Add Favourite", class: "btn btn-secondary btn-sm"
+  - if @favourites.empty?
+    %p.text-muted No favourites yet — add one above, or from the suggestions below.
+  - else
+    = paginate @favourites, theme: "comfy"
+    %table.table.table-sm
+      %thead
+        %tr
+          %th Name
+          %th Substack
+          %th Engagement
+          %th
+      %tbody
+        - @favourites.each do |user|
+          - stats = @favourite_stats[user.user_id]
+          %tr
+            %td= link_to user.name.presence || "(no name)", edit_comfy_admin_substack_user_path(user)
+            %td
+              - if user.profile_url
+                = link_to "@#{user.handle}", user.profile_url, target: "_blank"
+              - else
+                %span.text-muted.small no handle
+            %td.small
+              - if stats
+                = render "stats", stats: stats
+              - else
+                %span.text-muted none recorded
+            %td.text-right
+              = button_to "Remove", comfy_remove_admin_substack_favourite_path(user), method: :post, class: "btn btn-link btn-sm text-danger p-0"
+    = paginate @favourites, theme: "comfy"
+
+%section
+  .d-flex.justify-content-between.align-items-center
+    %h4 Suggested favourites
+    .d-flex
+      = button_to "Scan activity", comfy_scan_admin_substack_favourites_path, method: :post, class: "btn btn-outline-secondary btn-sm mr-2", disabled: @scanning.present?
+      = button_to "Full rescan", comfy_scan_admin_substack_favourites_path(full: 1), method: :post, class: "btn btn-outline-secondary btn-sm", disabled: @scanning.present?, form: { data: { turbo_confirm: "Rescan every post and Note? Takes a while." } }, data: { confirm: "Rescan every post and Note? Takes a while." }
+  %p.text-muted.small
+    - if @scanning
+      Scanning: #{@scanning.completed} of #{@scanning.total} posts and Notes (#{@scanning.percent}%) — reload to update.
+    - elsif @last_scan
+      Last scanned #{time_ago_in_words(@last_scan.updated_at)} ago; “Scan activity” rechecks content from #{ScanSubstackEngagementJob::OVERLAP.inspect} before that onward.
+    - else
+      Not scanned yet — “Scan activity” reads who commented on, liked, restacked or replied to every post and Note of yours. The first scan covers your whole history, so expect it to run for hours.
+    Accounts that engaged with at least #{SubstackEngagement::SUGGESTION_MIN_PIECES} of your pieces, not yet favourites.
+    Score = pieces + 2 × (comments + restacks + replies) + 3 × active months.
+
+  - if @suggestions.empty?
+    %p.text-muted No suggestions yet.
+  - else
+    = form_with url: comfy_admin_substack_favourites_path, method: :get, class: "form-inline mb-2" do
+      = label_tag :order, "Order by", class: "mr-2 small"
+      = select_tag :order, options_for_select([["Score", "score"], ["Pieces", "pieces"], ["Active months", "months"], ["Comments", "comments"], ["Restacks", "restacks"], ["Replies", "replies"], ["Likes", "likes"], ["Last engaged", "last"]], @suggestion_order), class: "form-control form-control-sm mr-2"
+      = submit_tag "Sort", class: "btn btn-secondary btn-sm"
+    %table.table.table-sm
+      %thead
+        %tr
+          %th Account
+          %th Engagement
+          %th
+      %tbody
+        - @suggestions.each do |suggestion|
+          %tr
+            %td
+              = link_to suggestion.name.presence || suggestion.handle.presence || suggestion.user_id, SubstackEngagement.profile_url(suggestion.handle, suggestion.user_id), target: "_blank"
+              - if suggestion.handle.present?
+                %span.text-muted.small= "@#{suggestion.handle}"
+            %td.small= render "stats", stats: suggestion
+            %td.text-right
+              = button_to "Add", comfy_create_admin_substack_favourite_path, method: :post, params: { user_id: suggestion.user_id, handle: suggestion.handle, name: suggestion.name }, class: "btn btn-outline-primary btn-sm"

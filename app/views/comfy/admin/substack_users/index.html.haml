@@ -5,7 +5,7 @@
 = form_with url: comfy_admin_substack_users_path, method: :get, class: "form-inline mb-3" do
   = text_field_tag :q, params[:q], placeholder: "search name, handle or user id", class: "form-control mr-2", style: "width: 18rem;"
   = label_tag :order, "Order by", class: "mr-2"
-  = select_tag :order, options_for_select([["Name", "name"], ["Pronouns", "pronouns"], ["Handle", "handle"], ["User id", "user_id"], ["Quotations", "quotations"], ["Replies", "replies"]], params[:order]), class: "form-control mr-2"
+  = select_tag :order, options_for_select([["Name", "name"], ["Pronouns", "pronouns"], ["Handle", "handle"], ["User id", "user_id"], ["Quotations", "quotations"], ["Replies", "replies"], ["Favourite?", "favourite"]], params[:order]), class: "form-control mr-2"
   = select_tag :direction, options_for_select([["Asc", "asc"], ["Desc", "desc"]], params[:direction]), class: "form-control mr-2"
   = submit_tag "Search", class: "btn btn-secondary btn-sm"
   - if params[:q].present?
@@ -24,6 +24,7 @@
         %th User id
         %th Quotations
         %th Replies
+        %th Favourite?
         %th
     %tbody
       - @substack_users.each do |user|
@@ -38,6 +39,7 @@
           %td= user.user_id || content_tag(:span, "unknown", class: "text-muted small")
           %td= user.quotations_count
           %td= user.replies_count
+          %td= user.favourite? ? "yes" : "no"
           %td.text-right
             = link_to edit_comfy_admin_substack_user_path(user), class: "text-secondary mr-2", title: "Edit" do
               %i.fas.fa-pencil-alt

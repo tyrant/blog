@@ -99,6 +99,43 @@ module Substack
       res["Location"].to_s[%r{/@([^/?#]+)}, 1]
     end
 
+    # -- Engagement reads (for SubstackEngagement / Substack Favourites) ---------
+
+    # One page of the publication's posts, newest first: { "posts", "nextCursor" }.
+    # 12 is the largest page size the endpoint accepts.
+    def archive_page(cursor = nil)
+      path = "/api/v1/archive?sort=new&limit=12"
+      path += "&cursor=#{CGI.escape(cursor)}" if cursor
+      request(Net::HTTP::Get.new(pub_uri(path)))
+    end
+
+    # Every comment on one of the publication's posts, each with nested "children".
+    def post_comments(post_id)
+      request(Net::HTTP::Get.new(pub_uri("/api/v1/post/#{Integer(post_id)}/comments?all_comments=true&sort=oldest_first")))
+    end
+
+    # The accounts that liked / restacked a post or a Note (a "comment"), as
+    # [{ "id", "name", … }]. Handles aren't included.
+    def post_reactors(post_id)   = request(Net::HTTP::Get.new(uri("/api/v1/post/#{Integer(post_id)}/reactors")))
+    def post_restackers(post_id) = request(Net::HTTP::Get.new(uri("/api/v1/post/#{Integer(post_id)}/restackers")))
+    def note_reactors(note_id)   = request(Net::HTTP::Get.new(uri("/api/v1/comment/#{Integer(note_id)}/reactors")))
+    def note_restackers(note_id) = request(Net::HTTP::Get.new(uri("/api/v1/comment/#{Integer(note_id)}/restackers")))
+
+    # A Note's reply threads: { "commentBranches" => [{ "comment", "descendantComments" }], "nextCursor" }.
+    def note_replies(note_id, cursor = nil)
+      path = "/api/v1/reader/comment/#{Integer(note_id)}/replies"
+      path += "?cursor=#{CGI.escape(cursor)}" if cursor
+      request(Net::HTTP::Get.new(uri(path)))
+    end
+
+    # One page of an account's profile activity (their posts, Notes and restacks),
+    # newest first: { "items", "nextCursor" }.
+    def profile_feed(user_id, cursor = nil)
+      path = "/api/v1/reader/feed/profile/#{Integer(user_id)}"
+      path += "?cursor=#{CGI.escape(cursor)}" if cursor
+      request(Net::HTTP::Get.new(uri(path)))
+    end
+
     # SubstackSyncConfig#subtitle_for renders a random combination from a
     # template + word lists, with no documented length cap to validate against
     # up front — Substack's own 400 on the "draft_subtitle" param is the only

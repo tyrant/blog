@@ -116,6 +116,12 @@ Rails.application.routes.draw do
       post "admin/subscription-cleanup/import",  to: "substack_subscriptions#import",  as: :import_admin_substack_subscriptions
       post "admin/subscription-cleanup/recheck", to: "substack_subscriptions#recheck", as: :recheck_admin_substack_subscriptions
       post "admin/subscription-cleanup/:id/unsubscribe", to: "substack_subscriptions#unsubscribe", as: :unsubscribe_admin_substack_subscription
+      get  "admin/substack-favourites",                   to: "substack_favourites#index",   as: :admin_substack_favourites
+      post "admin/substack-favourites",                   to: "substack_favourites#create",  as: :create_admin_substack_favourite
+      post "admin/substack-favourites/refresh",           to: "substack_favourites#refresh", as: :refresh_admin_substack_favourites
+      post "admin/substack-favourites/scan",              to: "substack_favourites#scan",    as: :scan_admin_substack_favourites
+      post "admin/substack-favourites/:id/remove",        to: "substack_favourites#remove",  as: :remove_admin_substack_favourite
+      post "admin/substack-favourites/items/:id/dismiss", to: "substack_favourites#dismiss", as: :dismiss_admin_substack_favourite_item
 
       get  "admin/substack-blizzard",             to: "substack_blizzard#index",       as: :admin_substack_blizzard
       post "admin/substack-blizzard/repost/tick",    to: "substack_blizzard#repost_tick",    as: :admin_substack_blizzard_repost_tick

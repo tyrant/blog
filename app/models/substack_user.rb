@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
 # One Substack account, shared by its SubstackQuotations and SubstackReplies.
+# A favourite's recent posts and Notes are tracked on Substack Favourites.
 class SubstackUser < ApplicationRecord
   has_many :quotations, class_name: "SubstackQuotation", dependent: :nullify
   has_many :replies, class_name: "SubstackReply", dependent: :nullify
+  has_many :favourite_items, class_name: "SubstackFavouriteItem", dependent: :destroy
+
+  scope :favourites, -> { where(favourite: true) }
 
   normalizes :handle, with: ->(handle) { handle.strip.delete_prefix("@").presence }
   normalizes :name, with: ->(name) { name.strip.presence }
@@ -62,6 +66,7 @@ class SubstackUser < ApplicationRecord
     "name"        => ALPHABETICAL_SQL,
     "pronouns"    => "lower(pronouns)",
     "handle"      => "lower(handle)",
+    "favourite"   => "favourite",
     "user_id"     => "user_id",
     "quotations"  => "quotations_count",
     "replies"     => "replies_count"
@@ -98,6 +103,8 @@ class SubstackUser < ApplicationRecord
   def absorb!(other)
     other.quotations.update_all(substack_user_id: id)
     other.replies.update_all(substack_user_id: id)
+    other.favourite_items.update_all(substack_user_id: id)
+    update!(favourite: true) if other.favourite? && !favourite?
     other.reload.destroy!
   end
 
