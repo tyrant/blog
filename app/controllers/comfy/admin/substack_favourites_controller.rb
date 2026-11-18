@@ -11,8 +11,10 @@ class Comfy::Admin::SubstackFavouritesController < Comfy::Admin::Cms::BaseContro
   SUGGESTIONS = 50
 
   def index
-    @items = SubstackFavouriteItem.pending.from_favourites.newest_first.includes(:substack_user)
-                                  .page(params[:feed_page]).per(FEED_PER_PAGE)
+    @kind = SubstackFavouriteItem::KINDS.include?(params[:kind]) ? params[:kind] : nil
+    items = SubstackFavouriteItem.pending.from_favourites
+    items = items.where(kind: @kind) if @kind
+    @items = items.newest_first.includes(:substack_user).page(params[:feed_page]).per(FEED_PER_PAGE)
     @replied_ids = SubstackFavouriteItem.replied_ids(@items)
     @favourites = SubstackUser.favourites.alphabetical.page(params[:page]).per(FAVOURITES_PER_PAGE)
     @favourite_stats = SubstackEngagement.leaderboard.where(user_id: @favourites.filter_map(&:user_id)).index_by(&:user_id)

@@ -12,9 +12,15 @@
   Lists each favourite’s own posts and Notes from the last #{Substack::FavouritesRefresher::MAX_AGE.inspect}; also refreshed daily.
 
 %section.mb-5
-  %h4 Feed
+  .d-flex.justify-content-between.align-items-center
+    %h4 Feed
+    = form_with url: comfy_admin_substack_favourites_path, method: :get, class: "form-inline mb-2" do
+      = hidden_field_tag :order, params[:order] if params[:order].present?
+      = label_tag :kind, "Show", class: "mr-2 small"
+      = select_tag :kind, options_for_select([["Both", ""], ["Posts", "post"], ["Notes", "note"]], @kind), class: "form-control form-control-sm mr-2", onchange: "this.form.submit()"
+      %noscript= submit_tag "Filter", class: "btn btn-secondary btn-sm"
   - if @items.empty?
-    %p.text-muted Nothing to reply to — add favourites below, then Refresh.
+    %p.text-muted= @kind ? "No #{@kind.pluralize} to reply to." : "Nothing to reply to — add favourites below, then Refresh."
   - else
     = paginate @items, theme: "comfy", param_name: :feed_page
     %table.table.table-sm
@@ -101,6 +107,7 @@
     %p.text-muted No suggestions yet.
   - else
     = form_with url: comfy_admin_substack_favourites_path, method: :get, class: "form-inline mb-2" do
+      = hidden_field_tag :kind, @kind if @kind
       = label_tag :order, "Order by", class: "mr-2 small"
       = select_tag :order, options_for_select([["Score", "score"], ["Pieces", "pieces"], ["Active months", "months"], ["Comments", "comments"], ["Restacks", "restacks"], ["Replies", "replies"], ["Likes", "likes"], ["Last engaged", "last"]], @suggestion_order), class: "form-control form-control-sm mr-2"
       = submit_tag "Sort", class: "btn btn-secondary btn-sm"

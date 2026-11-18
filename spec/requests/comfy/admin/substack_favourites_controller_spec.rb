@@ -58,6 +58,45 @@ RSpec.describe 'Comfy::Admin::SubstackFavouritesController', type: :request do
     it { expect(response.body).to include 'Add Favourite' }
   end
 
+  describe 'GET index filtered by kind' do
+    let!(:eva) { create :substack_user, handle: 'eva', favourite: true }
+
+    before do
+      SubstackFavouriteItem.create!(substack_user: eva, entity_key: 'c-1', kind: 'note', url: 'u1', excerpt: 'a lovely note', published_at: 1.hour.ago)
+      SubstackFavouriteItem.create!(substack_user: eva, entity_key: 'p-2', kind: 'post', url: 'u2', title: 'A splendid post', published_at: 2.hours.ago)
+    end
+
+    it 'shows only posts' do
+      get comfy_admin_substack_favourites_path(kind: 'post'), headers: admin_headers
+      expect(response.body).to include 'A splendid post'
+      expect(response.body).not_to include 'a lovely note'
+      expect(response.body).to include '<option selected="selected" value="post">Posts</option>'
+    end
+
+    it 'shows only Notes' do
+      get comfy_admin_substack_favourites_path(kind: 'note'), headers: admin_headers
+      expect(response.body).to include 'a lovely note'
+      expect(response.body).not_to include 'A splendid post'
+    end
+
+    it 'shows both for anything else' do
+      get comfy_admin_substack_favourites_path(kind: 'video'), headers: admin_headers
+      expect(response.body).to include('a lovely note', 'A splendid post')
+    end
+
+    it 'says when a filter leaves nothing' do
+      SubstackFavouriteItem.where(kind: 'post').delete_all
+      get comfy_admin_substack_favourites_path(kind: 'post'), headers: admin_headers
+      expect(response.body).to include 'No posts to reply to.'
+    end
+
+    it 'keeps the filter when re-sorting suggestions' do
+      SubstackEngagement.record!((1..3).map { |i| { user_id: 22, handle: nil, name: 'Kim', content_key: "p-#{i}", kind: 'like', occurred_at: 1.day.ago } })
+      get comfy_admin_substack_favourites_path(kind: 'note', order: 'likes'), headers: admin_headers
+      expect(response.body).to include('<input type="hidden" name="kind" id="kind" value="note"', '<input type="hidden" name="order" id="order" value="likes"')
+    end
+  end
+
   describe 'GET index while jobs run' do
     before do
       JobProgress.begin!(RefreshSubstackFavouritesJob::PROGRESS_KEY, label: 'r', total: 4)
