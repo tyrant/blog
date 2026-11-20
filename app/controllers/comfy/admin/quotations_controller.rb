@@ -80,6 +80,14 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
+  # One job per page; the job's concurrency limit runs them one after another.
+  def sync_all_reviews
+    page_count = SubstackSyncConfig.instance.reviews_page_groups.size
+    (1..page_count).each { |page| SyncReviewsPageJob.perform_later(page) }
+    flash[:success] = "Syncing all #{helpers.pluralize(page_count, "Reviews page")} on the worker, one at a time."
+    redirect_to comfy_admin_quotations_path
+  end
+
   def reorder
     SubstackQuotation.move!(params.require(:id), params.require(:to))
     head :ok

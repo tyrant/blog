@@ -312,6 +312,31 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     end
   end
 
+  describe 'POST sync_all_reviews' do
+    before do
+      SubstackSyncConfig.instance.update!(reviews_page_size: 2)
+      3.times { |i| SubstackQuotation.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}", post_url: 'https://x/p/a') }
+      allow(SyncReviewsPageJob).to receive(:perform_later)
+      post comfy_sync_all_reviews_admin_quotations_path, headers: admin_headers
+    end
+
+    it { expect(response).to redirect_to comfy_admin_quotations_path }
+    it { expect(SyncReviewsPageJob).to have_received(:perform_later).twice }
+    it { expect(SyncReviewsPageJob).to have_received(:perform_later).with(1) }
+    it { expect(SyncReviewsPageJob).to have_received(:perform_later).with(2) }
+    it { expect(flash[:success]).to eq 'Syncing all 2 Reviews pages on the worker, one at a time.' }
+  end
+
+  describe 'GET index Sync all pages button' do
+    before { get comfy_admin_quotations_path, headers: admin_headers }
+
+    let(:sync_all_form) { Nokogiri::HTML(response.body).at_css('section table').next_element }
+
+    it { expect(sync_all_form['action']).to eq comfy_sync_all_reviews_admin_quotations_path }
+    it { expect(sync_all_form.at_css('button').text).to eq 'Sync all pages' }
+    it { expect(sync_all_form.next_element['action']).to eq comfy_page_size_admin_quotations_path }
+  end
+
   describe 'GET index Reviews page rows' do
     let(:config) { SubstackSyncConfig.instance }
 
