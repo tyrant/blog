@@ -100,6 +100,13 @@ class SubstackUser < ApplicationRecord
     "https://substack.com/@#{handle}" if handle.present?
   end
 
+  # How the user reads in an admin picker: name and handle when known, else whatever identifies them.
+  def select_label
+    at_handle = "@#{handle}" if handle.present?
+    return "#{name} (#{at_handle})" if name.present? && at_handle
+    name.presence || at_handle || "Substack user #{user_id}"
+  end
+
   def absorb!(other)
     other.quotations.update_all(substack_user_id: id)
     other.replies.update_all(substack_user_id: id)

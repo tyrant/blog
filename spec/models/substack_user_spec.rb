@@ -56,6 +56,13 @@ RSpec.describe SubstackUser do
     it { expect(build(:substack_user, handle: nil).profile_url).to be_nil }
   end
 
+  describe '#select_label' do
+    it { expect(build(:substack_user, name: 'Eva', handle: 'eva').select_label).to eq 'Eva (@eva)' }
+    it { expect(build(:substack_user, name: 'Eva', handle: nil).select_label).to eq 'Eva' }
+    it { expect(build(:substack_user, name: nil, handle: 'eva').select_label).to eq '@eva' }
+    it { expect(build(:substack_user, name: nil, handle: nil, user_id: 42).select_label).to eq 'Substack user 42' }
+  end
+
   describe '#absorb!' do
     let(:user) { create :substack_user }
     let(:other) { create :substack_user }

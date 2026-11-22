@@ -44,10 +44,14 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     if comment_changed
       # A new comment re-resolves post and author from the comment itself.
       quotation.populate_from_substack!
-    elsif params.key?(:post_url)
-      # Title and thumbnail are never typed — they come from the post the URL names.
-      quotation.post_url = params[:post_url]
-      quotation.post_url.present? ? quotation.populate_post_from_substack! : quotation.clear_post_metadata
+    else
+      # Blank (the cleared picker) unlinks the author.
+      quotation.substack_user_id = params[:substack_user_id].presence if params.key?(:substack_user_id)
+      if params.key?(:post_url)
+        # Title and thumbnail are never typed — they come from the post the URL names.
+        quotation.post_url = params[:post_url]
+        quotation.post_url.present? ? quotation.populate_post_from_substack! : quotation.clear_post_metadata
+      end
     end
     quotation.save!
     flash[:success] = "Quotation updated."

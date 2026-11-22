@@ -140,6 +140,17 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
     it { expect(response.body).to include 'name="previewable"' }
     it { expect(response.body).to_not include 'name="post_title"' }
     it { expect(response.body).to_not include 'name="post_image_url"' }
+
+    describe 'Substack user picker' do
+      let!(:eva) { create :substack_user, name: 'Eva', handle: 'eva' }
+      let(:picker) { Nokogiri::HTML(response.body).at_css('select#substack_user_id') }
+
+      before { get comfy_edit_admin_quotation_path(quotation), headers: admin_headers }
+
+      it { expect(picker['class']).to include 'js-substack-user-select' }
+      it { expect(picker.css('option').map(&:text)).to eq ['', "Bob (@#{quotation.substack_user.handle})", 'Eva (@eva)'] }
+      it { expect(picker.at_css('option[selected]')['value']).to eq quotation.substack_user_id.to_s }
+    end
   end
 
   describe 'PATCH update' do
@@ -200,6 +211,55 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
       it 'overrides manually-entered post fields when the comment changes' do
         patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old', post_title: 'Manual Post' }, headers: admin_headers
         expect(quotation.reload.post_title).to eq 'New Post'
+      end
+    end
+
+    context 'picking a Substack user' do
+      let!(:eva) { create :substack_user, name: 'Eva', handle: 'eva' }
+      let(:bob) { quotation.substack_user }
+
+      before { allow(Substack::QuotationResolver).to receive(:execute) }
+
+      it 'links the picked user' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', substack_user_id: eva.id }, headers: admin_headers
+        expect(quotation.reload.substack_user).to eq eva
+      end
+
+      it 'unlinks the user when the picker is cleared' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', substack_user_id: '' }, headers: admin_headers
+        expect(quotation.reload.substack_user).to be_nil
+      end
+
+      it 'keeps the user when no picker value is submitted' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old' }, headers: admin_headers
+        expect(quotation.reload.substack_user).to eq bob
+      end
+
+      it 'does not re-hit Substack' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', substack_user_id: eva.id }, headers: admin_headers
+        expect(Substack::QuotationResolver).to_not have_received(:execute)
+      end
+
+      it 'rejects an unknown user' do
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/1', quotation: 'old', substack_user_id: 0 }, headers: admin_headers
+        expect(quotation.reload.substack_user).to eq bob
+      end
+    end
+
+    context 'changing the comment url while picking a Substack user' do
+      let!(:zed) { create :substack_user, name: 'Zed', handle: 'zed' }
+      let(:resolved) do
+        Substack::QuotationResolver::Result.new(post_url: 'https://x/p/b', post_title: 'New Post',
+                                                author_name: 'Eva', author_handle: 'eva')
+      end
+
+      before do
+        allow(Substack::QuotationResolver).to receive(:execute).and_return(resolved)
+        patch comfy_admin_quotation_path(quotation), params: { comment_url: 'https://x/comment/9', quotation: 'old', substack_user_id: zed.id }, headers: admin_headers
+      end
+
+      it 'takes the author resolved from the new comment' do
+        expect(quotation.reload.substack_user.handle).to eq 'eva'
       end
     end
 

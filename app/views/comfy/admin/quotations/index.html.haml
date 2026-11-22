@@ -13,6 +13,14 @@
     .form-group
       = text_area_tag :quotation, @quotation.quotation, class: "form-control", rows: 3, placeholder: "the blurb to quote"
     - if editing
+      .form-group
+        %label.small.text-muted{ for: "substack_user_id" } Substack user
+        = select_tag :substack_user_id,
+          options_for_select(SubstackUser.alphabetical.map { |user| [user.select_label, user.id] }, @quotation.substack_user_id),
+          include_blank: true, class: "form-control js-substack-user-select", data: { placeholder: "— no author —" }
+        %small.form-text.text-muted
+          Auto-filled from the comment — pick another to correct it. Changing the comment URL above
+          re-resolves the author and overrides this.
       %p.text-muted.small.mb-1
         The post URL is auto-filled from the comment — set it by hand when the comment is on a
         third-party note whose post can't be resolved. Its title and image are read from Substack
