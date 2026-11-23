@@ -2,9 +2,10 @@
 
 # Builds a Substack Note body_json from a SubstackQuotation, for the blizzard's
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
-# marks; Notes have no heading or paragraph alignment): a bold title — "another
-# <COMPLIMENT> review (#N)" — the italic quote, a 🔗 link to the review on its
-# Reviews page, the linked author, and an "all **M** at my Reviews Pages" link.
+# marks; Notes have no heading or paragraph alignment): a bold title — "Sexyverse
+# Advice <COMPLIMENT> review #N:" — the italic quote, a 🔗 link to the review on
+# its Reviews page, the linked author, and an "all **M** reviews at my Reviews
+# Pages" link.
 # The post itself rides along as a preview-card attachment (added by the ticker).
 module Substack
   module Blizzard
@@ -33,15 +34,15 @@ module Substack
         }
       end
 
-      # "Sexyverse Advice: another CRACKING review (#3)" — the number is the
+      # "Sexyverse Advice CRACKING review #3:" — the number is the
       # quotation's place on the Reviews pages, left off when it isn't on them.
       def title(quotation, standing: reviews_standing(quotation))
         number, _total = standing
-        review = number ? " review (##{number})" : " review"
+        review = number ? " review ##{number}:" : " review:"
         {
           "type" => "paragraph",
           "content" => [
-            text("Sexyverse Advice: another ",
+            text("Sexyverse Advice ",
                  marks: [{ "type" => "bold" }]),
             text(random_compliment[0]&.upcase,
                  marks: [{ "type" => "bold" }, { "type" => "italic" }]),
@@ -142,7 +143,7 @@ module Substack
       # Substack strips an explicit link mark to the reviews page (a page, not a
       # card-able post), but auto-linkifies a bare URL sitting in plain text — so
       # emit the URL unmarked in parens and let Substack turn it into the link.
-      # The bold "all N" counts every review on the Reviews pages.
+      # The bold N in "all N reviews" counts every review on the Reviews pages.
       def more_reviews(quotation, standing: reviews_standing(quotation))
         verbs = ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick']
         _number, total = standing
@@ -153,7 +154,7 @@ module Substack
             text("#{verbs.sample} all "),
             text(total.to_s,
                  marks: [{ "type" => "bold" }]),
-            text(" at my "),
+            text(" reviews at my "),
             text("Reviews Pages",
                   marks: [{ "type" => "bold" }, { "type" => "italic" }]),
             text(": "),

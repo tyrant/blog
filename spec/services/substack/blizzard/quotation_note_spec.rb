@@ -36,7 +36,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       let!(:featured) { quote.tap(&:save!) }
       let!(:other) { quote.tap(&:save!) }
 
-      it { expect(doc['content'][0]['content'][2]['text']).to eq ' review (#1)' }
+      it { expect(doc['content'][0]['content'][2]['text']).to eq ' review #1:' }
       it { expect(doc['content'][2]['content'][1].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/reviews#§1' }
       it { expect(doc['content'][4]['content'][1]['text']).to eq '2' }
     end
@@ -46,9 +46,9 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     subject(:node) { described_class.title(quote) }
 
     it { expect(node['type']).to eq 'paragraph' }
-    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Sexyverse Advice: another ', 'marks' => [{ 'type' => 'bold' }]) }
+    it { expect(node['content'][0]).to eq('type' => 'text', 'text' => 'Sexyverse Advice ', 'marks' => [{ 'type' => 'bold' }]) }
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'CRACKING', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
-    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review', 'marks' => [{ 'type' => 'bold' }]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review:', 'marks' => [{ 'type' => 'bold' }]) }
 
     describe 'when no compliment is configured' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
@@ -62,7 +62,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       let!(:second) { quote.tap(&:save!) }
       let!(:third) { quote.tap(&:save!) }
 
-      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review (#2)', 'marks' => [{ 'type' => 'bold' }]) }
+      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review #2:', 'marks' => [{ 'type' => 'bold' }]) }
     end
   end
 
@@ -217,7 +217,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(node['type']).to eq 'paragraph' }
     it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} all " }).to be true }
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => '3', 'marks' => [{ 'type' => 'bold' }]) }
-    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' at my ') }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' reviews at my ') }
 
     describe 'when the quotation is not on the Reviews pages' do
       subject(:node) { described_class.more_reviews(quote(post_url: nil).tap(&:save!)) }
