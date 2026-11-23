@@ -93,6 +93,18 @@ class SubstackSyncConfig < ApplicationRecord
     stored != SubstackQuotation.reviews_page_fingerprint(group, page_count)
   end
 
+  # A Reviews page's slug (page is 1-based), as ReviewsPageSyncer creates them.
+  def self.reviews_page_slug(page)
+    page == 1 ? "reviews" : "reviews-page-#{page}"
+  end
+
+  # A review's own link: the Reviews page holding review #number, anchored at
+  # its "#N" heading (Substack anchors headings as "§<heading text>").
+  def review_url(number)
+    page = (number - 1) / reviews_page_size + 1
+    "https://#{publication_host}/p/#{self.class.reviews_page_slug(page)}?open=false#%C2%A7#{number}"
+  end
+
   # Substack's editor for a draft/post — where a manual Update/Publish happens.
   def draft_editor_url(draft_id)
     "https://#{publication_host}/publish/post/#{draft_id}"

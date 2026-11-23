@@ -264,6 +264,20 @@ RSpec.describe SubstackSyncConfig do
     end
   end
 
+  describe '#review_url' do
+    subject(:config) { described_class.instance.tap { |c| c.update!(publication_host: 'mikeyclarke.substack.com', reviews_page_size: 20) } }
+
+    it { expect(config.review_url(78)).to eq 'https://mikeyclarke.substack.com/p/reviews-page-4?open=false#%C2%A778' }
+    it { expect(config.review_url(1)).to eq 'https://mikeyclarke.substack.com/p/reviews?open=false#%C2%A71' }
+    it { expect(config.review_url(20)).to eq 'https://mikeyclarke.substack.com/p/reviews?open=false#%C2%A720' }
+    it { expect(config.review_url(21)).to eq 'https://mikeyclarke.substack.com/p/reviews-page-2?open=false#%C2%A721' }
+  end
+
+  describe '.reviews_page_slug' do
+    it { expect(described_class.reviews_page_slug(1)).to eq 'reviews' }
+    it { expect(described_class.reviews_page_slug(3)).to eq 'reviews-page-3' }
+  end
+
   describe '.instance' do
     it { expect(described_class.instance).to be_persisted }
 

@@ -3,8 +3,8 @@
 # Builds a Substack Note body_json from a SubstackQuotation, for the blizzard's
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
 # marks; Notes have no heading or paragraph alignment): a bold title — "another
-# <COMPLIMENT> review (N of M)" — the italic quote, a 🔗 link to the original
-# comment, the linked author, and an "another **M-1** at my Reviews Pages" link.
+# <COMPLIMENT> review (#N)" — the italic quote, a 🔗 link to the review on its
+# Reviews page, the linked author, and an "all **M** at my Reviews Pages" link.
 # The post itself rides along as a preview-card attachment (added by the ticker).
 module Substack
   module Blizzard
@@ -26,18 +26,18 @@ module Substack
           "content" => [
             title(quotation, standing: standing),
             quote(quotation),
-            source(quotation),
+            source(quotation, standing: standing),
             attribution(quotation),
             more_reviews(quotation, standing: standing)
           ]
         }
       end
 
-      # "Sexyverse Advice: another CRACKING review (3 of 120)" — the count is the
+      # "Sexyverse Advice: another CRACKING review (#3)" — the number is the
       # quotation's place on the Reviews pages, left off when it isn't on them.
       def title(quotation, standing: reviews_standing(quotation))
-        number, total = standing
-        review = number ? " review (#{number} of #{total})" : " review"
+        number, _total = standing
+        review = number ? " review (##{number})" : " review"
         {
           "type" => "paragraph",
           "content" => [
@@ -73,13 +73,17 @@ module Substack
         }
       end
 
-      def source(quotation)
+      # The 🔗 points at the review's own spot on its Reviews page — or, for a
+      # quotation the pages leave out, at the original comment.
+      def source(quotation, standing: reviews_standing(quotation))
+        number, _total = standing
+        href = number ? SubstackSyncConfig.instance.review_url(number) : quotation.comment_url
         {
           "type" => "paragraph",
           "content" => [
             text("🔗 — "),
             text('blargh-placeholder-text',
-                 marks: [link(quotation.comment_url)]),
+                 marks: [link(href)]),
             text('.')
           ]
         }
@@ -138,17 +142,16 @@ module Substack
       # Substack strips an explicit link mark to the reviews page (a page, not a
       # card-able post), but auto-linkifies a bare URL sitting in plain text — so
       # emit the URL unmarked in parens and let Substack turn it into the link.
-      # The bold "another N" excludes this quotation when the Reviews pages hold it.
+      # The bold "all N" counts every review on the Reviews pages.
       def more_reviews(quotation, standing: reviews_standing(quotation))
         verbs = ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick']
-        number, total = standing
-        others = number ? total - 1 : total
+        _number, total = standing
 
         {
           "type" => "paragraph",
           "content" => [
-            text("#{verbs.sample} another "),
-            text(others.to_s,
+            text("#{verbs.sample} all "),
+            text(total.to_s,
                  marks: [{ "type" => "bold" }]),
             text(" at my "),
             text("Reviews Pages",

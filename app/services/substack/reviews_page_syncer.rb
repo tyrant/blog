@@ -272,7 +272,7 @@ module Substack
     end
 
     def default_slug(index)
-      index.zero? ? "reviews" : "reviews-page-#{index + 1}"
+      SubstackSyncConfig.reviews_page_slug(index + 1)
     end
 
     # Everything above the first review on page 1 is manually-authored intro and is

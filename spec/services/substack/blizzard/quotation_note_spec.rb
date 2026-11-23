@@ -10,10 +10,13 @@ RSpec.describe Substack::Blizzard::QuotationNote do
                             substack_user: create(:substack_user, name: 'Eva', handle: 'eva', user_id: 69847396) }.merge(attrs))
   end
 
+  let(:config) do
+    instance_double(SubstackSyncConfig, subtitle_variables: { 'compliment' => ['cracking'], 'quantity' => ['bags'] })
+  end
+
   before do
-    allow(SubstackSyncConfig).to receive(:instance)
-      .and_return(instance_double(SubstackSyncConfig,
-                                   subtitle_variables: { 'compliment' => ['cracking'], 'quantity' => ['bags'] }))
+    allow(config).to receive(:review_url) { |number| "https://pub.substack.com/p/reviews#§#{number}" }
+    allow(SubstackSyncConfig).to receive(:instance).and_return(config)
   end
 
   describe '.build' do
@@ -33,8 +36,9 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       let!(:featured) { quote.tap(&:save!) }
       let!(:other) { quote.tap(&:save!) }
 
-      it { expect(doc['content'][0]['content'][2]['text']).to eq ' review (1 of 2)' }
-      it { expect(doc['content'][4]['content'][1]['text']).to eq '1' }
+      it { expect(doc['content'][0]['content'][2]['text']).to eq ' review (#1)' }
+      it { expect(doc['content'][2]['content'][1].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/reviews#§1' }
+      it { expect(doc['content'][4]['content'][1]['text']).to eq '2' }
     end
   end
 
@@ -58,7 +62,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       let!(:second) { quote.tap(&:save!) }
       let!(:third) { quote.tap(&:save!) }
 
-      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review (2 of 3)', 'marks' => [{ 'type' => 'bold' }]) }
+      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review (#2)', 'marks' => [{ 'type' => 'bold' }]) }
     end
   end
 
@@ -100,6 +104,17 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
                                             'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => 'https://pub.substack.com/p/ch-1/comment/42' } }]) }
     it { expect(node['content'][2]).to eq('type' => 'text', 'text' => '.') }
+
+    describe 'when the quotation is on the Reviews pages' do
+      subject(:node) { described_class.source(second) }
+
+      let!(:first) { quote.tap(&:save!) }
+      let!(:second) { quote.tap(&:save!) }
+
+      it 'links the review on its Reviews page, not the comment' do
+        expect(node['content'][1].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/reviews#§2'
+      end
+    end
   end
 
   describe '.attribution' do
@@ -200,8 +215,8 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     let(:verbs) { ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick'] }
 
     it { expect(node['type']).to eq 'paragraph' }
-    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} another " }).to be true }
-    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => '2', 'marks' => [{ 'type' => 'bold' }]) }
+    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} all " }).to be true }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => '3', 'marks' => [{ 'type' => 'bold' }]) }
     it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' at my ') }
 
     describe 'when the quotation is not on the Reviews pages' do
