@@ -2,10 +2,9 @@
 
 # Builds a Substack Note body_json from a SubstackQuotation, for the blizzard's
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
-# marks; Notes have no heading or paragraph alignment): a lead-in label — bold
-# "Another <compliment> review" then an unbolded "(🔗)" whose 🔗 links the original
-# comment — a bold post-title link, the italic quote, the linked author, and a
-# "More reviews" link. The post itself rides along as a preview-card attachment
+# marks; Notes have no heading or paragraph alignment): a bold title — "another
+# <COMPLIMENT> review (N of M)" — the italic quote, a 🔗 link to the original
+# comment, the linked author, and a "the other M-1 at my Reviews Pages" link. The post itself rides along as a preview-card attachment
 # (added by the ticker).
 module Substack
   module Blizzard
@@ -20,20 +19,25 @@ module Substack
       NEUTRAL_WORDING = { "they_are" => "they're", "send_love" => "check 'em out and/or send them some love." }.freeze
 
       def build(quotation)
-        { 
-          "type" => "doc", 
+        standing = reviews_standing(quotation)
+        {
+          "type" => "doc",
           "attrs" => { "schemaVersion" => "v1" },
           "content" => [
-            title(quotation),
+            title(quotation, standing: standing),
             quote(quotation),
             source(quotation),
             attribution(quotation),
-            more_reviews
+            more_reviews(quotation, standing: standing)
           ]
         }
       end
 
-      def title(quotation)
+      # "Sexyverse Advice: another CRACKING review (3 of 120)" — the count is the
+      # quotation's place on the Reviews pages, left off when it isn't on them.
+      def title(quotation, standing: reviews_standing(quotation))
+        number, total = standing
+        review = number ? " review (#{number} of #{total})" : " review"
         {
           "type" => "paragraph",
           "content" => [
@@ -41,10 +45,19 @@ module Substack
                  marks: [{ "type" => "bold" }]),
             text(random_compliment[0]&.upcase,
                  marks: [{ "type" => "bold" }, { "type" => "italic" }]),
-            text(" review",
+            text(review,
                  marks: [{ "type" => "bold" }])
           ]
         }
+      end
+
+      # Where the quotation sits on the Reviews pages, which list the featurable
+      # quotations in manual order: [its 1-based place, or nil when it isn't on
+      # them (no post URL, or unsaved), and how many the pages hold].
+      def reviews_standing(quotation)
+        ids = SubstackQuotation.featurable.by_position.pluck(:id)
+        index = ids.index(quotation.id) if quotation.id
+        [index && index + 1, ids.size]
       end
 
       def quote(quotation)
@@ -125,13 +138,16 @@ module Substack
       # Substack strips an explicit link mark to the reviews page (a page, not a
       # card-able post), but auto-linkifies a bare URL sitting in plain text — so
       # emit the URL unmarked in parens and let Substack turn it into the link.
-      def more_reviews
+      # "The other N" excludes this quotation when the Reviews pages hold it.
+      def more_reviews(quotation, standing: reviews_standing(quotation))
         verbs = ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick']
+        number, total = standing
+        others = number ? total - 1 : total
 
-        { 
-          "type" => "paragraph", 
+        {
+          "type" => "paragraph",
           "content" => [
-            text("#{verbs.sample} oodles more kudos at my "),
+            text("#{verbs.sample} the other #{others} at my "),
             text("Reviews Pages",
                   marks: [{ "type" => "bold" }, { "type" => "italic" }]),
             text(": "),

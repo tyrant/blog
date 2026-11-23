@@ -26,6 +26,16 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     it { expect(doc['content'][2]).to eq described_class.source(quote) }
     it { expect(doc['content'][3]).to eq described_class.attribution(quote) }
     it { expect(doc['content'][4]['type']).to eq 'paragraph' }
+
+    describe 'for a quotation on the Reviews pages' do
+      subject(:doc) { described_class.build(featured) }
+
+      let!(:featured) { quote.tap(&:save!) }
+      let!(:other) { quote.tap(&:save!) }
+
+      it { expect(doc['content'][0]['content'][2]['text']).to eq ' review (1 of 2)' }
+      it { expect(doc['content'][4]['content'][0]['text']).to end_with ' the other 1 at my ' }
+    end
   end
 
   describe '.title' do
@@ -39,6 +49,38 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     describe 'when no compliment is configured' do
       before { allow(SubstackSyncConfig).to receive(:instance).and_return(instance_double(SubstackSyncConfig, subtitle_variables: {})) }
       it { expect(node['content'][1]['text']).to eq '' }
+    end
+
+    describe 'when the quotation is on the Reviews pages' do
+      subject(:node) { described_class.title(second) }
+
+      let!(:first) { quote.tap(&:save!) }
+      let!(:second) { quote.tap(&:save!) }
+      let!(:third) { quote.tap(&:save!) }
+
+      it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' review (2 of 3)', 'marks' => [{ 'type' => 'bold' }]) }
+    end
+  end
+
+  describe '.reviews_standing' do
+    let!(:first) { quote.tap(&:save!) }
+    let!(:second) { quote.tap(&:save!) }
+    let!(:unfeatured) { quote(post_url: nil).tap(&:save!) }
+
+    it { expect(described_class.reviews_standing(first)).to eq [1, 2] }
+    it { expect(described_class.reviews_standing(second)).to eq [2, 2] }
+
+    it 'follows the manual Reviews order' do
+      SubstackQuotation.move!(second.id, 0)
+      expect(described_class.reviews_standing(second)).to eq [1, 2]
+    end
+
+    it 'has no place for a quotation the Reviews pages leave out (no post URL)' do
+      expect(described_class.reviews_standing(unfeatured)).to eq [nil, 2]
+    end
+
+    it 'has no place for an unsaved quotation' do
+      expect(described_class.reviews_standing(quote)).to eq [nil, 2]
     end
   end
 
@@ -151,12 +193,21 @@ RSpec.describe Substack::Blizzard::QuotationNote do
   end
 
   describe '.more_reviews' do
-    subject(:node) { described_class.more_reviews }
+    subject(:node) { described_class.more_reviews(featured) }
 
+    let!(:featured) { quote.tap(&:save!) }
+    let!(:others) { 2.times { quote.tap(&:save!) } }
     let(:verbs) { ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick'] }
 
     it { expect(node['type']).to eq 'paragraph' }
-    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} oodles more kudos at my " }).to be true }
+    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} the other 2 at my " }).to be true }
+
+    describe 'when the quotation is not on the Reviews pages' do
+      subject(:node) { described_class.more_reviews(quote(post_url: nil).tap(&:save!)) }
+
+      it { expect(node['content'][0]['text']).to end_with ' the other 3 at my ' }
+    end
+
     it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Reviews Pages', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
     it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ': ') }
     it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
