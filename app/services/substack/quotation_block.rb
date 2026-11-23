@@ -25,13 +25,30 @@ module Substack
       [heading(quotation), blockquote(quotation), self.spacer]
     end
 
-    # A Reviews-page unit: the post-embed card (or post-title heading
-    # fallback), a blockquote holding only the quote, the signature as its own
-    # paragraph beneath it, then the centred h5 "." spacer. Unlike #unit (the
-    # post footer's shape, which rotation/capture detect), the attribution sits
-    # outside the blockquote.
-    def review_unit(quotation)
-      [card(quotation) || heading(quotation), quote_only_blockquote(quotation), review_signature(quotation), trailing_spacer]
+    # A Reviews-page unit: an h4 "#N" numbering the review, the post-embed card
+    # (or post-title heading fallback), a blockquote holding only the quote, the
+    # signature as its own paragraph beneath it, then an empty h6 spacer. Unlike
+    # #unit (the post footer's shape, which rotation/capture detect), the
+    # attribution sits outside the blockquote.
+    def review_unit(quotation, number:)
+      [review_number(number), card(quotation) || heading(quotation), quote_only_blockquote(quotation),
+       review_signature(quotation), review_spacer]
+    end
+
+    # "#12": the review's 1-based place across all the Reviews pages (the same
+    # count as the Blizzard notes' "(12 of M)"), as its own heading so each review
+    # can be linked to.
+    def review_number(number)
+      {
+        "type" => "heading",
+        "attrs" => { "textAlign" => nil, "level" => 4 },
+        "content" => [text("##{number}")]
+      }
+    end
+
+    # An empty, left-aligned h6 between reviews, there only for vertical spacing.
+    def review_spacer
+      { "type" => "heading", "attrs" => { "textAlign" => "left", "level" => 6 } }
     end
 
     def quote_only_blockquote(quotation)

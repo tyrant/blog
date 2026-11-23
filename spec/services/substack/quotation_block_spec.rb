@@ -90,14 +90,16 @@ RSpec.describe Substack::QuotationBlock do
       allow(Substack::Blizzard::QuotationNote).to receive(:random_compliment).with(n: 2).and_return(%w[gnarly cracking])
     end
 
-    let(:unit) { described_class.review_unit(quote(post_embed: { 'size' => 'sm' }, substack_user: create(:substack_user, name: 'Eva', handle: 'eva', pronouns: 'she/her'))) }
-    let(:signature) { unit[2]['content'] }
+    let(:unit) { described_class.review_unit(quote(post_embed: { 'size' => 'sm' }, substack_user: create(:substack_user, name: 'Eva', handle: 'eva', pronouns: 'she/her')), number: 12) }
+    let(:signature) { unit[3]['content'] }
 
-    it { expect(unit.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote paragraph heading] }
+    it { expect(unit.map { |b| b['type'] }).to eq %w[heading digestPostEmbed blockquote paragraph heading] }
+    it { expect(unit[0]).to eq described_class.review_number(12) }
+    it { expect(unit[4]).to eq described_class.review_spacer }
 
     it 'block-quotes only the italic quote' do
-      expect(unit[1]['content'].size).to eq 1
-      expect(unit[1]['content'][0]['content']).to eq [{ 'type' => 'text', 'text' => '“a blurb”', 'marks' => [{ 'type' => 'em' }] }]
+      expect(unit[2]['content'].size).to eq 1
+      expect(unit[2]['content'][0]['content']).to eq [{ 'type' => 'text', 'text' => '“a blurb”', 'marks' => [{ 'type' => 'em' }] }]
     end
 
     it 'signs it "🔗 — <Blizzard-style thanks>" in post marks, with a linked author name' do
@@ -109,14 +111,23 @@ RSpec.describe Substack::QuotationBlock do
       expect(signature.find { |n| n['text'] == 'Eva' }.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
     end
 
-    it 'leads with the post-title heading when there is no embed snapshot' do
-      expect(described_class.review_unit(quote).map { |b| b['type'] }).to eq %w[heading blockquote paragraph heading]
+    it 'follows the number with the post-title heading when there is no embed snapshot' do
+      expect(described_class.review_unit(quote, number: 1)[1]).to eq described_class.heading(quote)
     end
 
     it 'omits the 🔗 when there is no comment_url' do
-      nodes = described_class.review_unit(quote(comment_url: nil))[2]['content']
+      nodes = described_class.review_unit(quote(comment_url: nil), number: 1)[3]['content']
       expect(nodes.first['text']).to eq ' — '
     end
+  end
+
+  describe '.review_number' do
+    it { expect(described_class.review_number(7)).to eq('type' => 'heading', 'attrs' => { 'textAlign' => nil, 'level' => 4 },
+                                                         'content' => [{ 'type' => 'text', 'text' => '#7' }]) }
+  end
+
+  describe '.review_spacer' do
+    it { expect(described_class.review_spacer).to eq('type' => 'heading', 'attrs' => { 'textAlign' => 'left', 'level' => 6 }) }
   end
 
   describe '.card' do

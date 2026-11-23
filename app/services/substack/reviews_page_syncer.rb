@@ -53,7 +53,7 @@ module Substack
         next if @page && i + 1 != @page
 
         group = groups[i] || []
-        body  = page_document(i, page_count, urls, group, page_intro)
+        body  = page_document(i, page_count, urls, group, page_intro, first_number: groups.first(i).sum(&:size) + 1)
 
         Substack::Client.retrying_subtitle_rejection do
           @client.update_draft(
@@ -123,10 +123,12 @@ module Substack
       id
     end
 
-    def page_document(index, page_count, urls, reviews, page_intro)
+    # first_number: the 1-based number of this page's first review, counting
+    # across every Reviews page.
+    def page_document(index, page_count, urls, reviews, page_intro, first_number: 1)
       banner = banner_image(reviews.first)
       nav    = page_count > 1 ? [pagination(index + 1, page_count, urls)] : []
-      units  = reviews.flat_map { |quotation| review_unit(quotation) }
+      units  = reviews.each_with_index.flat_map { |quotation, i| review_unit(quotation, number: first_number + i) }
       content = banner + nav + page_intro + units + nav + subscribe_cta_blocks
       content = [{ "type" => "paragraph" }] if content.empty?
 
@@ -334,13 +336,13 @@ module Substack
       { "content" => [] }
     end
 
-    # The Reviews-page quotation unit (post-embed card, block-quoted quote,
-    # 🔗 — thank-you signature, spacer), after ensuring the quotation's embed
-    # snapshot is populated.
-    def review_unit(quotation)
+    # The Reviews-page quotation unit ("#N" heading, post-embed card,
+    # block-quoted quote, 🔗 — thank-you signature, spacer), after ensuring the
+    # quotation's embed snapshot is populated.
+    def review_unit(quotation, number:)
       ensure_embed(quotation)
 
-      QuotationBlock.review_unit(quotation)
+      QuotationBlock.review_unit(quotation, number: number)
     end
 
     # Populate the quotation's digestPostEmbed snapshot the first time it's synced,

@@ -78,9 +78,18 @@ RSpec.describe Substack::ReviewsPageSyncer do
 
     it 'falls back to a plain post-title heading when no embed can be built' do
       sync
-      types = body_doc['content'].map { |b| b['type'] }
-      expect(types.first).to eq 'heading'
+      expect(body_doc['content'][1]).to eq Substack::QuotationBlock.heading(first)
+    end
+
+    it 'builds no card when no embed can be built' do
+      sync
       expect(body_doc['content'].none? { |b| b['type'] == 'digestPostEmbed' }).to be true
+    end
+
+    it 'heads each review with its number' do
+      sync
+      expect(body_doc['content'][0]).to eq('type' => 'heading', 'attrs' => { 'textAlign' => nil, 'level' => 4 },
+                                           'content' => [{ 'type' => 'text', 'text' => '#1' }])
     end
 
     context 'with a stored embed snapshot' do
@@ -93,16 +102,19 @@ RSpec.describe Substack::ReviewsPageSyncer do
         expect(card['attrs']).to include('id' => 192565792, 'title' => 'A', 'size' => 'sm', 'caption' => '“first”')
       end
 
-      it 'closes the card, quote and signature with a centred h5 "." spacer, not a linked post-title heading' do
+      it 'numbers the review, then the card, quote and signature, not a linked post-title heading' do
         sync
-        types = body_doc['content'].map { |b| b['type'] }
-        expect(types.first(4)).to eq %w[digestPostEmbed blockquote paragraph heading]
-        expect(body_doc['content'][3]['content'].first['text']).to eq '.'
+        expect(body_doc['content'].first(4).map { |b| b['type'] }).to eq %w[heading digestPostEmbed blockquote paragraph]
+      end
+
+      it 'closes the review with an empty, left-aligned h6 spacer' do
+        sync
+        expect(body_doc['content'][4]).to eq('type' => 'heading', 'attrs' => { 'textAlign' => 'left', 'level' => 6 })
       end
 
       it 'block-quotes only the quote, with the 🔗 — thank-you signature beneath it' do
         sync
-        quote, signature = body_doc['content'][1], body_doc['content'][2]
+        quote, signature = body_doc['content'][2], body_doc['content'][3]
         expect(quote['content'].map { |p| p['content'].map { |n| n['text'] }.join }).to eq ['“first”']
         expect(signature['content'].first(2).map { |n| n['text'] }).to eq ['🔗', ' — ']
         expect(signature['content'].map { |n| n['text'] }.join).to include 'of thanks to the'
@@ -168,6 +180,20 @@ RSpec.describe Substack::ReviewsPageSyncer do
         it 'strips the stale card + attribution pair rather than folding it into the intro' do
           sync
           expect(body_doc['content'].none? { |b| b['type'] == 'digestPostEmbed' }).to be true
+        end
+      end
+
+      context 'when the existing review region is already numbered' do
+        let(:existing) { { 'type' => 'doc', 'content' => [intro] + Substack::QuotationBlock.review_unit(first, number: 1) } }
+
+        it 'folds the "#1" heading into the review region, not the intro' do
+          sync
+          expect(body_doc['content'].count { |b| b == Substack::QuotationBlock.review_number(1) }).to eq 1
+        end
+
+        it 'keeps the intro above the regenerated list' do
+          sync
+          expect(body_doc['content'].first).to eq intro
         end
       end
 
@@ -617,6 +643,33 @@ RSpec.describe Substack::ReviewsPageSyncer do
     it 'repeats the intro on page 2' do
       sync
       expect(bodies[556]).to include(intro)
+    end
+
+    describe 'review numbering' do
+      def numbers(blocks)
+        blocks.select { |b| b['type'] == 'heading' && b.dig('attrs', 'level') == 4 }
+          .map { |b| b['content'].first['text'] }.grep(/\A#\d+\z/)
+      end
+
+      before { sync }
+
+      it { expect(numbers(bodies[555])).to eq %w[#1 #2] }
+      it { expect(numbers(bodies[556])).to eq %w[#3] }
+    end
+
+    context 'when syncing only page 2' do
+      subject(:sync) { described_class.execute(client: client, config: config, page: 2) }
+
+      before do
+        allow(client).to receive(:get_draft).with(556)
+          .and_return('draft_subtitle' => '', 'is_published' => true, 'slug' => 'reviews-page-2')
+        config.update!(reviews_extra_draft_ids: [556])
+        sync
+      end
+
+      it 'still numbers on from page 1' do
+        expect(bodies[556].find { |b| b['type'] == 'heading' && b.dig('attrs', 'level') == 4 }['content'].first['text']).to eq '#3'
+      end
     end
   end
 
