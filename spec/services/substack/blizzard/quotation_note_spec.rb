@@ -34,7 +34,7 @@ RSpec.describe Substack::Blizzard::QuotationNote do
       let!(:other) { quote.tap(&:save!) }
 
       it { expect(doc['content'][0]['content'][2]['text']).to eq ' review (1 of 2)' }
-      it { expect(doc['content'][4]['content'][0]['text']).to end_with ' the other 1 at my ' }
+      it { expect(doc['content'][4]['content'][1]['text']).to eq '1' }
     end
   end
 
@@ -200,19 +200,21 @@ RSpec.describe Substack::Blizzard::QuotationNote do
     let(:verbs) { ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick'] }
 
     it { expect(node['type']).to eq 'paragraph' }
-    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} the other 2 at my " }).to be true }
+    it { expect(verbs.any? { |verb| node['content'][0]['text'] == "#{verb} another " }).to be true }
+    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => '2', 'marks' => [{ 'type' => 'bold' }]) }
+    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ' at my ') }
 
     describe 'when the quotation is not on the Reviews pages' do
       subject(:node) { described_class.more_reviews(quote(post_url: nil).tap(&:save!)) }
 
-      it { expect(node['content'][0]['text']).to end_with ' the other 3 at my ' }
+      it { expect(node['content'][1]['text']).to eq '3' }
     end
 
-    it { expect(node['content'][1]).to eq('type' => 'text', 'text' => 'Reviews Pages', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
-    it { expect(node['content'][2]).to eq('type' => 'text', 'text' => ': ') }
-    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
+    it { expect(node['content'][3]).to eq('type' => 'text', 'text' => 'Reviews Pages', 'marks' => [{ 'type' => 'bold' }, { 'type' => 'italic' }]) }
+    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => ': ') }
+    it { expect(node['content'][5]).to eq('type' => 'text', 'text' => 'blargh-placeholder-text',
                                             'marks' => [{ 'type' => 'link', 'attrs' => { 'href' => described_class::REVIEWS_URL } }]) }
-    it { expect(node['content'][4]).to eq('type' => 'text', 'text' => '.') }
+    it { expect(node['content'][6]).to eq('type' => 'text', 'text' => '.') }
   end
 
   describe '.text' do

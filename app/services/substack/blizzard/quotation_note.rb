@@ -4,8 +4,8 @@
 # quotation reposts. Adapted to the Note schema (blockquote + bold/italic/link
 # marks; Notes have no heading or paragraph alignment): a bold title — "another
 # <COMPLIMENT> review (N of M)" — the italic quote, a 🔗 link to the original
-# comment, the linked author, and a "the other M-1 at my Reviews Pages" link. The post itself rides along as a preview-card attachment
-# (added by the ticker).
+# comment, the linked author, and an "another **M-1** at my Reviews Pages" link.
+# The post itself rides along as a preview-card attachment (added by the ticker).
 module Substack
   module Blizzard
     module QuotationNote
@@ -138,7 +138,7 @@ module Substack
       # Substack strips an explicit link mark to the reviews page (a page, not a
       # card-able post), but auto-linkifies a bare URL sitting in plain text — so
       # emit the URL unmarked in parens and let Substack turn it into the link.
-      # "The other N" excludes this quotation when the Reviews pages hold it.
+      # The bold "another N" excludes this quotation when the Reviews pages hold it.
       def more_reviews(quotation, standing: reviews_standing(quotation))
         verbs = ['Enjoy', 'Peruse', 'Snuffle up', 'Savour', 'Yum up', 'Chow down', 'Gnaw', 'Gobble', 'Hoick']
         number, total = standing
@@ -147,7 +147,10 @@ module Substack
         {
           "type" => "paragraph",
           "content" => [
-            text("#{verbs.sample} the other #{others} at my "),
+            text("#{verbs.sample} another "),
+            text(others.to_s,
+                 marks: [{ "type" => "bold" }]),
+            text(" at my "),
             text("Reviews Pages",
                   marks: [{ "type" => "bold" }, { "type" => "italic" }]),
             text(": "),
