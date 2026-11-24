@@ -373,28 +373,64 @@ RSpec.describe 'Comfy::Admin::QuotationsController', type: :request do
   end
 
   describe 'POST sync_all_reviews' do
+    let(:config) { SubstackSyncConfig.instance }
+
     before do
-      SubstackSyncConfig.instance.update!(reviews_page_size: 2)
-      3.times { |i| SubstackQuotation.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}", post_url: 'https://x/p/a') }
+      config.update!(reviews_page_size: 2)
+      5.times { |i| SubstackQuotation.create!(quotation: "q#{i}", comment_url: "https://x/comment/#{i}", post_url: 'https://x/p/a') }
       allow(SyncReviewsPageJob).to receive(:perform_later)
-      post comfy_sync_all_reviews_admin_quotations_path, headers: admin_headers
     end
 
-    it { expect(response).to redirect_to comfy_admin_quotations_path }
-    it { expect(SyncReviewsPageJob).to have_received(:perform_later).twice }
-    it { expect(SyncReviewsPageJob).to have_received(:perform_later).with(1) }
-    it { expect(SyncReviewsPageJob).to have_received(:perform_later).with(2) }
-    it { expect(flash[:success]).to eq 'Syncing all 2 Reviews pages on the worker, one at a time.' }
+    describe 'when some pages have been synced' do
+      before do
+        config.record_reviews_page_fingerprint!(1, 'abc')
+        config.record_reviews_page_fingerprint!(2, 'def')
+        post comfy_sync_all_reviews_admin_quotations_path, headers: admin_headers
+      end
+
+      it { expect(response).to redirect_to comfy_admin_quotations_path }
+      it { expect(SyncReviewsPageJob).to have_received(:perform_later).twice }
+      it { expect(SyncReviewsPageJob).to have_received(:perform_later).with(1) }
+      it { expect(SyncReviewsPageJob).to have_received(:perform_later).with(2) }
+      it { expect(SyncReviewsPageJob).to_not have_received(:perform_later).with(3) }
+
+      it do
+        expect(flash[:success]).to eq 'Resyncing 2 synced Reviews pages on the worker, one at a time. ' \
+                                      'Skipped never-synced page 3 — sync by hand when ready.'
+      end
+    end
+
+    describe 'when every page has been synced' do
+      before do
+        (1..3).each { |page| config.record_reviews_page_fingerprint!(page, 'abc') }
+        post comfy_sync_all_reviews_admin_quotations_path, headers: admin_headers
+      end
+
+      it { expect(SyncReviewsPageJob).to have_received(:perform_later).exactly(3).times }
+      it { expect(flash[:success]).to eq 'Resyncing 3 synced Reviews pages on the worker, one at a time.' }
+    end
+
+    describe 'when no page has been synced' do
+      before { post comfy_sync_all_reviews_admin_quotations_path, headers: admin_headers }
+
+      it { expect(SyncReviewsPageJob).to_not have_received(:perform_later) }
+
+      it do
+        expect(flash[:success]).to eq 'No Reviews pages have been synced yet, so none were resynced. ' \
+                                      'Skipped never-synced pages 1, 2, and 3 — sync by hand when ready.'
+      end
+    end
   end
 
-  describe 'GET index Sync all pages button' do
+  describe 'GET index Resync all synced pages button' do
     before { get comfy_admin_quotations_path, headers: admin_headers }
 
     let(:sync_all_form) { Nokogiri::HTML(response.body).at_css('section table').next_element }
 
     it { expect(sync_all_form['action']).to eq comfy_sync_all_reviews_admin_quotations_path }
-    it { expect(sync_all_form.at_css('button').text).to eq 'Sync all pages' }
-    it { expect(sync_all_form.next_element['action']).to eq comfy_page_size_admin_quotations_path }
+    it { expect(sync_all_form.at_css('button').text).to eq 'Resync all synced pages' }
+    it { expect(sync_all_form.next_element.text).to include 'Skips pages marked "Not synced yet"' }
+    it { expect(sync_all_form.next_element.next_element['action']).to eq comfy_page_size_admin_quotations_path }
   end
 
   describe 'GET index Reviews page rows' do

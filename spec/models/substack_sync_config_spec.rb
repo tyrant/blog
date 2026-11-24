@@ -264,6 +264,15 @@ RSpec.describe SubstackSyncConfig do
     end
   end
 
+  describe '#reviews_page_synced?' do
+    subject(:config) { described_class.instance }
+
+    before { config.record_reviews_page_fingerprint!(1, 'abc') }
+
+    it { expect(config.reviews_page_synced?(1)).to be true }
+    it { expect(config.reviews_page_synced?(2)).to be false }
+  end
+
   describe '#review_url' do
     subject(:config) { described_class.instance.tap { |c| c.update!(publication_host: 'mikeyclarke.substack.com', reviews_page_size: 20) } }
 

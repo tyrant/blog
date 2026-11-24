@@ -84,6 +84,13 @@ class SubstackSyncConfig < ApplicationRecord
     reviews_page_fingerprints[page.to_s] = fingerprint
   end
 
+  # Whether a Reviews page (1-based) has ever been synced — i.e. it carries a
+  # stamped fingerprint. Pages that haven't (typically a still-filling last
+  # page) are left alone by "Resync all synced pages".
+  def reviews_page_synced?(page)
+    reviews_page_fingerprints.key?(page.to_s)
+  end
+
   # Whether a Reviews page's content differs from what it was last synced with:
   # :never when it hasn't been synced since tracking began, true/false otherwise.
   def reviews_page_changed?(page, group, page_count)

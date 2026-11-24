@@ -84,11 +84,15 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
     redirect_to comfy_admin_quotations_path
   end
 
-  # One job per page; the job's concurrency limit runs them one after another.
+  # Resync every page that has been synced before, one job per page (the job's
+  # concurrency limit runs them one after another). Never-synced pages — a
+  # partly filled last page, say — are skipped until synced by hand.
   def sync_all_reviews
-    page_count = SubstackSyncConfig.instance.reviews_page_groups.size
-    (1..page_count).each { |page| SyncReviewsPageJob.perform_later(page) }
-    flash[:success] = "Syncing all #{helpers.pluralize(page_count, "Reviews page")} on the worker, one at a time."
+    config  = SubstackSyncConfig.instance
+    pages   = (1..config.reviews_page_groups.size).to_a
+    synced, skipped = pages.partition { |page| config.reviews_page_synced?(page) }
+    synced.each { |page| SyncReviewsPageJob.perform_later(page) }
+    flash[:success] = resync_message(synced, skipped)
     redirect_to comfy_admin_quotations_path
   end
 
@@ -123,6 +127,17 @@ class Comfy::Admin::QuotationsController < Comfy::Admin::Cms::BaseController
 
   def list_page_for(quotation)
     quotation.order_index.to_i / PER_PAGE + 1
+  end
+
+  def resync_message(synced, skipped)
+    message = if synced.any?
+                "Resyncing #{helpers.pluralize(synced.size, "synced Reviews page")} on the worker, one at a time."
+              else
+                "No Reviews pages have been synced yet, so none were resynced."
+              end
+    return message if skipped.empty?
+
+    "#{message} Skipped never-synced #{"page".pluralize(skipped.size)} #{skipped.to_sentence} — sync by hand when ready."
   end
 
   def redirect_to_list_page

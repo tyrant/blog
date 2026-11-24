@@ -78,7 +78,9 @@
             - if page[:pending]
               %span.badge.badge-info Needs publishing
 
-  = button_to "Sync all pages", comfy_sync_all_reviews_admin_quotations_path, method: :post, class: "btn btn-secondary btn-sm"
+  = button_to "Resync all synced pages", comfy_sync_all_reviews_admin_quotations_path, method: :post, class: "btn btn-secondary btn-sm"
+  %p.small.text-muted.mt-1.mb-0
+    Skips pages marked "Not synced yet" — e.g. a part-filled last page — until you sync them by hand.
 
   = form_with url: comfy_page_size_admin_quotations_path, method: :patch, class: "form-inline mt-2" do
     %label.small.text-muted.mr-2{ for: "reviews_page_size" } Quotations per Reviews page
