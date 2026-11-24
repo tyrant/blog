@@ -102,13 +102,16 @@ RSpec.describe Substack::QuotationBlock do
       expect(unit[2]['content'][0]['content']).to eq [{ 'type' => 'text', 'text' => '“a blurb”', 'marks' => [{ 'type' => 'em' }] }]
     end
 
-    it 'signs it "🔗 — <Blizzard-style thanks>" in post marks, with a linked author name' do
+    it 'signs it "🔗 — <Blizzard-style thanks>" in post marks, with the author\'s @handle' do
       expect(signature.map { |n| n['text'] }.join)
-        .to eq "🔗 — Bags of thanks to the Most Gnarly Eva, she's cracking, do check her out and/or send her some love."
+        .to eq "🔗 — Bags of thanks to the Most Gnarly @eva, she's cracking, do check her out and/or send her some love."
       expect(signature[0].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
       expect(signature.find { |n| n['text'] == 'Most ' }['marks']).to eq [{ 'type' => 'em' }]
       expect(signature.find { |n| n['text'] == 'cracking' }['marks']).to eq [{ 'type' => 'strong' }, { 'type' => 'em' }]
-      expect(signature.find { |n| n['text'] == 'Eva' }.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    end
+
+    it 'leaves the @handle unlinked, for a mention to be made by hand' do
+      expect(signature.find { |n| n['text'] == '@eva' }).to eq('type' => 'text', 'text' => '@eva')
     end
 
     it 'follows the number with the post-title heading when there is no embed snapshot' do
@@ -118,6 +121,15 @@ RSpec.describe Substack::QuotationBlock do
     it 'omits the 🔗 when there is no comment_url' do
       nodes = described_class.review_unit(quote(comment_url: nil), number: 1)[3]['content']
       expect(nodes.first['text']).to eq ' — '
+    end
+  end
+
+  describe '.review_author' do
+    it { expect(described_class.review_author(quote)).to eq('type' => 'text', 'text' => '@eva') }
+
+    it 'falls back to the plain name when there is no handle' do
+      node = described_class.review_author(quote(substack_user: create(:substack_user, name: 'Eva', handle: nil)))
+      expect(node).to eq('type' => 'text', 'text' => 'Eva')
     end
   end
 

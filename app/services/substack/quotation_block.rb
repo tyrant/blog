@@ -69,9 +69,18 @@ module Substack
       nodes = []
       nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
       nodes << text(" — ")
-      nodes.concat(Blizzard::QuotationNote.attribution_nodes(quotation, bold: "strong", italic: "em", author_node: author(quotation)))
+      nodes.concat(Blizzard::QuotationNote.attribution_nodes(quotation, bold: "strong", italic: "em", author_node: review_author(quotation)))
 
       { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => nodes }
+    end
+
+    # The Reviews pages name each author as plain "@handle" text, unlinked: before
+    # publishing, the author clicks each one in the Substack editor to turn it into
+    # a mention, which also notifies that user. Falls back to the plain name when
+    # there's no handle.
+    def review_author(quotation)
+      user = quotation.substack_user
+      text(user&.handle.present? ? "@#{user.handle}" : user&.name)
     end
 
     # The heading-only unit (no embed card) — kept for the heading fallback and
