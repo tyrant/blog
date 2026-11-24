@@ -21,9 +21,8 @@
   .alert.alert-warning.mb-3
     %strong #{pluralize(@pending_publishes.size, "Substack post")} need publishing by hand
     %div.small.mb-2
-      Their draft edits are synced, but Substack now wants a fresh 2FA sign-in before any publish, which the
-      stored cookie can't give. Open each in Substack's editor and click Update (one 2FA code covers the session);
-      it drops off this list on the next page load once Substack shows it published.
+      Their draft edits are synced, but syncing never publishes. Open each in Substack's editor and click Update
+      (one 2FA code covers the session); it drops off this list on the next page load once Substack shows it published.
     %ul.list-unstyled.mb-2
       - @pending_publishes.each do |pending|
         %li.d-flex.align-items-center.mb-1
@@ -74,8 +73,8 @@
 %h5 Re-sync all posts
 %p.text-muted.small
   Runs a full Substack sync of every linked post on the worker (rebuilds body,
-  images, footer template, tags, subtitle). Already-published posts are re-published
-  in place — no subscriber email is sent.
+  images, footer template, tags, subtitle) as draft edits. Nothing is published:
+  already-published posts join the needs-publishing list above for a manual Update.
 = form_with url: sync_all_comfy_admin_substack_sync_config_path, method: :post do
   = submit_tag "Re-sync all posts now", class: "btn btn-outline-secondary"
 

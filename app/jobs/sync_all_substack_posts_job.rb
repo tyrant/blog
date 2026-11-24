@@ -4,8 +4,8 @@
 # per post, triggered on demand from the "Re-sync all posts now" button. The
 # per-post jobs serialize via SubstackPostSyncJob's limits_concurrency, so they
 # never burst against Substack no matter how many are enqueued at once; a failed
-# enqueue never aborts the run. Never publishes — PostSyncer only auto-publishes
-# posts already live, and no email is re-sent.
+# enqueue never aborts the run. Never publishes — PostSyncer only writes drafts,
+# flagging already-live posts "needs publishing".
 class SyncAllSubstackPostsJob < ApplicationJob
   queue_as :default
 

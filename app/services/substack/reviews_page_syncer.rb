@@ -5,7 +5,8 @@
 # split into pages of SubstackSyncConfig#reviews_page_size reviews. Page 1 is the original page whose id lives
 # in SubstackSyncConfig#reviews_draft_id (its "reviews" slug/URL is preserved);
 # pages 2..X are auto-created drafts (slug "reviews-page-N") whose ids are appended
-# to SubstackSyncConfig#reviews_extra_draft_ids and published with send_email:false.
+# to SubstackSyncConfig#reviews_extra_draft_ids. Nothing is published here: each
+# page written is left as a draft edit for a manual Update/Publish.
 #
 # Each page renders as: a top pagination nav (1 · 2 · … · X, current bold, others
 # linked — omitted when there's only one page), page 1's manually-authored intro,
@@ -69,14 +70,10 @@ module Substack
         # snapshot, which bumps its updated_at.
         @config.record_reviews_page_fingerprint!(i + 1, SubstackQuotation.reviews_page_fingerprint(group, page_count))
 
-        # Push edits live: page 1's first publish stays manual (mirroring
-        # PostSyncer); auto-created pages 2..X publish on any sync, including
-        # their first (send_email:false — no subscriber email is ever sent). When
-        # Substack wants a fresh 2FA sign-in, the page is queued for a manual
-        # publish and the rebuild carries on with the rest.
-        if drafts[i]["is_published"] || i.positive?
-          SubstackPendingPublish.publish(@client, id, title: "Reviews page #{i + 1}")
-        end
+        # Never publish automatically: every page written waits in its draft,
+        # flagged "Needs publishing", for hand edits (@handle → mention) and a
+        # manual Update/Publish in Substack's editor.
+        SubstackPendingPublish.record!(id, "Reviews page #{i + 1}")
       end
 
       sync_navigation

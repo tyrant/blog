@@ -48,11 +48,10 @@ module Substack
             audience: post.effective_substack_audience, should_send_email: false)
         end
         if remote["is_published"]
-          # Push edits to an already-published post live immediately (the email
-          # was sent at first publish, so this never re-sends) — or queue a
-          # manual publish when Substack wants a fresh 2FA sign-in. Never re-slug
-          # a published post — that would change its public URL.
-          SubstackPendingPublish.publish(@client, substack_id, title: post.title)
+          # Never publish automatically: the edit waits in the draft, listed
+          # under "needs publishing" until it's Updated by hand. Never re-slug a
+          # published post — that would change its public URL.
+          SubstackPendingPublish.record!(substack_id, post.title)
         else
           # Still a draft — safe to (re-)slug it to match the Comfy post.
           apply_slug(substack_id, post, bylines)

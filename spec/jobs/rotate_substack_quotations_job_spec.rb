@@ -38,32 +38,24 @@ RSpec.describe RotateSubstackQuotationsJob, type: :job do
       end
     end
 
-    it 'does not publish an unpublished draft' do
+    it 'does not publish an unpublished draft, or queue it' do
       described_class.new.perform
       expect(client).to_not have_received(:publish_draft)
+      expect(SubstackPendingPublish.count).to eq 0
     end
   end
 
   context 'a published post' do
     before { allow(client).to receive(:get_draft).with(900).and_return(draft(published: true)) }
 
-    it 'republishes to push the rotation live' do
+    it 'never publishes the rotation' do
       described_class.new.perform
-      expect(client).to have_received(:publish_draft).with(900)
+      expect(client).to_not have_received(:publish_draft)
     end
 
-    context 'when Substack wants a fresh 2FA sign-in to publish' do
-      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth') }
-
-      it 'queues the post for a manual publish' do
-        described_class.new.perform
-        expect(SubstackPendingPublish.where(draft_id: 900)).to exist
-      end
-
-      it 'still counts as a rotation' do
-        described_class.new.perform
-        expect(SubstackSyncConfig.instance.quotations_rotated_at).to be_present
-      end
+    it 'queues the post for a manual publish' do
+      described_class.new.perform
+      expect(SubstackPendingPublish.where(draft_id: 900)).to exist
     end
 
     it 'stamps the last-rotated time' do

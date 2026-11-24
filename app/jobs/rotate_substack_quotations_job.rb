@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 # Rotates the mirror-managed featured-quote block on every Substack-linked post:
-# fetches each draft, swaps in a fresh random SubstackQuotation, and saves —
-# re-publishing already-published posts so the change goes live (no email is
-# re-sent). Sequential with gentle pacing to stay under Substack's rate limit.
+# fetches each draft, swaps in a fresh random SubstackQuotation, and saves the
+# draft. Never publishes: already-published posts are flagged "needs
+# publishing" for a manual Update. Sequential with gentle pacing to stay under Substack's rate limit.
 # Fires daily via config/recurring.yml but self-gates on the configured
 # rotation interval (SubstackSyncConfig#quotation_rotation_days).
 class RotateSubstackQuotationsJob < ApplicationJob
@@ -60,7 +60,8 @@ class RotateSubstackQuotationsJob < ApplicationJob
 
     body["content"] = rotated
     client.update_draft(substack_id, draft_body: JSON.generate(body))
-    SubstackPendingPublish.publish(client, substack_id, title: remote["draft_title"]) if remote["is_published"]
+    # Never published automatically — the rotation waits in the draft until Updated by hand.
+    SubstackPendingPublish.record!(substack_id, remote["draft_title"]) if remote["is_published"]
   end
 
   def parse_body(raw)

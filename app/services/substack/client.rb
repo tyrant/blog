@@ -231,9 +231,9 @@ module Substack
       request(Net::HTTP::Delete.new(pub_uri("/api/v1/drafts/#{draft_id}")))
     end
 
-    # Publishes (or re-publishes) a draft. send_email stays false: the syncer only
-    # auto-publishes posts already published once, whose subscriber email was sent
-    # at that first publish — so re-publishing edits never re-sends.
+    # Publishes (or re-publishes) a draft, without a subscriber email. The syncers
+    # never call this — publishing is manual; only the one-off reviews bootstrap
+    # rake task does.
     def publish_draft(draft_id, send_email: false)
       req = Net::HTTP::Post.new(pub_uri("/api/v1/drafts/#{draft_id}/publish"))
       req.body = JSON.generate(send_email: send_email)

@@ -52,8 +52,9 @@
     Every quotation is mirrored to the dedicated Substack "Reviews" pages, in the order
     below, one page per group. Sync a page to push its quotations to its Substack draft;
     "Changed" marks pages whose quotations were added, edited, deleted or reordered since
-    their last sync. Substack wants a 2FA sign-in to publish, so open the draft and click
-    Update afterwards — "Needs publishing" clears on reload once Substack shows it published.
+    their last sync. Syncing never publishes: open the draft, make any hand edits (turn each
+    @handle into a mention), then click Update — "Needs publishing" clears on reload once
+    Substack shows it published.
     Set page 1's draft id under
     = succeed "." do
       = link_to "Substack Sync settings", edit_comfy_admin_substack_sync_config_path

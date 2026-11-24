@@ -175,23 +175,14 @@ RSpec.describe Substack::PostSyncer do
       expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body, draft_title: post.title, should_send_email: false))
     end
 
-    it 'publishes the edits immediately' do
+    it 'never publishes the edits' do
       sync
-      expect(client).to have_received(:publish_draft).with(778)
+      expect(client).to_not have_received(:publish_draft)
     end
 
-    context 'when Substack wants a fresh 2FA sign-in to publish' do
-      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth') }
-
-      it 'still syncs the draft, without failing' do
-        expect { sync }.to_not raise_error
-        expect(client).to have_received(:update_draft).with(778, hash_including(:draft_body))
-      end
-
-      it 'queues the post for a manual publish' do
-        sync
-        expect(SubstackPendingPublish.find_by(draft_id: 778).title).to eq post.title
-      end
+    it 'queues the post for a manual publish' do
+      sync
+      expect(SubstackPendingPublish.find_by(draft_id: 778).title).to eq post.title
     end
 
     it 'never re-slugs a published post' do

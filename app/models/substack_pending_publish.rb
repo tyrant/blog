@@ -1,26 +1,16 @@
 # frozen_string_literal: true
 
-# A Substack post whose draft edits the syncers pushed but couldn't publish
-# live, because Substack wants a fresh 2FA sign-in before any publish
-# (reauthentication_required) — which a stored session cookie can't give it.
-# Draft writes still go through, so the edit is waiting in the draft: the admin
-# lists these for a manual Update in Substack's editor, and reconcile! clears
-# them once Substack shows that Update happened (or they're dismissed by hand).
+# A Substack post whose draft the syncers have edited, waiting on a manual
+# publish. The syncers never publish anything themselves: they write the draft
+# and record it here, the author makes any hand edits (e.g. turning @handles
+# into mentions) and clicks Update in Substack's editor (with its 2FA), and
+# reconcile! clears the entry once Substack shows that Update happened (or it's
+# dismissed by hand).
 class SubstackPendingPublish < ApplicationRecord
   scope :oldest_first, -> { order(:created_at) }
 
-  # Publish draft_id live, or — when Substack demands re-authentication — record
-  # it as pending instead of failing the sync. Any other error still raises.
-  # Returns true when published, false when queued for a manual publish.
-  def self.publish(client, draft_id, title:)
-    client.publish_draft(draft_id)
-    where(draft_id: draft_id).delete_all
-    true
-  rescue Substack::Client::ReauthRequired
-    record!(draft_id, title)
-    false
-  end
-
+  # Mark draft_id as awaiting a manual publish — one entry per draft, carrying
+  # the latest title.
   def self.record!(draft_id, title)
     pending = find_or_initialize_by(draft_id: draft_id)
     pending.title = title if title.present?

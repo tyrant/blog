@@ -5,49 +5,22 @@ require 'rails_helper'
 RSpec.describe SubstackPendingPublish do
   let(:client) { instance_double(Substack::Client) }
 
-  describe '.publish' do
-    context 'when Substack publishes it' do
-      before do
-        allow(client).to receive(:publish_draft).with(42)
-        described_class.create!(draft_id: 42, title: 'Was pending')
-      end
-
-      it { expect(described_class.publish(client, 42, title: 'Post')).to be true }
-
-      it 'clears any pending entry for that draft' do
-        described_class.publish(client, 42, title: 'Post')
-        expect(described_class.where(draft_id: 42)).to be_empty
-      end
+  describe '.record!' do
+    it 'records the draft as pending' do
+      described_class.record!(42, 'Post')
+      expect(described_class.find_by(draft_id: 42).title).to eq 'Post'
     end
 
-    context 'when Substack demands a fresh sign-in' do
-      before do
-        allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth')
-      end
-
-      it { expect(described_class.publish(client, 42, title: 'Post')).to be false }
-
-      it 'records the draft as pending' do
-        described_class.publish(client, 42, title: 'Post')
-        expect(described_class.find_by(draft_id: 42).title).to eq 'Post'
-      end
-
-      it 'keeps one entry per draft, with the latest title' do
-        described_class.publish(client, 42, title: 'Post')
-        described_class.publish(client, 42, title: 'Renamed')
-        expect(described_class.where(draft_id: 42).pluck(:title)).to eq ['Renamed']
-      end
+    it 'keeps one entry per draft, with the latest title' do
+      described_class.record!(42, 'Post')
+      described_class.record!(42, 'Renamed')
+      expect(described_class.where(draft_id: 42).pluck(:title)).to eq ['Renamed']
     end
 
-    context 'any other Substack error' do
-      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::AuthError, 'dead cookie') }
-
-      it { expect { described_class.publish(client, 42, title: 'Post') }.to raise_error(Substack::Client::AuthError) }
-
-      it 'records nothing' do
-        begin; described_class.publish(client, 42, title: 'Post'); rescue Substack::Client::AuthError; end
-        expect(described_class.count).to eq 0
-      end
+    it 'keeps the old title when given none' do
+      described_class.record!(42, 'Post')
+      described_class.record!(42, nil)
+      expect(described_class.find_by(draft_id: 42).title).to eq 'Post'
     end
   end
 

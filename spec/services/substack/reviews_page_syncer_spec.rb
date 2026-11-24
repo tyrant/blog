@@ -399,18 +399,14 @@ RSpec.describe Substack::ReviewsPageSyncer do
       allow(Substack::QuotationEmbed).to receive(:execute).and_return(nil)
     end
 
-    it 'republishes to push the edit live' do
+    it 'never publishes it' do
       sync
-      expect(client).to have_received(:publish_draft).with(555)
+      expect(client).to_not have_received(:publish_draft)
     end
 
-    context 'when Substack wants a fresh 2FA sign-in to publish' do
-      before { allow(client).to receive(:publish_draft).and_raise(Substack::Client::ReauthRequired, 'reauth') }
-
-      it 'queues the page for a manual publish instead of failing' do
-        expect { sync }.to_not raise_error
-        expect(SubstackPendingPublish.find_by(draft_id: 555).title).to eq 'Reviews page 1'
-      end
+    it 'queues the page for a manual publish' do
+      sync
+      expect(SubstackPendingPublish.find_by(draft_id: 555).title).to eq 'Reviews page 1'
     end
   end
 
@@ -445,9 +441,15 @@ RSpec.describe Substack::ReviewsPageSyncer do
       expect(client).to have_received(:update_draft).with(556, hash_including(slug: 'reviews-page-2'))
     end
 
-    it 'publishes the newly created page' do
+    it 'never publishes, not even the newly created page' do
       sync
-      expect(client).to have_received(:publish_draft).with(556)
+      expect(client).to_not have_received(:publish_draft)
+    end
+
+    it 'queues every page for a manual publish' do
+      sync
+      expect(SubstackPendingPublish.pluck(:draft_id, :title))
+        .to contain_exactly([555, 'Reviews page 1'], [556, 'Reviews page 2'])
     end
 
     it 'records the new page id in the config' do
@@ -484,10 +486,9 @@ RSpec.describe Substack::ReviewsPageSyncer do
           .to eq ['https://mikeyclarke.substack.com/p/reviews']
       end
 
-      it 'publishes only that page' do
+      it 'queues only that page for a manual publish' do
         sync
-        expect(client).to have_received(:publish_draft).with(556).once
-        expect(client).to_not have_received(:publish_draft).with(555)
+        expect(SubstackPendingPublish.pluck(:draft_id)).to eq [556]
       end
 
       it 'stamps only that page' do
@@ -495,11 +496,12 @@ RSpec.describe Substack::ReviewsPageSyncer do
         expect(config.reload.reviews_page_fingerprints.keys).to eq ['2']
       end
 
-      it 'publishes a page 2+ that was never published' do
+      it 'leaves a never-published page 2+ unpublished, queued for a manual publish' do
         allow(client).to receive(:get_draft).with(556)
           .and_return('draft_title' => 'Reviews Page 2', 'draft_subtitle' => '', 'is_published' => false, 'slug' => 'reviews-page-2')
         sync
-        expect(client).to have_received(:publish_draft).with(556)
+        expect(client).to_not have_received(:publish_draft)
+        expect(SubstackPendingPublish.pluck(:draft_id)).to eq [556]
       end
     end
 
