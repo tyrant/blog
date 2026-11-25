@@ -57,28 +57,54 @@ RSpec.describe Substack::QuotationBlock do
   end
 
   describe '.unit' do
-    it 'is the heading/blockquote/spacer triplet when the quotation has no embed snapshot' do
-      expect(described_class.unit(quote).map { |b| b['type'] }).to eq %w[heading blockquote paragraph]
+    let(:embed) { { 'size' => 'sm', 'id' => 7 } }
+    let(:unit) { described_class.unit(quote(quotation: 'card quote', post_embed: embed)) }
+
+    before do
+      SubstackSyncConfig.instance.update!(publication_host: 'pub.substack.com', reviews_page_size: 20,
+                                          subtitle_variables_json: '{"compliment": ["gnarly", "cracking"], "quantity": ["bags"]}')
     end
 
-    it 'is a card/blockquote/spacer triplet when the quotation has a snapshot' do
-      unit = described_class.unit(quote(post_embed: { 'size' => 'sm', 'id' => 7 }))
-      expect(unit.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote heading]
+    it 'is card, quote, signature line, then a centred h5 "." spacer' do
+      expect(unit.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote paragraph heading]
+      expect(unit[3]).to eq described_class.trailing_spacer
     end
 
-    it "puts the quote (marked em) and attribution inside the card unit's blockquote, both visible" do
-      unit = described_class.unit(quote(quotation: 'card quote', post_embed: { 'size' => 'sm' }))
-      quote_node = unit[1]['content'][0]['content'][0]
-      attribution_nodes = unit[1]['content'][1]['content']
-      expect(quote_node['text']).to eq '“card quote”'
-      expect(quote_node['marks'].map { |m| m['type'] }).to include 'em'
-      expect(attribution_nodes.map { |n| n['text'] }).to eq ['🔗', ' — ', 'Eva']
+    it 'leads with the post-title heading when there is no embed snapshot' do
+      expect(described_class.unit(quote).first).to eq described_class.heading(quote)
     end
 
-    it 'closes the card unit with a centred h5 "." spacer' do
-      unit = described_class.unit(quote(post_embed: { 'size' => 'sm' }))
-      expect(unit[2]).to eq('type' => 'heading', 'attrs' => { 'textAlign' => 'center', 'level' => 5 },
-                             'content' => [{ 'type' => 'text', 'text' => '.' }])
+    it 'drops the spacer with spacer: false' do
+      expect(described_class.unit(quote(post_embed: embed), spacer: false).map { |b| b['type'] })
+        .to eq %w[digestPostEmbed blockquote paragraph]
+    end
+
+    it 'block-quotes only the italic quote' do
+      expect(unit[1]).to eq described_class.quote_only_blockquote(quote(quotation: 'card quote'))
+    end
+
+    describe 'the signature line' do
+      let(:signature) { unit[2]['content'] }
+
+      it 'reads "🔗 — <Blizzard-style thanks to @handle>"' do
+        expect(signature.map { |n| n['text'] }.join)
+          .to match(/\A🔗 — Bags of thanks to the Most \w+ @eva, they're \w+, do check 'em out/)
+      end
+
+      it 'leaves the @handle unlinked, for a mention to be made by hand' do
+        expect(signature.find { |n| n['text'] == '@eva' }).to eq('type' => 'text', 'text' => '@eva')
+      end
+
+      it "links the 🔗 to the review's spot on its Reviews page" do
+        saved = quote.tap(&:save!)
+        link = described_class.unit(saved)[2]['content'][0]
+        expect(link['text']).to eq '🔗'
+        expect(link.dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/reviews?open=false#%C2%A71'
+      end
+
+      it 'links the 🔗 to the comment for a quotation not on the Reviews pages' do
+        expect(signature[0].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
+      end
     end
   end
 
@@ -210,10 +236,17 @@ RSpec.describe Substack::QuotationBlock do
       expect(described_class.triplet_at?(unit, 0)).to be true
     end
 
-    it 'matches a card/blockquote/spacer triplet (the current card shape)' do
-      unit = described_class.unit(quote(post_embed: { 'size' => 'sm' }))
+    it 'matches the current footer unit, with or without its spacer' do
+      [true, false].each do |spacer|
+        expect(described_class.triplet_at?(described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: spacer), 0)).to be true
+      end
+    end
+
+    it 'matches an earlier card/attributed-blockquote/spacer unit' do
+      unit = [described_class.card(quote(post_embed: { 'size' => 'sm' })), described_class.quote_blockquote(quote), described_class.trailing_spacer]
       expect(described_class.triplet_at?(unit, 0)).to be true
     end
+
   end
 
   describe '.walk_units' do
@@ -222,25 +255,31 @@ RSpec.describe Substack::QuotationBlock do
         described_class.unit(quote(post_embed: { 'size' => 'sm' })) +
         described_class.unit(quote(post_embed: { 'size' => 'sm' })) +
         [{ 'type' => 'horizontal_rule' }]
-      expect(described_class.walk_units(content, 1)).to eq [2, 7]
+      expect(described_class.walk_units(content, 1)).to eq [2, 9]
     end
 
     it 'counts spacer-less card units (the current layout) up to the next block' do
       content = described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: false) +
         described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: false) +
         [{ 'type' => 'button' }]
+      expect(described_class.walk_units(content, 0)).to eq [2, 6]
+    end
+
+    it 'counts a run of earlier card/attributed-blockquote units' do
+      earlier = [described_class.card(quote(post_embed: { 'size' => 'sm' })), described_class.quote_blockquote(quote)]
+      content = earlier + earlier + [{ 'type' => 'button' }]
       expect(described_class.walk_units(content, 0)).to eq [2, 4]
     end
 
     it 'does not swallow a following paragraph as a spacer-less unit’s spacer' do
       content = described_class.unit(quote(post_embed: { 'size' => 'sm' }), spacer: false) +
         [{ 'type' => 'paragraph', 'content' => [{ 'type' => 'text', 'text' => 'Enjoy oodles more kudos' }] }]
-      expect(described_class.walk_units(content, 0)).to eq [1, 2]
+      expect(described_class.walk_units(content, 0)).to eq [1, 3]
     end
 
     it 'counts a mixed run of legacy and card-shape units' do
       content = described_class.build(quote) + described_class.unit(quote(post_embed: { 'size' => 'sm' }))
-      expect(described_class.walk_units(content, 0)).to eq [2, 6]
+      expect(described_class.walk_units(content, 0)).to eq [2, 7]
     end
   end
 
@@ -275,7 +314,14 @@ RSpec.describe Substack::QuotationBlock do
       fresh_with_embed = [quote(quotation: 'new', post_embed: { 'size' => 'sm' })]
       result = described_class.rotate(card_content, fresh_with_embed)
       expect(result[1]['attrs']['caption']).to eq '“new”'
-      expect(result.size).to eq 4
+      expect(result.size).to eq 5
+    end
+
+    it 'upgrades an earlier spacer-less card run to the current shape, still spacer-less' do
+      earlier = [{ 'type' => 'paragraph' }, described_class.card(quote(post_embed: { 'size' => 'sm' })),
+                 described_class.quote_blockquote(quote), { 'type' => 'button' }]
+      result = described_class.rotate(earlier, [quote(quotation: 'new', post_embed: { 'size' => 'sm' })])
+      expect(result.map { |b| b['type'] }).to eq %w[paragraph digestPostEmbed blockquote paragraph button]
     end
 
     it 'keeps a spacer-less run spacer-less' do
@@ -284,7 +330,7 @@ RSpec.describe Substack::QuotationBlock do
         [{ 'type' => 'button' }]
       fresh_with_embed = [quote(quotation: 'new', post_embed: { 'size' => 'sm' })]
       result = described_class.rotate(card_content, fresh_with_embed)
-      expect(result.map { |b| b['type'] }).to eq %w[paragraph digestPostEmbed blockquote button]
+      expect(result.map { |b| b['type'] }).to eq %w[paragraph digestPostEmbed blockquote paragraph button]
       expect(result[1]['attrs']['caption']).to eq '“new”'
     end
   end

@@ -1,28 +1,33 @@
 # frozen_string_literal: true
 
 module Substack
-  # Builds and detects the featured-quote blocks. When the quotation has a
-  # post_embed snapshot, it renders as a three-block unit: a native "small"
-  # post-embed card (its caption *is* the quote, but Substack's mobile CSS
-  # hides that caption — kept only for the rich preview), a blockquote of the
-  # quote (marked em, always visible) with the attribution nested below it as
-  # a second paragraph, then a centred h5 "." spacer beneath the pair. Without
-  # a snapshot it falls back to the older three-block shape: an h4 heading
-  # linking the post, a blockquote of the italicised quote (with the same
-  # inline attribution), and a centred "." spacer. The template's
-  # syncQuotations directive expands into N of these; the rotation job finds
-  # the run in a draft (of any shape) and swaps them for fresh ones.
+  # Builds and detects the featured-quote blocks. A post-footer unit (#unit)
+  # mirrors the Reviews pages: a native "small" post-embed card (its caption
+  # *is* the quote, but Substack's mobile CSS hides that caption — kept only for
+  # the rich preview) or, without a snapshot, an h4 heading linking the post; a
+  # blockquote holding only the italic quote; a "🔗 — <Blizzard-worded thanks to
+  # @handle>" signature line, its 🔗 linking the review on its Reviews page;
+  # then (spacer: true) a centred h5 "." spacer. Older drafts carry earlier
+  # shapes — card + attributed blockquote (± spacer), or heading + blockquote +
+  # "." — which are still detected. The template's syncQuotations
+  # directive expands into N units; the rotation job finds the run in a draft
+  # (of any shape) and swaps them for fresh ones.
   module QuotationBlock
     module_function
 
-    # spacer: false drops the trailing "." spacer from a card unit — the
-    # current reference layout shows its review(s) as bare card + blockquote
-    # pairs. The heading fallback always keeps its spacer (part of its shape).
+    # A post-footer unit (see module docs). spacer: false drops the trailing
+    # "." spacer — the current reference layout has none.
     def unit(quotation, spacer: true)
-      lead = card(quotation)
-      return [lead, quote_blockquote(quotation), (trailing_spacer if spacer)].compact if lead
+      [card(quotation) || heading(quotation), quote_only_blockquote(quotation),
+       review_signature(quotation, href: review_href(quotation)), (trailing_spacer if spacer)].compact
+    end
 
-      [heading(quotation), blockquote(quotation), self.spacer]
+    # Where a footer unit's 🔗 points: the review's own spot on its Reviews page,
+    # as in the Blizzard notes — or, for a quotation the pages leave out, the
+    # original comment.
+    def review_href(quotation)
+      number, _total = Blizzard::QuotationNote.reviews_standing(quotation)
+      number ? SubstackSyncConfig.instance.review_url(number) : quotation.comment_url
     end
 
     # A Reviews-page unit: an h4 "#N" numbering the review, the post-embed card
@@ -62,19 +67,21 @@ module Substack
       }
     end
 
-    # "🔗 — Bags of thanks to the *Most* Gnarly Eva, she's ***cracking***, do
-    # check her out…": the 🔗 links the original comment; the rest is the
-    # Blizzard notes' attribution wording, in post marks with a linked name.
-    def review_signature(quotation)
+    # "🔗 — Bags of thanks to the *Most* Gnarly @eva, she's ***cracking***, do
+    # check her out…": the 🔗 links href (on the Reviews pages, the original
+    # comment; in post footers, the review on its Reviews page); the rest is
+    # the Blizzard notes' attribution wording, in post marks, naming the
+    # author by plain @handle.
+    def review_signature(quotation, href: quotation.comment_url)
       nodes = []
-      nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
+      nodes << text("🔗", href: href) if href.present?
       nodes << text(" — ")
       nodes.concat(Blizzard::QuotationNote.attribution_nodes(quotation, bold: "strong", italic: "em", author_node: review_author(quotation)))
 
       { "type" => "paragraph", "attrs" => { "textAlign" => "left" }, "content" => nodes }
     end
 
-    # The Reviews pages name each author as plain "@handle" text, unlinked: before
+    # Reviews pages and post footers name each author as plain "@handle" text, unlinked: before
     # publishing, the author clicks each one in the Substack editor to turn it into
     # a mention, which also notifies that user. Falls back to the plain name when
     # there's no handle.
@@ -120,10 +127,10 @@ module Substack
       }
     end
 
-    # The card unit's quote + attribution, both always visible regardless of
-    # Substack's per-device embed styling: the quote (marked em) as the
-    # blockquote's first paragraph, the attribution (🔗, em-dash, linked
-    # commenter) nested below it as a second paragraph.
+    # An earlier footer shape's blockquote (no longer built for footers; kept
+    # as the reference for detecting it in older drafts): the quote (marked em)
+    # as the first paragraph, the attribution (🔗, em-dash, linked commenter)
+    # nested below it as a second paragraph.
     def quote_blockquote(quotation)
       attribution_nodes = []
       attribution_nodes << text("🔗", href: quotation.comment_url) if quotation.comment_url.present?
@@ -221,9 +228,10 @@ module Substack
       content[0...start] + fresh + content[stop..]
     end
 
-    # Whether the run starting at index uses "." spacers after its card units
-    # (older layouts) — false for the current bare card + blockquote pairs.
+    # Whether the run starting at index has "." spacers after its units.
     def spaced_run?(content, index)
+      return period_heading?(content[index + 3]) if footer_unit?(content, index)
+
       !card_without_spacer?(content, index)
     end
 
@@ -242,6 +250,7 @@ module Substack
     # A quotation unit at index: any shape (see module docs). Returns the
     # block length of the unit found there (2 or 3), or nil if none matches.
     def unit_length_at(content, index)
+      return (period_heading?(content[index + 3]) ? 4 : 3) if footer_unit?(content, index)
       return 3 if card_with_trailing_spacer?(content, index)
       return 2 if card_without_spacer?(content, index)
       return 2 if quotation_lead?(content[index]) && attribution_paragraph?(content[index + 1])
@@ -250,7 +259,22 @@ module Substack
       nil
     end
 
-    # The current card shape: a post-embed card, a blockquote carrying both
+    # The current footer shape (#unit): card or post heading, a quote-only
+    # blockquote, then the signature paragraph led by a linked 🔗.
+    def footer_unit?(content, index)
+      quotation_lead?(content[index]) &&
+        blockquote_em?(content[index + 1]) && Array(content[index + 1]["content"]).size == 1 &&
+        signature_paragraph?(content[index + 2])
+    end
+
+    def signature_paragraph?(block)
+      return false unless paragraph?(block)
+
+      first = Array(block["content"]).first.to_h
+      first["text"] == "🔗" && Array(first["marks"]).any? { |mark| mark["type"] == "link" }
+    end
+
+    # An earlier card shape: a post-embed card, a blockquote carrying both
     # the quote and (nested as a second paragraph) its attribution, then a
     # centred "." heading spacer.
     def card_with_trailing_spacer?(content, index)
@@ -259,7 +283,7 @@ module Substack
         period_heading?(content[index + 2])
     end
 
-    # The current reference layout: a post-embed card and its attributed
+    # An earlier reference layout: a post-embed card and its attributed
     # blockquote with no "." spacer after them (e.g. straight into a button).
     def card_without_spacer?(content, index)
       post_embed_card?(content[index]) &&

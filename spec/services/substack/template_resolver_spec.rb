@@ -104,9 +104,9 @@ RSpec.describe Substack::TemplateResolver do
       end
     end
 
-    it 'expands to count triplets (3 blocks each)' do
+    it 'expands to count units (4 blocks each, with the spacer)' do
       result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 2 } }])
-      expect(result.size).to eq 6
+      expect(result.size).to eq 8
       expect(result.count { |b| b['type'] == 'blockquote' }).to eq 2
     end
 
@@ -117,13 +117,13 @@ RSpec.describe Substack::TemplateResolver do
     it 'leads each quotation with a post-embed card when a snapshot exists' do
       SubstackQuotation.update_all(post_embed: { 'size' => 'sm', 'id' => 9 })
       result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1 } }])
-      expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote heading]
+      expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote paragraph heading]
     end
 
     it 'drops the trailing spacer when the directive says spacer: false' do
       SubstackQuotation.update_all(post_embed: { 'size' => 'sm', 'id' => 9 })
       result = resolve([{ 'type' => 'syncQuotations', 'attrs' => { 'count' => 1, 'spacer' => false } }])
-      expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote]
+      expect(result.map { |b| b['type'] }).to eq %w[digestPostEmbed blockquote paragraph]
     end
 
     it 'uses injected quotations when given' do

@@ -105,7 +105,7 @@ module Substack
         most_complimented = [
             text("Most ",
                   marks: [{ 'type' => italic }]),
-            text("#{compliments[0].capitalize} ")
+            text("#{compliments[0].to_s.capitalize} ")
           ]
         wording = pronoun_wording(quotation)
 
