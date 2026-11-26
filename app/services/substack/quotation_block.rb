@@ -174,30 +174,32 @@ module Substack
       }
     end
 
-    # The single top-of-post aside: Substack's native Callout Block holding the
-    # same one-line quote + 🔗 + attribution (same shape HtmlToProseMirror emits
-    # for <p class="callout-block">).
+    # The single top-of-post aside: Substack's native Callout Block holding a
+    # one-line quote + 🔗 + attribution (same shape HtmlToProseMirror emits for
+    # <p class="callout-block">). As in the post footer, the 🔗 links the review
+    # on its Reviews page and the author is plain "@handle" text, made into a
+    # mention by hand.
     def callout(quotation)
       {
         "type" => "calloutBlock",
         "content" => [{
           "type" => "paragraph",
           "attrs" => { "textAlign" => nil },
-          "content" => quote_line_nodes(quotation)
+          "content" => quote_line_nodes(quotation, href: review_href(quotation), author_node: review_author(quotation))
         }]
       }
     end
 
-    def quote_line_nodes(quotation)
+    def quote_line_nodes(quotation, href: quotation.comment_url, author_node: author(quotation))
       nodes = [text("“#{quotation.quotation}”", marks: [{ "type" => "em" }])]
 
-      if quotation.comment_url.present?
+      if href.present?
         nodes << text(" ")
-        nodes << text("🔗", href: quotation.comment_url)
+        nodes << text("🔗", href: href)
       end
 
       nodes << text(" — ")
-      nodes << author(quotation)
+      nodes << author_node
       nodes
     end
 

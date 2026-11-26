@@ -211,16 +211,32 @@ RSpec.describe Substack::QuotationBlock do
   describe '.callout' do
     subject(:callout) { described_class.callout(quote) }
 
+    before { SubstackSyncConfig.instance.update!(publication_host: 'pub.substack.com', reviews_page_size: 20) }
+
+    let(:nodes) { callout['content'][0]['content'] }
+
     it 'is a Callout Block holding one paragraph' do
       expect(callout['type']).to eq 'calloutBlock'
       expect(callout['content'].map { |b| b['type'] }).to eq %w[paragraph]
     end
 
-    it 'carries the italic quote, comment link and linked author on that one line' do
-      nodes = callout['content'][0]['content']
-      expect(nodes.map { |n| n['text'] }).to eq ['“a blurb”', ' ', '🔗', ' — ', 'Eva']
+    it 'carries the italic quote, 🔗 and @handle on that one line' do
+      expect(nodes.map { |n| n['text'] }).to eq ['“a blurb”', ' ', '🔗', ' — ', '@eva']
       expect(nodes[0]['marks'].map { |m| m['type'] }).to include 'em'
-      expect(nodes.last.dig('marks', 0, 'attrs', 'href')).to eq 'https://substack.com/@eva'
+    end
+
+    it 'leaves the @handle unlinked, for a mention to be made by hand' do
+      expect(nodes.last).to eq('type' => 'text', 'text' => '@eva')
+    end
+
+    it "links the 🔗 to the review's spot on its Reviews page" do
+      saved = quote.tap(&:save!)
+      link = described_class.callout(saved)['content'][0]['content'][2]
+      expect(link.dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/reviews?open=false#%C2%A71'
+    end
+
+    it 'links the 🔗 to the comment for a quotation not on the Reviews pages' do
+      expect(nodes[2].dig('marks', 0, 'attrs', 'href')).to eq 'https://pub.substack.com/p/ch-1/comment/42'
     end
   end
 

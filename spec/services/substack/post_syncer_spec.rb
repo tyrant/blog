@@ -351,13 +351,14 @@ RSpec.describe Substack::PostSyncer do
         end
       end
 
-      it 'renders the quote, comment link, and author link as one line in a Callout Block with no embed card' do
+      it 'renders the quote, review link, and @handle as one line in a Callout Block with no embed card' do
         sync
         expect(client).to have_received(:create_draft) do |args|
           widget = args[:body_doc]['content'][0]
           expect(widget['type']).to eq 'calloutBlock'
           texts = widget['content'][0]['content'].map { |n| n['text'] }
-          expect(texts).to eq ['“q”', ' ', '🔗', ' — ', 'A']
+          expect(texts).to eq ['“q”', ' ', '🔗', ' — ', '@a']
+          expect(widget['content'][0]['content'][2].dig('marks', 0, 'attrs', 'href')).to include '/p/reviews?open=false#%C2%A71'
         end
       end
 
